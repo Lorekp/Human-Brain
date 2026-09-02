@@ -1,0 +1,2483 @@
+{
+  "attempt_outcome_distribution": {
+    "sandbox:regression_failure": 8,
+    "sandbox:runtime_error": 8,
+    "sandbox:signature_error": 2,
+    "stop:pointer_binding_failed_closed": 3
+  },
+  "capability_curve": [
+    {
+      "capability_group": "absolute-gap",
+      "control_cumulative_rate": 0.0,
+      "control_solved_online": 0,
+      "cumulative_rate": 0.0,
+      "solved_online": 0,
+      "stage": "public-prior-alpha-transfer",
+      "task_index": 0,
+      "tasks_seen": 1
+    },
+    {
+      "capability_group": "even-filter",
+      "control_cumulative_rate": 0.0,
+      "control_solved_online": 0,
+      "cumulative_rate": 0.0,
+      "solved_online": 0,
+      "stage": "public-prior-alpha-transfer",
+      "task_index": 1,
+      "tasks_seen": 2
+    },
+    {
+      "capability_group": "normalize-text",
+      "control_cumulative_rate": 0.0,
+      "control_solved_online": 0,
+      "cumulative_rate": 0.0,
+      "solved_online": 0,
+      "stage": "public-prior-alpha-transfer",
+      "task_index": 2,
+      "tasks_seen": 3
+    },
+    {
+      "capability_group": "affine-scalar",
+      "control_cumulative_rate": 0.0,
+      "control_solved_online": 0,
+      "cumulative_rate": 0.0,
+      "solved_online": 0,
+      "stage": "public-prior-alpha-transfer",
+      "task_index": 3,
+      "tasks_seen": 4
+    },
+    {
+      "capability_group": "absolute-gap",
+      "control_cumulative_rate": 0.0,
+      "control_solved_online": 0,
+      "cumulative_rate": 0.0,
+      "solved_online": 0,
+      "stage": "within-stream-structural-repeat",
+      "task_index": 4,
+      "tasks_seen": 5
+    },
+    {
+      "capability_group": "even-filter",
+      "control_cumulative_rate": 0.0,
+      "control_solved_online": 0,
+      "cumulative_rate": 0.0,
+      "solved_online": 0,
+      "stage": "within-stream-structural-repeat",
+      "task_index": 5,
+      "tasks_seen": 6
+    },
+    {
+      "capability_group": "normalize-text",
+      "control_cumulative_rate": 0.0,
+      "control_solved_online": 0,
+      "cumulative_rate": 0.0,
+      "solved_online": 0,
+      "stage": "within-stream-structural-repeat",
+      "task_index": 6,
+      "tasks_seen": 7
+    },
+    {
+      "capability_group": "affine-scalar",
+      "control_cumulative_rate": 0.0,
+      "control_solved_online": 0,
+      "cumulative_rate": 0.0,
+      "solved_online": 0,
+      "stage": "within-stream-structural-repeat",
+      "task_index": 7,
+      "tasks_seen": 8
+    },
+    {
+      "capability_group": "prefix-sums",
+      "control_cumulative_rate": 0.0,
+      "control_solved_online": 0,
+      "cumulative_rate": 0.0,
+      "solved_online": 0,
+      "stage": "unseen-behavior",
+      "task_index": 8,
+      "tasks_seen": 9
+    },
+    {
+      "capability_group": "reverse-word-order",
+      "control_cumulative_rate": 0.0,
+      "control_solved_online": 0,
+      "cumulative_rate": 0.0,
+      "solved_online": 0,
+      "stage": "unseen-behavior",
+      "task_index": 9,
+      "tasks_seen": 10
+    },
+    {
+      "capability_group": "longest-nonnegative-run",
+      "control_cumulative_rate": 0.0,
+      "control_solved_online": 0,
+      "cumulative_rate": 0.0,
+      "solved_online": 0,
+      "stage": "unseen-behavior",
+      "task_index": 10,
+      "tasks_seen": 11
+    },
+    {
+      "capability_group": "alternating-merge",
+      "control_cumulative_rate": 0.0,
+      "control_solved_online": 0,
+      "cumulative_rate": 0.0,
+      "solved_online": 0,
+      "stage": "unseen-behavior",
+      "task_index": 11,
+      "tasks_seen": 12
+    }
+  ],
+  "claim_boundary": "fresh public-TRAIN continual toy coding pressure only; no protected evaluation and no mesoscopic integrated forcing-gate claim",
+  "corpus_custody": {
+    "bootstrap_corpus_sha256": "7ee224c32dc40c10142b05dd6bb574a8c7f9ae28686a108212134c6660aaf117",
+    "generic_stop_examples": 1,
+    "model_config": {
+      "max_order": 256,
+      "max_phrases": 256,
+      "min_phrase_frequency": 2
+    },
+    "public_coding_prior_cases": 8,
+    "public_coding_prior_sha256": "81a60454b9af6b8592ea8b422c25bdd98115c101e5580c8cd571555fdf0abfb1",
+    "source_corpus_sha256": "b35a2edeabfb9e78755c4eb7bf3c77babacdddeaf2c0b4164af0c934e54ea56c",
+    "source_freeze_commit": "34ba9625b943d6ae4714a801fd4811915a706969",
+    "source_manifest_sha256": "0942545cd03e21ac94c047db90c15e59b9327c5171db74afd3963d3cbeef7362",
+    "target_task_count": 12,
+    "target_tasks_present_at_freeze": false,
+    "train_stream_sha256": "99e11062d7d4ede454abd0c5b52747ca208ea9a25a917088c2c9e14c574e5253",
+    "training_repetitions": 2
+  },
+  "exact_learner_action_source_executed": true,
+  "execution_custody": {
+    "language_source_sha256": "f376ebd49e25b327b362eb856de94cddfedc5cc57337699d0160fb1139064f31",
+    "persistent_coding_source_sha256": "7727cbdd1776282aad7b1dd345f7c6e9fe142a62f6b73afd932103dd51756d30",
+    "pointer_binding_source_sha256": "a4cd186a86f29eb01d9ca391dc271dbb912c8c2bb457f27c8dc5b870bc092e36",
+    "protocol_sha256": "f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2",
+    "public_prior_source_sha256": "95b0bbae62cc1fc08dd94e0f25e32116c2bbe671c7d5ceb10b50a4617ff0ac5b",
+    "python_executable_sha256": "6765c6b1685c86877fabe14d82240f3fab2913a617a85e8d09e61dc40798013b",
+    "session_source_sha256": "688b5c540eb626e10f63fe061f74a2c5bb899cf50090676f79424b5180f8e199",
+    "task_stream_source_sha256": "f1bf1a5e1bae97bd5eee36e85c17896fc80f556ec120568dc1d03b2e40e844da",
+    "worker_sha256": "258aaf45decb8ed6635a85b92ee970591932b2cf53b691149a0d66777601c870"
+  },
+  "failure_distribution": {
+    "sandbox:regression_failure": 8,
+    "sandbox:runtime_error": 8,
+    "sandbox:signature_error": 2,
+    "stop:pointer_binding_failed_closed": 3
+  },
+  "final_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+  "frozen_no_update_control": {
+    "attempt_outcome_distribution": {
+      "sandbox:regression_failure": 8,
+      "sandbox:runtime_error": 8,
+      "sandbox:signature_error": 2,
+      "stop:pointer_binding_failed_closed": 3
+    },
+    "failure_distribution": {
+      "sandbox:regression_failure": 8,
+      "sandbox:runtime_error": 8,
+      "sandbox:signature_error": 2,
+      "stop:pointer_binding_failed_closed": 3
+    },
+    "final_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+    "initial_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+    "learning_applied_events": 0,
+    "model_digest_unchanged": true,
+    "second_attempt_recoveries": 0,
+    "solved_online": 0
+  },
+  "full_replay_between_tasks": false,
+  "grown_branches": 499504,
+  "initial_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+  "learning_applied_events": 0,
+  "max_attempts": 2,
+  "one_persistent_treatment_model": true,
+  "protected_dev_or_eval_inputs": 0,
+  "reservation": {
+    "corpus_custody": {
+      "bootstrap_corpus_sha256": "7ee224c32dc40c10142b05dd6bb574a8c7f9ae28686a108212134c6660aaf117",
+      "generic_stop_examples": 1,
+      "model_config": {
+        "max_order": 256,
+        "max_phrases": 256,
+        "min_phrase_frequency": 2
+      },
+      "public_coding_prior_cases": 8,
+      "public_coding_prior_sha256": "81a60454b9af6b8592ea8b422c25bdd98115c101e5580c8cd571555fdf0abfb1",
+      "source_corpus_sha256": "b35a2edeabfb9e78755c4eb7bf3c77babacdddeaf2c0b4164af0c934e54ea56c",
+      "source_freeze_commit": "34ba9625b943d6ae4714a801fd4811915a706969",
+      "source_manifest_sha256": "0942545cd03e21ac94c047db90c15e59b9327c5171db74afd3963d3cbeef7362",
+      "target_task_count": 12,
+      "target_tasks_present_at_freeze": false,
+      "train_stream_sha256": "99e11062d7d4ede454abd0c5b52747ca208ea9a25a917088c2c9e14c574e5253",
+      "training_repetitions": 2
+    },
+    "execution_custody": {
+      "language_source_sha256": "f376ebd49e25b327b362eb856de94cddfedc5cc57337699d0160fb1139064f31",
+      "persistent_coding_source_sha256": "7727cbdd1776282aad7b1dd345f7c6e9fe142a62f6b73afd932103dd51756d30",
+      "pointer_binding_source_sha256": "a4cd186a86f29eb01d9ca391dc271dbb912c8c2bb457f27c8dc5b870bc092e36",
+      "protocol_sha256": "f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2",
+      "public_prior_source_sha256": "95b0bbae62cc1fc08dd94e0f25e32116c2bbe671c7d5ceb10b50a4617ff0ac5b",
+      "python_executable_sha256": "6765c6b1685c86877fabe14d82240f3fab2913a617a85e8d09e61dc40798013b",
+      "session_source_sha256": "688b5c540eb626e10f63fe061f74a2c5bb899cf50090676f79424b5180f8e199",
+      "task_stream_source_sha256": "f1bf1a5e1bae97bd5eee36e85c17896fc80f556ec120568dc1d03b2e40e844da",
+      "worker_sha256": "258aaf45decb8ed6635a85b92ee970591932b2cf53b691149a0d66777601c870"
+    },
+    "initial_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+    "schema": "continual-coding-session-reservation-v2",
+    "status": "COMPLETED"
+  },
+  "schema": "continual-coding-session-v2",
+  "second_attempt_recoveries": 0,
+  "solved_online": 0,
+  "status": "COMPLETED",
+  "target_task_teacher_sources_used": 0,
+  "task_count": 12,
+  "tasks": [
+    {
+      "attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "738ff30f28eaf97bba680fd492a13f073baa851e429b67d07c482d652988ee58",
+            "inventory_sha256": "c061fceebbc9b15b8dcd17a7fb53851dd55c681ddfaf06b97ddf6257de2262f0",
+            "inventory_symbols": [
+              "span_between_cairns",
+              "west_cairn",
+              "east_cairn",
+              "unused_mist",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def span_between_cairns(west_cairn, east_cairn, unused_mist):\\n    return west_cairn[east_cairn] if east_cairn in west_cairn else unused_mist\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "456fecd58623f6f77ff46bcbbea39b6856e5fae560fa8e1f655bf38b68e809bf",
+            "trace_sha256": "dc8ac7e7b02c130f4ff3d5bfd12a1eecccc6151a704a259bfd6c728da3e3d7fd"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def span_between_cairns(west_cairn, east_cairn, unused_mist):\\n    return west_cairn[east_cairn] if east_cairn in west_cairn else unused_mist\\n\"}",
+            "completion_trace_sha256": "dc8ac7e7b02c130f4ff3d5bfd12a1eecccc6151a704a259bfd6c728da3e3d7fd",
+            "decision_sha256": "19053a291fa560d48fca9127a9b9882070294e54cfc063674a11c8d020ef594f",
+            "frame_sha256": "738ff30f28eaf97bba680fd492a13f073baa851e429b67d07c482d652988ee58",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "e81113ed4c297946aa4bfb9e48eaa4a78d6313d9edff336a4959ab942bc13995",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "19053a291fa560d48fca9127a9b9882070294e54cfc063674a11c8d020ef594f",
+            "frame_sha256": "738ff30f28eaf97bba680fd492a13f073baa851e429b67d07c482d652988ee58",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "6a2333955d38041d586ba723afd952c662d8212d5cab75169782e6fc8b85bbf3",
+                "text": "runtime_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "61a2060be94cf3ac4d6899fa8ca80d0ddb7bc9259c0ae4e214d0b0d6444fe81b",
+                "text": "TypeError"
+              }
+            ],
+            "receipt_sha256": "1bf75b7c221196a7a0b7a19f1a9d31dfd154173eaf1671c409c81d548a8617fd",
+            "succeeded": false
+          },
+          "status": "sandbox:runtime_error"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "5011e52a213948535bb6f70e64cd6c697d0631d5318ed10c8153e8d347e64455",
+            "inventory_sha256": "c061fceebbc9b15b8dcd17a7fb53851dd55c681ddfaf06b97ddf6257de2262f0",
+            "inventory_symbols": [
+              "span_between_cairns",
+              "west_cairn",
+              "east_cairn",
+              "unused_mist",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def span_between_cairns(west_cairn, east_cairn, unused_mist):\\n    return west_cairn[east_cairn] if east_cairn in west_cairn else unused_mist\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "456fecd58623f6f77ff46bcbbea39b6856e5fae560fa8e1f655bf38b68e809bf",
+            "trace_sha256": "2fbc40e73e2819c1d3c5060c31ba0a84d31051cc9e02e9f52be143376321b829"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def span_between_cairns(west_cairn, east_cairn, unused_mist):\\n    return west_cairn[east_cairn] if east_cairn in west_cairn else unused_mist\\n\"}",
+            "completion_trace_sha256": "2fbc40e73e2819c1d3c5060c31ba0a84d31051cc9e02e9f52be143376321b829",
+            "decision_sha256": "4f547117b30402a13fc190b3df85a12e185e7de8a63717082424b4eb33414a77",
+            "frame_sha256": "5011e52a213948535bb6f70e64cd6c697d0631d5318ed10c8153e8d347e64455",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "64d6bb3d00be3136745944c9604d3c7a8511835cfc687ff24e572fccebb308a5",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "4f547117b30402a13fc190b3df85a12e185e7de8a63717082424b4eb33414a77",
+            "frame_sha256": "5011e52a213948535bb6f70e64cd6c697d0631d5318ed10c8153e8d347e64455",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "6a2333955d38041d586ba723afd952c662d8212d5cab75169782e6fc8b85bbf3",
+                "text": "runtime_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "61a2060be94cf3ac4d6899fa8ca80d0ddb7bc9259c0ae4e214d0b0d6444fe81b",
+                "text": "TypeError"
+              }
+            ],
+            "receipt_sha256": "26660c85616dd57f333d525d3109bf14847e912466a6d71b84a2e4212fdfa4a4",
+            "succeeded": false
+          },
+          "status": "sandbox:runtime_error"
+        }
+      ],
+      "capability_group": "absolute-gap",
+      "control_attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "738ff30f28eaf97bba680fd492a13f073baa851e429b67d07c482d652988ee58",
+            "inventory_sha256": "c061fceebbc9b15b8dcd17a7fb53851dd55c681ddfaf06b97ddf6257de2262f0",
+            "inventory_symbols": [
+              "span_between_cairns",
+              "west_cairn",
+              "east_cairn",
+              "unused_mist",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def span_between_cairns(west_cairn, east_cairn, unused_mist):\\n    return west_cairn[east_cairn] if east_cairn in west_cairn else unused_mist\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "456fecd58623f6f77ff46bcbbea39b6856e5fae560fa8e1f655bf38b68e809bf",
+            "trace_sha256": "dc8ac7e7b02c130f4ff3d5bfd12a1eecccc6151a704a259bfd6c728da3e3d7fd"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def span_between_cairns(west_cairn, east_cairn, unused_mist):\\n    return west_cairn[east_cairn] if east_cairn in west_cairn else unused_mist\\n\"}",
+            "completion_trace_sha256": "dc8ac7e7b02c130f4ff3d5bfd12a1eecccc6151a704a259bfd6c728da3e3d7fd",
+            "decision_sha256": "19053a291fa560d48fca9127a9b9882070294e54cfc063674a11c8d020ef594f",
+            "frame_sha256": "738ff30f28eaf97bba680fd492a13f073baa851e429b67d07c482d652988ee58",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "e81113ed4c297946aa4bfb9e48eaa4a78d6313d9edff336a4959ab942bc13995",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "19053a291fa560d48fca9127a9b9882070294e54cfc063674a11c8d020ef594f",
+            "frame_sha256": "738ff30f28eaf97bba680fd492a13f073baa851e429b67d07c482d652988ee58",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "6a2333955d38041d586ba723afd952c662d8212d5cab75169782e6fc8b85bbf3",
+                "text": "runtime_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "61a2060be94cf3ac4d6899fa8ca80d0ddb7bc9259c0ae4e214d0b0d6444fe81b",
+                "text": "TypeError"
+              }
+            ],
+            "receipt_sha256": "1bf75b7c221196a7a0b7a19f1a9d31dfd154173eaf1671c409c81d548a8617fd",
+            "succeeded": false
+          },
+          "status": "sandbox:runtime_error"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "5011e52a213948535bb6f70e64cd6c697d0631d5318ed10c8153e8d347e64455",
+            "inventory_sha256": "c061fceebbc9b15b8dcd17a7fb53851dd55c681ddfaf06b97ddf6257de2262f0",
+            "inventory_symbols": [
+              "span_between_cairns",
+              "west_cairn",
+              "east_cairn",
+              "unused_mist",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def span_between_cairns(west_cairn, east_cairn, unused_mist):\\n    return west_cairn[east_cairn] if east_cairn in west_cairn else unused_mist\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "456fecd58623f6f77ff46bcbbea39b6856e5fae560fa8e1f655bf38b68e809bf",
+            "trace_sha256": "2fbc40e73e2819c1d3c5060c31ba0a84d31051cc9e02e9f52be143376321b829"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def span_between_cairns(west_cairn, east_cairn, unused_mist):\\n    return west_cairn[east_cairn] if east_cairn in west_cairn else unused_mist\\n\"}",
+            "completion_trace_sha256": "2fbc40e73e2819c1d3c5060c31ba0a84d31051cc9e02e9f52be143376321b829",
+            "decision_sha256": "4f547117b30402a13fc190b3df85a12e185e7de8a63717082424b4eb33414a77",
+            "frame_sha256": "5011e52a213948535bb6f70e64cd6c697d0631d5318ed10c8153e8d347e64455",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "64d6bb3d00be3136745944c9604d3c7a8511835cfc687ff24e572fccebb308a5",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "4f547117b30402a13fc190b3df85a12e185e7de8a63717082424b4eb33414a77",
+            "frame_sha256": "5011e52a213948535bb6f70e64cd6c697d0631d5318ed10c8153e8d347e64455",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "6a2333955d38041d586ba723afd952c662d8212d5cab75169782e6fc8b85bbf3",
+                "text": "runtime_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "61a2060be94cf3ac4d6899fa8ca80d0ddb7bc9259c0ae4e214d0b0d6444fe81b",
+                "text": "TypeError"
+              }
+            ],
+            "receipt_sha256": "26660c85616dd57f333d525d3109bf14847e912466a6d71b84a2e4212fdfa4a4",
+            "succeeded": false
+          },
+          "status": "sandbox:runtime_error"
+        }
+      ],
+      "control_solved_online": false,
+      "public_observation_sha256": "e2ad27a1bfbb5df4684fb2b3dc15fa4cf7a7ab7858ad48f2cfbda7daa29c0324",
+      "solved_online": false,
+      "stage": "public-prior-alpha-transfer",
+      "task_index": 0,
+      "task_sha256": "0dec19fec37dcda474061d24dcc1a061bb87142a98987d51d9ebf84b90f49b64"
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "6aa047a97f0d486b3935034b2237e9ceae1bed8787e954afee1fed1f9d60fc08",
+            "inventory_sha256": "63211b049481dcd74fd4c4c9b3d9f5fd78d7ae33d7d38b0eb360cb76a75a76e4",
+            "inventory_symbols": [
+              "sift_even_embers",
+              "embers",
+              "unused_flint",
+              "unused_ash",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def sift_even_embers(embers, unused_flint, unused_ash):\\n    return embers[unused_flint] if unused_flint in embers else unused_ash\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "01729123e22f8178e27c8e73642d5391ab268be736c211aff448369b8600ee05",
+            "trace_sha256": "67b9537ebb44fa49d894165d58cd48566cd00b36604bd7ba50a1d04fa8fd2b0f"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def sift_even_embers(embers, unused_flint, unused_ash):\\n    return embers[unused_flint] if unused_flint in embers else unused_ash\\n\"}",
+            "completion_trace_sha256": "67b9537ebb44fa49d894165d58cd48566cd00b36604bd7ba50a1d04fa8fd2b0f",
+            "decision_sha256": "83fc31077f16ab04d8ff80fa74e6522d1124f2e2660bc1406c52dce57202a435",
+            "frame_sha256": "6aa047a97f0d486b3935034b2237e9ceae1bed8787e954afee1fed1f9d60fc08",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "da07e7f1d9b9b700142d5b7dcc9644bfb47ae8781a2a0b706bebc1fdbf69bf02",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "83fc31077f16ab04d8ff80fa74e6522d1124f2e2660bc1406c52dce57202a435",
+            "frame_sha256": "6aa047a97f0d486b3935034b2237e9ceae1bed8787e954afee1fed1f9d60fc08",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "44d3d468e6655769d63b96986cc93a8dcd63e17d195f02513d15babfa139b6be",
+                "text": "regression_failure"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "a6e14174d7d315c464dfa5684847ecae2ce1ac703afd304f71a0ef198aab2c7c",
+                "text": "fixed regression case failed"
+              }
+            ],
+            "receipt_sha256": "8f1aceb32ec98de0007bce0dfa3f49a4ff636fbc969b934f9595685ecebfcd88",
+            "succeeded": false
+          },
+          "status": "sandbox:regression_failure"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "49c25a5640d3c1daee2c733bc0bc5af5b35f1060b7cb9a7d1dd5838fbf4a348e",
+            "inventory_sha256": "63211b049481dcd74fd4c4c9b3d9f5fd78d7ae33d7d38b0eb360cb76a75a76e4",
+            "inventory_symbols": [
+              "sift_even_embers",
+              "embers",
+              "unused_flint",
+              "unused_ash",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def sift_even_embers(embers, unused_flint, unused_ash):\\n    return embers[unused_flint] if unused_flint in embers else unused_ash\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "01729123e22f8178e27c8e73642d5391ab268be736c211aff448369b8600ee05",
+            "trace_sha256": "33c1bf1c06ccc7236def90242e1a7662b4129fbcc408fbaaf5584bc916de87fe"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def sift_even_embers(embers, unused_flint, unused_ash):\\n    return embers[unused_flint] if unused_flint in embers else unused_ash\\n\"}",
+            "completion_trace_sha256": "33c1bf1c06ccc7236def90242e1a7662b4129fbcc408fbaaf5584bc916de87fe",
+            "decision_sha256": "ea47370d13519521710d2c7e800c6acdfa1b0e0c53745973afee7d8b4695af10",
+            "frame_sha256": "49c25a5640d3c1daee2c733bc0bc5af5b35f1060b7cb9a7d1dd5838fbf4a348e",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "b611421bd0e37e55612eb5c3b65198b181359742726f1d41323557f8650e2e79",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "ea47370d13519521710d2c7e800c6acdfa1b0e0c53745973afee7d8b4695af10",
+            "frame_sha256": "49c25a5640d3c1daee2c733bc0bc5af5b35f1060b7cb9a7d1dd5838fbf4a348e",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "44d3d468e6655769d63b96986cc93a8dcd63e17d195f02513d15babfa139b6be",
+                "text": "regression_failure"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "a6e14174d7d315c464dfa5684847ecae2ce1ac703afd304f71a0ef198aab2c7c",
+                "text": "fixed regression case failed"
+              }
+            ],
+            "receipt_sha256": "1c763ce385ae57c280f39bee0d11b617b14324bda292d3d88a474fac7d28ab1e",
+            "succeeded": false
+          },
+          "status": "sandbox:regression_failure"
+        }
+      ],
+      "capability_group": "even-filter",
+      "control_attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "6aa047a97f0d486b3935034b2237e9ceae1bed8787e954afee1fed1f9d60fc08",
+            "inventory_sha256": "63211b049481dcd74fd4c4c9b3d9f5fd78d7ae33d7d38b0eb360cb76a75a76e4",
+            "inventory_symbols": [
+              "sift_even_embers",
+              "embers",
+              "unused_flint",
+              "unused_ash",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def sift_even_embers(embers, unused_flint, unused_ash):\\n    return embers[unused_flint] if unused_flint in embers else unused_ash\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "01729123e22f8178e27c8e73642d5391ab268be736c211aff448369b8600ee05",
+            "trace_sha256": "67b9537ebb44fa49d894165d58cd48566cd00b36604bd7ba50a1d04fa8fd2b0f"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def sift_even_embers(embers, unused_flint, unused_ash):\\n    return embers[unused_flint] if unused_flint in embers else unused_ash\\n\"}",
+            "completion_trace_sha256": "67b9537ebb44fa49d894165d58cd48566cd00b36604bd7ba50a1d04fa8fd2b0f",
+            "decision_sha256": "83fc31077f16ab04d8ff80fa74e6522d1124f2e2660bc1406c52dce57202a435",
+            "frame_sha256": "6aa047a97f0d486b3935034b2237e9ceae1bed8787e954afee1fed1f9d60fc08",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "da07e7f1d9b9b700142d5b7dcc9644bfb47ae8781a2a0b706bebc1fdbf69bf02",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "83fc31077f16ab04d8ff80fa74e6522d1124f2e2660bc1406c52dce57202a435",
+            "frame_sha256": "6aa047a97f0d486b3935034b2237e9ceae1bed8787e954afee1fed1f9d60fc08",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "44d3d468e6655769d63b96986cc93a8dcd63e17d195f02513d15babfa139b6be",
+                "text": "regression_failure"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "a6e14174d7d315c464dfa5684847ecae2ce1ac703afd304f71a0ef198aab2c7c",
+                "text": "fixed regression case failed"
+              }
+            ],
+            "receipt_sha256": "8f1aceb32ec98de0007bce0dfa3f49a4ff636fbc969b934f9595685ecebfcd88",
+            "succeeded": false
+          },
+          "status": "sandbox:regression_failure"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "49c25a5640d3c1daee2c733bc0bc5af5b35f1060b7cb9a7d1dd5838fbf4a348e",
+            "inventory_sha256": "63211b049481dcd74fd4c4c9b3d9f5fd78d7ae33d7d38b0eb360cb76a75a76e4",
+            "inventory_symbols": [
+              "sift_even_embers",
+              "embers",
+              "unused_flint",
+              "unused_ash",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def sift_even_embers(embers, unused_flint, unused_ash):\\n    return embers[unused_flint] if unused_flint in embers else unused_ash\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "01729123e22f8178e27c8e73642d5391ab268be736c211aff448369b8600ee05",
+            "trace_sha256": "33c1bf1c06ccc7236def90242e1a7662b4129fbcc408fbaaf5584bc916de87fe"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def sift_even_embers(embers, unused_flint, unused_ash):\\n    return embers[unused_flint] if unused_flint in embers else unused_ash\\n\"}",
+            "completion_trace_sha256": "33c1bf1c06ccc7236def90242e1a7662b4129fbcc408fbaaf5584bc916de87fe",
+            "decision_sha256": "ea47370d13519521710d2c7e800c6acdfa1b0e0c53745973afee7d8b4695af10",
+            "frame_sha256": "49c25a5640d3c1daee2c733bc0bc5af5b35f1060b7cb9a7d1dd5838fbf4a348e",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "b611421bd0e37e55612eb5c3b65198b181359742726f1d41323557f8650e2e79",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "ea47370d13519521710d2c7e800c6acdfa1b0e0c53745973afee7d8b4695af10",
+            "frame_sha256": "49c25a5640d3c1daee2c733bc0bc5af5b35f1060b7cb9a7d1dd5838fbf4a348e",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "44d3d468e6655769d63b96986cc93a8dcd63e17d195f02513d15babfa139b6be",
+                "text": "regression_failure"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "a6e14174d7d315c464dfa5684847ecae2ce1ac703afd304f71a0ef198aab2c7c",
+                "text": "fixed regression case failed"
+              }
+            ],
+            "receipt_sha256": "1c763ce385ae57c280f39bee0d11b617b14324bda292d3d88a474fac7d28ab1e",
+            "succeeded": false
+          },
+          "status": "sandbox:regression_failure"
+        }
+      ],
+      "control_solved_online": false,
+      "public_observation_sha256": "f32ed3f8fbf7ee87f3bd81fd3eebeb139c79cdcd9de5635a7fa0d311dda290f9",
+      "solved_online": false,
+      "stage": "public-prior-alpha-transfer",
+      "task_index": 1,
+      "task_sha256": "9592b56ea15880e5b7eda93abcfece0156f1ed86b8857e58955f060a2e7ad8be"
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "44ce2f846e28ddfa1c8b92015e4f0cdf6a85f2869c40bb8b4117571fe8ae71af",
+            "inventory_sha256": "68afa05487f7f67454876ce72dba80c552b2f49c7dd49bcea7c1b93a959f0958",
+            "inventory_symbols": [
+              "settle_frosted_phrase",
+              "frosted_phrase",
+              "unused_reed",
+              "unused_dune",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def settle_frosted_phrase(frosted_phrase, unused_reed, unused_dune):\\n    return frosted_phrase[unused_reed] if unused_reed in frosted_phrase else unused_dune\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "d03996fc7c8c02cfd252bb783f25370ecd8b1a01c873cacfa84bcf117f7deb55",
+            "trace_sha256": "648711a8234a245e913661f66197a2d666e6f013f200f21d9eaa29dd20967aa4"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def settle_frosted_phrase(frosted_phrase, unused_reed, unused_dune):\\n    return frosted_phrase[unused_reed] if unused_reed in frosted_phrase else unused_dune\\n\"}",
+            "completion_trace_sha256": "648711a8234a245e913661f66197a2d666e6f013f200f21d9eaa29dd20967aa4",
+            "decision_sha256": "f6952f37a9b944a76e1c9fd6e099f8ff84671fab5ad23732b12d2ccf56753368",
+            "frame_sha256": "44ce2f846e28ddfa1c8b92015e4f0cdf6a85f2869c40bb8b4117571fe8ae71af",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "8bb3c7b66e2c038ab5736f5b2bc353ba1c16190d60a85cdb7a62099266dad351",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "f6952f37a9b944a76e1c9fd6e099f8ff84671fab5ad23732b12d2ccf56753368",
+            "frame_sha256": "44ce2f846e28ddfa1c8b92015e4f0cdf6a85f2869c40bb8b4117571fe8ae71af",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "44d3d468e6655769d63b96986cc93a8dcd63e17d195f02513d15babfa139b6be",
+                "text": "regression_failure"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "a6e14174d7d315c464dfa5684847ecae2ce1ac703afd304f71a0ef198aab2c7c",
+                "text": "fixed regression case failed"
+              }
+            ],
+            "receipt_sha256": "a505cafbe81fcb494c1d9eda2338ee819ef2355aa9de18a330232e76637a47cc",
+            "succeeded": false
+          },
+          "status": "sandbox:regression_failure"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "d0f8801e86de719dad44c8d54dc27c5893fce8a30ddd049d9c28dd705a40a872",
+            "inventory_sha256": "68afa05487f7f67454876ce72dba80c552b2f49c7dd49bcea7c1b93a959f0958",
+            "inventory_symbols": [
+              "settle_frosted_phrase",
+              "frosted_phrase",
+              "unused_reed",
+              "unused_dune",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def settle_frosted_phrase(frosted_phrase, unused_reed, unused_dune):\\n    return frosted_phrase[unused_reed] if unused_reed in frosted_phrase else unused_dune\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "d03996fc7c8c02cfd252bb783f25370ecd8b1a01c873cacfa84bcf117f7deb55",
+            "trace_sha256": "a84b33e0a3bcde602273b0212a4bfef95ecec37f27b9b51f920fdf14f76ca3b5"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def settle_frosted_phrase(frosted_phrase, unused_reed, unused_dune):\\n    return frosted_phrase[unused_reed] if unused_reed in frosted_phrase else unused_dune\\n\"}",
+            "completion_trace_sha256": "a84b33e0a3bcde602273b0212a4bfef95ecec37f27b9b51f920fdf14f76ca3b5",
+            "decision_sha256": "2c12f71be24eb853b30be1ec363256963a96d8e52b8f009ee8ea8c10f423231b",
+            "frame_sha256": "d0f8801e86de719dad44c8d54dc27c5893fce8a30ddd049d9c28dd705a40a872",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "089cf344afae96290aa5272858fa143728f38b61a330edab42fc430cbabd5edc",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "2c12f71be24eb853b30be1ec363256963a96d8e52b8f009ee8ea8c10f423231b",
+            "frame_sha256": "d0f8801e86de719dad44c8d54dc27c5893fce8a30ddd049d9c28dd705a40a872",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "44d3d468e6655769d63b96986cc93a8dcd63e17d195f02513d15babfa139b6be",
+                "text": "regression_failure"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "a6e14174d7d315c464dfa5684847ecae2ce1ac703afd304f71a0ef198aab2c7c",
+                "text": "fixed regression case failed"
+              }
+            ],
+            "receipt_sha256": "e8641273faf0a325ab8b081561ce7647dc24b1a89f1ff1ce17b8fd24d70380a2",
+            "succeeded": false
+          },
+          "status": "sandbox:regression_failure"
+        }
+      ],
+      "capability_group": "normalize-text",
+      "control_attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "44ce2f846e28ddfa1c8b92015e4f0cdf6a85f2869c40bb8b4117571fe8ae71af",
+            "inventory_sha256": "68afa05487f7f67454876ce72dba80c552b2f49c7dd49bcea7c1b93a959f0958",
+            "inventory_symbols": [
+              "settle_frosted_phrase",
+              "frosted_phrase",
+              "unused_reed",
+              "unused_dune",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def settle_frosted_phrase(frosted_phrase, unused_reed, unused_dune):\\n    return frosted_phrase[unused_reed] if unused_reed in frosted_phrase else unused_dune\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "d03996fc7c8c02cfd252bb783f25370ecd8b1a01c873cacfa84bcf117f7deb55",
+            "trace_sha256": "648711a8234a245e913661f66197a2d666e6f013f200f21d9eaa29dd20967aa4"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def settle_frosted_phrase(frosted_phrase, unused_reed, unused_dune):\\n    return frosted_phrase[unused_reed] if unused_reed in frosted_phrase else unused_dune\\n\"}",
+            "completion_trace_sha256": "648711a8234a245e913661f66197a2d666e6f013f200f21d9eaa29dd20967aa4",
+            "decision_sha256": "f6952f37a9b944a76e1c9fd6e099f8ff84671fab5ad23732b12d2ccf56753368",
+            "frame_sha256": "44ce2f846e28ddfa1c8b92015e4f0cdf6a85f2869c40bb8b4117571fe8ae71af",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "8bb3c7b66e2c038ab5736f5b2bc353ba1c16190d60a85cdb7a62099266dad351",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "f6952f37a9b944a76e1c9fd6e099f8ff84671fab5ad23732b12d2ccf56753368",
+            "frame_sha256": "44ce2f846e28ddfa1c8b92015e4f0cdf6a85f2869c40bb8b4117571fe8ae71af",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "44d3d468e6655769d63b96986cc93a8dcd63e17d195f02513d15babfa139b6be",
+                "text": "regression_failure"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "a6e14174d7d315c464dfa5684847ecae2ce1ac703afd304f71a0ef198aab2c7c",
+                "text": "fixed regression case failed"
+              }
+            ],
+            "receipt_sha256": "a505cafbe81fcb494c1d9eda2338ee819ef2355aa9de18a330232e76637a47cc",
+            "succeeded": false
+          },
+          "status": "sandbox:regression_failure"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "d0f8801e86de719dad44c8d54dc27c5893fce8a30ddd049d9c28dd705a40a872",
+            "inventory_sha256": "68afa05487f7f67454876ce72dba80c552b2f49c7dd49bcea7c1b93a959f0958",
+            "inventory_symbols": [
+              "settle_frosted_phrase",
+              "frosted_phrase",
+              "unused_reed",
+              "unused_dune",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def settle_frosted_phrase(frosted_phrase, unused_reed, unused_dune):\\n    return frosted_phrase[unused_reed] if unused_reed in frosted_phrase else unused_dune\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "d03996fc7c8c02cfd252bb783f25370ecd8b1a01c873cacfa84bcf117f7deb55",
+            "trace_sha256": "a84b33e0a3bcde602273b0212a4bfef95ecec37f27b9b51f920fdf14f76ca3b5"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def settle_frosted_phrase(frosted_phrase, unused_reed, unused_dune):\\n    return frosted_phrase[unused_reed] if unused_reed in frosted_phrase else unused_dune\\n\"}",
+            "completion_trace_sha256": "a84b33e0a3bcde602273b0212a4bfef95ecec37f27b9b51f920fdf14f76ca3b5",
+            "decision_sha256": "2c12f71be24eb853b30be1ec363256963a96d8e52b8f009ee8ea8c10f423231b",
+            "frame_sha256": "d0f8801e86de719dad44c8d54dc27c5893fce8a30ddd049d9c28dd705a40a872",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "089cf344afae96290aa5272858fa143728f38b61a330edab42fc430cbabd5edc",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "2c12f71be24eb853b30be1ec363256963a96d8e52b8f009ee8ea8c10f423231b",
+            "frame_sha256": "d0f8801e86de719dad44c8d54dc27c5893fce8a30ddd049d9c28dd705a40a872",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "44d3d468e6655769d63b96986cc93a8dcd63e17d195f02513d15babfa139b6be",
+                "text": "regression_failure"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "a6e14174d7d315c464dfa5684847ecae2ce1ac703afd304f71a0ef198aab2c7c",
+                "text": "fixed regression case failed"
+              }
+            ],
+            "receipt_sha256": "e8641273faf0a325ab8b081561ce7647dc24b1a89f1ff1ce17b8fd24d70380a2",
+            "succeeded": false
+          },
+          "status": "sandbox:regression_failure"
+        }
+      ],
+      "control_solved_online": false,
+      "public_observation_sha256": "702de1f92a09b66c11dfb822338f854a3226d4c2bfac4323e2ce15aecce91f66",
+      "solved_online": false,
+      "stage": "public-prior-alpha-transfer",
+      "task_index": 2,
+      "task_sha256": "3b65417e5a5b82f6e06ccd62ae6319c9063d908e0c8f51e58242c3c2243f5cc9"
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "7ce4dc415aa207ed5caf4d38f343d8db2cbd57fddc16ed40471d4eb1ec98c2b7",
+            "inventory_sha256": "949266a4aa19480f902fba86a1ee507c2dabacef5c1fba990c654f943d42f3c1",
+            "inventory_symbols": [
+              "weave_scale_offset",
+              "scale_seed",
+              "base_value",
+              "tail_offset",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def weave_scale_offset(scale_seed, base_value, tail_offset):\\n    return scale_seed[base_value] if base_value in scale_seed else tail_offset\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "4ba2953f40d5e69be8f64dad07548be2a0b32c86ed8e6f1bec2e2ae637bacde2",
+            "trace_sha256": "42ce65e836e7de66861c2f38854b6f15bccd38457e01876615f99eb6597d870e"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def weave_scale_offset(scale_seed, base_value, tail_offset):\\n    return scale_seed[base_value] if base_value in scale_seed else tail_offset\\n\"}",
+            "completion_trace_sha256": "42ce65e836e7de66861c2f38854b6f15bccd38457e01876615f99eb6597d870e",
+            "decision_sha256": "9f307a04b8e72b3ebf26105ce3e4ed12346365c0dd583f7cd063015d94a96f65",
+            "frame_sha256": "7ce4dc415aa207ed5caf4d38f343d8db2cbd57fddc16ed40471d4eb1ec98c2b7",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "43140ebf51b7f2e6d146d27cf69991893a2e94d702696a12ffe7a2a4dbb92bf5",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "9f307a04b8e72b3ebf26105ce3e4ed12346365c0dd583f7cd063015d94a96f65",
+            "frame_sha256": "7ce4dc415aa207ed5caf4d38f343d8db2cbd57fddc16ed40471d4eb1ec98c2b7",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "6a2333955d38041d586ba723afd952c662d8212d5cab75169782e6fc8b85bbf3",
+                "text": "runtime_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "61a2060be94cf3ac4d6899fa8ca80d0ddb7bc9259c0ae4e214d0b0d6444fe81b",
+                "text": "TypeError"
+              }
+            ],
+            "receipt_sha256": "b86845c31e18be651ee37f4c3a6615866818f775f35d90f9fb658db8c8c6f75a",
+            "succeeded": false
+          },
+          "status": "sandbox:runtime_error"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "aa5890e60071a4a7cf24699ea5365495ad1069e2a48a89828ecd20a098352b34",
+            "inventory_sha256": "949266a4aa19480f902fba86a1ee507c2dabacef5c1fba990c654f943d42f3c1",
+            "inventory_symbols": [
+              "weave_scale_offset",
+              "scale_seed",
+              "base_value",
+              "tail_offset",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def weave_scale_offset(scale_seed, base_value, tail_offset):\\n    return scale_seed[base_value] if base_value in scale_seed else tail_offset\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "4ba2953f40d5e69be8f64dad07548be2a0b32c86ed8e6f1bec2e2ae637bacde2",
+            "trace_sha256": "e31fde68bc225e189b5b6ad8ceada92a5322f0fc43387ae70636ce7632612421"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def weave_scale_offset(scale_seed, base_value, tail_offset):\\n    return scale_seed[base_value] if base_value in scale_seed else tail_offset\\n\"}",
+            "completion_trace_sha256": "e31fde68bc225e189b5b6ad8ceada92a5322f0fc43387ae70636ce7632612421",
+            "decision_sha256": "33b09cc593d5e9771bbc7ab6d1b09f7865e17851b71fd4d567a710783c771d0e",
+            "frame_sha256": "aa5890e60071a4a7cf24699ea5365495ad1069e2a48a89828ecd20a098352b34",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "abe581fa79d13c0f4dd00fe609e73e102231b9b210ddccad4a8ce8661fb9a090",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "33b09cc593d5e9771bbc7ab6d1b09f7865e17851b71fd4d567a710783c771d0e",
+            "frame_sha256": "aa5890e60071a4a7cf24699ea5365495ad1069e2a48a89828ecd20a098352b34",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "6a2333955d38041d586ba723afd952c662d8212d5cab75169782e6fc8b85bbf3",
+                "text": "runtime_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "61a2060be94cf3ac4d6899fa8ca80d0ddb7bc9259c0ae4e214d0b0d6444fe81b",
+                "text": "TypeError"
+              }
+            ],
+            "receipt_sha256": "ccdde77fe49db03b590183578021f940574fc8dee235d92a9f18f5d29084eb4d",
+            "succeeded": false
+          },
+          "status": "sandbox:runtime_error"
+        }
+      ],
+      "capability_group": "affine-scalar",
+      "control_attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "7ce4dc415aa207ed5caf4d38f343d8db2cbd57fddc16ed40471d4eb1ec98c2b7",
+            "inventory_sha256": "949266a4aa19480f902fba86a1ee507c2dabacef5c1fba990c654f943d42f3c1",
+            "inventory_symbols": [
+              "weave_scale_offset",
+              "scale_seed",
+              "base_value",
+              "tail_offset",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def weave_scale_offset(scale_seed, base_value, tail_offset):\\n    return scale_seed[base_value] if base_value in scale_seed else tail_offset\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "4ba2953f40d5e69be8f64dad07548be2a0b32c86ed8e6f1bec2e2ae637bacde2",
+            "trace_sha256": "42ce65e836e7de66861c2f38854b6f15bccd38457e01876615f99eb6597d870e"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def weave_scale_offset(scale_seed, base_value, tail_offset):\\n    return scale_seed[base_value] if base_value in scale_seed else tail_offset\\n\"}",
+            "completion_trace_sha256": "42ce65e836e7de66861c2f38854b6f15bccd38457e01876615f99eb6597d870e",
+            "decision_sha256": "9f307a04b8e72b3ebf26105ce3e4ed12346365c0dd583f7cd063015d94a96f65",
+            "frame_sha256": "7ce4dc415aa207ed5caf4d38f343d8db2cbd57fddc16ed40471d4eb1ec98c2b7",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "43140ebf51b7f2e6d146d27cf69991893a2e94d702696a12ffe7a2a4dbb92bf5",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "9f307a04b8e72b3ebf26105ce3e4ed12346365c0dd583f7cd063015d94a96f65",
+            "frame_sha256": "7ce4dc415aa207ed5caf4d38f343d8db2cbd57fddc16ed40471d4eb1ec98c2b7",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "6a2333955d38041d586ba723afd952c662d8212d5cab75169782e6fc8b85bbf3",
+                "text": "runtime_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "61a2060be94cf3ac4d6899fa8ca80d0ddb7bc9259c0ae4e214d0b0d6444fe81b",
+                "text": "TypeError"
+              }
+            ],
+            "receipt_sha256": "b86845c31e18be651ee37f4c3a6615866818f775f35d90f9fb658db8c8c6f75a",
+            "succeeded": false
+          },
+          "status": "sandbox:runtime_error"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "aa5890e60071a4a7cf24699ea5365495ad1069e2a48a89828ecd20a098352b34",
+            "inventory_sha256": "949266a4aa19480f902fba86a1ee507c2dabacef5c1fba990c654f943d42f3c1",
+            "inventory_symbols": [
+              "weave_scale_offset",
+              "scale_seed",
+              "base_value",
+              "tail_offset",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def weave_scale_offset(scale_seed, base_value, tail_offset):\\n    return scale_seed[base_value] if base_value in scale_seed else tail_offset\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "4ba2953f40d5e69be8f64dad07548be2a0b32c86ed8e6f1bec2e2ae637bacde2",
+            "trace_sha256": "e31fde68bc225e189b5b6ad8ceada92a5322f0fc43387ae70636ce7632612421"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def weave_scale_offset(scale_seed, base_value, tail_offset):\\n    return scale_seed[base_value] if base_value in scale_seed else tail_offset\\n\"}",
+            "completion_trace_sha256": "e31fde68bc225e189b5b6ad8ceada92a5322f0fc43387ae70636ce7632612421",
+            "decision_sha256": "33b09cc593d5e9771bbc7ab6d1b09f7865e17851b71fd4d567a710783c771d0e",
+            "frame_sha256": "aa5890e60071a4a7cf24699ea5365495ad1069e2a48a89828ecd20a098352b34",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "abe581fa79d13c0f4dd00fe609e73e102231b9b210ddccad4a8ce8661fb9a090",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "33b09cc593d5e9771bbc7ab6d1b09f7865e17851b71fd4d567a710783c771d0e",
+            "frame_sha256": "aa5890e60071a4a7cf24699ea5365495ad1069e2a48a89828ecd20a098352b34",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "6a2333955d38041d586ba723afd952c662d8212d5cab75169782e6fc8b85bbf3",
+                "text": "runtime_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "61a2060be94cf3ac4d6899fa8ca80d0ddb7bc9259c0ae4e214d0b0d6444fe81b",
+                "text": "TypeError"
+              }
+            ],
+            "receipt_sha256": "ccdde77fe49db03b590183578021f940574fc8dee235d92a9f18f5d29084eb4d",
+            "succeeded": false
+          },
+          "status": "sandbox:runtime_error"
+        }
+      ],
+      "control_solved_online": false,
+      "public_observation_sha256": "fe23ad22638a664d15f158a69b33b1dad17ce6a58ab6ddf8a346dc9fbb12badf",
+      "solved_online": false,
+      "stage": "public-prior-alpha-transfer",
+      "task_index": 3,
+      "task_sha256": "c46ca424a9ae922fcd317d69bd992a98d72a12d77e4887a42cbad31443757dcc"
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "7761908239bfeb6cc869b350f664ff1422d26c0de567228badfb5a53f136dbb9",
+            "inventory_sha256": "8601476269c3eb99d2403f10b08e937b13247312aab2e4eee4e7acd0059b1fc1",
+            "inventory_symbols": [
+              "measure_beacon_separation",
+              "first_beacon",
+              "second_beacon",
+              "spare_signal",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def measure_beacon_separation(first_beacon, second_beacon, spare_signal):\\n    return first_beacon[second_beacon] if second_beacon in first_beacon else spare_signal\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "85de35a9cf9e25c9a30f9edefd013f0abf358fc311f0802bfffe9bd8b106cc91",
+            "trace_sha256": "bf1761a08f30e35e24eb8eb3cc587f96b212797b00f248414f6988a81f86301d"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def measure_beacon_separation(first_beacon, second_beacon, spare_signal):\\n    return first_beacon[second_beacon] if second_beacon in first_beacon else spare_signal\\n\"}",
+            "completion_trace_sha256": "bf1761a08f30e35e24eb8eb3cc587f96b212797b00f248414f6988a81f86301d",
+            "decision_sha256": "1243ea5cbd517dbf92827cc6988f63cbf5b63591e53131bc4fb14e606e6020f7",
+            "frame_sha256": "7761908239bfeb6cc869b350f664ff1422d26c0de567228badfb5a53f136dbb9",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "b5cb908c9f9df5752a0660e69d9e222080c347ade8eaf87003d427768f828b18",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "1243ea5cbd517dbf92827cc6988f63cbf5b63591e53131bc4fb14e606e6020f7",
+            "frame_sha256": "7761908239bfeb6cc869b350f664ff1422d26c0de567228badfb5a53f136dbb9",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "6a2333955d38041d586ba723afd952c662d8212d5cab75169782e6fc8b85bbf3",
+                "text": "runtime_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "61a2060be94cf3ac4d6899fa8ca80d0ddb7bc9259c0ae4e214d0b0d6444fe81b",
+                "text": "TypeError"
+              }
+            ],
+            "receipt_sha256": "77bbd9658e8dbf82806b66f501e3352421872df7647d72e63ae035d10231a574",
+            "succeeded": false
+          },
+          "status": "sandbox:runtime_error"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "e4bc7c35af4bbd97e281a28ee14da98b9e357da6bb6e033c234003f5685aff21",
+            "inventory_sha256": "8601476269c3eb99d2403f10b08e937b13247312aab2e4eee4e7acd0059b1fc1",
+            "inventory_symbols": [
+              "measure_beacon_separation",
+              "first_beacon",
+              "second_beacon",
+              "spare_signal",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def measure_beacon_separation(first_beacon, second_beacon, spare_signal):\\n    return first_beacon[second_beacon] if second_beacon in first_beacon else spare_signal\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "85de35a9cf9e25c9a30f9edefd013f0abf358fc311f0802bfffe9bd8b106cc91",
+            "trace_sha256": "524b674b801743c76bc09d9be06204468f18bee1a2bd2a4d0db9a1be28649d52"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def measure_beacon_separation(first_beacon, second_beacon, spare_signal):\\n    return first_beacon[second_beacon] if second_beacon in first_beacon else spare_signal\\n\"}",
+            "completion_trace_sha256": "524b674b801743c76bc09d9be06204468f18bee1a2bd2a4d0db9a1be28649d52",
+            "decision_sha256": "10ac2851fe6a1f06f25fca7721a8a1f20001fbff41ea625007dc204ae22cae1d",
+            "frame_sha256": "e4bc7c35af4bbd97e281a28ee14da98b9e357da6bb6e033c234003f5685aff21",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "11382bc81d4704b29a509aae138896950e25de46a612bf923c4514d0b95112d8",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "10ac2851fe6a1f06f25fca7721a8a1f20001fbff41ea625007dc204ae22cae1d",
+            "frame_sha256": "e4bc7c35af4bbd97e281a28ee14da98b9e357da6bb6e033c234003f5685aff21",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "6a2333955d38041d586ba723afd952c662d8212d5cab75169782e6fc8b85bbf3",
+                "text": "runtime_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "61a2060be94cf3ac4d6899fa8ca80d0ddb7bc9259c0ae4e214d0b0d6444fe81b",
+                "text": "TypeError"
+              }
+            ],
+            "receipt_sha256": "8b41d4360d48d61a588939c987505cbd5dcfaeaa7f4d548f26c12815eabd30fb",
+            "succeeded": false
+          },
+          "status": "sandbox:runtime_error"
+        }
+      ],
+      "capability_group": "absolute-gap",
+      "control_attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "7761908239bfeb6cc869b350f664ff1422d26c0de567228badfb5a53f136dbb9",
+            "inventory_sha256": "8601476269c3eb99d2403f10b08e937b13247312aab2e4eee4e7acd0059b1fc1",
+            "inventory_symbols": [
+              "measure_beacon_separation",
+              "first_beacon",
+              "second_beacon",
+              "spare_signal",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def measure_beacon_separation(first_beacon, second_beacon, spare_signal):\\n    return first_beacon[second_beacon] if second_beacon in first_beacon else spare_signal\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "85de35a9cf9e25c9a30f9edefd013f0abf358fc311f0802bfffe9bd8b106cc91",
+            "trace_sha256": "bf1761a08f30e35e24eb8eb3cc587f96b212797b00f248414f6988a81f86301d"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def measure_beacon_separation(first_beacon, second_beacon, spare_signal):\\n    return first_beacon[second_beacon] if second_beacon in first_beacon else spare_signal\\n\"}",
+            "completion_trace_sha256": "bf1761a08f30e35e24eb8eb3cc587f96b212797b00f248414f6988a81f86301d",
+            "decision_sha256": "1243ea5cbd517dbf92827cc6988f63cbf5b63591e53131bc4fb14e606e6020f7",
+            "frame_sha256": "7761908239bfeb6cc869b350f664ff1422d26c0de567228badfb5a53f136dbb9",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "b5cb908c9f9df5752a0660e69d9e222080c347ade8eaf87003d427768f828b18",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "1243ea5cbd517dbf92827cc6988f63cbf5b63591e53131bc4fb14e606e6020f7",
+            "frame_sha256": "7761908239bfeb6cc869b350f664ff1422d26c0de567228badfb5a53f136dbb9",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "6a2333955d38041d586ba723afd952c662d8212d5cab75169782e6fc8b85bbf3",
+                "text": "runtime_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "61a2060be94cf3ac4d6899fa8ca80d0ddb7bc9259c0ae4e214d0b0d6444fe81b",
+                "text": "TypeError"
+              }
+            ],
+            "receipt_sha256": "77bbd9658e8dbf82806b66f501e3352421872df7647d72e63ae035d10231a574",
+            "succeeded": false
+          },
+          "status": "sandbox:runtime_error"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "e4bc7c35af4bbd97e281a28ee14da98b9e357da6bb6e033c234003f5685aff21",
+            "inventory_sha256": "8601476269c3eb99d2403f10b08e937b13247312aab2e4eee4e7acd0059b1fc1",
+            "inventory_symbols": [
+              "measure_beacon_separation",
+              "first_beacon",
+              "second_beacon",
+              "spare_signal",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def measure_beacon_separation(first_beacon, second_beacon, spare_signal):\\n    return first_beacon[second_beacon] if second_beacon in first_beacon else spare_signal\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "85de35a9cf9e25c9a30f9edefd013f0abf358fc311f0802bfffe9bd8b106cc91",
+            "trace_sha256": "524b674b801743c76bc09d9be06204468f18bee1a2bd2a4d0db9a1be28649d52"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def measure_beacon_separation(first_beacon, second_beacon, spare_signal):\\n    return first_beacon[second_beacon] if second_beacon in first_beacon else spare_signal\\n\"}",
+            "completion_trace_sha256": "524b674b801743c76bc09d9be06204468f18bee1a2bd2a4d0db9a1be28649d52",
+            "decision_sha256": "10ac2851fe6a1f06f25fca7721a8a1f20001fbff41ea625007dc204ae22cae1d",
+            "frame_sha256": "e4bc7c35af4bbd97e281a28ee14da98b9e357da6bb6e033c234003f5685aff21",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "11382bc81d4704b29a509aae138896950e25de46a612bf923c4514d0b95112d8",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "10ac2851fe6a1f06f25fca7721a8a1f20001fbff41ea625007dc204ae22cae1d",
+            "frame_sha256": "e4bc7c35af4bbd97e281a28ee14da98b9e357da6bb6e033c234003f5685aff21",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "6a2333955d38041d586ba723afd952c662d8212d5cab75169782e6fc8b85bbf3",
+                "text": "runtime_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "61a2060be94cf3ac4d6899fa8ca80d0ddb7bc9259c0ae4e214d0b0d6444fe81b",
+                "text": "TypeError"
+              }
+            ],
+            "receipt_sha256": "8b41d4360d48d61a588939c987505cbd5dcfaeaa7f4d548f26c12815eabd30fb",
+            "succeeded": false
+          },
+          "status": "sandbox:runtime_error"
+        }
+      ],
+      "control_solved_online": false,
+      "public_observation_sha256": "d076e97846113bbbb75976234ba66416fb9cad1e29df78551240468e7bb04e91",
+      "solved_online": false,
+      "stage": "within-stream-structural-repeat",
+      "task_index": 4,
+      "task_sha256": "e9ff00944c522fc602a1aad4a3832d6e5f6d8878f67355241a2b3d9321465247"
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "be549f1976eec0a94d05997fa626b848ba19701bb1c6a5dd415f3d13b298be19",
+            "inventory_sha256": "6a41cbc8426c1c5388907a16cef0686783e4f43da8eec678306b7a3dfdb0d20b",
+            "inventory_symbols": [
+              "retain_divisible_pairs",
+              "readings",
+              "spare_flag",
+              "spare_note",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def retain_divisible_pairs(readings, spare_flag, spare_note):\\n    return readings[spare_flag] if spare_flag in readings else spare_note\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "db3b2aa94c8691c3db33a43ea716f09edbf78cc0f61100ebd8e8dbb66496485c",
+            "trace_sha256": "3432e30a1c3efa0c25bf0ee2563f9c015f82f9b488dd2ac5b4a15c482493ac83"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def retain_divisible_pairs(readings, spare_flag, spare_note):\\n    return readings[spare_flag] if spare_flag in readings else spare_note\\n\"}",
+            "completion_trace_sha256": "3432e30a1c3efa0c25bf0ee2563f9c015f82f9b488dd2ac5b4a15c482493ac83",
+            "decision_sha256": "0f8869b75b93492ad396f2ae11a93a8ad20c872f152e39fcbd1e96539ffb1ad5",
+            "frame_sha256": "be549f1976eec0a94d05997fa626b848ba19701bb1c6a5dd415f3d13b298be19",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "717ccb7d7759bc865a05cfdb9283b856ab57e9e7adcf7b7f13534fe1da7c511d",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "0f8869b75b93492ad396f2ae11a93a8ad20c872f152e39fcbd1e96539ffb1ad5",
+            "frame_sha256": "be549f1976eec0a94d05997fa626b848ba19701bb1c6a5dd415f3d13b298be19",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "44d3d468e6655769d63b96986cc93a8dcd63e17d195f02513d15babfa139b6be",
+                "text": "regression_failure"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "a6e14174d7d315c464dfa5684847ecae2ce1ac703afd304f71a0ef198aab2c7c",
+                "text": "fixed regression case failed"
+              }
+            ],
+            "receipt_sha256": "9a5f3f9239c94ace69981e25cff28eb20e2aa4ec9c35464c8dc4fb6f637a3c4b",
+            "succeeded": false
+          },
+          "status": "sandbox:regression_failure"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "11dfd6d14169c26ca48ad9d682db59364afdebb0b326b9904a45ff71ed5ceda8",
+            "inventory_sha256": "6a41cbc8426c1c5388907a16cef0686783e4f43da8eec678306b7a3dfdb0d20b",
+            "inventory_symbols": [
+              "retain_divisible_pairs",
+              "readings",
+              "spare_flag",
+              "spare_note",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def retain_divisible_pairs(readings, spare_flag, spare_note):\\n    return readings[spare_flag] if spare_flag in readings else spare_note\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "db3b2aa94c8691c3db33a43ea716f09edbf78cc0f61100ebd8e8dbb66496485c",
+            "trace_sha256": "66840fdfa5a7016b85193125c1c56f2f265c8f5fe4f38e6a484a24a1e721cb91"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def retain_divisible_pairs(readings, spare_flag, spare_note):\\n    return readings[spare_flag] if spare_flag in readings else spare_note\\n\"}",
+            "completion_trace_sha256": "66840fdfa5a7016b85193125c1c56f2f265c8f5fe4f38e6a484a24a1e721cb91",
+            "decision_sha256": "06e1c598a52eb2c77381434377f0378cc0d360e9ff4e505ef6d51510c1545b9f",
+            "frame_sha256": "11dfd6d14169c26ca48ad9d682db59364afdebb0b326b9904a45ff71ed5ceda8",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "92946462f7a93c8c696bbd0d396f12893c77434325d84fad816a108df487d88c",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "06e1c598a52eb2c77381434377f0378cc0d360e9ff4e505ef6d51510c1545b9f",
+            "frame_sha256": "11dfd6d14169c26ca48ad9d682db59364afdebb0b326b9904a45ff71ed5ceda8",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "44d3d468e6655769d63b96986cc93a8dcd63e17d195f02513d15babfa139b6be",
+                "text": "regression_failure"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "a6e14174d7d315c464dfa5684847ecae2ce1ac703afd304f71a0ef198aab2c7c",
+                "text": "fixed regression case failed"
+              }
+            ],
+            "receipt_sha256": "598eedb2552e1e5cafec6286a8093174aeea6001866469fa29305bced1b6a183",
+            "succeeded": false
+          },
+          "status": "sandbox:regression_failure"
+        }
+      ],
+      "capability_group": "even-filter",
+      "control_attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "be549f1976eec0a94d05997fa626b848ba19701bb1c6a5dd415f3d13b298be19",
+            "inventory_sha256": "6a41cbc8426c1c5388907a16cef0686783e4f43da8eec678306b7a3dfdb0d20b",
+            "inventory_symbols": [
+              "retain_divisible_pairs",
+              "readings",
+              "spare_flag",
+              "spare_note",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def retain_divisible_pairs(readings, spare_flag, spare_note):\\n    return readings[spare_flag] if spare_flag in readings else spare_note\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "db3b2aa94c8691c3db33a43ea716f09edbf78cc0f61100ebd8e8dbb66496485c",
+            "trace_sha256": "3432e30a1c3efa0c25bf0ee2563f9c015f82f9b488dd2ac5b4a15c482493ac83"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def retain_divisible_pairs(readings, spare_flag, spare_note):\\n    return readings[spare_flag] if spare_flag in readings else spare_note\\n\"}",
+            "completion_trace_sha256": "3432e30a1c3efa0c25bf0ee2563f9c015f82f9b488dd2ac5b4a15c482493ac83",
+            "decision_sha256": "0f8869b75b93492ad396f2ae11a93a8ad20c872f152e39fcbd1e96539ffb1ad5",
+            "frame_sha256": "be549f1976eec0a94d05997fa626b848ba19701bb1c6a5dd415f3d13b298be19",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "717ccb7d7759bc865a05cfdb9283b856ab57e9e7adcf7b7f13534fe1da7c511d",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "0f8869b75b93492ad396f2ae11a93a8ad20c872f152e39fcbd1e96539ffb1ad5",
+            "frame_sha256": "be549f1976eec0a94d05997fa626b848ba19701bb1c6a5dd415f3d13b298be19",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "44d3d468e6655769d63b96986cc93a8dcd63e17d195f02513d15babfa139b6be",
+                "text": "regression_failure"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "a6e14174d7d315c464dfa5684847ecae2ce1ac703afd304f71a0ef198aab2c7c",
+                "text": "fixed regression case failed"
+              }
+            ],
+            "receipt_sha256": "9a5f3f9239c94ace69981e25cff28eb20e2aa4ec9c35464c8dc4fb6f637a3c4b",
+            "succeeded": false
+          },
+          "status": "sandbox:regression_failure"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "11dfd6d14169c26ca48ad9d682db59364afdebb0b326b9904a45ff71ed5ceda8",
+            "inventory_sha256": "6a41cbc8426c1c5388907a16cef0686783e4f43da8eec678306b7a3dfdb0d20b",
+            "inventory_symbols": [
+              "retain_divisible_pairs",
+              "readings",
+              "spare_flag",
+              "spare_note",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def retain_divisible_pairs(readings, spare_flag, spare_note):\\n    return readings[spare_flag] if spare_flag in readings else spare_note\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "db3b2aa94c8691c3db33a43ea716f09edbf78cc0f61100ebd8e8dbb66496485c",
+            "trace_sha256": "66840fdfa5a7016b85193125c1c56f2f265c8f5fe4f38e6a484a24a1e721cb91"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def retain_divisible_pairs(readings, spare_flag, spare_note):\\n    return readings[spare_flag] if spare_flag in readings else spare_note\\n\"}",
+            "completion_trace_sha256": "66840fdfa5a7016b85193125c1c56f2f265c8f5fe4f38e6a484a24a1e721cb91",
+            "decision_sha256": "06e1c598a52eb2c77381434377f0378cc0d360e9ff4e505ef6d51510c1545b9f",
+            "frame_sha256": "11dfd6d14169c26ca48ad9d682db59364afdebb0b326b9904a45ff71ed5ceda8",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "92946462f7a93c8c696bbd0d396f12893c77434325d84fad816a108df487d88c",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "06e1c598a52eb2c77381434377f0378cc0d360e9ff4e505ef6d51510c1545b9f",
+            "frame_sha256": "11dfd6d14169c26ca48ad9d682db59364afdebb0b326b9904a45ff71ed5ceda8",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "44d3d468e6655769d63b96986cc93a8dcd63e17d195f02513d15babfa139b6be",
+                "text": "regression_failure"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "a6e14174d7d315c464dfa5684847ecae2ce1ac703afd304f71a0ef198aab2c7c",
+                "text": "fixed regression case failed"
+              }
+            ],
+            "receipt_sha256": "598eedb2552e1e5cafec6286a8093174aeea6001866469fa29305bced1b6a183",
+            "succeeded": false
+          },
+          "status": "sandbox:regression_failure"
+        }
+      ],
+      "control_solved_online": false,
+      "public_observation_sha256": "d98e066f2b15c329ca317520df6dc5d30235c345f6c22d5a684d0f3fa7ff3353",
+      "solved_online": false,
+      "stage": "within-stream-structural-repeat",
+      "task_index": 5,
+      "task_sha256": "1a0d4b415de566bb23ad3080ab9f9af6ddb2235b571e3a2d342eda9adee312b9"
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "b155b544adb75a67c1e9b0e01af67fd29ede06c7dab43b6e7698a5bbb30e261f",
+            "inventory_sha256": "b5c6c2fd60698572f533548083b3040263ecac94d0ab66bc6cfc4da59fa977d9",
+            "inventory_symbols": [
+              "clean_margin_case",
+              "raw_label",
+              "spare_left",
+              "spare_right",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def clean_margin_case(raw_label, spare_left, spare_right):\\n    return raw_label[spare_left] if spare_left in raw_label else spare_right\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "6de1786b11fca06181643d472f37f33d0509b505d379eadf9a2f64fd6a12bf83",
+            "trace_sha256": "9464b8ba102b8726d60d05383bf1670a8b499ec07d6ba5e5d365689cb4b0cc72"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def clean_margin_case(raw_label, spare_left, spare_right):\\n    return raw_label[spare_left] if spare_left in raw_label else spare_right\\n\"}",
+            "completion_trace_sha256": "9464b8ba102b8726d60d05383bf1670a8b499ec07d6ba5e5d365689cb4b0cc72",
+            "decision_sha256": "f53492a268a0475134f9d808126f8d07a25b841791d3f6791fe83497e15e4e17",
+            "frame_sha256": "b155b544adb75a67c1e9b0e01af67fd29ede06c7dab43b6e7698a5bbb30e261f",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "5116290337206cafc7f76b75693b0c653020ac240020720d965ff2c40b15508f",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "f53492a268a0475134f9d808126f8d07a25b841791d3f6791fe83497e15e4e17",
+            "frame_sha256": "b155b544adb75a67c1e9b0e01af67fd29ede06c7dab43b6e7698a5bbb30e261f",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "44d3d468e6655769d63b96986cc93a8dcd63e17d195f02513d15babfa139b6be",
+                "text": "regression_failure"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "a6e14174d7d315c464dfa5684847ecae2ce1ac703afd304f71a0ef198aab2c7c",
+                "text": "fixed regression case failed"
+              }
+            ],
+            "receipt_sha256": "a1719a57d1f1ad07ae0e059d271ad5d89a7e6e1f1097f2b68dbf5177fcd7e80e",
+            "succeeded": false
+          },
+          "status": "sandbox:regression_failure"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "1f567d2f15007bba51fd78de0bcdbcf59e6846fe3f07134a366cecaf20aa9928",
+            "inventory_sha256": "b5c6c2fd60698572f533548083b3040263ecac94d0ab66bc6cfc4da59fa977d9",
+            "inventory_symbols": [
+              "clean_margin_case",
+              "raw_label",
+              "spare_left",
+              "spare_right",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def clean_margin_case(raw_label, spare_left, spare_right):\\n    return raw_label[spare_left] if spare_left in raw_label else spare_right\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "6de1786b11fca06181643d472f37f33d0509b505d379eadf9a2f64fd6a12bf83",
+            "trace_sha256": "a258301da38683421765f1afad08271a5120808a1603836e8b88c5a735397075"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def clean_margin_case(raw_label, spare_left, spare_right):\\n    return raw_label[spare_left] if spare_left in raw_label else spare_right\\n\"}",
+            "completion_trace_sha256": "a258301da38683421765f1afad08271a5120808a1603836e8b88c5a735397075",
+            "decision_sha256": "2178dccc848d70142231e5c93136829039e2760b321778819c0d4f37c241eee3",
+            "frame_sha256": "1f567d2f15007bba51fd78de0bcdbcf59e6846fe3f07134a366cecaf20aa9928",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "da9831d07ef637b44740480e50d0f824fb47c7ebe9a9b8504fd5a8d3234f1848",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "2178dccc848d70142231e5c93136829039e2760b321778819c0d4f37c241eee3",
+            "frame_sha256": "1f567d2f15007bba51fd78de0bcdbcf59e6846fe3f07134a366cecaf20aa9928",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "44d3d468e6655769d63b96986cc93a8dcd63e17d195f02513d15babfa139b6be",
+                "text": "regression_failure"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "a6e14174d7d315c464dfa5684847ecae2ce1ac703afd304f71a0ef198aab2c7c",
+                "text": "fixed regression case failed"
+              }
+            ],
+            "receipt_sha256": "09851bccb4b9ed5bf471ea52c4b5c384bc61245185940acd8c650e31e7117bcf",
+            "succeeded": false
+          },
+          "status": "sandbox:regression_failure"
+        }
+      ],
+      "capability_group": "normalize-text",
+      "control_attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "b155b544adb75a67c1e9b0e01af67fd29ede06c7dab43b6e7698a5bbb30e261f",
+            "inventory_sha256": "b5c6c2fd60698572f533548083b3040263ecac94d0ab66bc6cfc4da59fa977d9",
+            "inventory_symbols": [
+              "clean_margin_case",
+              "raw_label",
+              "spare_left",
+              "spare_right",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def clean_margin_case(raw_label, spare_left, spare_right):\\n    return raw_label[spare_left] if spare_left in raw_label else spare_right\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "6de1786b11fca06181643d472f37f33d0509b505d379eadf9a2f64fd6a12bf83",
+            "trace_sha256": "9464b8ba102b8726d60d05383bf1670a8b499ec07d6ba5e5d365689cb4b0cc72"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def clean_margin_case(raw_label, spare_left, spare_right):\\n    return raw_label[spare_left] if spare_left in raw_label else spare_right\\n\"}",
+            "completion_trace_sha256": "9464b8ba102b8726d60d05383bf1670a8b499ec07d6ba5e5d365689cb4b0cc72",
+            "decision_sha256": "f53492a268a0475134f9d808126f8d07a25b841791d3f6791fe83497e15e4e17",
+            "frame_sha256": "b155b544adb75a67c1e9b0e01af67fd29ede06c7dab43b6e7698a5bbb30e261f",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "5116290337206cafc7f76b75693b0c653020ac240020720d965ff2c40b15508f",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "f53492a268a0475134f9d808126f8d07a25b841791d3f6791fe83497e15e4e17",
+            "frame_sha256": "b155b544adb75a67c1e9b0e01af67fd29ede06c7dab43b6e7698a5bbb30e261f",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "44d3d468e6655769d63b96986cc93a8dcd63e17d195f02513d15babfa139b6be",
+                "text": "regression_failure"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "a6e14174d7d315c464dfa5684847ecae2ce1ac703afd304f71a0ef198aab2c7c",
+                "text": "fixed regression case failed"
+              }
+            ],
+            "receipt_sha256": "a1719a57d1f1ad07ae0e059d271ad5d89a7e6e1f1097f2b68dbf5177fcd7e80e",
+            "succeeded": false
+          },
+          "status": "sandbox:regression_failure"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "1f567d2f15007bba51fd78de0bcdbcf59e6846fe3f07134a366cecaf20aa9928",
+            "inventory_sha256": "b5c6c2fd60698572f533548083b3040263ecac94d0ab66bc6cfc4da59fa977d9",
+            "inventory_symbols": [
+              "clean_margin_case",
+              "raw_label",
+              "spare_left",
+              "spare_right",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def clean_margin_case(raw_label, spare_left, spare_right):\\n    return raw_label[spare_left] if spare_left in raw_label else spare_right\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "6de1786b11fca06181643d472f37f33d0509b505d379eadf9a2f64fd6a12bf83",
+            "trace_sha256": "a258301da38683421765f1afad08271a5120808a1603836e8b88c5a735397075"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def clean_margin_case(raw_label, spare_left, spare_right):\\n    return raw_label[spare_left] if spare_left in raw_label else spare_right\\n\"}",
+            "completion_trace_sha256": "a258301da38683421765f1afad08271a5120808a1603836e8b88c5a735397075",
+            "decision_sha256": "2178dccc848d70142231e5c93136829039e2760b321778819c0d4f37c241eee3",
+            "frame_sha256": "1f567d2f15007bba51fd78de0bcdbcf59e6846fe3f07134a366cecaf20aa9928",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "da9831d07ef637b44740480e50d0f824fb47c7ebe9a9b8504fd5a8d3234f1848",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "2178dccc848d70142231e5c93136829039e2760b321778819c0d4f37c241eee3",
+            "frame_sha256": "1f567d2f15007bba51fd78de0bcdbcf59e6846fe3f07134a366cecaf20aa9928",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "44d3d468e6655769d63b96986cc93a8dcd63e17d195f02513d15babfa139b6be",
+                "text": "regression_failure"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "a6e14174d7d315c464dfa5684847ecae2ce1ac703afd304f71a0ef198aab2c7c",
+                "text": "fixed regression case failed"
+              }
+            ],
+            "receipt_sha256": "09851bccb4b9ed5bf471ea52c4b5c384bc61245185940acd8c650e31e7117bcf",
+            "succeeded": false
+          },
+          "status": "sandbox:regression_failure"
+        }
+      ],
+      "control_solved_online": false,
+      "public_observation_sha256": "d1d939d93fc841199c4b03426beb4ca992c2211bb5bb4a1db8335bf7e005fe04",
+      "solved_online": false,
+      "stage": "within-stream-structural-repeat",
+      "task_index": 6,
+      "task_sha256": "5f4279a7163e832ec1d4279d415a6dd7d7c96182e869afd58c7f4a0493ac87df"
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "28216f120c14cd2b5ca0bbd942c4bb2e7c862d9a426884a2dd824b5d2db77334",
+            "inventory_sha256": "8988c5b2687445955fb7f7b72a4a11d09115ec8684b1531eec4825e3390571b4",
+            "inventory_symbols": [
+              "combine_stride_bias",
+              "stride",
+              "quantity",
+              "bias",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def combine_stride_bias(stride, quantity, bias):\\n    return stride[quantity] if quantity in stride else bias\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "39c9eec714f41b61531aa3e1ce6b0d754946ed3a9447d93c1b3a095cee30a43b",
+            "trace_sha256": "cb59350cd7ce2512cff912ce76b0b81acb2f48420b10792a22e11108b1e42d86"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def combine_stride_bias(stride, quantity, bias):\\n    return stride[quantity] if quantity in stride else bias\\n\"}",
+            "completion_trace_sha256": "cb59350cd7ce2512cff912ce76b0b81acb2f48420b10792a22e11108b1e42d86",
+            "decision_sha256": "3e6f552938184a44129090ed7f77ba523097823016aa6ea2365847e8681ad67e",
+            "frame_sha256": "28216f120c14cd2b5ca0bbd942c4bb2e7c862d9a426884a2dd824b5d2db77334",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "b48347168226460d60aa821c6099af03876693085732b796610d0d9f88ce1484",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "3e6f552938184a44129090ed7f77ba523097823016aa6ea2365847e8681ad67e",
+            "frame_sha256": "28216f120c14cd2b5ca0bbd942c4bb2e7c862d9a426884a2dd824b5d2db77334",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "6a2333955d38041d586ba723afd952c662d8212d5cab75169782e6fc8b85bbf3",
+                "text": "runtime_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "61a2060be94cf3ac4d6899fa8ca80d0ddb7bc9259c0ae4e214d0b0d6444fe81b",
+                "text": "TypeError"
+              }
+            ],
+            "receipt_sha256": "3de709c2d6fd8b910bce33847a8166203455d86f8d83e1ffda27c97bf6aa8067",
+            "succeeded": false
+          },
+          "status": "sandbox:runtime_error"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "7478176b0cab214f55b679864678b1b30d331cd525b8528dcc9ea8b69c6815ac",
+            "inventory_sha256": "8988c5b2687445955fb7f7b72a4a11d09115ec8684b1531eec4825e3390571b4",
+            "inventory_symbols": [
+              "combine_stride_bias",
+              "stride",
+              "quantity",
+              "bias",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def combine_stride_bias(stride, quantity, bias):\\n    return stride[quantity] if quantity in stride else bias\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "39c9eec714f41b61531aa3e1ce6b0d754946ed3a9447d93c1b3a095cee30a43b",
+            "trace_sha256": "9e855530a050e2474d1c1893b53fed6ff4902370b1b6b3cfcbbff3033572e129"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def combine_stride_bias(stride, quantity, bias):\\n    return stride[quantity] if quantity in stride else bias\\n\"}",
+            "completion_trace_sha256": "9e855530a050e2474d1c1893b53fed6ff4902370b1b6b3cfcbbff3033572e129",
+            "decision_sha256": "f722aaa76ce5c14254dd230743e2b89c97a4a9d5365760a1078eb99f5cd84e9e",
+            "frame_sha256": "7478176b0cab214f55b679864678b1b30d331cd525b8528dcc9ea8b69c6815ac",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "413a2c17937bed6862faef9c2a452b83cd16a76abead5f8f52ccec657bb7fbbf",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "f722aaa76ce5c14254dd230743e2b89c97a4a9d5365760a1078eb99f5cd84e9e",
+            "frame_sha256": "7478176b0cab214f55b679864678b1b30d331cd525b8528dcc9ea8b69c6815ac",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "6a2333955d38041d586ba723afd952c662d8212d5cab75169782e6fc8b85bbf3",
+                "text": "runtime_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "61a2060be94cf3ac4d6899fa8ca80d0ddb7bc9259c0ae4e214d0b0d6444fe81b",
+                "text": "TypeError"
+              }
+            ],
+            "receipt_sha256": "9f0ddf021e58d4de6419a340b30dc883891260e844a92c1594628da7cb56875d",
+            "succeeded": false
+          },
+          "status": "sandbox:runtime_error"
+        }
+      ],
+      "capability_group": "affine-scalar",
+      "control_attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "28216f120c14cd2b5ca0bbd942c4bb2e7c862d9a426884a2dd824b5d2db77334",
+            "inventory_sha256": "8988c5b2687445955fb7f7b72a4a11d09115ec8684b1531eec4825e3390571b4",
+            "inventory_symbols": [
+              "combine_stride_bias",
+              "stride",
+              "quantity",
+              "bias",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def combine_stride_bias(stride, quantity, bias):\\n    return stride[quantity] if quantity in stride else bias\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "39c9eec714f41b61531aa3e1ce6b0d754946ed3a9447d93c1b3a095cee30a43b",
+            "trace_sha256": "cb59350cd7ce2512cff912ce76b0b81acb2f48420b10792a22e11108b1e42d86"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def combine_stride_bias(stride, quantity, bias):\\n    return stride[quantity] if quantity in stride else bias\\n\"}",
+            "completion_trace_sha256": "cb59350cd7ce2512cff912ce76b0b81acb2f48420b10792a22e11108b1e42d86",
+            "decision_sha256": "3e6f552938184a44129090ed7f77ba523097823016aa6ea2365847e8681ad67e",
+            "frame_sha256": "28216f120c14cd2b5ca0bbd942c4bb2e7c862d9a426884a2dd824b5d2db77334",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "b48347168226460d60aa821c6099af03876693085732b796610d0d9f88ce1484",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "3e6f552938184a44129090ed7f77ba523097823016aa6ea2365847e8681ad67e",
+            "frame_sha256": "28216f120c14cd2b5ca0bbd942c4bb2e7c862d9a426884a2dd824b5d2db77334",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "6a2333955d38041d586ba723afd952c662d8212d5cab75169782e6fc8b85bbf3",
+                "text": "runtime_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "61a2060be94cf3ac4d6899fa8ca80d0ddb7bc9259c0ae4e214d0b0d6444fe81b",
+                "text": "TypeError"
+              }
+            ],
+            "receipt_sha256": "3de709c2d6fd8b910bce33847a8166203455d86f8d83e1ffda27c97bf6aa8067",
+            "succeeded": false
+          },
+          "status": "sandbox:runtime_error"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "7478176b0cab214f55b679864678b1b30d331cd525b8528dcc9ea8b69c6815ac",
+            "inventory_sha256": "8988c5b2687445955fb7f7b72a4a11d09115ec8684b1531eec4825e3390571b4",
+            "inventory_symbols": [
+              "combine_stride_bias",
+              "stride",
+              "quantity",
+              "bias",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def combine_stride_bias(stride, quantity, bias):\\n    return stride[quantity] if quantity in stride else bias\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "39c9eec714f41b61531aa3e1ce6b0d754946ed3a9447d93c1b3a095cee30a43b",
+            "trace_sha256": "9e855530a050e2474d1c1893b53fed6ff4902370b1b6b3cfcbbff3033572e129"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def combine_stride_bias(stride, quantity, bias):\\n    return stride[quantity] if quantity in stride else bias\\n\"}",
+            "completion_trace_sha256": "9e855530a050e2474d1c1893b53fed6ff4902370b1b6b3cfcbbff3033572e129",
+            "decision_sha256": "f722aaa76ce5c14254dd230743e2b89c97a4a9d5365760a1078eb99f5cd84e9e",
+            "frame_sha256": "7478176b0cab214f55b679864678b1b30d331cd525b8528dcc9ea8b69c6815ac",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "413a2c17937bed6862faef9c2a452b83cd16a76abead5f8f52ccec657bb7fbbf",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "f722aaa76ce5c14254dd230743e2b89c97a4a9d5365760a1078eb99f5cd84e9e",
+            "frame_sha256": "7478176b0cab214f55b679864678b1b30d331cd525b8528dcc9ea8b69c6815ac",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "6a2333955d38041d586ba723afd952c662d8212d5cab75169782e6fc8b85bbf3",
+                "text": "runtime_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "61a2060be94cf3ac4d6899fa8ca80d0ddb7bc9259c0ae4e214d0b0d6444fe81b",
+                "text": "TypeError"
+              }
+            ],
+            "receipt_sha256": "9f0ddf021e58d4de6419a340b30dc883891260e844a92c1594628da7cb56875d",
+            "succeeded": false
+          },
+          "status": "sandbox:runtime_error"
+        }
+      ],
+      "control_solved_online": false,
+      "public_observation_sha256": "249ad7116e20ac6382c84742c1cfbac6d952ba632cf0b74f982f5811900ccd66",
+      "solved_online": false,
+      "stage": "within-stream-structural-repeat",
+      "task_index": 7,
+      "task_sha256": "2331c6528ad154ef257c23cc6eb4239ff0da56b6d7a5ba41928e28b671a7614d"
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "49e122144ce2a245a32cfb1365afc7b20d5fc2a47bd1bdffa0820e338a871257",
+            "inventory_sha256": "0bfceaea946e3732e507a40017771ca7dc16ce538cb26eebbbc25019a18e9875",
+            "inventory_symbols": [
+              "accumulate_river_steps",
+              "river_steps",
+              "NotImplementedError"
+            ],
+            "materialization_error": "ValueError: pointer index 3 is outside the symbol inventory",
+            "materialized_output": null,
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "3ca8e3f22196c26a26e18e7aad572a146d1e0079f3364b655e359adc7469e4c2",
+            "trace_sha256": "2d0a5687d4dbab404c4781eca77dc0f50737047147223a382d27af4749b686d2"
+          },
+          "decision": {
+            "decision_sha256": "6422a43a1d24bd74749680b1cdedfb9b6fe54f084d045c800d73eaf83b46c3b5",
+            "frame_sha256": "49e122144ce2a245a32cfb1365afc7b20d5fc2a47bd1bdffa0820e338a871257",
+            "kind": "stop",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "reason": "pointer_binding_failed_closed"
+          },
+          "episode_sha256": "967656abcee7cb1378f7c3538582b9ed37968865dd1de3bf8d7755927f3b1f2b",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": null,
+          "status": "stop:pointer_binding_failed_closed"
+        }
+      ],
+      "capability_group": "prefix-sums",
+      "control_attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "49e122144ce2a245a32cfb1365afc7b20d5fc2a47bd1bdffa0820e338a871257",
+            "inventory_sha256": "0bfceaea946e3732e507a40017771ca7dc16ce538cb26eebbbc25019a18e9875",
+            "inventory_symbols": [
+              "accumulate_river_steps",
+              "river_steps",
+              "NotImplementedError"
+            ],
+            "materialization_error": "ValueError: pointer index 3 is outside the symbol inventory",
+            "materialized_output": null,
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "3ca8e3f22196c26a26e18e7aad572a146d1e0079f3364b655e359adc7469e4c2",
+            "trace_sha256": "2d0a5687d4dbab404c4781eca77dc0f50737047147223a382d27af4749b686d2"
+          },
+          "decision": {
+            "decision_sha256": "6422a43a1d24bd74749680b1cdedfb9b6fe54f084d045c800d73eaf83b46c3b5",
+            "frame_sha256": "49e122144ce2a245a32cfb1365afc7b20d5fc2a47bd1bdffa0820e338a871257",
+            "kind": "stop",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "reason": "pointer_binding_failed_closed"
+          },
+          "episode_sha256": "967656abcee7cb1378f7c3538582b9ed37968865dd1de3bf8d7755927f3b1f2b",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": null,
+          "status": "stop:pointer_binding_failed_closed"
+        }
+      ],
+      "control_solved_online": false,
+      "public_observation_sha256": "6dc0f782edcd6c1ede46e3dd0c2c8d1e41f8f3683a4982068660dfdf22ed4956",
+      "solved_online": false,
+      "stage": "unseen-behavior",
+      "task_index": 8,
+      "task_sha256": "199d160c1a38fb95cd0fe7dcf08d713a88e339c9cd97e7c0318b095ec9944e92"
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "d390fb6f66dd325ea18ca3db97a40acee9e7fd0781327c32eb3be5a51c022fbf",
+            "inventory_sha256": "17e68b35826ce163b989cd28bc711d2fa5a05728b60c0c3dbaa42e872d32eb8d",
+            "inventory_symbols": [
+              "reverse_constellation_words",
+              "constellation",
+              "NotImplementedError"
+            ],
+            "materialization_error": "ValueError: pointer index 3 is outside the symbol inventory",
+            "materialized_output": null,
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "092da403ecde48da5b28ebb30e52a49df40049ac59175318fee50593a60efd31",
+            "trace_sha256": "85ecfd6e214cbac0282004beb9efe9a898ac8baacfb6a6a8092ca99c74cefaae"
+          },
+          "decision": {
+            "decision_sha256": "0086e6e33f240ff09faf954a17211bf368bc650b587623687b4eb77b0850d736",
+            "frame_sha256": "d390fb6f66dd325ea18ca3db97a40acee9e7fd0781327c32eb3be5a51c022fbf",
+            "kind": "stop",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "reason": "pointer_binding_failed_closed"
+          },
+          "episode_sha256": "4d8a4870eec900b348940d4c071b1bade8ca86319c464aee70d10b604e311d1c",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": null,
+          "status": "stop:pointer_binding_failed_closed"
+        }
+      ],
+      "capability_group": "reverse-word-order",
+      "control_attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "d390fb6f66dd325ea18ca3db97a40acee9e7fd0781327c32eb3be5a51c022fbf",
+            "inventory_sha256": "17e68b35826ce163b989cd28bc711d2fa5a05728b60c0c3dbaa42e872d32eb8d",
+            "inventory_symbols": [
+              "reverse_constellation_words",
+              "constellation",
+              "NotImplementedError"
+            ],
+            "materialization_error": "ValueError: pointer index 3 is outside the symbol inventory",
+            "materialized_output": null,
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "092da403ecde48da5b28ebb30e52a49df40049ac59175318fee50593a60efd31",
+            "trace_sha256": "85ecfd6e214cbac0282004beb9efe9a898ac8baacfb6a6a8092ca99c74cefaae"
+          },
+          "decision": {
+            "decision_sha256": "0086e6e33f240ff09faf954a17211bf368bc650b587623687b4eb77b0850d736",
+            "frame_sha256": "d390fb6f66dd325ea18ca3db97a40acee9e7fd0781327c32eb3be5a51c022fbf",
+            "kind": "stop",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "reason": "pointer_binding_failed_closed"
+          },
+          "episode_sha256": "4d8a4870eec900b348940d4c071b1bade8ca86319c464aee70d10b604e311d1c",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": null,
+          "status": "stop:pointer_binding_failed_closed"
+        }
+      ],
+      "control_solved_online": false,
+      "public_observation_sha256": "3282fa8fe2bec1d243a6b24b7aa757ebf7fd862489234873748cf95317da58ed",
+      "solved_online": false,
+      "stage": "unseen-behavior",
+      "task_index": 9,
+      "task_sha256": "c47e0425aa0020c2bc79cb0ec3f6fcd7f6fcced52262f626f7a936d30dbf5284"
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "59d32e7861d693ac7aa0f895079a19f66a28ac26cd68a098ff299d0433adcad6",
+            "inventory_sha256": "3dea2a6b2373ae66c5d9eb7fb29e965c0bc28bed3cd5f0997d883b44c5b8eaf8",
+            "inventory_symbols": [
+              "longest_clear_weather",
+              "weather_codes",
+              "NotImplementedError"
+            ],
+            "materialization_error": "ValueError: pointer index 3 is outside the symbol inventory",
+            "materialized_output": null,
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "386077e8bef2631bc58297172175c2c051047b6fbe3688794fe7df44383f5cef",
+            "trace_sha256": "f321bf7893fb76aa2d706c5337c9489d3288271e5f66c6b2e2bf1fa88dd33fa7"
+          },
+          "decision": {
+            "decision_sha256": "4a38d90b0d198464def2f0865992636a9c7fe62d0366d8b0147975a2ba9b5421",
+            "frame_sha256": "59d32e7861d693ac7aa0f895079a19f66a28ac26cd68a098ff299d0433adcad6",
+            "kind": "stop",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "reason": "pointer_binding_failed_closed"
+          },
+          "episode_sha256": "51bb10dc2a7aff3a0b5928c5fb312ceaa8ea6e33a33e4253fbd384fccf3b0037",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": null,
+          "status": "stop:pointer_binding_failed_closed"
+        }
+      ],
+      "capability_group": "longest-nonnegative-run",
+      "control_attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "59d32e7861d693ac7aa0f895079a19f66a28ac26cd68a098ff299d0433adcad6",
+            "inventory_sha256": "3dea2a6b2373ae66c5d9eb7fb29e965c0bc28bed3cd5f0997d883b44c5b8eaf8",
+            "inventory_symbols": [
+              "longest_clear_weather",
+              "weather_codes",
+              "NotImplementedError"
+            ],
+            "materialization_error": "ValueError: pointer index 3 is outside the symbol inventory",
+            "materialized_output": null,
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "386077e8bef2631bc58297172175c2c051047b6fbe3688794fe7df44383f5cef",
+            "trace_sha256": "f321bf7893fb76aa2d706c5337c9489d3288271e5f66c6b2e2bf1fa88dd33fa7"
+          },
+          "decision": {
+            "decision_sha256": "4a38d90b0d198464def2f0865992636a9c7fe62d0366d8b0147975a2ba9b5421",
+            "frame_sha256": "59d32e7861d693ac7aa0f895079a19f66a28ac26cd68a098ff299d0433adcad6",
+            "kind": "stop",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "reason": "pointer_binding_failed_closed"
+          },
+          "episode_sha256": "51bb10dc2a7aff3a0b5928c5fb312ceaa8ea6e33a33e4253fbd384fccf3b0037",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": null,
+          "status": "stop:pointer_binding_failed_closed"
+        }
+      ],
+      "control_solved_online": false,
+      "public_observation_sha256": "84cf213e40790ed7593296abde77812b00ec14ddd30d20683fc1b2f1c2af5370",
+      "solved_online": false,
+      "stage": "unseen-behavior",
+      "task_index": 10,
+      "task_sha256": "b97ff99d4dc78278d9fa0432bf340e2e027f6119e915ed700bf34aa38e78d4ae"
+    },
+    {
+      "attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "82e6313d073340beaf0ea66da5cb34f67b13d6d6c2458829bbc6aa96146e7340",
+            "inventory_sha256": "8f6633c19194454a2a2013222488e10920b531f07eada709e3e4c10355dc9980",
+            "inventory_symbols": [
+              "braid_tributary_values",
+              "north_flow",
+              "south_flow",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def braid_tributary_values(north_flow, south_flow, NotImplementedError):\\n    return north_flow[south_flow] if south_flow in north_flow else NotImplementedError\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "2fa258a46f1786adbd763681f97ad9bd9c54c6a381ea5c08390dc0f7cfb7798f",
+            "trace_sha256": "f3b10137fc4a168b7391531e46338ecdeb8c1afcda5577f132dda5d21e9b6fb0"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def braid_tributary_values(north_flow, south_flow, NotImplementedError):\\n    return north_flow[south_flow] if south_flow in north_flow else NotImplementedError\\n\"}",
+            "completion_trace_sha256": "f3b10137fc4a168b7391531e46338ecdeb8c1afcda5577f132dda5d21e9b6fb0",
+            "decision_sha256": "1ccb233efa62707e13641d216c611220cb8ae4e8c3c170464e2b4bf19ada45c9",
+            "frame_sha256": "82e6313d073340beaf0ea66da5cb34f67b13d6d6c2458829bbc6aa96146e7340",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "7066d90bfd851d9fa178be1cd872b6983302716304a85f3d9e27af3a74531918",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "1ccb233efa62707e13641d216c611220cb8ae4e8c3c170464e2b4bf19ada45c9",
+            "frame_sha256": "82e6313d073340beaf0ea66da5cb34f67b13d6d6c2458829bbc6aa96146e7340",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "23857029b90754eb46fc6c62576e905e862d05b1123c41a5716f0ec4a4c46dba",
+                "text": "signature_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "28b1db7f51e1d821d0b95a08216ee75543d639d30187c2df3c86a1931b706516",
+                "text": "entry-point parameters differ from the task"
+              }
+            ],
+            "receipt_sha256": "6fc90eb75015a83adc2c73f33801b7d148ae27a61d1ba7ca637d467345e9dc39",
+            "succeeded": false
+          },
+          "status": "sandbox:signature_error"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "b93e8cd64c92ebb901d11b3363665635c90d0593af96853135ce3e6b8e4176ce",
+            "inventory_sha256": "8f6633c19194454a2a2013222488e10920b531f07eada709e3e4c10355dc9980",
+            "inventory_symbols": [
+              "braid_tributary_values",
+              "north_flow",
+              "south_flow",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def braid_tributary_values(north_flow, south_flow, NotImplementedError):\\n    return north_flow[south_flow] if south_flow in north_flow else NotImplementedError\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "2fa258a46f1786adbd763681f97ad9bd9c54c6a381ea5c08390dc0f7cfb7798f",
+            "trace_sha256": "2b59cc307071592ad951f52bd26e0ccd44507e70ada7dd9ee447974728ab8b6d"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def braid_tributary_values(north_flow, south_flow, NotImplementedError):\\n    return north_flow[south_flow] if south_flow in north_flow else NotImplementedError\\n\"}",
+            "completion_trace_sha256": "2b59cc307071592ad951f52bd26e0ccd44507e70ada7dd9ee447974728ab8b6d",
+            "decision_sha256": "13cff8e032557e566a41738da968787c202998b8639d0e41648e2c1169de426d",
+            "frame_sha256": "b93e8cd64c92ebb901d11b3363665635c90d0593af96853135ce3e6b8e4176ce",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "bddf5f71ff18a56bafb977700223375e4c9dfe2988f6ffbd7f63b0f7f7776975",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "13cff8e032557e566a41738da968787c202998b8639d0e41648e2c1169de426d",
+            "frame_sha256": "b93e8cd64c92ebb901d11b3363665635c90d0593af96853135ce3e6b8e4176ce",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "23857029b90754eb46fc6c62576e905e862d05b1123c41a5716f0ec4a4c46dba",
+                "text": "signature_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "28b1db7f51e1d821d0b95a08216ee75543d639d30187c2df3c86a1931b706516",
+                "text": "entry-point parameters differ from the task"
+              }
+            ],
+            "receipt_sha256": "f83b7c49903f344cadd2e97a4b85defe089d23f766e1a72d6174a3a76fb43ac4",
+            "succeeded": false
+          },
+          "status": "sandbox:signature_error"
+        }
+      ],
+      "capability_group": "alternating-merge",
+      "control_attempts": [
+        {
+          "attempt": 1,
+          "completion_trace": {
+            "frame_sha256": "82e6313d073340beaf0ea66da5cb34f67b13d6d6c2458829bbc6aa96146e7340",
+            "inventory_sha256": "8f6633c19194454a2a2013222488e10920b531f07eada709e3e4c10355dc9980",
+            "inventory_symbols": [
+              "braid_tributary_values",
+              "north_flow",
+              "south_flow",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def braid_tributary_values(north_flow, south_flow, NotImplementedError):\\n    return north_flow[south_flow] if south_flow in north_flow else NotImplementedError\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "2fa258a46f1786adbd763681f97ad9bd9c54c6a381ea5c08390dc0f7cfb7798f",
+            "trace_sha256": "f3b10137fc4a168b7391531e46338ecdeb8c1afcda5577f132dda5d21e9b6fb0"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def braid_tributary_values(north_flow, south_flow, NotImplementedError):\\n    return north_flow[south_flow] if south_flow in north_flow else NotImplementedError\\n\"}",
+            "completion_trace_sha256": "f3b10137fc4a168b7391531e46338ecdeb8c1afcda5577f132dda5d21e9b6fb0",
+            "decision_sha256": "1ccb233efa62707e13641d216c611220cb8ae4e8c3c170464e2b4bf19ada45c9",
+            "frame_sha256": "82e6313d073340beaf0ea66da5cb34f67b13d6d6c2458829bbc6aa96146e7340",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "7066d90bfd851d9fa178be1cd872b6983302716304a85f3d9e27af3a74531918",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "1ccb233efa62707e13641d216c611220cb8ae4e8c3c170464e2b4bf19ada45c9",
+            "frame_sha256": "82e6313d073340beaf0ea66da5cb34f67b13d6d6c2458829bbc6aa96146e7340",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "23857029b90754eb46fc6c62576e905e862d05b1123c41a5716f0ec4a4c46dba",
+                "text": "signature_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "28b1db7f51e1d821d0b95a08216ee75543d639d30187c2df3c86a1931b706516",
+                "text": "entry-point parameters differ from the task"
+              }
+            ],
+            "receipt_sha256": "6fc90eb75015a83adc2c73f33801b7d148ae27a61d1ba7ca637d467345e9dc39",
+            "succeeded": false
+          },
+          "status": "sandbox:signature_error"
+        },
+        {
+          "attempt": 2,
+          "completion_trace": {
+            "frame_sha256": "b93e8cd64c92ebb901d11b3363665635c90d0593af96853135ce3e6b8e4176ce",
+            "inventory_sha256": "8f6633c19194454a2a2013222488e10920b531f07eada709e3e4c10355dc9980",
+            "inventory_symbols": [
+              "braid_tributary_values",
+              "north_flow",
+              "south_flow",
+              "NotImplementedError"
+            ],
+            "materialization_error": null,
+            "materialized_output": "<tool>{\"arguments\":{\"source\":\"def braid_tributary_values(north_flow, south_flow, NotImplementedError):\\n    return north_flow[south_flow] if south_flow in north_flow else NotImplementedError\\n\"},\"name\":\"write_source\"}</tool>",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+            "starter_block_sha256": "2fa258a46f1786adbd763681f97ad9bd9c54c6a381ea5c08390dc0f7cfb7798f",
+            "trace_sha256": "2b59cc307071592ad951f52bd26e0ccd44507e70ada7dd9ee447974728ab8b6d"
+          },
+          "decision": {
+            "arguments_json": "{\"source\":\"def braid_tributary_values(north_flow, south_flow, NotImplementedError):\\n    return north_flow[south_flow] if south_flow in north_flow else NotImplementedError\\n\"}",
+            "completion_trace_sha256": "2b59cc307071592ad951f52bd26e0ccd44507e70ada7dd9ee447974728ab8b6d",
+            "decision_sha256": "13cff8e032557e566a41738da968787c202998b8639d0e41648e2c1169de426d",
+            "frame_sha256": "b93e8cd64c92ebb901d11b3363665635c90d0593af96853135ce3e6b8e4176ce",
+            "kind": "tool",
+            "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+            "tool_name": "write_source"
+          },
+          "episode_sha256": "bddf5f71ff18a56bafb977700223375e4c9dfe2988f6ffbd7f63b0f7f7776975",
+          "learning_applied": false,
+          "model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "prior_model_digest": "d7500691f8cc26889087384be5eea9a78e94debadcee5648f46058e7702ce7d1",
+          "receipt": {
+            "accepted": true,
+            "action_sha256": "13cff8e032557e566a41738da968787c202998b8639d0e41648e2c1169de426d",
+            "frame_sha256": "b93e8cd64c92ebb901d11b3363665635c90d0593af96853135ce3e6b8e4176ce",
+            "observations": [
+              {
+                "kind": "sandbox-outcome",
+                "sha256": "23857029b90754eb46fc6c62576e905e862d05b1123c41a5716f0ec4a4c46dba",
+                "text": "signature_error"
+              },
+              {
+                "kind": "sandbox-detail",
+                "sha256": "28b1db7f51e1d821d0b95a08216ee75543d639d30187c2df3c86a1931b706516",
+                "text": "entry-point parameters differ from the task"
+              }
+            ],
+            "receipt_sha256": "f83b7c49903f344cadd2e97a4b85defe089d23f766e1a72d6174a3a76fb43ac4",
+            "succeeded": false
+          },
+          "status": "sandbox:signature_error"
+        }
+      ],
+      "control_solved_online": false,
+      "public_observation_sha256": "c12a8e115bbf1fe887b66788990a83294915ef7943e0c7ee352b69f87ae3f626",
+      "solved_online": false,
+      "stage": "unseen-behavior",
+      "task_index": 11,
+      "task_sha256": "56f6c3c601697bd74c1f6590e593fea7feb7a4b451105194578868cc86e1bb98"
+    }
+  ]
+}

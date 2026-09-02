@@ -1,0 +1,4981 @@
+{
+  "case_count": 3,
+  "cases": [
+    {
+      "binding_off": {
+        "expected_placeholder_output": "let <@local> = drift(<@input>); send indigo(<@local>)",
+        "fixture_exact": false,
+        "output": "let <@local> = drift(<@input>); send indigo(<@local>)",
+        "output_sha256": "44d6b662716890694f581ac05ef84376024d5971e71bacf9d10c6a01710006dc",
+        "physical_trace": true,
+        "placeholder_exact": true,
+        "trace": {
+          "ablation": "binding_off",
+          "binding_races": [],
+          "cue_words": [
+            "cud",
+            "ulna"
+          ],
+          "emitted_fragment_cells": [
+            11,
+            2,
+            15,
+            2,
+            6,
+            2,
+            8,
+            3,
+            1,
+            4,
+            5,
+            2,
+            12,
+            2,
+            10,
+            3,
+            15,
+            4
+          ],
+          "emitted_token_ids": [
+            269,
+            32,
+            60,
+            64,
+            108,
+            111,
+            99,
+            97,
+            108,
+            62,
+            32,
+            61,
+            32,
+            265,
+            40,
+            60,
+            64,
+            105,
+            110,
+            112,
+            117,
+            116,
+            62,
+            41,
+            59,
+            32,
+            268,
+            32,
+            262,
+            40,
+            60,
+            64,
+            108,
+            111,
+            99,
+            97,
+            108,
+            62,
+            41
+          ],
+          "fragment_steps": [
+            {
+              "candidate_cells": [
+                11,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 0,
+              "winner_cell": 11,
+              "winner_kind": "literal",
+              "winner_text": "let"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 1,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                15,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 2,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 3,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                6,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 4,
+              "winner_cell": 6,
+              "winner_kind": "literal",
+              "winner_text": "="
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 5,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                8,
+                9,
+                14,
+                17
+              ],
+              "candidate_scores": [
+                0.5083333333333333,
+                0.0,
+                0.0,
+                0.2
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 6,
+              "winner_cell": 8,
+              "winner_kind": "literal",
+              "winner_text": "drift"
+            },
+            {
+              "candidate_cells": [
+                3,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 7,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                1,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 8,
+              "winner_cell": 1,
+              "winner_kind": "input",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 9,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            },
+            {
+              "candidate_cells": [
+                5,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 10,
+              "winner_cell": 5,
+              "winner_kind": "literal",
+              "winner_text": ";"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 11,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                12,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 12,
+              "winner_cell": 12,
+              "winner_kind": "literal",
+              "winner_text": "send"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 13,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                7,
+                10,
+                13,
+                17
+              ],
+              "candidate_scores": [
+                0.0,
+                0.5083333333333333,
+                0.0,
+                0.2
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 14,
+              "winner_cell": 10,
+              "winner_kind": "literal",
+              "winner_text": "indigo"
+            },
+            {
+              "candidate_cells": [
+                3,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 15,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                15,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 16,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 17,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            },
+            {
+              "candidate_cells": [
+                17
+              ],
+              "candidate_scores": [
+                1.2
+              ],
+              "simulated_steps": 52,
+              "spike_time_ms": 2.6,
+              "step": 18,
+              "winner_cell": 17,
+              "winner_kind": "stop",
+              "winner_text": ""
+            }
+          ],
+          "model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+          "output": "let <@local> = drift(<@input>); send indigo(<@local>)",
+          "query_sha256": "51916e5da00c464ea6bba3133f3b4904332985699097ba28cae6065e6ad16663",
+          "selected_stop": false,
+          "terminal_stop": true,
+          "trace_sha256": "fcb94cfbbed728092f032352c63ce1025bf1389a52b84f9b20056e0544a690b5"
+        }
+      },
+      "case_id": "fresh-composition-00",
+      "fresh_local_binding": {
+        "binding_race_count": 1,
+        "binding_winner_symbol": "_v8",
+        "input_symbol": "novel_quartz",
+        "local_not_public_symbols": true,
+        "local_reused_by_output_grammar": true,
+        "local_symbol": "_v8",
+        "passed": true
+      },
+      "projection_off": {
+        "fixture_exact": false,
+        "output": "<stop>insufficient learned fragment evidence</stop>",
+        "output_sha256": "e9a8aadda814b382e13b5bafb9502b19756d8f4cce6ff05f60c7855cdad8c0dc",
+        "physical_trace": true,
+        "trace": {
+          "ablation": "fragment_projection_off",
+          "binding_races": [
+            {
+              "candidate_count": 64,
+              "simulated_steps": 63,
+              "slot": 0,
+              "spike_time_ms": 3.1500000000000004,
+              "symbol": "_v8",
+              "winner_cell": 26
+            }
+          ],
+          "cue_words": [
+            "cud",
+            "ulna"
+          ],
+          "emitted_fragment_cells": [
+            11,
+            2,
+            15,
+            2,
+            6,
+            2
+          ],
+          "emitted_token_ids": [
+            60,
+            115,
+            116,
+            111,
+            112,
+            62,
+            105,
+            110,
+            115,
+            117,
+            102,
+            102,
+            105,
+            99,
+            105,
+            101,
+            110,
+            116,
+            32,
+            108,
+            101,
+            97,
+            114,
+            110,
+            101,
+            100,
+            32,
+            102,
+            114,
+            97,
+            103,
+            109,
+            101,
+            110,
+            116,
+            32,
+            101,
+            118,
+            105,
+            100,
+            101,
+            110,
+            99,
+            101,
+            60,
+            47,
+            115,
+            116,
+            111,
+            112,
+            62
+          ],
+          "fragment_steps": [
+            {
+              "candidate_cells": [
+                11,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 0,
+              "winner_cell": 11,
+              "winner_kind": "literal",
+              "winner_text": "let"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 1,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                15,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 2,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 3,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                6,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 4,
+              "winner_cell": 6,
+              "winner_kind": "literal",
+              "winner_text": "="
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 5,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                8,
+                9,
+                14,
+                17
+              ],
+              "candidate_scores": [
+                0.0,
+                0.0,
+                0.0,
+                0.2
+              ],
+              "simulated_steps": 724,
+              "spike_time_ms": 36.2,
+              "step": 6,
+              "winner_cell": 17,
+              "winner_kind": "stop",
+              "winner_text": ""
+            }
+          ],
+          "model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+          "output": "<stop>insufficient learned fragment evidence</stop>",
+          "query_sha256": "51916e5da00c464ea6bba3133f3b4904332985699097ba28cae6065e6ad16663",
+          "selected_stop": true,
+          "terminal_stop": false,
+          "trace_sha256": "8a76a8bf343598288e34ddc64ce3adb4204ea35e7a8098c25880873d9fe3a123"
+        }
+      },
+      "public_observation": {
+        "case_id": "fresh-composition-00",
+        "cue_a": "ulna",
+        "cue_b": "cud",
+        "input_symbol": "novel_quartz"
+      },
+      "scoring_custody": {
+        "binding_off_output": "let <@local> = drift(<@input>); send indigo(<@local>)",
+        "case_id": "fresh-composition-00",
+        "cue_a": "ulna",
+        "cue_b": "cud",
+        "input_symbol": "novel_quartz",
+        "scoring_only_factor_a": "drift",
+        "scoring_only_factor_b": "indigo"
+      },
+      "stop_off": {
+        "fixture_exact": true,
+        "output": "let _v8 = drift(novel_quartz); send indigo(_v8)",
+        "output_sha256": "23f96d8ee6f871eb256a3236af64d3e16861197a8805b71757c26f00b6445a5e",
+        "physical_trace": true,
+        "trace": {
+          "ablation": "stop_off",
+          "binding_races": [
+            {
+              "candidate_count": 64,
+              "simulated_steps": 63,
+              "slot": 0,
+              "spike_time_ms": 3.1500000000000004,
+              "symbol": "_v8",
+              "winner_cell": 26
+            }
+          ],
+          "cue_words": [
+            "cud",
+            "ulna"
+          ],
+          "emitted_fragment_cells": [
+            11,
+            2,
+            15,
+            2,
+            6,
+            2,
+            8,
+            3,
+            1,
+            4,
+            5,
+            2,
+            12,
+            2,
+            10,
+            3,
+            15,
+            4
+          ],
+          "emitted_token_ids": [
+            269,
+            32,
+            95,
+            118,
+            56,
+            32,
+            61,
+            32,
+            265,
+            40,
+            110,
+            111,
+            118,
+            101,
+            108,
+            95,
+            113,
+            117,
+            97,
+            114,
+            116,
+            122,
+            41,
+            59,
+            32,
+            268,
+            32,
+            262,
+            40,
+            95,
+            118,
+            56,
+            41
+          ],
+          "fragment_steps": [
+            {
+              "candidate_cells": [
+                11
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 0,
+              "winner_cell": 11,
+              "winner_kind": "literal",
+              "winner_text": "let"
+            },
+            {
+              "candidate_cells": [
+                2
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 1,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                15
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 2,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                2
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 3,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                6
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 4,
+              "winner_cell": 6,
+              "winner_kind": "literal",
+              "winner_text": "="
+            },
+            {
+              "candidate_cells": [
+                2
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 5,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                8,
+                9,
+                14
+              ],
+              "candidate_scores": [
+                0.5083333333333333,
+                0.0,
+                0.0
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 6,
+              "winner_cell": 8,
+              "winner_kind": "literal",
+              "winner_text": "drift"
+            },
+            {
+              "candidate_cells": [
+                3
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 7,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                1
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 8,
+              "winner_cell": 1,
+              "winner_kind": "input",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 9,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            },
+            {
+              "candidate_cells": [
+                5
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 10,
+              "winner_cell": 5,
+              "winner_kind": "literal",
+              "winner_text": ";"
+            },
+            {
+              "candidate_cells": [
+                2
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 11,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                12
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 12,
+              "winner_cell": 12,
+              "winner_kind": "literal",
+              "winner_text": "send"
+            },
+            {
+              "candidate_cells": [
+                2
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 13,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                7,
+                10,
+                13
+              ],
+              "candidate_scores": [
+                0.0,
+                0.5083333333333333,
+                0.0
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 14,
+              "winner_cell": 10,
+              "winner_kind": "literal",
+              "winner_text": "indigo"
+            },
+            {
+              "candidate_cells": [
+                3
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 15,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                15
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 16,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 17,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            }
+          ],
+          "model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+          "output": "let _v8 = drift(novel_quartz); send indigo(_v8)",
+          "query_sha256": "51916e5da00c464ea6bba3133f3b4904332985699097ba28cae6065e6ad16663",
+          "selected_stop": false,
+          "terminal_stop": false,
+          "trace_sha256": "75e507570d34da5924880c27fa7e5bb4a325f98d9bf784df6becc7236913c6ba"
+        }
+      },
+      "treatment": {
+        "fixture_exact": true,
+        "output": "let _v8 = drift(novel_quartz); send indigo(_v8)",
+        "output_sha256": "23f96d8ee6f871eb256a3236af64d3e16861197a8805b71757c26f00b6445a5e",
+        "physical_trace": true,
+        "trace": {
+          "ablation": null,
+          "binding_races": [
+            {
+              "candidate_count": 64,
+              "simulated_steps": 63,
+              "slot": 0,
+              "spike_time_ms": 3.1500000000000004,
+              "symbol": "_v8",
+              "winner_cell": 26
+            }
+          ],
+          "cue_words": [
+            "cud",
+            "ulna"
+          ],
+          "emitted_fragment_cells": [
+            11,
+            2,
+            15,
+            2,
+            6,
+            2,
+            8,
+            3,
+            1,
+            4,
+            5,
+            2,
+            12,
+            2,
+            10,
+            3,
+            15,
+            4
+          ],
+          "emitted_token_ids": [
+            269,
+            32,
+            95,
+            118,
+            56,
+            32,
+            61,
+            32,
+            265,
+            40,
+            110,
+            111,
+            118,
+            101,
+            108,
+            95,
+            113,
+            117,
+            97,
+            114,
+            116,
+            122,
+            41,
+            59,
+            32,
+            268,
+            32,
+            262,
+            40,
+            95,
+            118,
+            56,
+            41
+          ],
+          "fragment_steps": [
+            {
+              "candidate_cells": [
+                11,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 0,
+              "winner_cell": 11,
+              "winner_kind": "literal",
+              "winner_text": "let"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 1,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                15,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 2,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 3,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                6,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 4,
+              "winner_cell": 6,
+              "winner_kind": "literal",
+              "winner_text": "="
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 5,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                8,
+                9,
+                14,
+                17
+              ],
+              "candidate_scores": [
+                0.5083333333333333,
+                0.0,
+                0.0,
+                0.2
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 6,
+              "winner_cell": 8,
+              "winner_kind": "literal",
+              "winner_text": "drift"
+            },
+            {
+              "candidate_cells": [
+                3,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 7,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                1,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 8,
+              "winner_cell": 1,
+              "winner_kind": "input",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 9,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            },
+            {
+              "candidate_cells": [
+                5,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 10,
+              "winner_cell": 5,
+              "winner_kind": "literal",
+              "winner_text": ";"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 11,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                12,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 12,
+              "winner_cell": 12,
+              "winner_kind": "literal",
+              "winner_text": "send"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 13,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                7,
+                10,
+                13,
+                17
+              ],
+              "candidate_scores": [
+                0.0,
+                0.5083333333333333,
+                0.0,
+                0.2
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 14,
+              "winner_cell": 10,
+              "winner_kind": "literal",
+              "winner_text": "indigo"
+            },
+            {
+              "candidate_cells": [
+                3,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 15,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                15,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 16,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 17,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            },
+            {
+              "candidate_cells": [
+                17
+              ],
+              "candidate_scores": [
+                1.2
+              ],
+              "simulated_steps": 52,
+              "spike_time_ms": 2.6,
+              "step": 18,
+              "winner_cell": 17,
+              "winner_kind": "stop",
+              "winner_text": ""
+            }
+          ],
+          "model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+          "output": "let _v8 = drift(novel_quartz); send indigo(_v8)",
+          "query_sha256": "51916e5da00c464ea6bba3133f3b4904332985699097ba28cae6065e6ad16663",
+          "selected_stop": false,
+          "terminal_stop": true,
+          "trace_sha256": "a810459191f50622ec62ff5f937d9979b97b739d0f0c834ecf21a0e8d7ade74c"
+        }
+      },
+      "whole_episode_only": {
+        "fixture_exact": false,
+        "output": "<stop>whole episode miss</stop>",
+        "output_sha256": "041c32b2039a3553b9cff5b2566393b758cb8df7ce8cd21ae7b5fc7d408fec03",
+        "physical_trace": true,
+        "trace": {
+          "ablation": "whole_episode_only",
+          "binding_races": [],
+          "cue_words": [
+            "cud",
+            "ulna"
+          ],
+          "emitted_fragment_cells": [],
+          "emitted_token_ids": [
+            60,
+            115,
+            116,
+            111,
+            112,
+            62,
+            119,
+            104,
+            111,
+            108,
+            101,
+            32,
+            101,
+            112,
+            105,
+            115,
+            111,
+            100,
+            101,
+            32,
+            109,
+            105,
+            115,
+            115,
+            60,
+            47,
+            115,
+            116,
+            111,
+            112,
+            62
+          ],
+          "fragment_steps": [
+            {
+              "candidate_cells": [
+                17
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 0,
+              "winner_cell": 17,
+              "winner_kind": "stop",
+              "winner_text": ""
+            }
+          ],
+          "model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+          "output": "<stop>whole episode miss</stop>",
+          "query_sha256": "51916e5da00c464ea6bba3133f3b4904332985699097ba28cae6065e6ad16663",
+          "selected_stop": true,
+          "terminal_stop": false,
+          "trace_sha256": "40e141fc67f8162ee22167ed863f9611d8c5dfec8115150541b3d63d9d3fd9ca"
+        }
+      }
+    },
+    {
+      "binding_off": {
+        "expected_placeholder_output": "let <@local> = weave(<@input>); send silver(<@local>)",
+        "fixture_exact": false,
+        "output": "let <@local> = weave(<@input>); send silver(<@local>)",
+        "output_sha256": "0a5f6ddf4d7393caa733c05e3e054dee5cb5c233b1823b64147515e310c0fa33",
+        "physical_trace": true,
+        "placeholder_exact": true,
+        "trace": {
+          "ablation": "binding_off",
+          "binding_races": [],
+          "cue_words": [
+            "dor",
+            "vori"
+          ],
+          "emitted_fragment_cells": [
+            11,
+            2,
+            15,
+            2,
+            6,
+            2,
+            14,
+            3,
+            1,
+            4,
+            5,
+            2,
+            12,
+            2,
+            13,
+            3,
+            15,
+            4
+          ],
+          "emitted_token_ids": [
+            269,
+            32,
+            60,
+            64,
+            108,
+            111,
+            99,
+            97,
+            108,
+            62,
+            32,
+            61,
+            32,
+            267,
+            40,
+            60,
+            64,
+            105,
+            110,
+            112,
+            117,
+            116,
+            62,
+            41,
+            59,
+            32,
+            268,
+            32,
+            263,
+            40,
+            60,
+            64,
+            108,
+            111,
+            99,
+            97,
+            108,
+            62,
+            41
+          ],
+          "fragment_steps": [
+            {
+              "candidate_cells": [
+                11,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 0,
+              "winner_cell": 11,
+              "winner_kind": "literal",
+              "winner_text": "let"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 1,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                15,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 2,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 3,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                6,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 4,
+              "winner_cell": 6,
+              "winner_kind": "literal",
+              "winner_text": "="
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 5,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                8,
+                9,
+                14,
+                17
+              ],
+              "candidate_scores": [
+                0.0,
+                0.0,
+                0.5083333333333333,
+                0.2
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 6,
+              "winner_cell": 14,
+              "winner_kind": "literal",
+              "winner_text": "weave"
+            },
+            {
+              "candidate_cells": [
+                3,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 7,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                1,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 8,
+              "winner_cell": 1,
+              "winner_kind": "input",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 9,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            },
+            {
+              "candidate_cells": [
+                5,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 10,
+              "winner_cell": 5,
+              "winner_kind": "literal",
+              "winner_text": ";"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 11,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                12,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 12,
+              "winner_cell": 12,
+              "winner_kind": "literal",
+              "winner_text": "send"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 13,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                7,
+                10,
+                13,
+                17
+              ],
+              "candidate_scores": [
+                0.0,
+                0.0,
+                0.5083333333333333,
+                0.2
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 14,
+              "winner_cell": 13,
+              "winner_kind": "literal",
+              "winner_text": "silver"
+            },
+            {
+              "candidate_cells": [
+                3,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 15,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                15,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 16,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 17,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            },
+            {
+              "candidate_cells": [
+                17
+              ],
+              "candidate_scores": [
+                1.2
+              ],
+              "simulated_steps": 52,
+              "spike_time_ms": 2.6,
+              "step": 18,
+              "winner_cell": 17,
+              "winner_kind": "stop",
+              "winner_text": ""
+            }
+          ],
+          "model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+          "output": "let <@local> = weave(<@input>); send silver(<@local>)",
+          "query_sha256": "bddf35a6ff00c4147c753edc0d41c601c63d34162af696ef425005adc6405180",
+          "selected_stop": false,
+          "terminal_stop": true,
+          "trace_sha256": "01a8f761f875f6614bd03ceb73a77fb23e88362205b325c2f041164bbb9856ed"
+        }
+      },
+      "case_id": "fresh-composition-01",
+      "fresh_local_binding": {
+        "binding_race_count": 1,
+        "binding_winner_symbol": "_v8",
+        "input_symbol": "novel_raven",
+        "local_not_public_symbols": true,
+        "local_reused_by_output_grammar": true,
+        "local_symbol": "_v8",
+        "passed": true
+      },
+      "projection_off": {
+        "fixture_exact": false,
+        "output": "<stop>insufficient learned fragment evidence</stop>",
+        "output_sha256": "e9a8aadda814b382e13b5bafb9502b19756d8f4cce6ff05f60c7855cdad8c0dc",
+        "physical_trace": true,
+        "trace": {
+          "ablation": "fragment_projection_off",
+          "binding_races": [
+            {
+              "candidate_count": 64,
+              "simulated_steps": 63,
+              "slot": 0,
+              "spike_time_ms": 3.1500000000000004,
+              "symbol": "_v8",
+              "winner_cell": 26
+            }
+          ],
+          "cue_words": [
+            "dor",
+            "vori"
+          ],
+          "emitted_fragment_cells": [
+            11,
+            2,
+            15,
+            2,
+            6,
+            2
+          ],
+          "emitted_token_ids": [
+            60,
+            115,
+            116,
+            111,
+            112,
+            62,
+            105,
+            110,
+            115,
+            117,
+            102,
+            102,
+            105,
+            99,
+            105,
+            101,
+            110,
+            116,
+            32,
+            108,
+            101,
+            97,
+            114,
+            110,
+            101,
+            100,
+            32,
+            102,
+            114,
+            97,
+            103,
+            109,
+            101,
+            110,
+            116,
+            32,
+            101,
+            118,
+            105,
+            100,
+            101,
+            110,
+            99,
+            101,
+            60,
+            47,
+            115,
+            116,
+            111,
+            112,
+            62
+          ],
+          "fragment_steps": [
+            {
+              "candidate_cells": [
+                11,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 0,
+              "winner_cell": 11,
+              "winner_kind": "literal",
+              "winner_text": "let"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 1,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                15,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 2,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 3,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                6,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 4,
+              "winner_cell": 6,
+              "winner_kind": "literal",
+              "winner_text": "="
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 5,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                8,
+                9,
+                14,
+                17
+              ],
+              "candidate_scores": [
+                0.0,
+                0.0,
+                0.0,
+                0.2
+              ],
+              "simulated_steps": 724,
+              "spike_time_ms": 36.2,
+              "step": 6,
+              "winner_cell": 17,
+              "winner_kind": "stop",
+              "winner_text": ""
+            }
+          ],
+          "model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+          "output": "<stop>insufficient learned fragment evidence</stop>",
+          "query_sha256": "bddf35a6ff00c4147c753edc0d41c601c63d34162af696ef425005adc6405180",
+          "selected_stop": true,
+          "terminal_stop": false,
+          "trace_sha256": "bee5ae01c97565e206887d49da851748e6d046af94672a8265ad6554c5b9e9b4"
+        }
+      },
+      "public_observation": {
+        "case_id": "fresh-composition-01",
+        "cue_a": "vori",
+        "cue_b": "dor",
+        "input_symbol": "novel_raven"
+      },
+      "scoring_custody": {
+        "binding_off_output": "let <@local> = weave(<@input>); send silver(<@local>)",
+        "case_id": "fresh-composition-01",
+        "cue_a": "vori",
+        "cue_b": "dor",
+        "input_symbol": "novel_raven",
+        "scoring_only_factor_a": "weave",
+        "scoring_only_factor_b": "silver"
+      },
+      "stop_off": {
+        "fixture_exact": true,
+        "output": "let _v8 = weave(novel_raven); send silver(_v8)",
+        "output_sha256": "8f014d56e7754131259a8dac94c32c32f0fa8761358e41c3e4681b59c2785d1d",
+        "physical_trace": true,
+        "trace": {
+          "ablation": "stop_off",
+          "binding_races": [
+            {
+              "candidate_count": 64,
+              "simulated_steps": 63,
+              "slot": 0,
+              "spike_time_ms": 3.1500000000000004,
+              "symbol": "_v8",
+              "winner_cell": 26
+            }
+          ],
+          "cue_words": [
+            "dor",
+            "vori"
+          ],
+          "emitted_fragment_cells": [
+            11,
+            2,
+            15,
+            2,
+            6,
+            2,
+            14,
+            3,
+            1,
+            4,
+            5,
+            2,
+            12,
+            2,
+            13,
+            3,
+            15,
+            4
+          ],
+          "emitted_token_ids": [
+            269,
+            32,
+            95,
+            118,
+            56,
+            32,
+            61,
+            32,
+            267,
+            40,
+            110,
+            111,
+            118,
+            101,
+            108,
+            95,
+            114,
+            97,
+            118,
+            101,
+            110,
+            41,
+            59,
+            32,
+            268,
+            32,
+            263,
+            40,
+            95,
+            118,
+            56,
+            41
+          ],
+          "fragment_steps": [
+            {
+              "candidate_cells": [
+                11
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 0,
+              "winner_cell": 11,
+              "winner_kind": "literal",
+              "winner_text": "let"
+            },
+            {
+              "candidate_cells": [
+                2
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 1,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                15
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 2,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                2
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 3,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                6
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 4,
+              "winner_cell": 6,
+              "winner_kind": "literal",
+              "winner_text": "="
+            },
+            {
+              "candidate_cells": [
+                2
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 5,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                8,
+                9,
+                14
+              ],
+              "candidate_scores": [
+                0.0,
+                0.0,
+                0.5083333333333333
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 6,
+              "winner_cell": 14,
+              "winner_kind": "literal",
+              "winner_text": "weave"
+            },
+            {
+              "candidate_cells": [
+                3
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 7,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                1
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 8,
+              "winner_cell": 1,
+              "winner_kind": "input",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 9,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            },
+            {
+              "candidate_cells": [
+                5
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 10,
+              "winner_cell": 5,
+              "winner_kind": "literal",
+              "winner_text": ";"
+            },
+            {
+              "candidate_cells": [
+                2
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 11,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                12
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 12,
+              "winner_cell": 12,
+              "winner_kind": "literal",
+              "winner_text": "send"
+            },
+            {
+              "candidate_cells": [
+                2
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 13,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                7,
+                10,
+                13
+              ],
+              "candidate_scores": [
+                0.0,
+                0.0,
+                0.5083333333333333
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 14,
+              "winner_cell": 13,
+              "winner_kind": "literal",
+              "winner_text": "silver"
+            },
+            {
+              "candidate_cells": [
+                3
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 15,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                15
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 16,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 17,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            }
+          ],
+          "model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+          "output": "let _v8 = weave(novel_raven); send silver(_v8)",
+          "query_sha256": "bddf35a6ff00c4147c753edc0d41c601c63d34162af696ef425005adc6405180",
+          "selected_stop": false,
+          "terminal_stop": false,
+          "trace_sha256": "1ac4d764b677e3724c3ed19f1f387f8bbb9b3e0aa8d48b86ed7df8761f51af5b"
+        }
+      },
+      "treatment": {
+        "fixture_exact": true,
+        "output": "let _v8 = weave(novel_raven); send silver(_v8)",
+        "output_sha256": "8f014d56e7754131259a8dac94c32c32f0fa8761358e41c3e4681b59c2785d1d",
+        "physical_trace": true,
+        "trace": {
+          "ablation": null,
+          "binding_races": [
+            {
+              "candidate_count": 64,
+              "simulated_steps": 63,
+              "slot": 0,
+              "spike_time_ms": 3.1500000000000004,
+              "symbol": "_v8",
+              "winner_cell": 26
+            }
+          ],
+          "cue_words": [
+            "dor",
+            "vori"
+          ],
+          "emitted_fragment_cells": [
+            11,
+            2,
+            15,
+            2,
+            6,
+            2,
+            14,
+            3,
+            1,
+            4,
+            5,
+            2,
+            12,
+            2,
+            13,
+            3,
+            15,
+            4
+          ],
+          "emitted_token_ids": [
+            269,
+            32,
+            95,
+            118,
+            56,
+            32,
+            61,
+            32,
+            267,
+            40,
+            110,
+            111,
+            118,
+            101,
+            108,
+            95,
+            114,
+            97,
+            118,
+            101,
+            110,
+            41,
+            59,
+            32,
+            268,
+            32,
+            263,
+            40,
+            95,
+            118,
+            56,
+            41
+          ],
+          "fragment_steps": [
+            {
+              "candidate_cells": [
+                11,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 0,
+              "winner_cell": 11,
+              "winner_kind": "literal",
+              "winner_text": "let"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 1,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                15,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 2,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 3,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                6,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 4,
+              "winner_cell": 6,
+              "winner_kind": "literal",
+              "winner_text": "="
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 5,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                8,
+                9,
+                14,
+                17
+              ],
+              "candidate_scores": [
+                0.0,
+                0.0,
+                0.5083333333333333,
+                0.2
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 6,
+              "winner_cell": 14,
+              "winner_kind": "literal",
+              "winner_text": "weave"
+            },
+            {
+              "candidate_cells": [
+                3,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 7,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                1,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 8,
+              "winner_cell": 1,
+              "winner_kind": "input",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 9,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            },
+            {
+              "candidate_cells": [
+                5,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 10,
+              "winner_cell": 5,
+              "winner_kind": "literal",
+              "winner_text": ";"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 11,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                12,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 12,
+              "winner_cell": 12,
+              "winner_kind": "literal",
+              "winner_text": "send"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 13,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                7,
+                10,
+                13,
+                17
+              ],
+              "candidate_scores": [
+                0.0,
+                0.0,
+                0.5083333333333333,
+                0.2
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 14,
+              "winner_cell": 13,
+              "winner_kind": "literal",
+              "winner_text": "silver"
+            },
+            {
+              "candidate_cells": [
+                3,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 15,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                15,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 16,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 17,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            },
+            {
+              "candidate_cells": [
+                17
+              ],
+              "candidate_scores": [
+                1.2
+              ],
+              "simulated_steps": 52,
+              "spike_time_ms": 2.6,
+              "step": 18,
+              "winner_cell": 17,
+              "winner_kind": "stop",
+              "winner_text": ""
+            }
+          ],
+          "model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+          "output": "let _v8 = weave(novel_raven); send silver(_v8)",
+          "query_sha256": "bddf35a6ff00c4147c753edc0d41c601c63d34162af696ef425005adc6405180",
+          "selected_stop": false,
+          "terminal_stop": true,
+          "trace_sha256": "9489e190ae15f44abe1431c03f12582f237c21e32171260a606a88e85dc28bd0"
+        }
+      },
+      "whole_episode_only": {
+        "fixture_exact": false,
+        "output": "<stop>whole episode miss</stop>",
+        "output_sha256": "041c32b2039a3553b9cff5b2566393b758cb8df7ce8cd21ae7b5fc7d408fec03",
+        "physical_trace": true,
+        "trace": {
+          "ablation": "whole_episode_only",
+          "binding_races": [],
+          "cue_words": [
+            "dor",
+            "vori"
+          ],
+          "emitted_fragment_cells": [],
+          "emitted_token_ids": [
+            60,
+            115,
+            116,
+            111,
+            112,
+            62,
+            119,
+            104,
+            111,
+            108,
+            101,
+            32,
+            101,
+            112,
+            105,
+            115,
+            111,
+            100,
+            101,
+            32,
+            109,
+            105,
+            115,
+            115,
+            60,
+            47,
+            115,
+            116,
+            111,
+            112,
+            62
+          ],
+          "fragment_steps": [
+            {
+              "candidate_cells": [
+                17
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 0,
+              "winner_cell": 17,
+              "winner_kind": "stop",
+              "winner_text": ""
+            }
+          ],
+          "model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+          "output": "<stop>whole episode miss</stop>",
+          "query_sha256": "bddf35a6ff00c4147c753edc0d41c601c63d34162af696ef425005adc6405180",
+          "selected_stop": true,
+          "terminal_stop": false,
+          "trace_sha256": "a1e660766af46ea54994887d760827cdb13ac32dad03bb531921cc328d215af1"
+        }
+      }
+    },
+    {
+      "binding_off": {
+        "expected_placeholder_output": "let <@local> = hinge(<@input>); send amber(<@local>)",
+        "fixture_exact": false,
+        "output": "let <@local> = hinge(<@input>); send amber(<@local>)",
+        "output_sha256": "a5925011f985d0538f26a263e5c51c1a74a78c062c8449aecb9271cd08a2a41e",
+        "physical_trace": true,
+        "placeholder_exact": true,
+        "trace": {
+          "ablation": "binding_off",
+          "binding_races": [],
+          "cue_words": [
+            "bex",
+            "xema"
+          ],
+          "emitted_fragment_cells": [
+            11,
+            2,
+            15,
+            2,
+            6,
+            2,
+            9,
+            3,
+            1,
+            4,
+            5,
+            2,
+            12,
+            2,
+            7,
+            3,
+            15,
+            4
+          ],
+          "emitted_token_ids": [
+            269,
+            32,
+            60,
+            64,
+            108,
+            111,
+            99,
+            97,
+            108,
+            62,
+            32,
+            61,
+            32,
+            266,
+            40,
+            60,
+            64,
+            105,
+            110,
+            112,
+            117,
+            116,
+            62,
+            41,
+            59,
+            32,
+            268,
+            32,
+            264,
+            40,
+            60,
+            64,
+            108,
+            111,
+            99,
+            97,
+            108,
+            62,
+            41
+          ],
+          "fragment_steps": [
+            {
+              "candidate_cells": [
+                11,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 0,
+              "winner_cell": 11,
+              "winner_kind": "literal",
+              "winner_text": "let"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 1,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                15,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 2,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 3,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                6,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 4,
+              "winner_cell": 6,
+              "winner_kind": "literal",
+              "winner_text": "="
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 5,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                8,
+                9,
+                14,
+                17
+              ],
+              "candidate_scores": [
+                0.0,
+                0.5083333333333333,
+                0.0,
+                0.2
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 6,
+              "winner_cell": 9,
+              "winner_kind": "literal",
+              "winner_text": "hinge"
+            },
+            {
+              "candidate_cells": [
+                3,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 7,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                1,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 8,
+              "winner_cell": 1,
+              "winner_kind": "input",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 9,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            },
+            {
+              "candidate_cells": [
+                5,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 10,
+              "winner_cell": 5,
+              "winner_kind": "literal",
+              "winner_text": ";"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 11,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                12,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 12,
+              "winner_cell": 12,
+              "winner_kind": "literal",
+              "winner_text": "send"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 13,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                7,
+                10,
+                13,
+                17
+              ],
+              "candidate_scores": [
+                0.5083333333333333,
+                0.0,
+                0.0,
+                0.2
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 14,
+              "winner_cell": 7,
+              "winner_kind": "literal",
+              "winner_text": "amber"
+            },
+            {
+              "candidate_cells": [
+                3,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 15,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                15,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 16,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 17,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            },
+            {
+              "candidate_cells": [
+                17
+              ],
+              "candidate_scores": [
+                1.2
+              ],
+              "simulated_steps": 52,
+              "spike_time_ms": 2.6,
+              "step": 18,
+              "winner_cell": 17,
+              "winner_kind": "stop",
+              "winner_text": ""
+            }
+          ],
+          "model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+          "output": "let <@local> = hinge(<@input>); send amber(<@local>)",
+          "query_sha256": "e469be8fec5c9cd7e2ac576a9b1f94f969a2a4487a946c5de9d41aab50d5b173",
+          "selected_stop": false,
+          "terminal_stop": true,
+          "trace_sha256": "37dd1dc5fe0113494c03fd539122a6be88e9b9937131b54dcc4b5d56b8e294d3"
+        }
+      },
+      "case_id": "fresh-composition-02",
+      "fresh_local_binding": {
+        "binding_race_count": 1,
+        "binding_winner_symbol": "_v8",
+        "input_symbol": "novel_thistle",
+        "local_not_public_symbols": true,
+        "local_reused_by_output_grammar": true,
+        "local_symbol": "_v8",
+        "passed": true
+      },
+      "projection_off": {
+        "fixture_exact": false,
+        "output": "<stop>insufficient learned fragment evidence</stop>",
+        "output_sha256": "e9a8aadda814b382e13b5bafb9502b19756d8f4cce6ff05f60c7855cdad8c0dc",
+        "physical_trace": true,
+        "trace": {
+          "ablation": "fragment_projection_off",
+          "binding_races": [
+            {
+              "candidate_count": 64,
+              "simulated_steps": 63,
+              "slot": 0,
+              "spike_time_ms": 3.1500000000000004,
+              "symbol": "_v8",
+              "winner_cell": 26
+            }
+          ],
+          "cue_words": [
+            "bex",
+            "xema"
+          ],
+          "emitted_fragment_cells": [
+            11,
+            2,
+            15,
+            2,
+            6,
+            2
+          ],
+          "emitted_token_ids": [
+            60,
+            115,
+            116,
+            111,
+            112,
+            62,
+            105,
+            110,
+            115,
+            117,
+            102,
+            102,
+            105,
+            99,
+            105,
+            101,
+            110,
+            116,
+            32,
+            108,
+            101,
+            97,
+            114,
+            110,
+            101,
+            100,
+            32,
+            102,
+            114,
+            97,
+            103,
+            109,
+            101,
+            110,
+            116,
+            32,
+            101,
+            118,
+            105,
+            100,
+            101,
+            110,
+            99,
+            101,
+            60,
+            47,
+            115,
+            116,
+            111,
+            112,
+            62
+          ],
+          "fragment_steps": [
+            {
+              "candidate_cells": [
+                11,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 0,
+              "winner_cell": 11,
+              "winner_kind": "literal",
+              "winner_text": "let"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 1,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                15,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 2,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 3,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                6,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 4,
+              "winner_cell": 6,
+              "winner_kind": "literal",
+              "winner_text": "="
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 5,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                8,
+                9,
+                14,
+                17
+              ],
+              "candidate_scores": [
+                0.0,
+                0.0,
+                0.0,
+                0.2
+              ],
+              "simulated_steps": 724,
+              "spike_time_ms": 36.2,
+              "step": 6,
+              "winner_cell": 17,
+              "winner_kind": "stop",
+              "winner_text": ""
+            }
+          ],
+          "model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+          "output": "<stop>insufficient learned fragment evidence</stop>",
+          "query_sha256": "e469be8fec5c9cd7e2ac576a9b1f94f969a2a4487a946c5de9d41aab50d5b173",
+          "selected_stop": true,
+          "terminal_stop": false,
+          "trace_sha256": "93c6c72feff05fe3eafabdb32719e8fa8acfc1696ac9bedce94274303cc020d5"
+        }
+      },
+      "public_observation": {
+        "case_id": "fresh-composition-02",
+        "cue_a": "xema",
+        "cue_b": "bex",
+        "input_symbol": "novel_thistle"
+      },
+      "scoring_custody": {
+        "binding_off_output": "let <@local> = hinge(<@input>); send amber(<@local>)",
+        "case_id": "fresh-composition-02",
+        "cue_a": "xema",
+        "cue_b": "bex",
+        "input_symbol": "novel_thistle",
+        "scoring_only_factor_a": "hinge",
+        "scoring_only_factor_b": "amber"
+      },
+      "stop_off": {
+        "fixture_exact": true,
+        "output": "let _v8 = hinge(novel_thistle); send amber(_v8)",
+        "output_sha256": "0814b820c29350732bb5cc40757ff09f7ca007869bf6f444eba504c8a8f26fbf",
+        "physical_trace": true,
+        "trace": {
+          "ablation": "stop_off",
+          "binding_races": [
+            {
+              "candidate_count": 64,
+              "simulated_steps": 63,
+              "slot": 0,
+              "spike_time_ms": 3.1500000000000004,
+              "symbol": "_v8",
+              "winner_cell": 26
+            }
+          ],
+          "cue_words": [
+            "bex",
+            "xema"
+          ],
+          "emitted_fragment_cells": [
+            11,
+            2,
+            15,
+            2,
+            6,
+            2,
+            9,
+            3,
+            1,
+            4,
+            5,
+            2,
+            12,
+            2,
+            7,
+            3,
+            15,
+            4
+          ],
+          "emitted_token_ids": [
+            269,
+            32,
+            95,
+            118,
+            56,
+            32,
+            61,
+            32,
+            266,
+            40,
+            110,
+            111,
+            118,
+            101,
+            108,
+            95,
+            116,
+            104,
+            105,
+            115,
+            116,
+            108,
+            101,
+            41,
+            59,
+            32,
+            268,
+            32,
+            264,
+            40,
+            95,
+            118,
+            56,
+            41
+          ],
+          "fragment_steps": [
+            {
+              "candidate_cells": [
+                11
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 0,
+              "winner_cell": 11,
+              "winner_kind": "literal",
+              "winner_text": "let"
+            },
+            {
+              "candidate_cells": [
+                2
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 1,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                15
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 2,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                2
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 3,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                6
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 4,
+              "winner_cell": 6,
+              "winner_kind": "literal",
+              "winner_text": "="
+            },
+            {
+              "candidate_cells": [
+                2
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 5,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                8,
+                9,
+                14
+              ],
+              "candidate_scores": [
+                0.0,
+                0.5083333333333333,
+                0.0
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 6,
+              "winner_cell": 9,
+              "winner_kind": "literal",
+              "winner_text": "hinge"
+            },
+            {
+              "candidate_cells": [
+                3
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 7,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                1
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 8,
+              "winner_cell": 1,
+              "winner_kind": "input",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 9,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            },
+            {
+              "candidate_cells": [
+                5
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 10,
+              "winner_cell": 5,
+              "winner_kind": "literal",
+              "winner_text": ";"
+            },
+            {
+              "candidate_cells": [
+                2
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 11,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                12
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 12,
+              "winner_cell": 12,
+              "winner_kind": "literal",
+              "winner_text": "send"
+            },
+            {
+              "candidate_cells": [
+                2
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 13,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                7,
+                10,
+                13
+              ],
+              "candidate_scores": [
+                0.5083333333333333,
+                0.0,
+                0.0
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 14,
+              "winner_cell": 7,
+              "winner_kind": "literal",
+              "winner_text": "amber"
+            },
+            {
+              "candidate_cells": [
+                3
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 15,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                15
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 16,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 17,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            }
+          ],
+          "model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+          "output": "let _v8 = hinge(novel_thistle); send amber(_v8)",
+          "query_sha256": "e469be8fec5c9cd7e2ac576a9b1f94f969a2a4487a946c5de9d41aab50d5b173",
+          "selected_stop": false,
+          "terminal_stop": false,
+          "trace_sha256": "56aa4c92cb226773db2d728b0bd832547cf4f4ac150e7b37e9e443e03a245e89"
+        }
+      },
+      "treatment": {
+        "fixture_exact": true,
+        "output": "let _v8 = hinge(novel_thistle); send amber(_v8)",
+        "output_sha256": "0814b820c29350732bb5cc40757ff09f7ca007869bf6f444eba504c8a8f26fbf",
+        "physical_trace": true,
+        "trace": {
+          "ablation": null,
+          "binding_races": [
+            {
+              "candidate_count": 64,
+              "simulated_steps": 63,
+              "slot": 0,
+              "spike_time_ms": 3.1500000000000004,
+              "symbol": "_v8",
+              "winner_cell": 26
+            }
+          ],
+          "cue_words": [
+            "bex",
+            "xema"
+          ],
+          "emitted_fragment_cells": [
+            11,
+            2,
+            15,
+            2,
+            6,
+            2,
+            9,
+            3,
+            1,
+            4,
+            5,
+            2,
+            12,
+            2,
+            7,
+            3,
+            15,
+            4
+          ],
+          "emitted_token_ids": [
+            269,
+            32,
+            95,
+            118,
+            56,
+            32,
+            61,
+            32,
+            266,
+            40,
+            110,
+            111,
+            118,
+            101,
+            108,
+            95,
+            116,
+            104,
+            105,
+            115,
+            116,
+            108,
+            101,
+            41,
+            59,
+            32,
+            268,
+            32,
+            264,
+            40,
+            95,
+            118,
+            56,
+            41
+          ],
+          "fragment_steps": [
+            {
+              "candidate_cells": [
+                11,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 0,
+              "winner_cell": 11,
+              "winner_kind": "literal",
+              "winner_text": "let"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 1,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                15,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 2,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 3,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                6,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 4,
+              "winner_cell": 6,
+              "winner_kind": "literal",
+              "winner_text": "="
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 5,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                8,
+                9,
+                14,
+                17
+              ],
+              "candidate_scores": [
+                0.0,
+                0.5083333333333333,
+                0.0,
+                0.2
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 6,
+              "winner_cell": 9,
+              "winner_kind": "literal",
+              "winner_text": "hinge"
+            },
+            {
+              "candidate_cells": [
+                3,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 7,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                1,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 8,
+              "winner_cell": 1,
+              "winner_kind": "input",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 9,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            },
+            {
+              "candidate_cells": [
+                5,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 10,
+              "winner_cell": 5,
+              "winner_kind": "literal",
+              "winner_text": ";"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 11,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                12,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 12,
+              "winner_cell": 12,
+              "winner_kind": "literal",
+              "winner_text": "send"
+            },
+            {
+              "candidate_cells": [
+                2,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 13,
+              "winner_cell": 2,
+              "winner_kind": "literal",
+              "winner_text": " "
+            },
+            {
+              "candidate_cells": [
+                7,
+                10,
+                13,
+                17
+              ],
+              "candidate_scores": [
+                0.5083333333333333,
+                0.0,
+                0.0,
+                0.2
+              ],
+              "simulated_steps": 146,
+              "spike_time_ms": 7.300000000000001,
+              "step": 14,
+              "winner_cell": 7,
+              "winner_kind": "literal",
+              "winner_text": "amber"
+            },
+            {
+              "candidate_cells": [
+                3,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 15,
+              "winner_cell": 3,
+              "winner_kind": "literal",
+              "winner_text": "("
+            },
+            {
+              "candidate_cells": [
+                15,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 16,
+              "winner_cell": 15,
+              "winner_kind": "local",
+              "winner_text": ""
+            },
+            {
+              "candidate_cells": [
+                4,
+                17
+              ],
+              "candidate_scores": [
+                1.0,
+                0.2
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 17,
+              "winner_cell": 4,
+              "winner_kind": "literal",
+              "winner_text": ")"
+            },
+            {
+              "candidate_cells": [
+                17
+              ],
+              "candidate_scores": [
+                1.2
+              ],
+              "simulated_steps": 52,
+              "spike_time_ms": 2.6,
+              "step": 18,
+              "winner_cell": 17,
+              "winner_kind": "stop",
+              "winner_text": ""
+            }
+          ],
+          "model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+          "output": "let _v8 = hinge(novel_thistle); send amber(_v8)",
+          "query_sha256": "e469be8fec5c9cd7e2ac576a9b1f94f969a2a4487a946c5de9d41aab50d5b173",
+          "selected_stop": false,
+          "terminal_stop": true,
+          "trace_sha256": "e29ca8fb79b0fb34a26a7284faed6f1a4fe26159493fdf63888bb4ff51e1b4ae"
+        }
+      },
+      "whole_episode_only": {
+        "fixture_exact": false,
+        "output": "<stop>whole episode miss</stop>",
+        "output_sha256": "041c32b2039a3553b9cff5b2566393b758cb8df7ce8cd21ae7b5fc7d408fec03",
+        "physical_trace": true,
+        "trace": {
+          "ablation": "whole_episode_only",
+          "binding_races": [],
+          "cue_words": [
+            "bex",
+            "xema"
+          ],
+          "emitted_fragment_cells": [],
+          "emitted_token_ids": [
+            60,
+            115,
+            116,
+            111,
+            112,
+            62,
+            119,
+            104,
+            111,
+            108,
+            101,
+            32,
+            101,
+            112,
+            105,
+            115,
+            111,
+            100,
+            101,
+            32,
+            109,
+            105,
+            115,
+            115,
+            60,
+            47,
+            115,
+            116,
+            111,
+            112,
+            62
+          ],
+          "fragment_steps": [
+            {
+              "candidate_cells": [
+                17
+              ],
+              "candidate_scores": [
+                1.0
+              ],
+              "simulated_steps": 63,
+              "spike_time_ms": 3.1500000000000004,
+              "step": 0,
+              "winner_cell": 17,
+              "winner_kind": "stop",
+              "winner_text": ""
+            }
+          ],
+          "model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+          "output": "<stop>whole episode miss</stop>",
+          "query_sha256": "e469be8fec5c9cd7e2ac576a9b1f94f969a2a4487a946c5de9d41aab50d5b173",
+          "selected_stop": true,
+          "terminal_stop": false,
+          "trace_sha256": "cc04520ddaef2fbd0d40044038cc13b60735f9a1811970cb89130d7d42579eb0"
+        }
+      }
+    }
+  ],
+  "claim_boundary": "public arbitrary-token microfixture evidence for neuron-raced two-factor output construction, query-symbol projection, fresh local binding, and explicit STOP only; no Python execution, V4 task input, persistent continual-learning, SWE, protected evaluation, or broad intelligence claim",
+  "final_model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+  "fixture_sha256": "654545391474f40b8b4b6e41a2485e5f86b0a18475fd629a343773badbf036e6",
+  "inference_digest_unchanged": true,
+  "initial_model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+  "persistent_learner_inputs": 0,
+  "private_or_protected_inputs": 0,
+  "reservation": {
+    "artifact_path": "benchmarks/r4_factorized_output_binding_gate_v1.json",
+    "fixture_case_count": 3,
+    "fixture_sha256": "654545391474f40b8b4b6e41a2485e5f86b0a18475fd629a343773badbf036e6",
+    "fixture_training_count": 6,
+    "initial_model": {
+      "cell_count": 82,
+      "grown_branches": 422,
+      "training_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+      "vocabulary_size": 270
+    },
+    "model_config": {
+      "cell_parameters": {
+        "basket_inhibition_pa": 240.0,
+        "branch_current_pa": 95.0,
+        "cell": {
+          "after_spike_amplitudes_pa": [
+            -135.48819176942797,
+            755.8435771154525
+          ],
+          "after_spike_taus_ms": [
+            33.33333333333334,
+            3.3333333333333335
+          ],
+          "capacitance_pf": 164.528173438895,
+          "dt_ms": 0.05,
+          "input_resistance_mohm": 118.0633282200178,
+          "model_id": 503612028,
+          "rest_mv": -69.04794057210287,
+          "specimen_id": 488392806,
+          "spike_cut_steps": 77,
+          "threshold_relative_mv": 25.631077893053025
+        },
+        "dendritic_probability_gain": 16.0,
+        "race_ms": 30.0,
+        "tau_gabaa_ms": 8.0,
+        "tau_nmda_ms": 35.0
+      },
+      "max_new_tokens": 64,
+      "max_order": 8,
+      "max_phrases": 64,
+      "min_phrase_frequency": 2,
+      "random_seed": 7
+    },
+    "model_config_sha256": "27b113223b32c93357a75a7d4e2b09a722e406f4b9a64ae6e3f714251c7c99df",
+    "schema": "factorized-output-binding-gate-reservation-v1",
+    "source_custody": {
+      "cortex_sha256": "9cf37fc36978c3389a86a2856401f6c528d1a95f491dab0eb1b8662edcd055db",
+      "factorized_pointer_sha256": "595b4ab5b8bb486e843f52fbd73e4958d5e3d6d0efad6cb690491757a94d1017",
+      "fixture_source_sha256": "1a34614ccb94b336c24a5fc0c8a5ab1c3d0d0f2817ed2c59de977e7e796ac5da",
+      "gate_sha256": "4d37da1ff9f82915438b22f579c106cf7d12f3e15df3d77e3234237cdb8e930a",
+      "language_sha256": "f376ebd49e25b327b362eb856de94cddfedc5cc57337699d0160fb1139064f31",
+      "pointer_binding_sha256": "0cf13bd13be981c27d1eb00c1feb3fa08039c543654b17b02fa1b0e07e38171d",
+      "python_executable_sha256": "89e640c427d53939a746fd172f3f3071bfe45c2bdb171706655c8674a9d709ac",
+      "tokenizer_sha256": "08ef114a758006868944ad3091ca66619d3c082086ea2d44d93211d82a9791ce"
+    },
+    "status": "COMPLETED",
+    "training_examples_sha256": "f40ccacee48ff1065a4bccf7184c933a88ccaca85232ad655f1d7d1a2b084669"
+  },
+  "sandbox_executions": 0,
+  "schema": "factorized-output-binding-gate-v1",
+  "scores": {
+    "binding_off_binding_race_count": 0,
+    "binding_off_exact_count": 0,
+    "binding_off_placeholder_count": 3,
+    "fresh_local_binding_count": 3,
+    "physical_trace_count": 15,
+    "physical_trace_expected": 15,
+    "projection_off_exact_count": 0,
+    "projection_off_stop_count": 3,
+    "stop_off_exact_count": 3,
+    "stop_off_terminal_stop_count": 0,
+    "treatment_exact_count": 3,
+    "treatment_terminal_stop_count": 3,
+    "whole_episode_exact_count": 0,
+    "whole_episode_single_step_count": 3,
+    "whole_episode_stop_count": 3
+  },
+  "status": "PASS_FACTORIZED_OUTPUT_BINDING_GATE_V1",
+  "target_teacher_inputs": 0,
+  "training_example_count": 6,
+  "unknown_stop_control": {
+    "cue_text": "opaque unfamiliar",
+    "inventory_sha256": "728975bb8d376eab15233d73f11d1775915b835a15ec03eea4e9b93e2c5833a4",
+    "passed": true,
+    "prompt": "unknown-factor-control",
+    "stop_enabled": {
+      "fixture_exact": false,
+      "output": "<stop>insufficient learned fragment evidence</stop>",
+      "output_sha256": "e9a8aadda814b382e13b5bafb9502b19756d8f4cce6ff05f60c7855cdad8c0dc",
+      "physical_trace": true,
+      "trace": {
+        "ablation": null,
+        "binding_races": [
+          {
+            "candidate_count": 64,
+            "simulated_steps": 63,
+            "slot": 0,
+            "spike_time_ms": 3.1500000000000004,
+            "symbol": "_v8",
+            "winner_cell": 26
+          }
+        ],
+        "cue_words": [
+          "opaque",
+          "unfamiliar"
+        ],
+        "emitted_fragment_cells": [
+          11,
+          2,
+          15,
+          2,
+          6,
+          2
+        ],
+        "emitted_token_ids": [
+          60,
+          115,
+          116,
+          111,
+          112,
+          62,
+          105,
+          110,
+          115,
+          117,
+          102,
+          102,
+          105,
+          99,
+          105,
+          101,
+          110,
+          116,
+          32,
+          108,
+          101,
+          97,
+          114,
+          110,
+          101,
+          100,
+          32,
+          102,
+          114,
+          97,
+          103,
+          109,
+          101,
+          110,
+          116,
+          32,
+          101,
+          118,
+          105,
+          100,
+          101,
+          110,
+          99,
+          101,
+          60,
+          47,
+          115,
+          116,
+          111,
+          112,
+          62
+        ],
+        "fragment_steps": [
+          {
+            "candidate_cells": [
+              11,
+              17
+            ],
+            "candidate_scores": [
+              1.0,
+              0.2
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 0,
+            "winner_cell": 11,
+            "winner_kind": "literal",
+            "winner_text": "let"
+          },
+          {
+            "candidate_cells": [
+              2,
+              17
+            ],
+            "candidate_scores": [
+              1.0,
+              0.2
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 1,
+            "winner_cell": 2,
+            "winner_kind": "literal",
+            "winner_text": " "
+          },
+          {
+            "candidate_cells": [
+              15,
+              17
+            ],
+            "candidate_scores": [
+              1.0,
+              0.2
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 2,
+            "winner_cell": 15,
+            "winner_kind": "local",
+            "winner_text": ""
+          },
+          {
+            "candidate_cells": [
+              2,
+              17
+            ],
+            "candidate_scores": [
+              1.0,
+              0.2
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 3,
+            "winner_cell": 2,
+            "winner_kind": "literal",
+            "winner_text": " "
+          },
+          {
+            "candidate_cells": [
+              6,
+              17
+            ],
+            "candidate_scores": [
+              1.0,
+              0.2
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 4,
+            "winner_cell": 6,
+            "winner_kind": "literal",
+            "winner_text": "="
+          },
+          {
+            "candidate_cells": [
+              2,
+              17
+            ],
+            "candidate_scores": [
+              1.0,
+              0.2
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 5,
+            "winner_cell": 2,
+            "winner_kind": "literal",
+            "winner_text": " "
+          },
+          {
+            "candidate_cells": [
+              8,
+              9,
+              14,
+              17
+            ],
+            "candidate_scores": [
+              0.0,
+              0.0,
+              0.0,
+              0.2
+            ],
+            "simulated_steps": 724,
+            "spike_time_ms": 36.2,
+            "step": 6,
+            "winner_cell": 17,
+            "winner_kind": "stop",
+            "winner_text": ""
+          }
+        ],
+        "model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+        "output": "<stop>insufficient learned fragment evidence</stop>",
+        "query_sha256": "250f7daeea983f8e9fef0909bc2e4ff91584ec665a143d389719227f3ab00e53",
+        "selected_stop": true,
+        "terminal_stop": false,
+        "trace_sha256": "4244938ef1a15c18a54e0fe211c12e88145cb7c874fcf7f9f687c41ec2a3a3bd"
+      }
+    },
+    "stop_off": {
+      "fixture_exact": false,
+      "output": "let _v8 = hinge(novel_unknown); send silver(_v8)",
+      "output_sha256": "64d2778c6684bfb2c39aefefef2b93690a76550bbe49fc14e6c47b7e0292a50a",
+      "physical_trace": true,
+      "trace": {
+        "ablation": "stop_off",
+        "binding_races": [
+          {
+            "candidate_count": 64,
+            "simulated_steps": 63,
+            "slot": 0,
+            "spike_time_ms": 3.1500000000000004,
+            "symbol": "_v8",
+            "winner_cell": 26
+          }
+        ],
+        "cue_words": [
+          "opaque",
+          "unfamiliar"
+        ],
+        "emitted_fragment_cells": [
+          11,
+          2,
+          15,
+          2,
+          6,
+          2,
+          9,
+          3,
+          1,
+          4,
+          5,
+          2,
+          12,
+          2,
+          13,
+          3,
+          15,
+          4
+        ],
+        "emitted_token_ids": [
+          269,
+          32,
+          95,
+          118,
+          56,
+          32,
+          61,
+          32,
+          266,
+          40,
+          110,
+          111,
+          118,
+          101,
+          108,
+          95,
+          117,
+          110,
+          107,
+          110,
+          111,
+          119,
+          110,
+          41,
+          59,
+          32,
+          268,
+          32,
+          263,
+          40,
+          95,
+          118,
+          56,
+          41
+        ],
+        "fragment_steps": [
+          {
+            "candidate_cells": [
+              11
+            ],
+            "candidate_scores": [
+              1.0
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 0,
+            "winner_cell": 11,
+            "winner_kind": "literal",
+            "winner_text": "let"
+          },
+          {
+            "candidate_cells": [
+              2
+            ],
+            "candidate_scores": [
+              1.0
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 1,
+            "winner_cell": 2,
+            "winner_kind": "literal",
+            "winner_text": " "
+          },
+          {
+            "candidate_cells": [
+              15
+            ],
+            "candidate_scores": [
+              1.0
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 2,
+            "winner_cell": 15,
+            "winner_kind": "local",
+            "winner_text": ""
+          },
+          {
+            "candidate_cells": [
+              2
+            ],
+            "candidate_scores": [
+              1.0
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 3,
+            "winner_cell": 2,
+            "winner_kind": "literal",
+            "winner_text": " "
+          },
+          {
+            "candidate_cells": [
+              6
+            ],
+            "candidate_scores": [
+              1.0
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 4,
+            "winner_cell": 6,
+            "winner_kind": "literal",
+            "winner_text": "="
+          },
+          {
+            "candidate_cells": [
+              2
+            ],
+            "candidate_scores": [
+              1.0
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 5,
+            "winner_cell": 2,
+            "winner_kind": "literal",
+            "winner_text": " "
+          },
+          {
+            "candidate_cells": [
+              8,
+              9,
+              14
+            ],
+            "candidate_scores": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "simulated_steps": 837,
+            "spike_time_ms": 41.85,
+            "step": 6,
+            "winner_cell": 9,
+            "winner_kind": "literal",
+            "winner_text": "hinge"
+          },
+          {
+            "candidate_cells": [
+              3
+            ],
+            "candidate_scores": [
+              1.0
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 7,
+            "winner_cell": 3,
+            "winner_kind": "literal",
+            "winner_text": "("
+          },
+          {
+            "candidate_cells": [
+              1
+            ],
+            "candidate_scores": [
+              1.0
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 8,
+            "winner_cell": 1,
+            "winner_kind": "input",
+            "winner_text": ""
+          },
+          {
+            "candidate_cells": [
+              4
+            ],
+            "candidate_scores": [
+              1.0
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 9,
+            "winner_cell": 4,
+            "winner_kind": "literal",
+            "winner_text": ")"
+          },
+          {
+            "candidate_cells": [
+              5
+            ],
+            "candidate_scores": [
+              1.0
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 10,
+            "winner_cell": 5,
+            "winner_kind": "literal",
+            "winner_text": ";"
+          },
+          {
+            "candidate_cells": [
+              2
+            ],
+            "candidate_scores": [
+              1.0
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 11,
+            "winner_cell": 2,
+            "winner_kind": "literal",
+            "winner_text": " "
+          },
+          {
+            "candidate_cells": [
+              12
+            ],
+            "candidate_scores": [
+              1.0
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 12,
+            "winner_cell": 12,
+            "winner_kind": "literal",
+            "winner_text": "send"
+          },
+          {
+            "candidate_cells": [
+              2
+            ],
+            "candidate_scores": [
+              1.0
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 13,
+            "winner_cell": 2,
+            "winner_kind": "literal",
+            "winner_text": " "
+          },
+          {
+            "candidate_cells": [
+              7,
+              10,
+              13
+            ],
+            "candidate_scores": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "simulated_steps": 836,
+            "spike_time_ms": 41.800000000000004,
+            "step": 14,
+            "winner_cell": 13,
+            "winner_kind": "literal",
+            "winner_text": "silver"
+          },
+          {
+            "candidate_cells": [
+              3
+            ],
+            "candidate_scores": [
+              1.0
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 15,
+            "winner_cell": 3,
+            "winner_kind": "literal",
+            "winner_text": "("
+          },
+          {
+            "candidate_cells": [
+              15
+            ],
+            "candidate_scores": [
+              1.0
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 16,
+            "winner_cell": 15,
+            "winner_kind": "local",
+            "winner_text": ""
+          },
+          {
+            "candidate_cells": [
+              4
+            ],
+            "candidate_scores": [
+              1.0
+            ],
+            "simulated_steps": 63,
+            "spike_time_ms": 3.1500000000000004,
+            "step": 17,
+            "winner_cell": 4,
+            "winner_kind": "literal",
+            "winner_text": ")"
+          }
+        ],
+        "model_digest": "bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4",
+        "output": "let _v8 = hinge(novel_unknown); send silver(_v8)",
+        "query_sha256": "ad2fa6d15fc80454a518ea119760e031708b5d46f69c5faca052114c2c70fd0e",
+        "selected_stop": false,
+        "terminal_stop": false,
+        "trace_sha256": "ed357eedc2038f3da32bf07d53ab4cfa8814969e2e10a2dce3c4cdc6388558a8"
+      }
+    }
+  },
+  "v4_task_inputs": 0
+}

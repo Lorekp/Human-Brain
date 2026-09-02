@@ -2,11 +2,9 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-
 from humanbrain.cells import AllenGlif3Parameters, simulate_glif3_current
 from humanbrain.cortex import DendriticCortex, HumanCellParameters
 from humanbrain.human_cell_identity import HUMAN_GLIF3_IDENTITY
-
 
 ROOT = Path(__file__).resolve().parents[1]
 ALLEN_CONFIG = ROOT / "data" / "allen" / "503612028_neuron_config.json"
@@ -66,6 +64,48 @@ def test_dendritic_interpolation_keeps_discounted_lower_order_candidates() -> No
     active, drives = cortex._dendritic_drive([9, 1, 2])
     assert set(active) >= {3, 4}
     assert drives[list(active).index(4)] > drives[list(active).index(3)]
+
+
+def test_cached_dendritic_drive_is_bit_exact_and_mutation_safe() -> None:
+    cortex = DendriticCortex(cell_count=7, max_order=4, seed=17)
+    cortex.grow_sequence([0, 1, 2, 3, 4, 5], strength=1.0)
+    cortex.grow_sequence([6, 1, 2, 3, 4, 0], strength=2.0)
+    cortex.grow_sequence([0, 1, 2, 3, 6], strength=0.5)
+
+    expected_active = np.array([4, 6], dtype=np.int32)
+    expected_drives = np.array(
+        [12.1288017034675, 3.6231558089062617],
+        dtype=np.float64,
+    )
+    first_active, first_drives = cortex._dendritic_drive([0, 1, 2, 3])
+    np.testing.assert_array_equal(first_active, expected_active)
+    np.testing.assert_array_equal(first_drives, expected_drives)
+
+    first_active[:] = 0
+    first_drives[:] = 0.0
+    cached_active, cached_drives = cortex._dendritic_drive([0, 1, 2, 3])
+    np.testing.assert_array_equal(cached_active, expected_active)
+    np.testing.assert_array_equal(cached_drives, expected_drives)
+    assert cortex.branch_count == 26
+    assert cortex.grown_transitions == 38
+    assert cortex.race([0, 1, 2, 3]).winner == 4
+
+
+def test_dendritic_learning_invalidates_cached_currents() -> None:
+    cortex = DendriticCortex(cell_count=8, max_order=3)
+    cortex.grow_sequence([1, 2, 3])
+    cortex._dendritic_drive([1, 2])
+    assert cortex._drive_cache
+
+    cortex.grow_sequence([1, 2, 4], strength=2.0)
+    assert not cortex._drive_cache
+    assert cortex.race([1, 2]).winner == 4
+    cortex._dendritic_drive([1, 2])
+    assert cortex._drive_cache
+
+    assert cortex.adjust_branch_strength([1, 2], 4, -2.0)
+    assert not cortex._drive_cache
+    assert cortex.race([1, 2]).winner == 3
 
 
 def test_compiled_membrane_response_matches_stepwise_euler_race() -> None:
@@ -274,6 +314,30 @@ def test_coupled_race_is_bit_exact_across_deterministic_reruns() -> None:
     )
 
     assert second == first
+
+
+def test_event_first_race_matches_the_coupled_race_decision_prefix() -> None:
+    cortex = DendriticCortex(cell_count=64, seed=7)
+    cases = (
+        ((0,), (1_800.0,)),
+        ((5, 1, 9), (500.0, 1_800.0, 500.0)),
+        ((17, 4, 12, 2), (1_800.0, 500.0, 1_800.0, 500.0)),
+        ((8, 3, 21), (500.0, 500.0, 500.0)),
+    )
+
+    for candidate_cells, currents in cases:
+        event_first = cortex.race_currents_first_spike(candidate_cells, currents)
+        coupled = cortex.race_currents_with_inhibition(
+            candidate_cells,
+            currents,
+            basket_cell_id=63,
+            basket_current_pa=200_000.0,
+        )
+
+        assert event_first.winner == coupled.winner
+        assert event_first.spike_time_ms == coupled.winner_spike_time_ms
+        assert event_first.active_cells == coupled.active_cells
+        assert event_first.simulated_steps < coupled.simulated_steps
 
 
 def test_coupled_race_rejects_noninteger_physical_cell_ids() -> None:

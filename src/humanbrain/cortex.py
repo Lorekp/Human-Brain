@@ -14,6 +14,7 @@ from humanbrain.race_bias import PredictiveBiasConfig, apply_predictive_bias
 THRESHOLD_OFFSET_GENERATOR = "numpy.random.default_rng(seed).normal"
 THRESHOLD_OFFSET_MEAN_MV = 0.0
 THRESHOLD_OFFSET_STANDARD_DEVIATION_MV = 0.025
+_DENDRITIC_DRIVE_CACHE_LIMIT = 1_024
 
 
 def seeded_threshold_offsets_mv(cell_count: int, seed: int) -> np.ndarray:
@@ -109,6 +110,12 @@ class DendriticCortex:
         # incumbent race (tests/test_race_bias.py gate 1).
         self.predictive_bias = predictive_bias
         self._branches: dict[tuple[int, ...], dict[int, float]] = {}
+        # Autoregressive replay revisits identical bounded tails. Cache the exact
+        # active cells and currents; every learning mutation clears this state.
+        self._drive_cache: dict[
+            tuple[int, ...],
+            tuple[np.ndarray, np.ndarray],
+        ] = {}
         self._unigram = np.zeros(self.cell_count, dtype=np.float64)
         self._threshold_offset = seeded_threshold_offsets_mv(self.cell_count, seed)
         self._grown_transitions = 0
@@ -149,6 +156,8 @@ class DendriticCortex:
         ids = [int(token_id) for token_id in token_ids]
         if any(token_id < 0 or token_id >= self.cell_count for token_id in ids):
             raise ValueError("token id outside cortical sheet")
+        if ids:
+            self._drive_cache.clear()
         for target_index, target in enumerate(ids):
             self._unigram[target] += strength
             available = min(self.max_order, target_index)
@@ -159,16 +168,21 @@ class DendriticCortex:
                 self._grown_transitions += 1
 
     def _dendritic_drive(self, context: Sequence[int]) -> tuple[np.ndarray, np.ndarray]:
+        available = min(self.max_order, len(context))
+        tail = tuple(int(token) for token in context[len(context) - available :])
+        cached = self._drive_cache.get(tail)
+        if cached is not None:
+            active, drives = cached
+            return active.copy(), drives.copy()
         probability_by_cell: dict[int, float] = {}
         uniform_escape = 1.0
-        available = min(self.max_order, len(context))
         # Branches converge from basal (short) to apical (specific) dendrites.
         # Each level reserves escape current for its lower-order input in
         # proportion to the number of distinct continuations it has grown.
         # This is Witten-Bell interpolation implemented as synaptic current,
         # not an external token selector.
         for order in range(1, available + 1):
-            branch = self._branches.get(tuple(context[-order:]))
+            branch = self._branches.get(tail[-order:])
             if not branch:
                 continue
             total_strength = sum(branch.values())
@@ -201,6 +215,9 @@ class DendriticCortex:
             }
         active = np.fromiter(sorted(drive_by_cell), dtype=np.int32)
         drives = np.fromiter((drive_by_cell[int(i)] for i in active), dtype=np.float64)
+        if len(self._drive_cache) >= _DENDRITIC_DRIVE_CACHE_LIMIT:
+            del self._drive_cache[next(iter(self._drive_cache))]
+        self._drive_cache[tail] = (active.copy(), drives.copy())
         return active, drives
 
     def race(self, context: Sequence[int]) -> CellRace:
@@ -323,6 +340,22 @@ class DendriticCortex:
                 simulated_steps=elapsed_steps,
             )
         raise RuntimeError("active human cells did not spike under arousal")
+
+    def race_currents_first_spike(
+        self,
+        cell_ids: Sequence[int] | np.ndarray,
+        current_pa: Sequence[float] | np.ndarray,
+    ) -> CellRace:
+        """Resolve the event-exact causal prefix of an inhibited cell race.
+
+        Pyramidal excitation of the basket cell starts only after this first
+        spike, and basket inhibition starts one step later still.  Therefore
+        neither downstream event can change the winning cell or its spike
+        time.  The compiled pre-spike GLIF3 response used by ``race_currents``
+        is the complete neuronal state needed for that decision.
+        """
+
+        return self.race_currents(cell_ids, current_pa)
 
     def race_currents_with_inhibition(
         self,
@@ -496,6 +529,7 @@ class DendriticCortex:
             del targets[tid]
         else:
             targets[tid] = value
+        self._drive_cache.clear()
         return True
 
     def iter_branches(self) -> Iterable[tuple[tuple[int, ...], int, float]]:

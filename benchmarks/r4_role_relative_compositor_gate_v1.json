@@ -1,0 +1,208 @@
+{
+  "claim_boundary": "fresh public opaque-byte microfixture evidence for learned role-relative two-context composition, fresh query-role binding, physical recurrent and compositor necessity, fail-closed ambiguity and unknown handling, and one chain-local target-free negative revision only; no language, Python execution, persistent session, V6, SWE, protected evaluation, biological fidelity, or broad capability claim",
+  "custody": {
+    "effective_negative_resolution_count": 1,
+    "fixture_visibility": "public",
+    "gate_execution_count": 1,
+    "model_growth_count": 2,
+    "nogo_off_negative_control_count": 1,
+    "private_or_protected_inputs": 0,
+    "respond_count": 9,
+    "sandbox_executions": 0,
+    "target_supplied_to_negative_resolution": false,
+    "target_teacher_inputs": 0,
+    "v4_or_v6_task_inputs": 0
+  },
+  "decisions": {
+    "ambiguous": {
+      "all_races_physical": true,
+      "decision": "STOP",
+      "decision_sha256": "c57d92067b2f455971e095bf055c85be718726574a4156395698a8eb0bb90e1e",
+      "eligibility_sha256": null,
+      "emissions_hex": [],
+      "physical_cell_steps": 2400,
+      "race_chain_sha256": "1ad5f67b9f8b81842680b3444d93323011e7bf1926ea650a73670e617cf8c66a",
+      "race_count": 1,
+      "stop_reason": "context_chunk:collision"
+    },
+    "compositor_off": {
+      "all_races_physical": true,
+      "decision": "STOP",
+      "decision_sha256": "3dead75cb132df318fecb0d71cf87a066bfde0c102520496a114f779cde98cd5",
+      "eligibility_sha256": null,
+      "emissions_hex": [],
+      "physical_cell_steps": 15000,
+      "race_chain_sha256": "a7eeaad10bac41a6a9abdef54109bd3a3cba536fb588303df2f02dcec45bf8fa",
+      "race_count": 12,
+      "stop_reason": "context_chunk:tonic_stop"
+    },
+    "negative_after": {
+      "all_races_physical": true,
+      "decision": "EMIT",
+      "decision_sha256": "f0deae433424f2512f70eac573bf3292200c3dacb387abfa2675070f31b20fbd",
+      "eligibility_sha256": "4abe2e18f18ccec18fb63f9deb4066b6a601e85964477e62da10067c577e3284",
+      "emissions_hex": [
+        "f601",
+        "d192",
+        "f602"
+      ],
+      "physical_cell_steps": 13800,
+      "race_chain_sha256": "fbe5da5ddaf7575e4d93ed02a38e833472f483944afe1179e13cadb6fb2cc76e",
+      "race_count": 11,
+      "stop_reason": null
+    },
+    "negative_before": {
+      "all_races_physical": true,
+      "decision": "EMIT",
+      "decision_sha256": "23f664e12d267aaefb8a584c132fd9d049d53fb08051048df33380363e95f4ec",
+      "eligibility_sha256": "1f13fe5474ade3d1997181cbe810534366e8039b6a8512d4306e4d7ed3d1551e",
+      "emissions_hex": [
+        "f501",
+        "d191",
+        "f502"
+      ],
+      "physical_cell_steps": 13800,
+      "race_chain_sha256": "e8234f46b79eb1b62f9eddb8fe8736a2c2d7d319c0897ff995618688578f4f9d",
+      "race_count": 11,
+      "stop_reason": null
+    },
+    "nogo_off_first": {
+      "all_races_physical": true,
+      "decision": "EMIT",
+      "decision_sha256": "a3ff84f01d9e3c307af6959964d9b7b4a35053c28813f44d3ed6855ac2bb9da9",
+      "eligibility_sha256": "c76b3b6672685b7e510f7706d5d8b607a9c4ad427b5ea697b8c08d0401a19afa",
+      "emissions_hex": [
+        "f501",
+        "d191",
+        "f502"
+      ],
+      "physical_cell_steps": 13800,
+      "race_chain_sha256": "e8234f46b79eb1b62f9eddb8fe8736a2c2d7d319c0897ff995618688578f4f9d",
+      "race_count": 11,
+      "stop_reason": null
+    },
+    "nogo_off_repeat": {
+      "all_races_physical": true,
+      "decision": "EMIT",
+      "decision_sha256": "a3ff84f01d9e3c307af6959964d9b7b4a35053c28813f44d3ed6855ac2bb9da9",
+      "eligibility_sha256": "c76b3b6672685b7e510f7706d5d8b607a9c4ad427b5ea697b8c08d0401a19afa",
+      "emissions_hex": [
+        "f501",
+        "d191",
+        "f502"
+      ],
+      "physical_cell_steps": 13800,
+      "race_chain_sha256": "e8234f46b79eb1b62f9eddb8fe8736a2c2d7d319c0897ff995618688578f4f9d",
+      "race_count": 11,
+      "stop_reason": null
+    },
+    "recurrence_off": {
+      "all_races_physical": true,
+      "decision": "STOP",
+      "decision_sha256": "ed7db38bd0b1487431fd26e62f0206f6a83349554bdbdbbe6fc45f3a98023cc7",
+      "eligibility_sha256": null,
+      "emissions_hex": [],
+      "physical_cell_steps": 6000,
+      "race_chain_sha256": "61caf6ebbbb5e6733e5b811116804079e4f7a09114f1fa1935d6717ea4ced71f",
+      "race_count": 5,
+      "stop_reason": "state_next:tonic_stop"
+    },
+    "treatment": {
+      "all_races_physical": true,
+      "decision": "EMIT",
+      "decision_sha256": "db83aca3a254ffd293501619116b943028d8aede88bb311ce69aa97f75939e81",
+      "eligibility_sha256": "3bd61b54f87cfb444bc5f99369d59e83b2b9b9f78c9e7da027b3c87e08367fd4",
+      "emissions_hex": [
+        "f501",
+        "d191",
+        "f502",
+        "e501",
+        "d192",
+        "e502"
+      ],
+      "physical_cell_steps": 27000,
+      "race_chain_sha256": "ce21656d0d57221c33014c7bdaf77a8ce79d9406f70ea651dadddf82353b6b1d",
+      "race_count": 22,
+      "stop_reason": null
+    },
+    "unknown": {
+      "all_races_physical": true,
+      "decision": "STOP",
+      "decision_sha256": "97bf4d25d551ff77854223cfe3ff712c4f268fdc5d5c329aea2ce11779b82585",
+      "eligibility_sha256": null,
+      "emissions_hex": [],
+      "physical_cell_steps": 600,
+      "race_chain_sha256": "5a294122401709cd0a30d380ab3ae15fcc00fe3fb76244a44d35740027f493e3",
+      "race_count": 1,
+      "stop_reason": "context_chunk:tonic_stop"
+    }
+  },
+  "fixture_sha256": "5c847e0c942097b3d2413149523dfd28a346d5c64ff0b62884e196800fc24972",
+  "metrics": {
+    "base_digest": "5951fcc8fc32183dabc863eb2b1a8f35580ba411b5f249a3594769930b72345f",
+    "checks": {
+      "ambiguous_stop": true,
+      "compositor_off_stop": true,
+      "fresh_role_binding": true,
+      "negative_changed_next_winner": true,
+      "neutral_digest_identity": true,
+      "nogo_off_repeats": true,
+      "novel_two_context_composition": true,
+      "pending_resolution_exactly_once": true,
+      "physical_treatment_chain": true,
+      "recurrence_off_stop": true,
+      "target_free_negative_changed_chain": true,
+      "unknown_stop": true
+    },
+    "demonstrated_whole_output_count": 11,
+    "demonstration_count": 11,
+    "duplicate_resolution_error": "no pending EMIT decision to resolve",
+    "fresh_role_count": 2,
+    "negative_after_winner_gid": 7,
+    "negative_before_winner_gid": 6,
+    "negative_changed_edge_sha256": "9654a4df7d5bbdab7945a0274402882a037a82b7b0657241819318cde7438f24",
+    "pending_response_error": "resolve the pending EMIT decision before responding",
+    "post_negative_digest": "9711e465e6897a2efc407cdf7bd6bb0efa9f73668c0d0cb0544ed4928649c387",
+    "post_neutral_digest": "5951fcc8fc32183dabc863eb2b1a8f35580ba411b5f249a3594769930b72345f",
+    "training_summary": {
+      "chunk_cells": 5,
+      "context_cells": 3,
+      "demonstrations": 11,
+      "emission_cells": 10,
+      "excitatory_ticks": 109,
+      "learned_synapses": 46,
+      "recurrent_state_cells": 13,
+      "recurring_chunks": 5,
+      "total_cells": 36
+    },
+    "treatment_context_count": 2,
+    "treatment_emission_count": 6
+  },
+  "reservation_status": "COMPLETED",
+  "result_sha256": "5eb742b073c965280814ff2a0d3b96de60560785d126271b6c60d4680ce974ea",
+  "schema": "r4-role-relative-compositor-gate-v1",
+  "source_custody": {
+    "cells_source": {
+      "path": "src/humanbrain/cells.py",
+      "sha256": "5ca05a64a89f930db3ea351e3e236e3242bf21652fff127747a36d9ca488d2e6"
+    },
+    "focused_test": {
+      "path": "tests/test_role_relative_compositor.py",
+      "sha256": "b8cee1a6b5d57294e27784006328ec049803521ae84c639ff2cadc1a8831f812"
+    },
+    "gate_fixture": {
+      "path": "experiments/r4_integrated/role_relative_compositor_gate_v1.py",
+      "sha256": "9f4a745ef900d0139f2a1d2cd6b07d0cdba2591b975ea8e670a436d79f8c8b98"
+    },
+    "model_source": {
+      "path": "src/humanbrain/role_relative_compositor.py",
+      "sha256": "26aa90d8b6b56a9ffb3094bbf45b93dd926d1d6e8e2ee33610ed00883a11e87d"
+    },
+    "resting_glif_race_source": {
+      "path": "src/humanbrain/resting_glif_race.py",
+      "sha256": "b78a14ad6f601800c170bbd9e53d6204e992842954f22ea646d5f9ec04accca0"
+    }
+  },
+  "source_custody_sha256": "6c2a7c28fa43023e1225eecce21050d086a77536885f2c2b57221dc7a360c4d1",
+  "status": "PASS_R4_ROLE_RELATIVE_COMPOSITOR_GATE_V1"
+}

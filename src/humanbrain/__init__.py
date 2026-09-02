@@ -12,11 +12,18 @@ if TYPE_CHECKING:
     from humanbrain.language import (
         CellLanguageModel,
         LanguageEvaluation,
+        LearningUpdate,
         ModelConfig,
         Prediction,
     )
 
-__all__ = ["CellLanguageModel", "LanguageEvaluation", "ModelConfig", "Prediction"]
+__all__ = [
+    "CellLanguageModel",
+    "LanguageEvaluation",
+    "LearningUpdate",
+    "ModelConfig",
+    "Prediction",
+]
 _LANGUAGE_EXPORTS = frozenset(__all__)
 __version__ = "0.1.0"
 

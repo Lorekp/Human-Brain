@@ -40,6 +40,17 @@ class LanguageEvaluation:
     tokens_per_second: float
 
 
+@dataclass(frozen=True)
+class LearningUpdate:
+    """Observable receipt for one replay-free cortical growth event."""
+
+    prior_training_digest: str
+    training_digest: str
+    token_count: int
+    added_branches: int
+    grown_transitions: int
+
+
 class CellLanguageModel:
     """Grow, predict, and complete text through one small interface."""
 
@@ -99,6 +110,33 @@ class CellLanguageModel:
     def training_digest(self) -> str:
         return self._training_digest
 
+    def learn(self, text: str, *, strength: float = 1.0) -> LearningUpdate:
+        """Grow synaptic context from one new experience without corpus replay."""
+
+        if not isinstance(text, str) or not text:
+            raise ValueError("one non-empty learning experience is required")
+        token_ids = self._tokenizer.encode(text)
+        prior_digest = self._training_digest
+        branches_before = self._cortex.branch_count
+        transitions_before = self._cortex.grown_transitions
+        self._cortex.grow_sequence(token_ids, strength=strength)
+
+        raw = text.encode("utf-8")
+        digest = sha256()
+        digest.update(b"humanbrain-cell-language-learning-v1\0")
+        digest.update(prior_digest.encode("ascii"))
+        digest.update(float(strength).hex().encode("ascii"))
+        digest.update(len(raw).to_bytes(8, "big"))
+        digest.update(raw)
+        self._training_digest = digest.hexdigest()
+        return LearningUpdate(
+            prior_training_digest=prior_digest,
+            training_digest=self._training_digest,
+            token_count=len(token_ids),
+            added_branches=self._cortex.branch_count - branches_before,
+            grown_transitions=self._cortex.grown_transitions - transitions_before,
+        )
+
     def save(self, path: str | Path) -> str:
         """Freeze learned cell/synapse state and return its SHA-256."""
         from humanbrain.artifacts import save_checkpoint
@@ -129,21 +167,36 @@ class CellLanguageModel:
         self,
         prompt: str,
         max_new_tokens: int = 32,
-        stop_text: str | None = None,
+        stop_text: str | tuple[str, ...] | None = None,
     ) -> str:
         if max_new_tokens < 0:
             raise ValueError("max_new_tokens must be non-negative")
+        stop_markers = (
+            ()
+            if stop_text is None
+            else (stop_text,)
+            if isinstance(stop_text, str)
+            else tuple(stop_text)
+        )
+        if any(not isinstance(marker, str) or not marker for marker in stop_markers):
+            raise ValueError("stop text markers must be non-empty strings")
         ids = self._tokenizer.encode(prompt)
         generated: list[int] = []
         for _ in range(max_new_tokens):
             race = self._cortex.race(ids)
             ids.append(race.winner)
             generated.append(race.winner)
-            if stop_text is not None:
+            if stop_markers:
                 decoded = self._tokenizer.decode(generated)
-                stop_index = decoded.find(stop_text)
-                if stop_index >= 0:
-                    return decoded[: stop_index + len(stop_text)]
+                stops = (
+                    (index, marker)
+                    for marker in stop_markers
+                    if (index := decoded.find(marker)) >= 0
+                )
+                first = min(stops, default=None, key=lambda item: item[0])
+                if first is not None:
+                    stop_index, marker = first
+                    return decoded[: stop_index + len(marker)]
         return self._tokenizer.decode(generated)
 
     def evaluate(self, text: str, max_predictions: int | None = None) -> LanguageEvaluation:

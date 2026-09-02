@@ -18,6 +18,582 @@ split through mini-swe-agent 2.4.6 and the official cached Docker image
 - Combined developmental/native integration: 69 forced-CPU tests and 4 real
   CUDA tests passed, plus Rust formatting, Clippy, and Cargo tests.
 
+## Current integrated R4 frontier
+
+### Frozen recurrent-assembly continual V6 result
+
+The fresh public-TRAIN V6 session is terminally spent and must not be rerun.
+Its artifact is internally consistent, but the integrated capability gate
+failed. Treatment scored 1/16, the independently grown no-update control scored
+1/16, and `STACK_OFF` scored 2/16. Every success was a correct abstention; all
+fourteen executable tasks failed, including 0/4 renamed transfer, 0/4 nested
+multi-fragment recombination, 0/4 execution-feedback revision, and 0/2 delayed
+retention. R5 and R6 therefore remain sealed.
+
+The failure occurred before semantic execution. Each main arm used 37 attempts:
+six physical STOPs, fifteen pointer-materialization rejections, and sixteen
+materialized programs rejected for the wrong callable signature. Nine rejected
+programs referenced pointer 2 with only two current roles and six referenced
+pointer 3 with only three. No attempt reached the sandbox. On the first attempt
+of the fourteen executable tasks, the distribution was four physical STOPs,
+four pointer rejects, and six signature rejects.
+
+The causal result is sharper than the score. Treatment applied 31 authenticated
+negative updates and changed its checkpoint, but those updates touched only two
+distinct projected-span edges, one 27 times. Across all 37 aligned
+treatment/control attempts there were zero differences in emitted tokens,
+physical trajectories, STOP choices, raw pointer output, materialized output,
+host status, or task score. Every one of the 31 non-STOP outputs was byte-equal
+to one of the eight stored public-prior programs; only five priors were selected
+and one accounted for 18 attempts. Public-prior retention nevertheless remained
+8/8 in both main arms.
+
+V6 therefore falsifies the incremental assembly implementation as a source of
+novel role-bound proposals. It can replay and physically traverse learned
+programs, but it binds absolute prior pointer positions and has no recruited
+cross-owner schema/chunk path for a changed interface. Plasticity changes state
+that the effective proposal races do not use. Merely increasing punishment or
+repairing signatures on the host would conceal the missing general computation.
+The licensed next layer was a learned role-relative sequence/chunk compositor:
+current roles had to be traversed by recurrent cell decisions, complete chunks
+had to transition across learned owners, and the selected chain had to remain
+eligible for consequence-driven inhibition. That successor and its immediate
+return to integrated work are recorded below.
+
+The immutable artifact is
+[`r4_integrated_continual_coding_session_v6.json`](../benchmarks/r4_integrated_continual_coding_session_v6.json),
+33,242,148 bytes, SHA-256
+`73d3348d44a5910a226a3c9405db2e6d31381ed25934d3a74996624c377f9b58`.
+Its frozen task-source, train-stream, and stream-custody SHA-256 values are
+`34a19e89e8893f2a496cda422e7e2d5693c7d65cb68a4ebc1a0699e8b9049e24`,
+`4291faf1c0035dbff79b40250ab8cfd0e718d0a610ffd73684481a93fed60303`,
+and
+`e19d14234b9d3bef90927e176590ede49f17c8280208712ee0a455b743cf672b`.
+Reservation and final custody agree, all 90 attempt decisions have terminal
+resolution records, and the digest chains have zero discontinuities. This is a
+narrow fresh public-TRAIN falsification/localization result, not useful
+continual learning, repository competence, protected transfer, Simple-SWE,
+SWE-bench, or external-model evidence.
+
+### Role-relative compositor successor and terminal V7 result
+
+The exactly-once public mechanism gate
+`PASS_R4_ROLE_RELATIVE_COMPOSITOR_GATE_V1` passed all 12 checks. From 11
+complete opaque demonstrations, its 36-cell learner composed a novel
+six-emission response across two contexts, bound a fresh role inventory, and
+lost the response to both `COMPOSITOR_OFF` and `RECURRENCE_OFF`. Ambiguous and
+unknown observations selected physical STOP. Exact-once resolution and neutral
+digest identity held. A target-free negative receipt changed the selected GID
+from 6 to 7, while `NOGO_OFF` repeated GID 6. The immutable artifact is
+[`r4_role_relative_compositor_gate_v1.json`](../benchmarks/r4_role_relative_compositor_gate_v1.json),
+SHA-256
+`921f78601a9e1e897ed16f2472227592ce3b35ec17feb76836899949df3e679c`.
+Runner, compositor-source, and fixture-payload SHA-256 values are respectively
+`9f4a745ef900d0139f2a1d2cd6b07d0cdba2591b975ea8e670a436d79f8c8b98`,
+`26aa90d8b6b56a9ffb3094bbf45b93dd926d1d6e8e2ee33610ed00883a11e87d`,
+and
+`5c847e0c942097b3d2413149523dfd28a346d5c64ff0b62884e196800fc24972`.
+This is an opaque-byte mechanism-only causal result. Its complete normalized
+demonstrations and learned contexts do not establish coding, integrated
+continual learning, repository competence, protected transfer, SWE, or general
+intelligence.
+
+The mechanism now has a production integration cursor rather than a second
+selector. Complete pointerized outputs discover repeated inventory-to-end runs
+and collapse them to internal role markers. `FactorizedFragmentMemory` seals
+role-loop and root-edge custody; `RecurrentAssemblyStack` physically binds each
+current role, races `CONTINUE` against `EXIT`, retains one pending consequence
+receipt, and applies prefix-qualified chain-local NoGo to the selected proposal,
+including active-refinement scores. Focused development checks passed 7 assembly
+cases and 9 recurrent-stack cases; public-prior replay remained 8/8. The
+integrated path emitted novel size-three
+`PACK[<@0>](<@1>, <@2>)` from size-four training, lost it under `STACK_OFF`,
+and changed its next proposal after a scalar negative receipt. Root combined
+verification was 18 passed and targeted Ruff was clean.
+
+This is implementation and focused developmental evidence, not an integrated
+coding-session or SWE result. Planning and live inference still traverse the
+projection twice and preseed future factors. A single-pass attempt was rejected
+after it broke public replay, exposing a hidden dependence on whole-row
+coherence. That debt remains explicit rather than being concealed by a
+compatibility path.
+
+`DendriticCortex.race_currents_first_spike` also gives the assembly stack an
+event-exact compiled first-spike race. On 16 candidates repeated 200 times, the
+measured race call fell from 0.67846 seconds to 0.00693 seconds (about 97.9x)
+with the same winner and spike time; simulated event steps fell from 600 to 52.
+This is optimization evidence, not capability evidence.
+
+The frozen V7 integrated stream was then spent exactly once and is immutable.
+It contains 16 public-TRAIN tasks with stage counts 4/4/4/2/2, interface
+arities 1/2/3/5, fourteen executable tasks, and two intentionally
+insufficient-evidence tasks. Its task-logical, masked-task-source, and custody
+SHA-256 values are respectively
+`63227e99f894654a32873b100682f30baa786d3a5e06018d2083f1b58820a117`,
+`a73bdc1fb15fceccdc2419ca18a279de0d023a57e4ce4c39497117f637c8f2cc`,
+and
+`25d7db8cb294f5aec1f5953a336b1ada1bd36917fe0e7052081b86bfb352f35e`.
+Treatment/no-update/`STACK_OFF` scored 2/16, 0/16, and 2/16. All four
+recorded successes were correct physical STOPs on the two insufficient-evidence
+tasks; every executable stage scored zero in every arm. Treatment produced only
+three failed programs and sixteen physical STOP decisions. After its third
+negative update, every first attempt for tasks 4–15 stopped. `STACK_OFF`
+stopped on all sixteen. The no-update arm kept proposing: its 42 non-STOP
+attempts contained five distinct raw pointer programs and fifteen distinct
+materialized sources, entered the real sandbox 36 times, and failed every
+execution. Treatment added two sandbox entries, for 38 total across the main
+arms. This is genuine bottleneck movement from V6's zero sandbox entries, but
+not semantic competence.
+
+The result localizes the new frontier to semantic proposal formation and
+continual recruitment. Live role binding changed 30/42 no-update raw proposals
+away from byte-exact prior programs, so the role-relative cursor is doing real
+structural work. But the five finite structural owners still replay familiar
+semantic bodies under new interfaces. Chain-local NoGo rotates among those
+choices and then selects STOP; it cannot recruit a new operation or relation
+from experience. It also reduced treatment public-prior replay from 8/8 to 6/8,
+while no-update retained 8/8. The STOP result is nonselective uncertainty rather
+than a metacognitive success: treatment stopped almost everywhere,
+`STACK_OFF` stopped everywhere, and no-update failed to abstain on both
+ambiguous tasks.
+
+The terminal artifact is
+[`r4_integrated_continual_coding_session_v7.json`](../benchmarks/r4_integrated_continual_coding_session_v7.json),
+30,296,471 bytes, SHA-256
+`8ce4e91d10b4028d1debe38aa96662211c76940ae08f002f725a5e417538329f`.
+The runner and raw task-source SHA-256 values are
+`e83696896ac658a8e19a6fdfa283638aa11d2cb67578343a1be7f97cb6eea8f7`
+and
+`4e3f3f9cc1ccaf20f7b5b0fda1730e5a7fe532f7c11e3ef0dafdd5327970d8b0`.
+Reservation/final custody agree; all 79 decisions have one terminal resolution,
+45 authenticated resolution receipts were recorded, only the three treatment
+negative receipts changed learned state, initial roots match, both no-update
+digests stayed unchanged, and no target teacher or private authored field
+entered cognition. The next integrated mechanism must learn and order reusable
+semantic chunks from causal experience, grow alternatives online, and inhibit
+the responsible local transition without globally destroying shared prior
+structure. This remains fresh public-TRAIN failure localization only—not
+continual improvement, a completed mesoscopic gate, protected transfer,
+Simple-SWE, SWE-bench, Gemma, Opus, or intelligence. R5 and R6 remain sealed.
+
+### Frozen recurrent-inventory continual V5 result
+
+The fresh V5 integrated session is terminally spent. One persistent treatment
+learner, one independently grown no-update control, and one independently grown
+inventory-loop-off causal arm began from the same eight public-prior successes.
+They faced sixteen fresh public-TRAIN tasks: four renamed transfers, four novel
+factor recombinations, four execution-feedback revisions, two delayed-retention
+rechecks, and two requests with intentionally insufficient evidence. Interface
+arities 1, 2, 4, and 5 appeared four times each. Target answers, candidate
+patches, answer-bearing diagnostics, synthetic STOP lessons, DEV, protected
+inputs, and private authored budgets remained outside learner cognition.
+
+Treatment scored 5/16, the frozen control 6/16, and loop-off 2/16. By stage,
+treatment/control/loop-off scored respectively 4/4, 4/4, 0/4 on renamed
+transfer; 0/4, 0/4, 0/4 on recombination; 0/4, 0/4, 0/4 on feedback revision;
+0/2, 1/2, 0/2 on delayed retention; and 1/2, 1/2, 2/2 on insufficient
+evidence. Neither main arm recovered after failure, and treatment finished one
+task behind the no-update control.
+
+The integrated inventory loop nevertheless transferred causally. On the
+fourteen executable tasks, the control's first attempt materialized the exact
+public entry point and ordered parameter sequence on 12/14 and entered the
+sandbox on the same 12/14. It covered arities 1, 2, 4, and 5 at 3/3, 4/4, 2/4,
+and 3/3 exact interfaces. Loop-off was exact and entered the sandbox on 0/14,
+selecting physical explicit STOP on all sixteen tasks. Treatment was exact and
+entered the sandbox on 8/14; its later loss relative to control is attributable
+to online plasticity, not to the frozen recurrent inventory mechanism. The
+renamed-transfer tasks passed 4/4 in both main arms across all four arities, so
+fixed cardinality is no longer the dominant integrated failure.
+
+Semantic composition is. Both main arms failed all eight recombination and
+feedback-revision tasks. Exact-interface executions retrieved only one familiar
+primitive: interior slicing without normalization, distance without
+scale/surcharge, one-input iteration instead of shared nonzero product, or
+distance over the wrong affine operands. This is repeated evidence across
+independent groups and arities that flat independent fragment projections do
+not yet preserve and nest multiple learned operations as one reusable
+computation.
+
+Treatment applied fourteen authenticated digest-changing updates: four success
+and ten failure. Its branches grew from 18,762 to 19,270 while cell count stayed
+122 and vocabulary stayed 274; control and loop-off remained byte-identical to
+their initial model. Across eight treatment adjacent retry pairs, five repeated
+the same failed program and three changed, but every change was failed
+program-to-STOP. There were zero alternate executable retries and zero
+recoveries. All sixteen control retry pairs repeated the same failed program.
+Current negative plasticity therefore suppresses the whole active cue-fragment
+trace instead of constructing and testing a localized alternative.
+
+That plasticity also interfered with retained knowledge. Treatment public-prior
+replay began at 7/8 byte-exact and 8/8 alpha-equivalent/valid/terminal, remained
+intact after all four successful transfer updates, fell to 6/8 and 7/8 after
+scaled-route-cost failure updates, then fell again to 5/8 and 6/8 after the
+final insufficient-evidence failure update. Control stayed at 7/8 and 8/8.
+The unknown-cue probe still produced explicit neuronal STOP at all 34 main-arm
+checkpoints, so STOP exists but its contextual calibration and failure credit
+are wrong. Delayed task 12 passed in control but treatment stopped.
+
+Physical custody is complete. The 72 task-attempt traces contain 3,747 fragment
+races and 72 STOP winners; the treatment/control arms contain 172 physical
+inventory continue/exit races, while loop-off contains zero. All fragment,
+inventory, output-binding, and pre-plastic digest invariants hold. Across the
+306 retention traces, 17,485 fragment races, 816 inventory races, and 306 STOP
+winners also have zero recorded invariant violations.
+
+V5 therefore banks integrated causal variable-cardinality traversal and robust
+renamed transfer, while falsifying current independent projection and global
+failure depression as sufficient for continual coding. Its smallest licensed
+successor was a bounded recurrent compositional assembly stack over arbitrary
+learned fragments, with physical push/pop/emit decisions, assembly-scoped
+eligibility, and a stack-off causal micro-gate on opaque structure. That narrow
+mechanism result is recorded below. Broad route inhibition is not licensed: no
+viable alternate assembly was observed. Provenance consolidation is also
+premature because treatment produced no useful recovery or advantage.
+
+The immutable artifact is
+[`r4_integrated_continual_coding_session_v5.json`](../benchmarks/r4_integrated_continual_coding_session_v5.json),
+SHA-256
+`264541859cbd901e287ec5f9b88e8eedbb66bb51268b5aafe2a95b65c139ebfc`.
+Runner, task-stream source, train-stream, train-stream-custody, and
+factorized-model source SHA-256 values are respectively
+`f474438bec24e677762c03f135aacf7ded8a02846ed22bb27e99d51070fb2f59`,
+`c73b173265f2d4478fc03a9fffbd6d4d657e4f21aa29e0a47fcb89152ca3d8a4`,
+`f5abad0bd725b6946ea9ee98e74752c03940bcfe615de8ef1caa0c598b51d1e2`,
+`4081b581af922b78c0cffbc6d4241b474b3a65f1c571e998d0a90bdeb08ad495`,
+and
+`d34ed27d64600c0ee8e903425aebd4568fbb0a31beab848f8badc9cb32cbde36`.
+Reservation and terminal corpus/execution custody match exactly. This is fresh
+public-TRAIN toy integrated failure-localization only—not continual
+improvement, a completed mesoscopic forcing gate, protected transfer,
+Simple-SWE M0, SWE-bench, or external-model evidence. It must never be rerun or
+tuned.
+
+### Developmental recurrent assembly-stack result
+
+The V5 localization received one opaque causal micro-gate. Four complete public
+successes supplied a parity subset of three binary factors, each with a unique
+payload copied into a properly nested seven-token response; one additional
+success supplied a direct `ATOM` payload-copy route. The learner received only
+complete opaque observation and response sequences, with no supplied spans,
+groups, roles, stack actions, candidates, or target metadata. The two scored
+nested observations used factor triples absent from model training and unseen
+payload symbols.
+
+Treatment was exact on 2/2 nested responses and both traces reached physical
+depth at least two with PUSH and POP custody. `STACK_OFF` was exact on 0/2. The
+direct route stayed exact 1/1 with the stack enabled and 1/1 with `STACK_OFF`,
+isolating the causal loss to recurrent frame/continuation structure rather than
+generic emission or payload copying. The unsupported cue produced one physical
+explicit STOP. All 7/7 scored traces had positive spike-time/simulation custody,
+and all seven neutral resolutions retained the same initial/final model digest,
+`e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a`,
+with zero changed structural edges.
+
+This is a **visible-scoring public developmental causal result**, not fresh
+held-out generalization. The artifact records
+`cohort_novel_at_artifact_spend=false`, even though the two factor combinations
+and their symbols were absent from model training, because the scorer was
+visible during implementation. It is not integrated continual learning,
+mesoscopic repository competence, protected evidence, SWE, cross-domain
+transfer, or broad intelligence evidence.
+
+The immutable artifact is
+[`r4_recurrent_assembly_stack_gate_v1.json`](../benchmarks/r4_recurrent_assembly_stack_gate_v1.json),
+SHA-256
+`11dbbbd205c2ba1f59d8c2369a1190f5dc6f232205e425f3be07c951c579912a`.
+Fixture-content, fixture-source, runner-source, gate-spend model-source, and
+cortex-source SHA-256 values are respectively
+`e90933a769fcbb36a0ec8c316d4ee197c3590e4641bf2082e19007b15878d3ef`,
+`bbe6f43ada638b96e2d1062688169c5555e99e28441807af59be11c20cae7db1`,
+`de927bba97950e528ffeaa949b804d4045a74fdc4fcb7a0f94c8595fb138e4f6`,
+`242cbbea8ff84f8ae8baedf5780e3a0bc346f07ad56fe966df5c9efde4d53f7e`,
+and
+`9cf37fc36978c3389a86a2856401f6c528d1a95f491dab0eb1b8662edcd055db`.
+Independent audit reproduced the fixture/public-training custody, emitted-token
+byte hashes, all trace hashes, the decision-freeze hash, and every score above
+without rerunning the learner or gate.
+
+The gate-spend mechanism used a five-example bound and rebuilt all learned
+programs after each complete success. Its incremental no-replay successor and
+target-free persistent adapter were subsequently implemented and evaluated by
+V6; the frozen result above shows that those pieces preserved replay but did
+not form novel role-bound programs.
+
+V6 contains 16 tasks in stage counts 4/4/4/2/2 for renamed transfer, nested
+multi-fragment recombination, execution-feedback revision, delayed retention,
+and insufficient evidence. Arities 1, 2, 4, and 5 occur four times each; 14
+tasks expect execution and two expect immediate STOP. Its task-source,
+train-stream, and stream-custody SHA-256 values are respectively
+`34a19e89e8893f2a496cda422e7e2d5693c7d65cb68a4ebc1a0699e8b9049e24`,
+`4291faf1c0035dbff79b40250ab8cfd0e718d0a610ffd73684481a93fed60303`,
+and
+`e19d14234b9d3bef90927e176590ede49f17c8280208712ee0a455b743cf672b`.
+The stream is now spent exactly once. Its immutable result and successor
+localization are recorded at the top of this frontier section.
+
+### Frozen factorized continual V4 result
+
+The fresh factorized V4 session is terminally spent. One persistent treatment
+learner and one independently grown no-update control began from the same eight
+public-prior successes and received twelve fresh public-TRAIN tasks under one
+uniform three-attempt policy. The stream contained three renamed transfers,
+three factor recombinations, three feedback-revision tasks, and three requests
+whose evidence was intentionally insufficient. Target teachers, synthetic STOP
+lessons, full replay, DEV, and protected inputs remained absent.
+
+Both arms scored the same 5/12: 2/3 renamed transfers, 0/3 factor
+recombinations, 0/3 feedback revisions, and 3/3 immediate uncertainty STOPs.
+Equivalently, each arm solved 2/9 executable tasks and all three abstention
+tasks. The renamed passes were distance transfer and normalization; the
+two-parameter even-filter transfer stopped. Treatment used fourteen attempts:
+nine `explicit-stop`, two `passed`,
+and three `sandbox:regression_failure`. Control used sixteen: eight
+`explicit-stop`, two `passed`, three `sandbox:regression_failure`, and three
+`sandbox:signature_error`. Neither arm recovered on a later attempt, and
+treatment gained zero tasks over the frozen control.
+
+Treatment nevertheless applied five authenticated digest-changing updates:
+two success updates and three failure updates. Its branch count grew from
+18,686 to 18,874, while the control stayed at 18,686 and retained its initial
+digest. Those updates did not change an emitted retry. The artifact's
+`retry_changed` field is true for treatment task index 3 and control task
+indices 3 and 6, but it hashes the frame and model digest as well as the
+output. Across the two
+treatment and four control adjacent retry comparisons, both raw and
+materialized outputs changed 0/2 and 0/4 respectively. In particular, all
+three scaled-distance attempts emitted the same unscaled distance program in
+both arms.
+
+The failure updates also caused measurable interference. Treatment public-prior
+retention began at 7/8 byte-exact, 8/8 alpha-equivalent, 8/8 valid tool outputs,
+and 8/8 terminal STOPs. Immediately after the three scaled-distance failures,
+those counts fell to 6/8, 7/8, 7/8, and 7/8 and stayed there: prior case 1's
+even-filter replay now returned explicit STOP. The control remained at 7/8,
+8/8, 8/8, and 8/8.
+Both arms retained an explicit STOP on the untrained unknown-cue probe at every
+checkpoint.
+
+All 30 attempt traces contain a physical STOP winner. Thirteen are terminal
+STOPs after a complete tool output; seventeen are early explicit STOPs (nine
+treatment, eight control), each with a competing continuation: sixteen have
+two candidates and one has three. Eight
+two-symbol inventories stop at fragment step 21 after a function name, one
+parameter, and a dangling `, `; eight three-symbol inventories stop at step 24
+after two parameters and the same dangling delimiter. The remaining treatment
+STOP occurs at step 30 on the five-symbol capped-affine task, after closing a
+three-parameter signature and reaching the body indent. The successful renamed
+programs also use exactly three parameters, while the control's capped-affine
+program omits its fourth parameter. This localizes a fixed-three signature
+template rather than general arity-sensitive structural generation.
+
+The six supported early-STOP cases made learned variable-cardinality inventory
+traversal the first localized successor. The repeated scaled-distance failure
+and retention loss separately require consequence-driven structural
+plasticity: authenticated success/failure must be able to form or revise
+reusable fragment relations and localize credit rather than only depress
+existing cue edges. Another cue-weight retune or V4 retry is not licensed.
+
+The immutable artifact is
+[`r4_integrated_continual_coding_session_v4.json`](../benchmarks/r4_integrated_continual_coding_session_v4.json),
+SHA-256
+`15af435b757a9e0aceab024a88e5ff8bfe013e51020c514d77b0edb1138874f7`.
+Its runner, stream, stream-custody, task-source, and factorized-model SHA-256
+values are respectively
+`112435a42f6c85e3eddb057ae86983df6578ddd2bd90f736ae76e5ae26678501`,
+`b0e77bb4f29c6eff7eb717f9fda9d77f72a68f9954294dbdfd4be1dc0d962d57`,
+`b54ad8d7efa7d28b52951e03734d1cb7fdc9c0f191e8dd41fa0314c935c77b3b`,
+`520ea0ad97f5f211295ccd48b7900f4eaa475bcb73bd8d7a5816cba5165e552f`,
+and
+`595b4ab5b8bb486e843f52fbd73e4958d5e3d6d0efad6cb690491757a94d1017`.
+Reservation and terminal corpus/execution custody are identical; they also pin
+the protocol at
+`f7bc723457bdb733bb560feb7e7f509b39cb756b2eec130e7ead6168e0bcb2e2`,
+the worker at
+`258aaf45decb8ed6635a85b92ee970591932b2cf53b691149a0d66777601c870`,
+and the Python 3.11.15 executable at
+`6765c6b1685c86877fabe14d82240f3fab2913a617a85e8d09e61dc40798013b`.
+This is fresh developmental public-TRAIN failure-localization only—not
+protected evaluation, family-disjoint transfer, Simple-SWE M0, or a completed
+mesoscopic forcing-gate result. The artifact is immutable and must never be
+rerun or tuned.
+
+### Developmental variable-cardinality inventory result
+
+This result is **public developmental evidence, not a fresh held-out cohort**.
+The artifact records `cohort_novel_at_artifact_spend=false` because the focused
+mechanism test exercised the scoring cases before the artifact was spent. It
+must not be cited as fresh generalization, integrated V5, continual learning,
+SWE capability, or protected evidence.
+
+The localized mechanism replaces a fixed learned arity with one recurrent
+inventory-item cell, learned separator transitions, physical continue/exit
+cells whose learned weights distinguish an occupied next slot from exhaustion,
+and positive learned cue-familiarity drive conditioning the initial non-STOP
+race and loop entry. It therefore reuses one learned arbitrary-token relation
+across different inventory lengths instead of allocating one output position
+per item. The model grew to 80 cells and 90 branches from public demonstrations
+at arity three.
+
+On the already-exercised developmental scoring cardinalities 1, 2, 4, and 5,
+treatment was exact on 4/4. The fixed-arity loop-off ablation was exact on 0/4
+and produced zero loop races. Binding-off produced the expected pointer
+placeholder structure on 4/4 but the bound target on 0/4. The unknown-cue and
+empty-inventory probes stopped on 2/2. All 14 complete scored traces had
+physical custody; within them, the treatment and binding-off loop contracts
+contained 24 physical continue/exit races, and the two probe STOPs were
+physical. The initial and final training digest remained
+`7359928420927590c144792fdd86df8c98bf60b09bd6502d9ec3d4f219d9d086`,
+so inference changed no learned state.
+
+The spent immutable artifact is
+[`r4_variable_cardinality_inventory_gate_v1.json`](../benchmarks/r4_variable_cardinality_inventory_gate_v1.json),
+SHA-256
+`99da8382989e2fe8008f05fac06de4cdcf415269ad2fa462b311a23a15fc211a`.
+Its fixture-content, fixture-source, runner-source, and factorized-model-source
+SHA-256 values are respectively
+`656424b1e47347636c0b6638ba9b799b9aac8db5a3fef8df489645818acc67e7`,
+`6b73f64371ce957328a0fb5d6cd08decc212ad1b6f04a99aa0a8e9bf24565fee`,
+`edb7144142c68b59aa2608435abc2ece681a88855e8945e832c42abb5b9a6950`,
+and
+`d34ed27d64600c0ee8e903425aebd4568fbb0a31beab848f8badc9cb32cbde36`.
+The narrow claim is only that this recurrent arbitrary-token mechanism and its
+causal ablations work on the public developmental fixture. The next evidence
+must come from a genuinely fresh integrated V5 cohort; V4 and this artifact
+remain immutable.
+
+### Earlier cue-routed V3 result
+
+The cue-routed episodic V3 continual session is terminally spent. One persistent
+treatment learner and one independently grown frozen no-update control began
+from eight public-prior action routes plus one generic STOP route, then received
+the same twelve fresh public-TRAIN tasks: four prior-capability transfers, four
+recombinations, and four unsupported algorithms. Target teachers, full replay,
+DEV, and protected inputs remained absent; execution used the exact learner
+action source under a maximum-two-attempt, terminal-STOP policy.
+
+Both arms solved only the same inner-slice transfer: 1/12 overall, 1/4 prior
+transfer, 0/4 recombination, and 0/4 unsupported. Treatment used 18 attempts:
+one `passed`, seven `sandbox:regression_failure`, one `sandbox:runtime_error`,
+one `sandbox:signature_error`, one `sandbox:policy_violation`, and seven
+`stop:pointer_binding_failed_closed`. The frozen control used 16 attempts: one
+`passed`, four `sandbox:regression_failure`, two `sandbox:runtime_error`, two
+`sandbox:policy_violation`, and seven `stop:pointer_binding_failed_closed`.
+
+The new mechanism changed behavior without yet improving capability. Treatment
+recorded one successful learning event and changed its model digest; six second
+attempts changed after failure-conditioned route exclusion versus zero in the
+control, but neither arm recovered on a second attempt. Treatment selected seven
+distinct action routes, the control selected all eight, and neither selected the
+explicit STOP route. The result therefore banks physical episode routing and
+action-level revision only narrowly. It does not demonstrate continual
+improvement: one exact prior transfer worked equally in the frozen control,
+recombination remained absent, changed retries were not useful, and unsupported
+tasks did not elicit learned uncertainty.
+
+The V3 stream root is
+`eb4d92dc9e9c0a1c1082cfe522d246e787de5917c12979a2f7a3eb50158d4d64`;
+the bootstrap-corpus root is
+`8f78ef7d75a00309e3c7c74cdb3c681e5f9e7b9130064dfd04fcd462148f54bc`.
+The immutable `COMPLETED` artifact is
+[`r4_integrated_continual_coding_session_v3.json`](../benchmarks/r4_integrated_continual_coding_session_v3.json),
+SHA-256
+`effb9053111826481645cea593d7ca1bc840bed2085a3258744563e9aa633c9d`.
+Its exact claim boundary is `prepared fresh public-TRAIN routed continual toy
+pressure only; no protected evaluation or mesoscopic forcing-gate claim`. It
+must not be rerun or tuned. The next fresh integrated successor needs learned
+compositional episode reuse, reliable STOP/uncertainty, and failure updates that
+produce recoveries rather than merely different actions.
+
+### Frozen factorized output-binding result
+
+V3's whole-episode routing failure drove one smaller reusable mechanism gate,
+not another integrated-cohort retry. `FactorizedPointerCellModel` learns a
+shared recurrent graph of output fragments, conditions ambiguous recurrent
+edges on learned cue evidence, binds query symbols only after a fragment cell
+wins, allocates and consistently reuses fresh output-local symbols, and keeps a
+physical STOP cell in every decision race. The frozen gate grew an 82-cell,
+422-branch model from six public opaque-token lessons, then spent exactly once
+on three fresh cue-factor compositions.
+
+`PASS_FACTORIZED_OUTPUT_BINDING_GATE_V1` banked 3/3 exact treatment
+compositions and 3/3 fresh-local bindings. The whole-episode-only control
+stopped 3/3; binding-off produced all three exact placeholder forms but 0/3
+bound outputs; fragment-projection-off stopped 3/3; and all 15 required
+fragment/STOP traces had physical spike custody. Unknown cues stopped with the
+STOP competitor enabled and emitted a non-STOP construction only when STOP was
+ablated. The initial and final model digest remained
+`bf77d21f7a646ea0a72b67d4c6d0569875656c4e8aa9d5bb9525a0e571e160b4`,
+so frozen inference changed no learned state.
+
+The immutable artifact is
+[`r4_factorized_output_binding_gate_v1.json`](../benchmarks/r4_factorized_output_binding_gate_v1.json),
+SHA-256
+`301e40786f47a9e6ce09d03e7049524faa2bed9d6d928c66dd57cb2e7ce33376`.
+Its source custody pins `src/humanbrain/factorized_pointer.py` at
+`595b4ab5b8bb486e843f52fbd73e4958d5e3d6d0efad6cb690491757a94d1017`,
+the gate source at
+`4d37da1ff9f82915438b22f579c106cf7d12f3e15df3d77e3234237cdb8e930a`,
+and the fixture source at
+`1a34614ccb94b336c24a5fc0c8a5ab1c3d0d0f2817ed2c59de977e7e796ac5da`;
+the frozen fixture content root is
+`654545391474f40b8b4b6e41a2485e5f86b0a18475fd629a343773badbf036e6`.
+
+A separate public-prior developmental profile localized immutable digest
+serialization at 0.260 of 0.319 seconds across eight decodes. Caching that
+derived digest, with invalidation after plasticity, reduced the same eight
+decodes from 266.635 ms to 60.045 ms, a 4.44x speedup; the remaining 529
+physical races consumed 0.049 of 0.059 seconds. This is implementation
+performance evidence, not added capability.
+
+The gate's narrow claim is arbitrary-token two-factor output construction,
+query-symbol projection, fresh-local binding, and causal STOP. It performed
+zero Python or sandbox executions, consumed zero V4, persistent-learner,
+private, protected, or target-teacher inputs, and provides no SWE or integrated
+continual-learning result. Online feedback can revise selected cue-edge weights
+but cannot yet grow unseen structural fragments. The next evidence must come
+from a fresh persistent integrated cohort, not another use of this spent gate.
+
+The V2 precursor remains frozen at 0/12 in both arms. It moved sixteen attempts
+beyond V1's all-signature-failure boundary into real execution, but every raw
+action selected `fallback_lookup`; neither arm learned, changed digest, or
+changed a retry. Its stream root is
+`99e11062d7d4ede454abd0c5b52747ca208ea9a25a917088c2c9e14c574e5253`,
+and its immutable artifact is
+[`r4_integrated_continual_coding_session_v2.json`](../benchmarks/r4_integrated_continual_coding_session_v2.json),
+SHA-256
+`5e85b7f81007366fca2c0557814858a7bbe2e4cea5d5f70028fec3e7fc25542c`.
+
+### Frozen source-local pointer result
+
+The separately named source-local alpha-binding micro-gate is also now spent.
+Its pointer treatment learned from all eight frozen public-prior cases; each
+dynamic inventory was derived mechanically from first-occurrence identifiers
+in the exact starter source rather than supplied in semantic-role order. On
+eight fresh mechanically alpha-renamed cases, the all-or-nothing gate reported
+`FAIL_SOURCE_LOCAL_ALPHA_BINDING_GATE_V1`: 4/8 exact expected sources, 8/8 raw
+neuronal outputs containing pointers, 0/8 exact for the raw binding-off model,
+and a fail-closed STOP for an empty inventory.
+
+The frozen artifact localizes the partial result more sharply than the headline
+score. Seven of eight outputs materialize the correct entrypoint and parameter
+signature, and all seven addressable raw pointer programs follow a one-position
+inventory rotation exactly. The remaining case selects a six-position program
+for a four-position inventory and stops on out-of-range pointers. The four
+semantic retrieval choices are correct; the other choices map expected prior
+templates `0,1,2,5` to selected templates `4,6,6,6`. Thus source-local copying
+is useful but incomplete, while alpha-invariant behavior/template retrieval is
+the next bottleneck. The artifact is
+[`r4_source_local_alpha_binding_gate_v1.json`](../benchmarks/r4_source_local_alpha_binding_gate_v1.json),
+SHA-256
+`f08a7fa57455664c9525833ce310e7b1f8166cdb5b5ea833e10d4e46d4d57de2`.
+It must not be rerun. The immediate integrated successor subsequently
+normalized both prompt and action through the same source-derived pointer
+vocabulary and produced the frozen V2 result above; V3 then added cue-routed
+episodes and failure-conditioned route exclusion. The current frontier is
+compositional reuse, reliable uncertainty, and useful recovery, not more tuning
+of any spent cohort.
+
 ## Current packed TRAIN and generality frontier
 
 The earlier sections below retain the chronological mechanism record. The live

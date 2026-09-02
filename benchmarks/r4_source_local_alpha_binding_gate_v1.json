@@ -1,0 +1,909 @@
+{
+  "alpha_binding_stream_sha256": "9d95eaf38dcfee911554a9ca88cea27d1b07dc469288b9e4aec4b7e8adc6b3e9",
+  "binding_off_exact_count": 0,
+  "case_count": 8,
+  "cases": [
+    {
+      "ast_signature": null,
+      "binding_off": {
+        "ast_signature": {
+          "entrypoint": "solve",
+          "keyword_only": [],
+          "kwarg": null,
+          "parameters": [
+            "arg0",
+            "arg1",
+            "arg2"
+          ],
+          "positional_only": [],
+          "vararg": null
+        },
+        "decision": {
+          "arguments_json": "{\"source\":\"def solve(arg0, arg1, arg2):\\n    return sorted(set(arg0) & set(arg1))\\n\"}",
+          "frame_sha256": "0573516d35ab5b24a8d7ed4f70cf1beaa8a5360509713b19c6413486b336cc68",
+          "kind": "tool",
+          "model_digest": "71c8eeaa123c726cc8a87d92c99acd52696992871e54e276a1c43c0fbd43f7f0",
+          "sha256": "46c4acf2f56c06eefbc8efac862868df3006b54c60a86006a8c716451672b4c2",
+          "tool_name": "write_source"
+        },
+        "exact_binding_retained": false,
+        "raw_output": "\n<tool>{\"arguments\":{\"source\":\"def solve(arg0, arg1, arg2):\\n    return sorted(set(arg0) & set(arg1))\\n\"},\"name\":\"write_source\"}</tool>",
+        "tool_action_source": "def solve(arg0, arg1, arg2):\n    return sorted(set(arg0) & set(arg1))\n"
+      },
+      "case_id": "alpha-binding-00",
+      "frame_sha256": "0573516d35ab5b24a8d7ed4f70cf1beaa8a5360509713b19c6413486b336cc68",
+      "inventory": {
+        "derivation": "first_unique_non_keyword_ascii_identifiers_from_starter_source",
+        "lexical_position_count": 4,
+        "sha256": "9399c09d1611c2779d6fd667516c2805e492a048a9a64445c3b85687f3ad640c"
+      },
+      "materialization_error": {
+        "message": "pointer index 4 is outside the symbol inventory",
+        "type": "ValueError"
+      },
+      "materialized_decision": {
+        "frame_sha256": "0573516d35ab5b24a8d7ed4f70cf1beaa8a5360509713b19c6413486b336cc68",
+        "kind": "stop",
+        "model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+        "reason": "pointer_binding_failed_closed",
+        "sha256": "9669cf01d63856606069caf9a309fb7137f2fe72cc7edab4e8a1e0c7dc974284"
+      },
+      "materialized_output": null,
+      "materialized_tool_action_source": null,
+      "positive_exact": false,
+      "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@4>(<@5>(<@1>) & <@5>(<@2>))\\n\"},\"name\":\"write_source\"}</tool>",
+      "raw_pointer_output_contains_pointer": true,
+      "rotated_inventory_control": {
+        "ast_signature": null,
+        "decision": {
+          "frame_sha256": "0573516d35ab5b24a8d7ed4f70cf1beaa8a5360509713b19c6413486b336cc68",
+          "kind": "stop",
+          "model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+          "reason": "pointer_binding_failed_closed",
+          "sha256": "9669cf01d63856606069caf9a309fb7137f2fe72cc7edab4e8a1e0c7dc974284"
+        },
+        "exact_rotated_source": "def dovetail_ash(elmstone_bay, fablecrest_ivy, cairn_wisp):\n    return abs(elmstone_bay - fablecrest_ivy)\n",
+        "follows_rotation_and_loses_original": false,
+        "inventory": {
+          "derivation": "one_position_rotation_of_starter_source_inventory",
+          "lexical_position_count": 4,
+          "sha256": "1ea42bcac3e950a1c3bf0058716eb7312532845447f703bde9a77d92c77043c2"
+        },
+        "materialization_error": {
+          "message": "pointer index 4 is outside the symbol inventory",
+          "type": "ValueError"
+        },
+        "materialized_output": null,
+        "raw_matches_positive": true,
+        "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@4>(<@5>(<@1>) & <@5>(<@2>))\\n\"},\"name\":\"write_source\"}</tool>",
+        "tool_action_source": null
+      },
+      "scoring_only_expected_ast_signature": {
+        "entrypoint": "cairn_wisp",
+        "keyword_only": [],
+        "kwarg": null,
+        "parameters": [
+          "dovetail_ash",
+          "elmstone_bay",
+          "fablecrest_ivy"
+        ],
+        "positional_only": [],
+        "vararg": null
+      },
+      "scoring_only_expected_source": "def cairn_wisp(dovetail_ash, elmstone_bay, fablecrest_ivy):\n    return abs(dovetail_ash - elmstone_bay)\n"
+    },
+    {
+      "ast_signature": {
+        "entrypoint": "garnet_hush",
+        "keyword_only": [],
+        "kwarg": null,
+        "parameters": [
+          "hollowmere_jade",
+          "ironleaf_kite",
+          "juniper_lark"
+        ],
+        "positional_only": [],
+        "vararg": null
+      },
+      "binding_off": {
+        "ast_signature": {
+          "entrypoint": "solve",
+          "keyword_only": [],
+          "kwarg": null,
+          "parameters": [
+            "arg0",
+            "arg1",
+            "arg2"
+          ],
+          "positional_only": [],
+          "vararg": null
+        },
+        "decision": {
+          "arguments_json": "{\"source\":\"def solve(arg0, arg1, arg2):\\n    return arg0[1:-1]\\n\"}",
+          "frame_sha256": "3d8894c55750c3b3553553513c63172fb0c51abc46da404a4bb48cdcec0eb432",
+          "kind": "tool",
+          "model_digest": "71c8eeaa123c726cc8a87d92c99acd52696992871e54e276a1c43c0fbd43f7f0",
+          "sha256": "68ac8a2f399828cc87f8ddb0e7ce2e2a64c3d5eeb978ed667f8d10e0e598a321",
+          "tool_name": "write_source"
+        },
+        "exact_binding_retained": false,
+        "raw_output": "\n<tool>{\"arguments\":{\"source\":\"def solve(arg0, arg1, arg2):\\n    return arg0[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+        "tool_action_source": "def solve(arg0, arg1, arg2):\n    return arg0[1:-1]\n"
+      },
+      "case_id": "alpha-binding-01",
+      "frame_sha256": "3d8894c55750c3b3553553513c63172fb0c51abc46da404a4bb48cdcec0eb432",
+      "inventory": {
+        "derivation": "first_unique_non_keyword_ascii_identifiers_from_starter_source",
+        "lexical_position_count": 5,
+        "sha256": "2b85e25e60823d886f3a9a0579da3695b2533faadc8158aeec5e3d9e9811a656"
+      },
+      "materialization_error": null,
+      "materialized_decision": {
+        "arguments_json": "{\"source\":\"def garnet_hush(hollowmere_jade, ironleaf_kite, juniper_lark):\\n    return hollowmere_jade[1:-1]\\n\"}",
+        "frame_sha256": "3d8894c55750c3b3553553513c63172fb0c51abc46da404a4bb48cdcec0eb432",
+        "kind": "tool",
+        "model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+        "sha256": "6acd8e1952f52fc16a5201de122ef3d2f2bd77c65c40496ac797f3e0541bd473",
+        "tool_name": "write_source"
+      },
+      "materialized_output": "<tool>{\"arguments\":{\"source\":\"def garnet_hush(hollowmere_jade, ironleaf_kite, juniper_lark):\\n    return hollowmere_jade[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+      "materialized_tool_action_source": "def garnet_hush(hollowmere_jade, ironleaf_kite, juniper_lark):\n    return hollowmere_jade[1:-1]\n",
+      "positive_exact": false,
+      "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+      "raw_pointer_output_contains_pointer": true,
+      "rotated_inventory_control": {
+        "ast_signature": {
+          "entrypoint": "hollowmere_jade",
+          "keyword_only": [],
+          "kwarg": null,
+          "parameters": [
+            "ironleaf_kite",
+            "juniper_lark",
+            "item"
+          ],
+          "positional_only": [],
+          "vararg": null
+        },
+        "decision": {
+          "arguments_json": "{\"source\":\"def hollowmere_jade(ironleaf_kite, juniper_lark, item):\\n    return ironleaf_kite[1:-1]\\n\"}",
+          "frame_sha256": "3d8894c55750c3b3553553513c63172fb0c51abc46da404a4bb48cdcec0eb432",
+          "kind": "tool",
+          "model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+          "sha256": "62ad65758b596dbb1d98c6affdc2ad72bd8e309112d0291c9cb5ca9e44ffdfbe",
+          "tool_name": "write_source"
+        },
+        "exact_rotated_source": "def hollowmere_jade(ironleaf_kite, juniper_lark, item):\n    return [garnet_hush for garnet_hush in ironleaf_kite if garnet_hush % 2 == 0]\n",
+        "follows_rotation_and_loses_original": false,
+        "inventory": {
+          "derivation": "one_position_rotation_of_starter_source_inventory",
+          "lexical_position_count": 5,
+          "sha256": "106b475222b22f6118cc6b740321605f473c106331a91adbe65f50071c3461e7"
+        },
+        "materialization_error": null,
+        "materialized_output": "<tool>{\"arguments\":{\"source\":\"def hollowmere_jade(ironleaf_kite, juniper_lark, item):\\n    return ironleaf_kite[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+        "raw_matches_positive": true,
+        "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+        "tool_action_source": "def hollowmere_jade(ironleaf_kite, juniper_lark, item):\n    return ironleaf_kite[1:-1]\n"
+      },
+      "scoring_only_expected_ast_signature": {
+        "entrypoint": "garnet_hush",
+        "keyword_only": [],
+        "kwarg": null,
+        "parameters": [
+          "hollowmere_jade",
+          "ironleaf_kite",
+          "juniper_lark"
+        ],
+        "positional_only": [],
+        "vararg": null
+      },
+      "scoring_only_expected_source": "def garnet_hush(hollowmere_jade, ironleaf_kite, juniper_lark):\n    return [item for item in hollowmere_jade if item % 2 == 0]\n"
+    },
+    {
+      "ast_signature": {
+        "entrypoint": "kindred_moss",
+        "keyword_only": [],
+        "kwarg": null,
+        "parameters": [
+          "lattice_north",
+          "marble_oak",
+          "nimbus_pine"
+        ],
+        "positional_only": [],
+        "vararg": null
+      },
+      "binding_off": {
+        "ast_signature": {
+          "entrypoint": "solve",
+          "keyword_only": [],
+          "kwarg": null,
+          "parameters": [
+            "arg0",
+            "arg1",
+            "arg2"
+          ],
+          "positional_only": [],
+          "vararg": null
+        },
+        "decision": {
+          "arguments_json": "{\"source\":\"def solve(arg0, arg1, arg2):\\n    return arg0[1:-1]\\n\"}",
+          "frame_sha256": "52e050332649da48dd2dc37de11f0695b6a49804c794bf06f5b3b16ea0f4e01a",
+          "kind": "tool",
+          "model_digest": "71c8eeaa123c726cc8a87d92c99acd52696992871e54e276a1c43c0fbd43f7f0",
+          "sha256": "254508a88093a0493daba563c18dc8b9368ce118957958587615008753726e95",
+          "tool_name": "write_source"
+        },
+        "exact_binding_retained": false,
+        "raw_output": "\n<tool>{\"arguments\":{\"source\":\"def solve(arg0, arg1, arg2):\\n    return arg0[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+        "tool_action_source": "def solve(arg0, arg1, arg2):\n    return arg0[1:-1]\n"
+      },
+      "case_id": "alpha-binding-02",
+      "frame_sha256": "52e050332649da48dd2dc37de11f0695b6a49804c794bf06f5b3b16ea0f4e01a",
+      "inventory": {
+        "derivation": "first_unique_non_keyword_ascii_identifiers_from_starter_source",
+        "lexical_position_count": 5,
+        "sha256": "e95d6a4fd2dce07f70342c50a05447ef0bae3f3bcadc7644b9d80e20289af37f"
+      },
+      "materialization_error": null,
+      "materialized_decision": {
+        "arguments_json": "{\"source\":\"def kindred_moss(lattice_north, marble_oak, nimbus_pine):\\n    return lattice_north[1:-1]\\n\"}",
+        "frame_sha256": "52e050332649da48dd2dc37de11f0695b6a49804c794bf06f5b3b16ea0f4e01a",
+        "kind": "tool",
+        "model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+        "sha256": "f5c745ed2f7d6e8cb6678997d6041f6982f89d5503e0786581e368e4f09ba443",
+        "tool_name": "write_source"
+      },
+      "materialized_output": "<tool>{\"arguments\":{\"source\":\"def kindred_moss(lattice_north, marble_oak, nimbus_pine):\\n    return lattice_north[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+      "materialized_tool_action_source": "def kindred_moss(lattice_north, marble_oak, nimbus_pine):\n    return lattice_north[1:-1]\n",
+      "positive_exact": false,
+      "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+      "raw_pointer_output_contains_pointer": true,
+      "rotated_inventory_control": {
+        "ast_signature": {
+          "entrypoint": "lattice_north",
+          "keyword_only": [],
+          "kwarg": null,
+          "parameters": [
+            "marble_oak",
+            "nimbus_pine",
+            "lower"
+          ],
+          "positional_only": [],
+          "vararg": null
+        },
+        "decision": {
+          "arguments_json": "{\"source\":\"def lattice_north(marble_oak, nimbus_pine, lower):\\n    return marble_oak[1:-1]\\n\"}",
+          "frame_sha256": "52e050332649da48dd2dc37de11f0695b6a49804c794bf06f5b3b16ea0f4e01a",
+          "kind": "tool",
+          "model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+          "sha256": "889776fd537370d1caa44a756803ecf9b5e8d45bf2063ef1be8b95bb85e62ba4",
+          "tool_name": "write_source"
+        },
+        "exact_rotated_source": "def lattice_north(marble_oak, nimbus_pine, lower):\n    return marble_oak.strip().kindred_moss()\n",
+        "follows_rotation_and_loses_original": false,
+        "inventory": {
+          "derivation": "one_position_rotation_of_starter_source_inventory",
+          "lexical_position_count": 5,
+          "sha256": "f4c2950c53ddbe0a816a76a82b07c0bc10e8547ed9138cdb9492cbe0fb0e62ea"
+        },
+        "materialization_error": null,
+        "materialized_output": "<tool>{\"arguments\":{\"source\":\"def lattice_north(marble_oak, nimbus_pine, lower):\\n    return marble_oak[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+        "raw_matches_positive": true,
+        "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+        "tool_action_source": "def lattice_north(marble_oak, nimbus_pine, lower):\n    return marble_oak[1:-1]\n"
+      },
+      "scoring_only_expected_ast_signature": {
+        "entrypoint": "kindred_moss",
+        "keyword_only": [],
+        "kwarg": null,
+        "parameters": [
+          "lattice_north",
+          "marble_oak",
+          "nimbus_pine"
+        ],
+        "positional_only": [],
+        "vararg": null
+      },
+      "scoring_only_expected_source": "def kindred_moss(lattice_north, marble_oak, nimbus_pine):\n    return lattice_north.strip().lower()\n"
+    },
+    {
+      "ast_signature": {
+        "entrypoint": "opal_quill",
+        "keyword_only": [],
+        "kwarg": null,
+        "parameters": [
+          "prairie_rune",
+          "quartz_sable",
+          "river_thorn"
+        ],
+        "positional_only": [],
+        "vararg": null
+      },
+      "binding_off": {
+        "ast_signature": {
+          "entrypoint": "solve",
+          "keyword_only": [],
+          "kwarg": null,
+          "parameters": [
+            "arg0",
+            "arg1",
+            "arg2"
+          ],
+          "positional_only": [],
+          "vararg": null
+        },
+        "decision": {
+          "arguments_json": "{\"source\":\"def solve(arg0, arg1, arg2):\\n    return arg0[arg1] if arg1 in arg0 else arg2\\n\"}",
+          "frame_sha256": "99e7431854faa36199116d604fcda01cf34153c531020055f2c892e65e0f8986",
+          "kind": "tool",
+          "model_digest": "71c8eeaa123c726cc8a87d92c99acd52696992871e54e276a1c43c0fbd43f7f0",
+          "sha256": "191320de89066b814b81df0547a0c975ac4f2f7338c338f13aea82c16aad3cd1",
+          "tool_name": "write_source"
+        },
+        "exact_binding_retained": false,
+        "raw_output": "\n<tool>{\"arguments\":{\"source\":\"def solve(arg0, arg1, arg2):\\n    return arg0[arg1] if arg1 in arg0 else arg2\\n\"},\"name\":\"write_source\"}</tool>",
+        "tool_action_source": "def solve(arg0, arg1, arg2):\n    return arg0[arg1] if arg1 in arg0 else arg2\n"
+      },
+      "case_id": "alpha-binding-03",
+      "frame_sha256": "99e7431854faa36199116d604fcda01cf34153c531020055f2c892e65e0f8986",
+      "inventory": {
+        "derivation": "first_unique_non_keyword_ascii_identifiers_from_starter_source",
+        "lexical_position_count": 4,
+        "sha256": "875abfdb2d6e2ebc5a1a696df4e07f2d64489e4053a19a4f2e58337d079cdb85"
+      },
+      "materialization_error": null,
+      "materialized_decision": {
+        "arguments_json": "{\"source\":\"def opal_quill(prairie_rune, quartz_sable, river_thorn):\\n    return prairie_rune[quartz_sable] if quartz_sable in prairie_rune else river_thorn\\n\"}",
+        "frame_sha256": "99e7431854faa36199116d604fcda01cf34153c531020055f2c892e65e0f8986",
+        "kind": "tool",
+        "model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+        "sha256": "34468f2045507e15727e10f60a2afa0cb2191fcfe4ffe287e38664f37fef1c2a",
+        "tool_name": "write_source"
+      },
+      "materialized_output": "<tool>{\"arguments\":{\"source\":\"def opal_quill(prairie_rune, quartz_sable, river_thorn):\\n    return prairie_rune[quartz_sable] if quartz_sable in prairie_rune else river_thorn\\n\"},\"name\":\"write_source\"}</tool>",
+      "materialized_tool_action_source": "def opal_quill(prairie_rune, quartz_sable, river_thorn):\n    return prairie_rune[quartz_sable] if quartz_sable in prairie_rune else river_thorn\n",
+      "positive_exact": true,
+      "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+      "raw_pointer_output_contains_pointer": true,
+      "rotated_inventory_control": {
+        "ast_signature": {
+          "entrypoint": "prairie_rune",
+          "keyword_only": [],
+          "kwarg": null,
+          "parameters": [
+            "quartz_sable",
+            "river_thorn",
+            "opal_quill"
+          ],
+          "positional_only": [],
+          "vararg": null
+        },
+        "decision": {
+          "arguments_json": "{\"source\":\"def prairie_rune(quartz_sable, river_thorn, opal_quill):\\n    return quartz_sable[river_thorn] if river_thorn in quartz_sable else opal_quill\\n\"}",
+          "frame_sha256": "99e7431854faa36199116d604fcda01cf34153c531020055f2c892e65e0f8986",
+          "kind": "tool",
+          "model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+          "sha256": "8e8a8ddb01b83c1c437ad711c767eefcdaafb68a511e757ad9bd2735e83014de",
+          "tool_name": "write_source"
+        },
+        "exact_rotated_source": "def prairie_rune(quartz_sable, river_thorn, opal_quill):\n    return quartz_sable[river_thorn] if river_thorn in quartz_sable else opal_quill\n",
+        "follows_rotation_and_loses_original": true,
+        "inventory": {
+          "derivation": "one_position_rotation_of_starter_source_inventory",
+          "lexical_position_count": 4,
+          "sha256": "432b743e134fddc73de473a0f79edd210f02745e597f64435e4ddf463c307ec9"
+        },
+        "materialization_error": null,
+        "materialized_output": "<tool>{\"arguments\":{\"source\":\"def prairie_rune(quartz_sable, river_thorn, opal_quill):\\n    return quartz_sable[river_thorn] if river_thorn in quartz_sable else opal_quill\\n\"},\"name\":\"write_source\"}</tool>",
+        "raw_matches_positive": true,
+        "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[<@2>] if <@2> in <@1> else <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+        "tool_action_source": "def prairie_rune(quartz_sable, river_thorn, opal_quill):\n    return quartz_sable[river_thorn] if river_thorn in quartz_sable else opal_quill\n"
+      },
+      "scoring_only_expected_ast_signature": {
+        "entrypoint": "opal_quill",
+        "keyword_only": [],
+        "kwarg": null,
+        "parameters": [
+          "prairie_rune",
+          "quartz_sable",
+          "river_thorn"
+        ],
+        "positional_only": [],
+        "vararg": null
+      },
+      "scoring_only_expected_source": "def opal_quill(prairie_rune, quartz_sable, river_thorn):\n    return prairie_rune[quartz_sable] if quartz_sable in prairie_rune else river_thorn\n"
+    },
+    {
+      "ast_signature": {
+        "entrypoint": "silver_umber",
+        "keyword_only": [],
+        "kwarg": null,
+        "parameters": [
+          "tundra_vale",
+          "velvet_wren",
+          "willow_xylem"
+        ],
+        "positional_only": [],
+        "vararg": null
+      },
+      "binding_off": {
+        "ast_signature": {
+          "entrypoint": "solve",
+          "keyword_only": [],
+          "kwarg": null,
+          "parameters": [
+            "arg0",
+            "arg1",
+            "arg2"
+          ],
+          "positional_only": [],
+          "vararg": null
+        },
+        "decision": {
+          "arguments_json": "{\"source\":\"def solve(arg0, arg1, arg2):\\n    return sorted(set(arg0) & set(arg1))\\n\"}",
+          "frame_sha256": "4e87163388b9e82f098b410d49d5dc6eb8c514d6f844b2e66d634181137b291f",
+          "kind": "tool",
+          "model_digest": "71c8eeaa123c726cc8a87d92c99acd52696992871e54e276a1c43c0fbd43f7f0",
+          "sha256": "8f4182a51e6d2a75a55d9a9cf28c963014b9dcc355048e170af23040f1706ba4",
+          "tool_name": "write_source"
+        },
+        "exact_binding_retained": false,
+        "raw_output": "\n<tool>{\"arguments\":{\"source\":\"def solve(arg0, arg1, arg2):\\n    return sorted(set(arg0) & set(arg1))\\n\"},\"name\":\"write_source\"}</tool>",
+        "tool_action_source": "def solve(arg0, arg1, arg2):\n    return sorted(set(arg0) & set(arg1))\n"
+      },
+      "case_id": "alpha-binding-04",
+      "frame_sha256": "4e87163388b9e82f098b410d49d5dc6eb8c514d6f844b2e66d634181137b291f",
+      "inventory": {
+        "derivation": "first_unique_non_keyword_ascii_identifiers_from_starter_source",
+        "lexical_position_count": 6,
+        "sha256": "655a617eb7be342d739d50e1e64473d020f3050550ae9383f8008db29e440c72"
+      },
+      "materialization_error": null,
+      "materialized_decision": {
+        "arguments_json": "{\"source\":\"def silver_umber(tundra_vale, velvet_wren, willow_xylem):\\n    return sorted(set(tundra_vale) & set(velvet_wren))\\n\"}",
+        "frame_sha256": "4e87163388b9e82f098b410d49d5dc6eb8c514d6f844b2e66d634181137b291f",
+        "kind": "tool",
+        "model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+        "sha256": "a7486775af77b238df9997ee3e1b6bef6163683cea20814128a18c0ffcacb478",
+        "tool_name": "write_source"
+      },
+      "materialized_output": "<tool>{\"arguments\":{\"source\":\"def silver_umber(tundra_vale, velvet_wren, willow_xylem):\\n    return sorted(set(tundra_vale) & set(velvet_wren))\\n\"},\"name\":\"write_source\"}</tool>",
+      "materialized_tool_action_source": "def silver_umber(tundra_vale, velvet_wren, willow_xylem):\n    return sorted(set(tundra_vale) & set(velvet_wren))\n",
+      "positive_exact": true,
+      "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@4>(<@5>(<@1>) & <@5>(<@2>))\\n\"},\"name\":\"write_source\"}</tool>",
+      "raw_pointer_output_contains_pointer": true,
+      "rotated_inventory_control": {
+        "ast_signature": {
+          "entrypoint": "tundra_vale",
+          "keyword_only": [],
+          "kwarg": null,
+          "parameters": [
+            "velvet_wren",
+            "willow_xylem",
+            "sorted"
+          ],
+          "positional_only": [],
+          "vararg": null
+        },
+        "decision": {
+          "arguments_json": "{\"source\":\"def tundra_vale(velvet_wren, willow_xylem, sorted):\\n    return set(silver_umber(velvet_wren) & silver_umber(willow_xylem))\\n\"}",
+          "frame_sha256": "4e87163388b9e82f098b410d49d5dc6eb8c514d6f844b2e66d634181137b291f",
+          "kind": "tool",
+          "model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+          "sha256": "4c264c2bfb2487f94aa7a1ac85bee6cc80b69489db1866dc95dede3716a22eb6",
+          "tool_name": "write_source"
+        },
+        "exact_rotated_source": "def tundra_vale(velvet_wren, willow_xylem, sorted):\n    return set(silver_umber(velvet_wren) & silver_umber(willow_xylem))\n",
+        "follows_rotation_and_loses_original": true,
+        "inventory": {
+          "derivation": "one_position_rotation_of_starter_source_inventory",
+          "lexical_position_count": 6,
+          "sha256": "f18598a25d02bc3114e856c2078d3fbb2a288441cf3cc2d4556a6aa74278ebd4"
+        },
+        "materialization_error": null,
+        "materialized_output": "<tool>{\"arguments\":{\"source\":\"def tundra_vale(velvet_wren, willow_xylem, sorted):\\n    return set(silver_umber(velvet_wren) & silver_umber(willow_xylem))\\n\"},\"name\":\"write_source\"}</tool>",
+        "raw_matches_positive": true,
+        "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@4>(<@5>(<@1>) & <@5>(<@2>))\\n\"},\"name\":\"write_source\"}</tool>",
+        "tool_action_source": "def tundra_vale(velvet_wren, willow_xylem, sorted):\n    return set(silver_umber(velvet_wren) & silver_umber(willow_xylem))\n"
+      },
+      "scoring_only_expected_ast_signature": {
+        "entrypoint": "silver_umber",
+        "keyword_only": [],
+        "kwarg": null,
+        "parameters": [
+          "tundra_vale",
+          "velvet_wren",
+          "willow_xylem"
+        ],
+        "positional_only": [],
+        "vararg": null
+      },
+      "scoring_only_expected_source": "def silver_umber(tundra_vale, velvet_wren, willow_xylem):\n    return sorted(set(tundra_vale) & set(velvet_wren))\n"
+    },
+    {
+      "ast_signature": {
+        "entrypoint": "yarrow_crest",
+        "keyword_only": [],
+        "kwarg": null,
+        "parameters": [
+          "zephyr_dawn",
+          "amber_finch",
+          "bramble_glade"
+        ],
+        "positional_only": [],
+        "vararg": null
+      },
+      "binding_off": {
+        "ast_signature": {
+          "entrypoint": "solve",
+          "keyword_only": [],
+          "kwarg": null,
+          "parameters": [
+            "arg0",
+            "arg1",
+            "arg2"
+          ],
+          "positional_only": [],
+          "vararg": null
+        },
+        "decision": {
+          "arguments_json": "{\"source\":\"def solve(arg0, arg1, arg2):\\n    return arg0[1:-1]\\n\"}",
+          "frame_sha256": "1b8656828e6b96c786ecc4f6c35a737b78a4218bb02b54446e176e5b62a01156",
+          "kind": "tool",
+          "model_digest": "71c8eeaa123c726cc8a87d92c99acd52696992871e54e276a1c43c0fbd43f7f0",
+          "sha256": "b61d729ac0abb83871fde71f537b70bef40d49345c81918a5b3cbc7a226b2cd8",
+          "tool_name": "write_source"
+        },
+        "exact_binding_retained": false,
+        "raw_output": "\n<tool>{\"arguments\":{\"source\":\"def solve(arg0, arg1, arg2):\\n    return arg0[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+        "tool_action_source": "def solve(arg0, arg1, arg2):\n    return arg0[1:-1]\n"
+      },
+      "case_id": "alpha-binding-05",
+      "frame_sha256": "1b8656828e6b96c786ecc4f6c35a737b78a4218bb02b54446e176e5b62a01156",
+      "inventory": {
+        "derivation": "first_unique_non_keyword_ascii_identifiers_from_starter_source",
+        "lexical_position_count": 6,
+        "sha256": "c5929b4d692f7c6b5c49ef46b6138ef8888902ca7cd792ba63a98e8bc517298f"
+      },
+      "materialization_error": null,
+      "materialized_decision": {
+        "arguments_json": "{\"source\":\"def yarrow_crest(zephyr_dawn, amber_finch, bramble_glade):\\n    return zephyr_dawn[1:-1]\\n\"}",
+        "frame_sha256": "1b8656828e6b96c786ecc4f6c35a737b78a4218bb02b54446e176e5b62a01156",
+        "kind": "tool",
+        "model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+        "sha256": "30ec09e649fb0d76262a256bac168734eb3940f532760a544cc9372c6357ac73",
+        "tool_name": "write_source"
+      },
+      "materialized_output": "<tool>{\"arguments\":{\"source\":\"def yarrow_crest(zephyr_dawn, amber_finch, bramble_glade):\\n    return zephyr_dawn[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+      "materialized_tool_action_source": "def yarrow_crest(zephyr_dawn, amber_finch, bramble_glade):\n    return zephyr_dawn[1:-1]\n",
+      "positive_exact": false,
+      "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+      "raw_pointer_output_contains_pointer": true,
+      "rotated_inventory_control": {
+        "ast_signature": {
+          "entrypoint": "zephyr_dawn",
+          "keyword_only": [],
+          "kwarg": null,
+          "parameters": [
+            "amber_finch",
+            "bramble_glade",
+            "result"
+          ],
+          "positional_only": [],
+          "vararg": null
+        },
+        "decision": {
+          "arguments_json": "{\"source\":\"def zephyr_dawn(amber_finch, bramble_glade, result):\\n    return amber_finch[1:-1]\\n\"}",
+          "frame_sha256": "1b8656828e6b96c786ecc4f6c35a737b78a4218bb02b54446e176e5b62a01156",
+          "kind": "tool",
+          "model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+          "sha256": "c4fd489cb98968aa209649ec0315315920557ea11b8ce32670816a88444beeec",
+          "tool_name": "write_source"
+        },
+        "exact_rotated_source": "def zephyr_dawn(amber_finch, bramble_glade, result):\n    item = 1\n    for yarrow_crest in amber_finch:\n        if yarrow_crest != 0:\n            item *= yarrow_crest\n    return item\n",
+        "follows_rotation_and_loses_original": false,
+        "inventory": {
+          "derivation": "one_position_rotation_of_starter_source_inventory",
+          "lexical_position_count": 6,
+          "sha256": "8e49b0bb8a8b919109d638533088671a1d27e8f9bd4833a04a08e8010df3b4d5"
+        },
+        "materialization_error": null,
+        "materialized_output": "<tool>{\"arguments\":{\"source\":\"def zephyr_dawn(amber_finch, bramble_glade, result):\\n    return amber_finch[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+        "raw_matches_positive": true,
+        "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+        "tool_action_source": "def zephyr_dawn(amber_finch, bramble_glade, result):\n    return amber_finch[1:-1]\n"
+      },
+      "scoring_only_expected_ast_signature": {
+        "entrypoint": "yarrow_crest",
+        "keyword_only": [],
+        "kwarg": null,
+        "parameters": [
+          "zephyr_dawn",
+          "amber_finch",
+          "bramble_glade"
+        ],
+        "positional_only": [],
+        "vararg": null
+      },
+      "scoring_only_expected_source": "def yarrow_crest(zephyr_dawn, amber_finch, bramble_glade):\n    result = 1\n    for item in zephyr_dawn:\n        if item != 0:\n            result *= item\n    return result\n"
+    },
+    {
+      "ast_signature": {
+        "entrypoint": "cobalt_heath",
+        "keyword_only": [],
+        "kwarg": null,
+        "parameters": [
+          "drift_isle",
+          "ember_jolt",
+          "flint_knoll"
+        ],
+        "positional_only": [],
+        "vararg": null
+      },
+      "binding_off": {
+        "ast_signature": {
+          "entrypoint": "solve",
+          "keyword_only": [],
+          "kwarg": null,
+          "parameters": [
+            "arg0",
+            "arg1",
+            "arg2"
+          ],
+          "positional_only": [],
+          "vararg": null
+        },
+        "decision": {
+          "arguments_json": "{\"source\":\"def solve(arg0, arg1, arg2):\\n    return arg0[1:-1]\\n\"}",
+          "frame_sha256": "628fd116cc28a261e8f47495e128e20f173ec604cf35d953144168b6eb3792e2",
+          "kind": "tool",
+          "model_digest": "71c8eeaa123c726cc8a87d92c99acd52696992871e54e276a1c43c0fbd43f7f0",
+          "sha256": "077385c04180222fa3351570d77e1bf9e769f6ec19e70a7d8bc2c5e45ddf5483",
+          "tool_name": "write_source"
+        },
+        "exact_binding_retained": false,
+        "raw_output": "\n<tool>{\"arguments\":{\"source\":\"def solve(arg0, arg1, arg2):\\n    return arg0[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+        "tool_action_source": "def solve(arg0, arg1, arg2):\n    return arg0[1:-1]\n"
+      },
+      "case_id": "alpha-binding-06",
+      "frame_sha256": "628fd116cc28a261e8f47495e128e20f173ec604cf35d953144168b6eb3792e2",
+      "inventory": {
+        "derivation": "first_unique_non_keyword_ascii_identifiers_from_starter_source",
+        "lexical_position_count": 4,
+        "sha256": "7405e7d0ee29d50d6c8d8aae0d6d98917f69d69eddf39d8fd896c06ebe5f4c2e"
+      },
+      "materialization_error": null,
+      "materialized_decision": {
+        "arguments_json": "{\"source\":\"def cobalt_heath(drift_isle, ember_jolt, flint_knoll):\\n    return drift_isle[1:-1]\\n\"}",
+        "frame_sha256": "628fd116cc28a261e8f47495e128e20f173ec604cf35d953144168b6eb3792e2",
+        "kind": "tool",
+        "model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+        "sha256": "a54d7f8d5efa5d309d3c2e970e80d7857c2da0a67414e19cdf3258ab560b0468",
+        "tool_name": "write_source"
+      },
+      "materialized_output": "<tool>{\"arguments\":{\"source\":\"def cobalt_heath(drift_isle, ember_jolt, flint_knoll):\\n    return drift_isle[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+      "materialized_tool_action_source": "def cobalt_heath(drift_isle, ember_jolt, flint_knoll):\n    return drift_isle[1:-1]\n",
+      "positive_exact": true,
+      "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+      "raw_pointer_output_contains_pointer": true,
+      "rotated_inventory_control": {
+        "ast_signature": {
+          "entrypoint": "drift_isle",
+          "keyword_only": [],
+          "kwarg": null,
+          "parameters": [
+            "ember_jolt",
+            "flint_knoll",
+            "cobalt_heath"
+          ],
+          "positional_only": [],
+          "vararg": null
+        },
+        "decision": {
+          "arguments_json": "{\"source\":\"def drift_isle(ember_jolt, flint_knoll, cobalt_heath):\\n    return ember_jolt[1:-1]\\n\"}",
+          "frame_sha256": "628fd116cc28a261e8f47495e128e20f173ec604cf35d953144168b6eb3792e2",
+          "kind": "tool",
+          "model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+          "sha256": "045ee12270892475d8c8e8e08275ceeab08c783fb531d44fe37271827a6d3732",
+          "tool_name": "write_source"
+        },
+        "exact_rotated_source": "def drift_isle(ember_jolt, flint_knoll, cobalt_heath):\n    return ember_jolt[1:-1]\n",
+        "follows_rotation_and_loses_original": true,
+        "inventory": {
+          "derivation": "one_position_rotation_of_starter_source_inventory",
+          "lexical_position_count": 4,
+          "sha256": "eb18cf04f97afaab6f7591c1ffef683e31d067d5bc674b05e30e35cd0a12c88c"
+        },
+        "materialization_error": null,
+        "materialized_output": "<tool>{\"arguments\":{\"source\":\"def drift_isle(ember_jolt, flint_knoll, cobalt_heath):\\n    return ember_jolt[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+        "raw_matches_positive": true,
+        "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1>[1:-1]\\n\"},\"name\":\"write_source\"}</tool>",
+        "tool_action_source": "def drift_isle(ember_jolt, flint_knoll, cobalt_heath):\n    return ember_jolt[1:-1]\n"
+      },
+      "scoring_only_expected_ast_signature": {
+        "entrypoint": "cobalt_heath",
+        "keyword_only": [],
+        "kwarg": null,
+        "parameters": [
+          "drift_isle",
+          "ember_jolt",
+          "flint_knoll"
+        ],
+        "positional_only": [],
+        "vararg": null
+      },
+      "scoring_only_expected_source": "def cobalt_heath(drift_isle, ember_jolt, flint_knoll):\n    return drift_isle[1:-1]\n"
+    },
+    {
+      "ast_signature": {
+        "entrypoint": "grove_lumen",
+        "keyword_only": [],
+        "kwarg": null,
+        "parameters": [
+          "harbor_mirth",
+          "indigo_nest",
+          "jasmine_orbit"
+        ],
+        "positional_only": [],
+        "vararg": null
+      },
+      "binding_off": {
+        "ast_signature": {
+          "entrypoint": "solve",
+          "keyword_only": [],
+          "kwarg": null,
+          "parameters": [
+            "arg0",
+            "arg1",
+            "arg2"
+          ],
+          "positional_only": [],
+          "vararg": null
+        },
+        "decision": {
+          "arguments_json": "{\"source\":\"def solve(arg0, arg1, arg2):\\n    return arg0 * arg1 + arg2\\n\"}",
+          "frame_sha256": "c13832845394dcf19fd69f320e778408068e35290893ff1fff8cf77a02695eb7",
+          "kind": "tool",
+          "model_digest": "71c8eeaa123c726cc8a87d92c99acd52696992871e54e276a1c43c0fbd43f7f0",
+          "sha256": "1f576dd8ad8ac14e438284fea02cc0fd8b0b06bb9e2aaf071e71820e66e3acc4",
+          "tool_name": "write_source"
+        },
+        "exact_binding_retained": false,
+        "raw_output": "\n<tool>{\"arguments\":{\"source\":\"def solve(arg0, arg1, arg2):\\n    return arg0 * arg1 + arg2\\n\"},\"name\":\"write_source\"}</tool>",
+        "tool_action_source": "def solve(arg0, arg1, arg2):\n    return arg0 * arg1 + arg2\n"
+      },
+      "case_id": "alpha-binding-07",
+      "frame_sha256": "c13832845394dcf19fd69f320e778408068e35290893ff1fff8cf77a02695eb7",
+      "inventory": {
+        "derivation": "first_unique_non_keyword_ascii_identifiers_from_starter_source",
+        "lexical_position_count": 4,
+        "sha256": "3d35c75c6e78d99615603e6808ed220af6771344f371d461bb7a0ce0126af4ea"
+      },
+      "materialization_error": null,
+      "materialized_decision": {
+        "arguments_json": "{\"source\":\"def grove_lumen(harbor_mirth, indigo_nest, jasmine_orbit):\\n    return harbor_mirth * indigo_nest + jasmine_orbit\\n\"}",
+        "frame_sha256": "c13832845394dcf19fd69f320e778408068e35290893ff1fff8cf77a02695eb7",
+        "kind": "tool",
+        "model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+        "sha256": "49e16066161b34c2c28dcde693814a665a2e56104a598637d79e124bcbd5ccc4",
+        "tool_name": "write_source"
+      },
+      "materialized_output": "<tool>{\"arguments\":{\"source\":\"def grove_lumen(harbor_mirth, indigo_nest, jasmine_orbit):\\n    return harbor_mirth * indigo_nest + jasmine_orbit\\n\"},\"name\":\"write_source\"}</tool>",
+      "materialized_tool_action_source": "def grove_lumen(harbor_mirth, indigo_nest, jasmine_orbit):\n    return harbor_mirth * indigo_nest + jasmine_orbit\n",
+      "positive_exact": true,
+      "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1> * <@2> + <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+      "raw_pointer_output_contains_pointer": true,
+      "rotated_inventory_control": {
+        "ast_signature": {
+          "entrypoint": "harbor_mirth",
+          "keyword_only": [],
+          "kwarg": null,
+          "parameters": [
+            "indigo_nest",
+            "jasmine_orbit",
+            "grove_lumen"
+          ],
+          "positional_only": [],
+          "vararg": null
+        },
+        "decision": {
+          "arguments_json": "{\"source\":\"def harbor_mirth(indigo_nest, jasmine_orbit, grove_lumen):\\n    return indigo_nest * jasmine_orbit + grove_lumen\\n\"}",
+          "frame_sha256": "c13832845394dcf19fd69f320e778408068e35290893ff1fff8cf77a02695eb7",
+          "kind": "tool",
+          "model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+          "sha256": "c39fa66cceb37ed307b4bc0bbefe4a9b3ce2b82b8c6c36c57586797ba2972845",
+          "tool_name": "write_source"
+        },
+        "exact_rotated_source": "def harbor_mirth(indigo_nest, jasmine_orbit, grove_lumen):\n    return indigo_nest * jasmine_orbit + grove_lumen\n",
+        "follows_rotation_and_loses_original": true,
+        "inventory": {
+          "derivation": "one_position_rotation_of_starter_source_inventory",
+          "lexical_position_count": 4,
+          "sha256": "03e288dfc147702d504a2b9e4ada295af2d9ff278d135ee67a82e9ec44779c7b"
+        },
+        "materialization_error": null,
+        "materialized_output": "<tool>{\"arguments\":{\"source\":\"def harbor_mirth(indigo_nest, jasmine_orbit, grove_lumen):\\n    return indigo_nest * jasmine_orbit + grove_lumen\\n\"},\"name\":\"write_source\"}</tool>",
+        "raw_matches_positive": true,
+        "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@1> * <@2> + <@3>\\n\"},\"name\":\"write_source\"}</tool>",
+        "tool_action_source": "def harbor_mirth(indigo_nest, jasmine_orbit, grove_lumen):\n    return indigo_nest * jasmine_orbit + grove_lumen\n"
+      },
+      "scoring_only_expected_ast_signature": {
+        "entrypoint": "grove_lumen",
+        "keyword_only": [],
+        "kwarg": null,
+        "parameters": [
+          "harbor_mirth",
+          "indigo_nest",
+          "jasmine_orbit"
+        ],
+        "positional_only": [],
+        "vararg": null
+      },
+      "scoring_only_expected_source": "def grove_lumen(harbor_mirth, indigo_nest, jasmine_orbit):\n    return harbor_mirth * indigo_nest + jasmine_orbit\n"
+    }
+  ],
+  "claim_boundary": "neuron-selected lexical source positions over mechanically derived starter-source inventories; public expected sources are scoring-only; no execution, target R4 stream, private data, target teacher, protected evidence, or integrated-capability claim",
+  "empty_inventory_control": {
+    "case_id": "alpha-binding-00",
+    "decision": {
+      "frame_sha256": "0573516d35ab5b24a8d7ed4f70cf1beaa8a5360509713b19c6413486b336cc68",
+      "kind": "stop",
+      "model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+      "reason": "pointer_binding_failed_closed",
+      "sha256": "9669cf01d63856606069caf9a309fb7137f2fe72cc7edab4e8a1e0c7dc974284"
+    },
+    "failed_closed_with_stop": true,
+    "inventory": {
+      "derivation": "deliberately_empty_control",
+      "lexical_position_count": 0,
+      "sha256": "e67d1d6dea2a181b3217eea19b505cd84cb2707265710614bdb7b7908ff47849"
+    },
+    "materialization_error": {
+      "message": "pointer index 0 is outside the symbol inventory",
+      "type": "ValueError"
+    },
+    "materialized_output": null,
+    "raw_pointer_output": "<tool>{\"arguments\":{\"source\":\"def <@0>(<@1>, <@2>, <@3>):\\n    return <@4>(<@5>(<@1>) & <@5>(<@2>))\\n\"},\"name\":\"write_source\"}</tool>",
+    "raw_pointer_output_contains_pointer": true
+  },
+  "empty_inventory_failed_closed": true,
+  "pointer_model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+  "positive_exact_count": 4,
+  "private_inputs": 0,
+  "public_coding_prior_sha256": "81a60454b9af6b8592ea8b422c25bdd98115c101e5580c8cd571555fdf0abfb1",
+  "raw_control_model_digest": "71c8eeaa123c726cc8a87d92c99acd52696992871e54e276a1c43c0fbd43f7f0",
+  "raw_pointer_output_count": 8,
+  "reservation": {
+    "alpha_binding_stream_sha256": "9d95eaf38dcfee911554a9ca88cea27d1b07dc469288b9e4aec4b7e8adc6b3e9",
+    "case_count": 8,
+    "model_config": {
+      "max_order": 256,
+      "max_phrases": 256,
+      "min_phrase_frequency": 2
+    },
+    "pointer_model_digest": "98823f1c2d7585329547df24e980c40bb34b9db72119da273bd8822086058b5e",
+    "public_coding_prior_sha256": "81a60454b9af6b8592ea8b422c25bdd98115c101e5580c8cd571555fdf0abfb1",
+    "raw_control_model_digest": "71c8eeaa123c726cc8a87d92c99acd52696992871e54e276a1c43c0fbd43f7f0",
+    "schema": "source-local-alpha-binding-gate-reservation-v1",
+    "source_custody": {
+      "alpha_tasks_sha256": "9efa7dd855720495ab7b27f352d96f6c96a08b840a73dc9cca9b27b0f73180cc",
+      "gate_sha256": "c0ba2f6ce248b183f805ee3fed339bc184efc4e435e8e3fdeb75e54d70e9fed8",
+      "persistent_coding_sha256": "84a93efb02aff40dd9cbd59da1cce6e90d3d82a2f5163b32303d814d52def490",
+      "pointer_binding_sha256": "757bf8d36a69a50450b386f6d6d6fb12cb3cc273420c4472f696ca9630800567",
+      "prior_corpus_sha256": "b35a2edeabfb9e78755c4eb7bf3c77babacdddeaf2c0b4164af0c934e54ea56c",
+      "prior_freeze_commit": "34ba9625b943d6ae4714a801fd4811915a706969",
+      "prior_manifest_sha256": "0942545cd03e21ac94c047db90c15e59b9327c5171db74afd3963d3cbeef7362",
+      "public_prior_module_sha256": "95b0bbae62cc1fc08dd94e0f25e32116c2bbe671c7d5ceb10b50a4617ff0ac5b"
+    },
+    "status": "COMPLETED",
+    "training_example_count": 16
+  },
+  "rotation_follow_count": 4,
+  "sandbox_executions": 0,
+  "schema": "source-local-alpha-binding-gate-v1",
+  "status": "FAIL_SOURCE_LOCAL_ALPHA_BINDING_GATE_V1",
+  "target_r4_stream_inputs": 0,
+  "target_teacher_inputs": 0,
+  "training_example_count": 16,
+  "training_uses_all_public_prior_cases": true
+}

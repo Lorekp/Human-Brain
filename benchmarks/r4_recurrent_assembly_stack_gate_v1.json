@@ -1,0 +1,2354 @@
+{
+  "claim_boundary": "public developmental causal mechanism-fit evidence that a bounded physical assembly stack is necessary for two visible-scoring, model-training-unseen three-factor recombinations, with local PUSH/POP/STOP custody and direct-route retention; the scorer was visible during implementation, so this is not fresh developer-heldout generalization, Python, persistent integrated V5/V6, protected evaluation, SWE, cross-domain transfer, or broad intelligence evidence",
+  "cohort_novel_at_artifact_spend": false,
+  "decision_freeze": {
+    "decision_freeze_sha256": "b9821e470e78bbccb07db93d2152c1a9efe97784915109d1548f9adb83d925c8",
+    "direct": {
+      "public_observation": {
+        "case_id": "fresh-atom-00",
+        "observation_sha256": "3c713cb7f4293adcd6e80b811d7f90e3d48bf54017ea7e96736de63cc0dd9a57",
+        "observation_tokens": [
+          "ATOM",
+          "payload-umber-101"
+        ],
+        "schema": "recurrent-assembly-stack-fixture-v1"
+      },
+      "stack_off_prior_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+      "stack_off_resolved_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+      "stack_off_token_ids": [
+        1812807059
+      ],
+      "stack_off_trace_sha256": "85d7ce6700195288c02118f4a7210f3fad54de670e9dc4a3f8c7725957fab616",
+      "treatment_prior_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+      "treatment_resolved_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+      "treatment_token_ids": [
+        1812807059
+      ],
+      "treatment_trace_sha256": "85d7ce6700195288c02118f4a7210f3fad54de670e9dc4a3f8c7725957fab616"
+    },
+    "nested": [
+      {
+        "public_observation": {
+          "case_id": "fresh-nested-00",
+          "observation_sha256": "e7d926efa616182bf6b8d9c8fdda750ca732407307d9d84209a4fbb7068cee8e",
+          "observation_tokens": [
+            "nivo",
+            "bexi",
+            "lune",
+            "payload-quartz-83"
+          ],
+          "schema": "recurrent-assembly-stack-fixture-v1"
+        },
+        "stack_off_prior_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "stack_off_resolved_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "stack_off_token_ids": [],
+        "stack_off_trace_sha256": "6f6bcba29acc230df72380e45ed30da51c308a1b1072d67542b9f2aeba1bd03a",
+        "treatment_prior_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "treatment_resolved_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "treatment_token_ids": [
+          1670424000,
+          1138527134,
+          39409101,
+          1057767621,
+          975024859,
+          121736235,
+          86644416
+        ],
+        "treatment_trace_sha256": "3ee7970dac0255d55bffe96de967e5879f6f2ba60301c24366d7868b0f86534c"
+      },
+      {
+        "public_observation": {
+          "case_id": "fresh-nested-01",
+          "observation_sha256": "e1fd9a6b6832fcaac5b61d85de2d524da583dbe950c37768c8b8b0ec0b3891f4",
+          "observation_tokens": [
+            "raku",
+            "toma",
+            "lune",
+            "payload-thistle-97"
+          ],
+          "schema": "recurrent-assembly-stack-fixture-v1"
+        },
+        "stack_off_prior_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "stack_off_resolved_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "stack_off_token_ids": [],
+        "stack_off_trace_sha256": "ad274b22c1c98f6454f5485654245a3111b7cac6c7112d2300a37487aea7da1f",
+        "treatment_prior_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "treatment_resolved_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "treatment_token_ids": [
+          1293699535,
+          147351745,
+          39409101,
+          1705330657,
+          975024859,
+          17327511,
+          2117645593
+        ],
+        "treatment_trace_sha256": "d8d0d7109c62e73bfa31178a8e6d924fa159e062459127591aef16c23d24e0ff"
+      }
+    ],
+    "unknown_cue": {
+      "prior_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+      "public_observation": {
+        "observation_sha256": "b8409a1f1a99acc455cc185b5428dcc047014e3f73ba6da2540a150ae880bb9d",
+        "observation_tokens": [
+          "ulvek",
+          "sorin",
+          "drav",
+          "payload-xanthic-109"
+        ],
+        "probe_id": "unknown-cue-00",
+        "schema": "recurrent-assembly-stack-fixture-v1"
+      },
+      "resolved_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+      "token_ids": [],
+      "trace_sha256": "2db30fdaaf1d7469cd945559824bc1fb39ea16bddf1fa9a188c770e01133bcd7"
+    }
+  },
+  "decisions_frozen_before_scoring": true,
+  "developmental_mechanism_family_visible": true,
+  "evaluation_status": "public_developmental_mechanism_fit",
+  "final_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+  "fixture_sha256": "e90933a769fcbb36a0ec8c316d4ee197c3590e4641bf2082e19007b15878d3ef",
+  "fresh_atom_control": {
+    "case_id": "fresh-atom-00",
+    "public_observation": {
+      "case_id": "fresh-atom-00",
+      "observation_sha256": "3c713cb7f4293adcd6e80b811d7f90e3d48bf54017ea7e96736de63cc0dd9a57",
+      "observation_tokens": [
+        "ATOM",
+        "payload-umber-101"
+      ],
+      "schema": "recurrent-assembly-stack-fixture-v1"
+    },
+    "scoring_custody": {
+      "case_id": "fresh-atom-00",
+      "observation_sha256": "3c713cb7f4293adcd6e80b811d7f90e3d48bf54017ea7e96736de63cc0dd9a57",
+      "observation_tokens": [
+        "ATOM",
+        "payload-umber-101"
+      ],
+      "schema": "recurrent-assembly-stack-fixture-v1",
+      "scoring_only_expected_tokens": [
+        "payload-umber-101"
+      ]
+    },
+    "scoring_only_expected_token_ids": [
+      1812807059
+    ],
+    "stack_off": {
+      "emitted_token_bytes_sha256": "30df6474123781d815e241057e590a75920288c1f18d84f3ef5e7183ee99e6f8",
+      "emitted_token_ids": [
+        1812807059
+      ],
+      "fixture_exact": true,
+      "inference_digest_unchanged": true,
+      "neutral_consequence": {
+        "changed_edges": [],
+        "model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "prior_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "valence": "neutral"
+      },
+      "prior_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+      "resolved_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+      "trace": {
+        "max_depth": 0,
+        "operations": [
+          "root",
+          "emit",
+          "emit",
+          "stop"
+        ],
+        "selected_stop": false,
+        "selected_structural_edges": [
+          "root:fdf81434adf93c8788c193a4"
+        ],
+        "simulated_steps": 2400,
+        "steps": [
+          {
+            "candidate_cells": [
+              80,
+              3
+            ],
+            "candidate_scores": [
+              5.0,
+              1.0
+            ],
+            "depth": 0,
+            "operation": "root",
+            "phase": "root",
+            "simulated_steps": 600,
+            "spike_time_ms": 2.6,
+            "winner_cell": 80
+          },
+          {
+            "candidate_cells": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "candidate_scores": [
+              0.0,
+              5.0,
+              0.0,
+              0.0
+            ],
+            "depth": 0,
+            "operation": "emit",
+            "phase": "control",
+            "simulated_steps": 600,
+            "spike_time_ms": 2.6,
+            "winner_cell": 1
+          },
+          {
+            "candidate_cells": [
+              78,
+              3
+            ],
+            "candidate_scores": [
+              5.0,
+              1.0
+            ],
+            "depth": 0,
+            "operation": "emit",
+            "phase": "emission",
+            "simulated_steps": 600,
+            "spike_time_ms": 2.6,
+            "winner_cell": 78
+          },
+          {
+            "candidate_cells": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "candidate_scores": [
+              0.0,
+              0.0,
+              0.0,
+              5.0
+            ],
+            "depth": 0,
+            "operation": "stop",
+            "phase": "control",
+            "simulated_steps": 600,
+            "spike_time_ms": 2.6,
+            "winner_cell": 3
+          }
+        ],
+        "summary": {
+          "actions": [
+            "ROOT",
+            "EMIT",
+            "EMIT",
+            "STOP"
+          ],
+          "depths": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "emit_count": 2,
+          "max_depth": 0,
+          "phases": [
+            "root",
+            "control",
+            "emission",
+            "control"
+          ],
+          "physical_custody": true,
+          "physical_step_count": 4,
+          "pop_count": 0,
+          "push_count": 0,
+          "selected_stop": false,
+          "simulated_steps": 2400,
+          "step_count": 4,
+          "stop_count": 1
+        },
+        "trace_sha256": "85d7ce6700195288c02118f4a7210f3fad54de670e9dc4a3f8c7725957fab616",
+        "winner_cells": [
+          80,
+          1,
+          78,
+          3
+        ]
+      }
+    },
+    "treatment": {
+      "emitted_token_bytes_sha256": "30df6474123781d815e241057e590a75920288c1f18d84f3ef5e7183ee99e6f8",
+      "emitted_token_ids": [
+        1812807059
+      ],
+      "fixture_exact": true,
+      "inference_digest_unchanged": true,
+      "neutral_consequence": {
+        "changed_edges": [],
+        "model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "prior_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "valence": "neutral"
+      },
+      "prior_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+      "resolved_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+      "trace": {
+        "max_depth": 0,
+        "operations": [
+          "root",
+          "emit",
+          "emit",
+          "stop"
+        ],
+        "selected_stop": false,
+        "selected_structural_edges": [
+          "root:fdf81434adf93c8788c193a4"
+        ],
+        "simulated_steps": 2400,
+        "steps": [
+          {
+            "candidate_cells": [
+              80,
+              3
+            ],
+            "candidate_scores": [
+              5.0,
+              1.0
+            ],
+            "depth": 0,
+            "operation": "root",
+            "phase": "root",
+            "simulated_steps": 600,
+            "spike_time_ms": 2.6,
+            "winner_cell": 80
+          },
+          {
+            "candidate_cells": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "candidate_scores": [
+              0.0,
+              5.0,
+              0.0,
+              0.0
+            ],
+            "depth": 0,
+            "operation": "emit",
+            "phase": "control",
+            "simulated_steps": 600,
+            "spike_time_ms": 2.6,
+            "winner_cell": 1
+          },
+          {
+            "candidate_cells": [
+              78,
+              3
+            ],
+            "candidate_scores": [
+              5.0,
+              1.0
+            ],
+            "depth": 0,
+            "operation": "emit",
+            "phase": "emission",
+            "simulated_steps": 600,
+            "spike_time_ms": 2.6,
+            "winner_cell": 78
+          },
+          {
+            "candidate_cells": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "candidate_scores": [
+              0.0,
+              0.0,
+              0.0,
+              5.0
+            ],
+            "depth": 0,
+            "operation": "stop",
+            "phase": "control",
+            "simulated_steps": 600,
+            "spike_time_ms": 2.6,
+            "winner_cell": 3
+          }
+        ],
+        "summary": {
+          "actions": [
+            "ROOT",
+            "EMIT",
+            "EMIT",
+            "STOP"
+          ],
+          "depths": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "emit_count": 2,
+          "max_depth": 0,
+          "phases": [
+            "root",
+            "control",
+            "emission",
+            "control"
+          ],
+          "physical_custody": true,
+          "physical_step_count": 4,
+          "pop_count": 0,
+          "push_count": 0,
+          "selected_stop": false,
+          "simulated_steps": 2400,
+          "step_count": 4,
+          "stop_count": 1
+        },
+        "trace_sha256": "85d7ce6700195288c02118f4a7210f3fad54de670e9dc4a3f8c7725957fab616",
+        "winner_cells": [
+          80,
+          1,
+          78,
+          3
+        ]
+      }
+    }
+  },
+  "fresh_combinations_unseen_by_model_training": true,
+  "fresh_nested_cases": [
+    {
+      "case_id": "fresh-nested-00",
+      "public_observation": {
+        "case_id": "fresh-nested-00",
+        "observation_sha256": "e7d926efa616182bf6b8d9c8fdda750ca732407307d9d84209a4fbb7068cee8e",
+        "observation_tokens": [
+          "nivo",
+          "bexi",
+          "lune",
+          "payload-quartz-83"
+        ],
+        "schema": "recurrent-assembly-stack-fixture-v1"
+      },
+      "scoring_custody": {
+        "case_id": "fresh-nested-00",
+        "observation_sha256": "e7d926efa616182bf6b8d9c8fdda750ca732407307d9d84209a4fbb7068cee8e",
+        "observation_tokens": [
+          "nivo",
+          "bexi",
+          "lune",
+          "payload-quartz-83"
+        ],
+        "schema": "recurrent-assembly-stack-fixture-v1",
+        "scoring_only_expected_tokens": [
+          "qev",
+          "dax",
+          "wex",
+          "payload-quartz-83",
+          "yop",
+          "pif",
+          "mur"
+        ]
+      },
+      "scoring_only_expected_token_ids": [
+        1670424000,
+        1138527134,
+        39409101,
+        1057767621,
+        975024859,
+        121736235,
+        86644416
+      ],
+      "stack_off": {
+        "emitted_token_bytes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "emitted_token_ids": [],
+        "fixture_exact": false,
+        "inference_digest_unchanged": true,
+        "neutral_consequence": {
+          "changed_edges": [],
+          "model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+          "prior_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+          "valence": "neutral"
+        },
+        "prior_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "resolved_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "trace": {
+          "max_depth": 0,
+          "operations": [
+            "root",
+            "emit",
+            "emit",
+            "push",
+            "stop"
+          ],
+          "selected_stop": true,
+          "selected_structural_edges": [
+            "root:c4082b9326bf1907ef53bab2"
+          ],
+          "simulated_steps": 3000,
+          "steps": [
+            {
+              "candidate_cells": [
+                47,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                1.0
+              ],
+              "depth": 0,
+              "operation": "root",
+              "phase": "root",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 47
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                0.0
+              ],
+              "depth": 0,
+              "operation": "emit",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 1
+            },
+            {
+              "candidate_cells": [
+                8,
+                37,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                0.0,
+                1.0
+              ],
+              "depth": 0,
+              "operation": "emit",
+              "phase": "emission",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 8
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "depth": 0,
+              "operation": "push",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 0
+            },
+            {
+              "candidate_cells": [
+                4,
+                5,
+                6,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "depth": 0,
+              "operation": "stop",
+              "phase": "frame",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 3
+            }
+          ],
+          "summary": {
+            "actions": [
+              "ROOT",
+              "EMIT",
+              "EMIT",
+              "PUSH",
+              "STOP"
+            ],
+            "depths": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "emit_count": 2,
+            "max_depth": 0,
+            "phases": [
+              "root",
+              "control",
+              "emission",
+              "control",
+              "frame"
+            ],
+            "physical_custody": true,
+            "physical_step_count": 5,
+            "pop_count": 0,
+            "push_count": 1,
+            "selected_stop": true,
+            "simulated_steps": 3000,
+            "step_count": 5,
+            "stop_count": 1
+          },
+          "trace_sha256": "6f6bcba29acc230df72380e45ed30da51c308a1b1072d67542b9f2aeba1bd03a",
+          "winner_cells": [
+            47,
+            1,
+            8,
+            0,
+            3
+          ]
+        }
+      },
+      "treatment": {
+        "emitted_token_bytes_sha256": "739b34d726bafab5609bd8a0c0f5738f7cc76da0f6ccd9c15371dd7a238acac1",
+        "emitted_token_ids": [
+          1670424000,
+          1138527134,
+          39409101,
+          1057767621,
+          975024859,
+          121736235,
+          86644416
+        ],
+        "fixture_exact": true,
+        "inference_digest_unchanged": true,
+        "nested_physical_contract": true,
+        "neutral_consequence": {
+          "changed_edges": [],
+          "model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+          "prior_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+          "valence": "neutral"
+        },
+        "prior_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "resolved_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "trace": {
+          "max_depth": 2,
+          "operations": [
+            "root",
+            "emit",
+            "emit",
+            "push",
+            "push",
+            "push",
+            "emit",
+            "emit",
+            "push",
+            "push",
+            "push",
+            "emit",
+            "emit",
+            "emit",
+            "emit",
+            "emit",
+            "emit",
+            "pop",
+            "pop",
+            "emit",
+            "emit",
+            "pop",
+            "pop",
+            "emit",
+            "emit",
+            "stop"
+          ],
+          "selected_stop": false,
+          "selected_structural_edges": [
+            "root:c4082b9326bf1907ef53bab2",
+            "child:c4082b9326bf1907ef53bab2:1:0c07ebe7760bb00628a36e77",
+            "child:0c07ebe7760bb00628a36e77:1:2439760dd967e85188e1820b"
+          ],
+          "simulated_steps": 15600,
+          "steps": [
+            {
+              "candidate_cells": [
+                47,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                1.0
+              ],
+              "depth": 0,
+              "operation": "root",
+              "phase": "root",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 47
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                0.0
+              ],
+              "depth": 0,
+              "operation": "emit",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 1
+            },
+            {
+              "candidate_cells": [
+                8,
+                37,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                0.0,
+                1.0
+              ],
+              "depth": 0,
+              "operation": "emit",
+              "phase": "emission",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 8
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "depth": 0,
+              "operation": "push",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 0
+            },
+            {
+              "candidate_cells": [
+                4,
+                5,
+                6,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "depth": 0,
+              "operation": "push",
+              "phase": "frame",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 4
+            },
+            {
+              "candidate_cells": [
+                62,
+                57,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                0.0,
+                1.0
+              ],
+              "depth": 0,
+              "operation": "push",
+              "phase": "child",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 62
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                0.0
+              ],
+              "depth": 1,
+              "operation": "emit",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 1
+            },
+            {
+              "candidate_cells": [
+                10,
+                25,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                0.0,
+                1.0
+              ],
+              "depth": 1,
+              "operation": "emit",
+              "phase": "emission",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 10
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "depth": 1,
+              "operation": "push",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 0
+            },
+            {
+              "candidate_cells": [
+                4,
+                5,
+                6,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                1.0
+              ],
+              "depth": 1,
+              "operation": "push",
+              "phase": "frame",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 5
+            },
+            {
+              "candidate_cells": [
+                72,
+                67,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                0.0,
+                1.0
+              ],
+              "depth": 1,
+              "operation": "push",
+              "phase": "child",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 72
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                0.0
+              ],
+              "depth": 2,
+              "operation": "emit",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 1
+            },
+            {
+              "candidate_cells": [
+                12,
+                27,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                1.0
+              ],
+              "depth": 2,
+              "operation": "emit",
+              "phase": "emission",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 27
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                0.0
+              ],
+              "depth": 2,
+              "operation": "emit",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 1
+            },
+            {
+              "candidate_cells": [
+                14,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                1.0
+              ],
+              "depth": 2,
+              "operation": "emit",
+              "phase": "emission",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 14
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                0.0
+              ],
+              "depth": 2,
+              "operation": "emit",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 1
+            },
+            {
+              "candidate_cells": [
+                16,
+                30,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                1.0
+              ],
+              "depth": 2,
+              "operation": "emit",
+              "phase": "emission",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 30
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                0.0,
+                5.0,
+                0.0
+              ],
+              "depth": 2,
+              "operation": "pop",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 2
+            },
+            {
+              "candidate_cells": [
+                65,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                1.0
+              ],
+              "depth": 2,
+              "operation": "pop",
+              "phase": "continuation",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 65
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                0.0
+              ],
+              "depth": 1,
+              "operation": "emit",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 1
+            },
+            {
+              "candidate_cells": [
+                18,
+                32,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                0.0,
+                1.0
+              ],
+              "depth": 1,
+              "operation": "emit",
+              "phase": "emission",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 18
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                0.0,
+                5.0,
+                0.0
+              ],
+              "depth": 1,
+              "operation": "pop",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 2
+            },
+            {
+              "candidate_cells": [
+                50,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                1.0
+              ],
+              "depth": 1,
+              "operation": "pop",
+              "phase": "continuation",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 50
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                0.0
+              ],
+              "depth": 0,
+              "operation": "emit",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 1
+            },
+            {
+              "candidate_cells": [
+                20,
+                44,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                0.0,
+                1.0
+              ],
+              "depth": 0,
+              "operation": "emit",
+              "phase": "emission",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 20
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                0.0,
+                0.0,
+                5.0
+              ],
+              "depth": 0,
+              "operation": "stop",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 3
+            }
+          ],
+          "summary": {
+            "actions": [
+              "ROOT",
+              "EMIT",
+              "EMIT",
+              "PUSH",
+              "PUSH",
+              "PUSH",
+              "EMIT",
+              "EMIT",
+              "PUSH",
+              "PUSH",
+              "PUSH",
+              "EMIT",
+              "EMIT",
+              "EMIT",
+              "EMIT",
+              "EMIT",
+              "EMIT",
+              "POP",
+              "POP",
+              "EMIT",
+              "EMIT",
+              "POP",
+              "POP",
+              "EMIT",
+              "EMIT",
+              "STOP"
+            ],
+            "depths": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              1,
+              1,
+              1,
+              1,
+              2,
+              2,
+              2,
+              2,
+              2,
+              2,
+              2,
+              2,
+              1,
+              1,
+              1,
+              1,
+              0,
+              0,
+              0
+            ],
+            "emit_count": 14,
+            "max_depth": 2,
+            "phases": [
+              "root",
+              "control",
+              "emission",
+              "control",
+              "frame",
+              "child",
+              "control",
+              "emission",
+              "control",
+              "frame",
+              "child",
+              "control",
+              "emission",
+              "control",
+              "emission",
+              "control",
+              "emission",
+              "control",
+              "continuation",
+              "control",
+              "emission",
+              "control",
+              "continuation",
+              "control",
+              "emission",
+              "control"
+            ],
+            "physical_custody": true,
+            "physical_step_count": 26,
+            "pop_count": 4,
+            "push_count": 6,
+            "selected_stop": false,
+            "simulated_steps": 15600,
+            "step_count": 26,
+            "stop_count": 1
+          },
+          "trace_sha256": "3ee7970dac0255d55bffe96de967e5879f6f2ba60301c24366d7868b0f86534c",
+          "winner_cells": [
+            47,
+            1,
+            8,
+            0,
+            4,
+            62,
+            1,
+            10,
+            0,
+            5,
+            72,
+            1,
+            27,
+            1,
+            14,
+            1,
+            30,
+            2,
+            65,
+            1,
+            18,
+            2,
+            50,
+            1,
+            20,
+            3
+          ]
+        }
+      }
+    },
+    {
+      "case_id": "fresh-nested-01",
+      "public_observation": {
+        "case_id": "fresh-nested-01",
+        "observation_sha256": "e1fd9a6b6832fcaac5b61d85de2d524da583dbe950c37768c8b8b0ec0b3891f4",
+        "observation_tokens": [
+          "raku",
+          "toma",
+          "lune",
+          "payload-thistle-97"
+        ],
+        "schema": "recurrent-assembly-stack-fixture-v1"
+      },
+      "scoring_custody": {
+        "case_id": "fresh-nested-01",
+        "observation_sha256": "e1fd9a6b6832fcaac5b61d85de2d524da583dbe950c37768c8b8b0ec0b3891f4",
+        "observation_tokens": [
+          "raku",
+          "toma",
+          "lune",
+          "payload-thistle-97"
+        ],
+        "schema": "recurrent-assembly-stack-fixture-v1",
+        "scoring_only_expected_tokens": [
+          "sot",
+          "kud",
+          "wex",
+          "payload-thistle-97",
+          "yop",
+          "zan",
+          "vel"
+        ]
+      },
+      "scoring_only_expected_token_ids": [
+        1293699535,
+        147351745,
+        39409101,
+        1705330657,
+        975024859,
+        17327511,
+        2117645593
+      ],
+      "stack_off": {
+        "emitted_token_bytes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "emitted_token_ids": [],
+        "fixture_exact": false,
+        "inference_digest_unchanged": true,
+        "neutral_consequence": {
+          "changed_edges": [],
+          "model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+          "prior_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+          "valence": "neutral"
+        },
+        "prior_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "resolved_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "trace": {
+          "max_depth": 0,
+          "operations": [
+            "root",
+            "emit",
+            "emit",
+            "push",
+            "stop"
+          ],
+          "selected_stop": true,
+          "selected_structural_edges": [
+            "root:d3c419e8573f0d2d92459da3"
+          ],
+          "simulated_steps": 3000,
+          "steps": [
+            {
+              "candidate_cells": [
+                52,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                1.0
+              ],
+              "depth": 0,
+              "operation": "root",
+              "phase": "root",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 52
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                0.0
+              ],
+              "depth": 0,
+              "operation": "emit",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 1
+            },
+            {
+              "candidate_cells": [
+                8,
+                37,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                1.0
+              ],
+              "depth": 0,
+              "operation": "emit",
+              "phase": "emission",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 37
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "depth": 0,
+              "operation": "push",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 0
+            },
+            {
+              "candidate_cells": [
+                4,
+                5,
+                6,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "depth": 0,
+              "operation": "stop",
+              "phase": "frame",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 3
+            }
+          ],
+          "summary": {
+            "actions": [
+              "ROOT",
+              "EMIT",
+              "EMIT",
+              "PUSH",
+              "STOP"
+            ],
+            "depths": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "emit_count": 2,
+            "max_depth": 0,
+            "phases": [
+              "root",
+              "control",
+              "emission",
+              "control",
+              "frame"
+            ],
+            "physical_custody": true,
+            "physical_step_count": 5,
+            "pop_count": 0,
+            "push_count": 1,
+            "selected_stop": true,
+            "simulated_steps": 3000,
+            "step_count": 5,
+            "stop_count": 1
+          },
+          "trace_sha256": "ad274b22c1c98f6454f5485654245a3111b7cac6c7112d2300a37487aea7da1f",
+          "winner_cells": [
+            52,
+            1,
+            37,
+            0,
+            3
+          ]
+        }
+      },
+      "treatment": {
+        "emitted_token_bytes_sha256": "c2876d6a261ed3577799710659785c02942e9a3186f5d29727c52a443417d0aa",
+        "emitted_token_ids": [
+          1293699535,
+          147351745,
+          39409101,
+          1705330657,
+          975024859,
+          17327511,
+          2117645593
+        ],
+        "fixture_exact": true,
+        "inference_digest_unchanged": true,
+        "nested_physical_contract": true,
+        "neutral_consequence": {
+          "changed_edges": [],
+          "model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+          "prior_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+          "valence": "neutral"
+        },
+        "prior_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "resolved_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "trace": {
+          "max_depth": 2,
+          "operations": [
+            "root",
+            "emit",
+            "emit",
+            "push",
+            "push",
+            "push",
+            "emit",
+            "emit",
+            "push",
+            "push",
+            "push",
+            "emit",
+            "emit",
+            "emit",
+            "emit",
+            "emit",
+            "emit",
+            "pop",
+            "pop",
+            "emit",
+            "emit",
+            "pop",
+            "pop",
+            "emit",
+            "emit",
+            "stop"
+          ],
+          "selected_stop": false,
+          "selected_structural_edges": [
+            "root:d3c419e8573f0d2d92459da3",
+            "child:d3c419e8573f0d2d92459da3:1:ddd0e94c8bfef978e1adf2b2",
+            "child:ddd0e94c8bfef978e1adf2b2:1:2439760dd967e85188e1820b"
+          ],
+          "simulated_steps": 15600,
+          "steps": [
+            {
+              "candidate_cells": [
+                52,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                1.0
+              ],
+              "depth": 0,
+              "operation": "root",
+              "phase": "root",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 52
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                0.0
+              ],
+              "depth": 0,
+              "operation": "emit",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 1
+            },
+            {
+              "candidate_cells": [
+                8,
+                37,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                1.0
+              ],
+              "depth": 0,
+              "operation": "emit",
+              "phase": "emission",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 37
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "depth": 0,
+              "operation": "push",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 0
+            },
+            {
+              "candidate_cells": [
+                4,
+                5,
+                6,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "depth": 0,
+              "operation": "push",
+              "phase": "frame",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 4
+            },
+            {
+              "candidate_cells": [
+                62,
+                57,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                1.0
+              ],
+              "depth": 0,
+              "operation": "push",
+              "phase": "child",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 57
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                0.0
+              ],
+              "depth": 1,
+              "operation": "emit",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 1
+            },
+            {
+              "candidate_cells": [
+                10,
+                25,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                1.0
+              ],
+              "depth": 1,
+              "operation": "emit",
+              "phase": "emission",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 25
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "depth": 1,
+              "operation": "push",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 0
+            },
+            {
+              "candidate_cells": [
+                4,
+                5,
+                6,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                1.0
+              ],
+              "depth": 1,
+              "operation": "push",
+              "phase": "frame",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 5
+            },
+            {
+              "candidate_cells": [
+                72,
+                67,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                0.0,
+                1.0
+              ],
+              "depth": 1,
+              "operation": "push",
+              "phase": "child",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 72
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                0.0
+              ],
+              "depth": 2,
+              "operation": "emit",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 1
+            },
+            {
+              "candidate_cells": [
+                12,
+                27,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                1.0
+              ],
+              "depth": 2,
+              "operation": "emit",
+              "phase": "emission",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 27
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                0.0
+              ],
+              "depth": 2,
+              "operation": "emit",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 1
+            },
+            {
+              "candidate_cells": [
+                14,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                1.0
+              ],
+              "depth": 2,
+              "operation": "emit",
+              "phase": "emission",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 14
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                0.0
+              ],
+              "depth": 2,
+              "operation": "emit",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 1
+            },
+            {
+              "candidate_cells": [
+                16,
+                30,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                1.0
+              ],
+              "depth": 2,
+              "operation": "emit",
+              "phase": "emission",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 30
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                0.0,
+                5.0,
+                0.0
+              ],
+              "depth": 2,
+              "operation": "pop",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 2
+            },
+            {
+              "candidate_cells": [
+                60,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                1.0
+              ],
+              "depth": 2,
+              "operation": "pop",
+              "phase": "continuation",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 60
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                0.0
+              ],
+              "depth": 1,
+              "operation": "emit",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 1
+            },
+            {
+              "candidate_cells": [
+                18,
+                32,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                1.0
+              ],
+              "depth": 1,
+              "operation": "emit",
+              "phase": "emission",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 32
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                0.0,
+                5.0,
+                0.0
+              ],
+              "depth": 1,
+              "operation": "pop",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 2
+            },
+            {
+              "candidate_cells": [
+                55,
+                3
+              ],
+              "candidate_scores": [
+                5.0,
+                1.0
+              ],
+              "depth": 1,
+              "operation": "pop",
+              "phase": "continuation",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 55
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                0.0,
+                0.0
+              ],
+              "depth": 0,
+              "operation": "emit",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 1
+            },
+            {
+              "candidate_cells": [
+                20,
+                44,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                5.0,
+                1.0
+              ],
+              "depth": 0,
+              "operation": "emit",
+              "phase": "emission",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 44
+            },
+            {
+              "candidate_cells": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "candidate_scores": [
+                0.0,
+                0.0,
+                0.0,
+                5.0
+              ],
+              "depth": 0,
+              "operation": "stop",
+              "phase": "control",
+              "simulated_steps": 600,
+              "spike_time_ms": 2.6,
+              "winner_cell": 3
+            }
+          ],
+          "summary": {
+            "actions": [
+              "ROOT",
+              "EMIT",
+              "EMIT",
+              "PUSH",
+              "PUSH",
+              "PUSH",
+              "EMIT",
+              "EMIT",
+              "PUSH",
+              "PUSH",
+              "PUSH",
+              "EMIT",
+              "EMIT",
+              "EMIT",
+              "EMIT",
+              "EMIT",
+              "EMIT",
+              "POP",
+              "POP",
+              "EMIT",
+              "EMIT",
+              "POP",
+              "POP",
+              "EMIT",
+              "EMIT",
+              "STOP"
+            ],
+            "depths": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              1,
+              1,
+              1,
+              1,
+              2,
+              2,
+              2,
+              2,
+              2,
+              2,
+              2,
+              2,
+              1,
+              1,
+              1,
+              1,
+              0,
+              0,
+              0
+            ],
+            "emit_count": 14,
+            "max_depth": 2,
+            "phases": [
+              "root",
+              "control",
+              "emission",
+              "control",
+              "frame",
+              "child",
+              "control",
+              "emission",
+              "control",
+              "frame",
+              "child",
+              "control",
+              "emission",
+              "control",
+              "emission",
+              "control",
+              "emission",
+              "control",
+              "continuation",
+              "control",
+              "emission",
+              "control",
+              "continuation",
+              "control",
+              "emission",
+              "control"
+            ],
+            "physical_custody": true,
+            "physical_step_count": 26,
+            "pop_count": 4,
+            "push_count": 6,
+            "selected_stop": false,
+            "simulated_steps": 15600,
+            "step_count": 26,
+            "stop_count": 1
+          },
+          "trace_sha256": "d8d0d7109c62e73bfa31178a8e6d924fa159e062459127591aef16c23d24e0ff",
+          "winner_cells": [
+            52,
+            1,
+            37,
+            0,
+            4,
+            57,
+            1,
+            25,
+            0,
+            5,
+            72,
+            1,
+            27,
+            1,
+            14,
+            1,
+            30,
+            2,
+            60,
+            1,
+            32,
+            2,
+            55,
+            1,
+            44,
+            3
+          ]
+        }
+      }
+    }
+  ],
+  "inference_digest_unchanged": true,
+  "initial_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+  "integrated_task_inputs": 0,
+  "neutral_resolution_during_scoring": true,
+  "persistent_learner_inputs": 0,
+  "private_or_protected_inputs": 0,
+  "protected_evidence": false,
+  "reservation": {
+    "artifact_absent_at_check": true,
+    "artifact_path": "benchmarks/r4_recurrent_assembly_stack_gate_v1.json",
+    "claim_boundary": "public developmental causal mechanism-fit evidence that a bounded physical assembly stack is necessary for two visible-scoring, model-training-unseen three-factor recombinations, with local PUSH/POP/STOP custody and direct-route retention; the scorer was visible during implementation, so this is not fresh developer-heldout generalization, Python, persistent integrated V5/V6, protected evaluation, SWE, cross-domain transfer, or broad intelligence evidence",
+    "cohort_novel_at_artifact_spend": false,
+    "developmental_mechanism_family_visible": true,
+    "evaluation_status": "public_developmental_mechanism_fit",
+    "fixture_sha256": "e90933a769fcbb36a0ec8c316d4ee197c3590e4641bf2082e19007b15878d3ef",
+    "fresh_atom_case_count": 1,
+    "fresh_combinations_unseen_by_model_training": true,
+    "fresh_nested_case_count": 2,
+    "initial_model": {
+      "model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+      "public_success_observation_count": 5
+    },
+    "model_config": {
+      "max_cells": 2048,
+      "max_cue_tokens": 4,
+      "max_depth": 3,
+      "max_examples": 5,
+      "max_output_tokens": 7,
+      "max_programs": 256,
+      "max_sequence_tokens": 7,
+      "max_steps": 96,
+      "random_seed": 23
+    },
+    "model_config_sha256": "6a280073cd59dc0ea2975931dcc477d88fba982a49d92d814f97e247960e2c76",
+    "opaque_token_encoding": "sha256(namespace + utf8_token) first 31 nonzero bits",
+    "protected_evidence": false,
+    "public_experience_count": 5,
+    "public_training_sha256": "02eab2ab787453f978bbac8d857894d52ccb6f2622bf049fcd53d576c74d6efe",
+    "schema": "recurrent-assembly-stack-gate-reservation-v1",
+    "source_custody": {
+      "cortex_source_sha256": "9cf37fc36978c3389a86a2856401f6c528d1a95f491dab0eb1b8662edcd055db",
+      "fixture_source_sha256": "bbe6f43ada638b96e2d1062688169c5555e99e28441807af59be11c20cae7db1",
+      "model_source_sha256": "242cbbea8ff84f8ae8baedf5780e3a0bc346f07ad56fe966df5c9efde4d53f7e",
+      "python_executable_sha256": "89e640c427d53939a746fd172f3f3071bfe45c2bdb171706655c8674a9d709ac",
+      "runner_sha256": "de927bba97950e528ffeaa949b804d4045a74fdc4fcb7a0f94c8595fb138e4f6"
+    },
+    "source_custody_sha256": "fce69c60f5319aeb3c1e21069d72dd3d7da684df3c8c7eea2d18f075322e8d8a",
+    "status": "COMPLETED",
+    "target_teacher_inputs": 0,
+    "unknown_cue_probe_count": 1
+  },
+  "sandbox_executions": 0,
+  "schema": "recurrent-assembly-stack-gate-v1",
+  "scores": {
+    "direct_stack_off_exact_count": 1,
+    "direct_treatment_exact_count": 1,
+    "inference_digest_match_count": 7,
+    "neutral_resolution_count": 7,
+    "physical_trace_count": 7,
+    "physical_trace_expected": 7,
+    "stack_off_nested_exact_count": 0,
+    "stack_off_nested_exact_expected": 0,
+    "treatment_exact_count": 2,
+    "treatment_expected": 2,
+    "treatment_nested_physical_count": 2,
+    "treatment_nested_physical_expected": 2,
+    "unknown_physical_stop_count": 1
+  },
+  "status": "PASS_RECURRENT_ASSEMBLY_STACK_GATE_V1",
+  "target_teacher_inputs": 0,
+  "unknown_cue_probe": {
+    "passed": true,
+    "probe_id": "unknown-cue-00",
+    "public_observation": {
+      "observation_sha256": "b8409a1f1a99acc455cc185b5428dcc047014e3f73ba6da2540a150ae880bb9d",
+      "observation_tokens": [
+        "ulvek",
+        "sorin",
+        "drav",
+        "payload-xanthic-109"
+      ],
+      "probe_id": "unknown-cue-00",
+      "schema": "recurrent-assembly-stack-fixture-v1"
+    },
+    "response": {
+      "emitted_token_bytes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "emitted_token_ids": [],
+      "inference_digest_unchanged": true,
+      "neutral_consequence": {
+        "changed_edges": [],
+        "model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "prior_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+        "valence": "neutral"
+      },
+      "prior_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+      "resolved_model_digest": "e122718efb8f419fd673cfb20098d0cfa06451001ba83669d93b93f6c97bd00a",
+      "trace": {
+        "max_depth": 0,
+        "operations": [
+          "stop"
+        ],
+        "selected_stop": true,
+        "selected_structural_edges": [],
+        "simulated_steps": 53,
+        "steps": [
+          {
+            "candidate_cells": [
+              3
+            ],
+            "candidate_scores": [
+              1.0
+            ],
+            "depth": 0,
+            "operation": "stop",
+            "phase": "root",
+            "simulated_steps": 53,
+            "spike_time_ms": 2.6,
+            "winner_cell": 3
+          }
+        ],
+        "summary": {
+          "actions": [
+            "STOP"
+          ],
+          "depths": [
+            0
+          ],
+          "emit_count": 0,
+          "max_depth": 0,
+          "phases": [
+            "root"
+          ],
+          "physical_custody": true,
+          "physical_step_count": 1,
+          "pop_count": 0,
+          "push_count": 0,
+          "selected_stop": true,
+          "simulated_steps": 53,
+          "step_count": 1,
+          "stop_count": 1
+        },
+        "trace_sha256": "2db30fdaaf1d7469cd945559824bc1fb39ea16bddf1fa9a188c770e01133bcd7",
+        "winner_cells": [
+          3
+        ]
+      }
+    },
+    "scoring_custody": {
+      "observation_sha256": "b8409a1f1a99acc455cc185b5428dcc047014e3f73ba6da2540a150ae880bb9d",
+      "observation_tokens": [
+        "ulvek",
+        "sorin",
+        "drav",
+        "payload-xanthic-109"
+      ],
+      "probe_id": "unknown-cue-00",
+      "schema": "recurrent-assembly-stack-fixture-v1",
+      "scoring_only_expected_behavior": "physical_explicit_stop"
+    }
+  }
+}
