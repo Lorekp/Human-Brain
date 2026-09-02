@@ -389,14 +389,26 @@ public-prior retention was also only 3/8 in every arm before online changes,
 showing that the token-wise semantic race is not a reliable episodic replay
 path for long heterogeneous outputs.
 
-The current construction seam is a sparse exact-state episode assembly plus a
-generic typed action transport. Learned exact state must excite an episode cell
-and physically replay its sequence; novel transfer must not inherit stored
-ordinal bindings. The transport codec may canonicalize interface structure but
-must leave act/STOP, action name, payload, retrieval, and consequence learning
-to neuronal races. Once this compact boundary is causal and frozen,
-development returns to a fresh V9 repository stream rather than extending a
-microgate series. The immutable V8 artifact SHA-256 is
+The current construction seam is now implemented as a sparse exact-state
+episode assembly plus a generic typed action transport. Learned exact state
+excites an episode cell and physically replays literal tokenizer atoms and EOS;
+`EXACT_ASSEMBLY_OFF` physically stops from the same learned digest. The
+transport wire encodes neuron-emitted action names and argument keys as UTF-8
+byte lists while leaving payload values pointerizable, then a deterministic
+adapter emits canonical `<tool>` JSON. It does not choose act/STOP, tool, or
+payload.
+
+Focused checks passed 19 causal-sequence and 20 tool-bridge cases. On the eight
+public bootstrap actions, normal exact replay is now 8/8 and every output is an
+authentic decoded `submit_patch`; the assembly-off twin stops 8/8. Normal
+inference took 19.5–33.8 ms per case. This diagnostic did not touch V8 tasks or
+an evaluator. The mechanism commits are `d177565` and `0cd20e7`; frozen source
+hashes are
+`e8d1ff323755209c0f71fb6e6617d7c677e8a2355454bc2e7658322cc3cd2495`
+and
+`15c6cb6e96f0b18f589cd2f38d1b23332d82b9ae4254d37bacfa8d5fa5699049`.
+Development now returns to a fresh V9 repository stream rather than extending
+a microgate series. The immutable V8 artifact SHA-256 is
 `adee84be37609f03eca023817571b53a434662aee4f5455a90d9ae3a18ccb9b3`.
 
 ### Coding

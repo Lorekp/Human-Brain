@@ -2343,6 +2343,26 @@ tuned. This is pre-execution failure localization only; it is not software
 competence, continual improvement, protected transfer, SWE-bench, Gemma,
 Opus, or intelligence evidence. R5/R6 remain sealed.
 
+The localized representation correction was then implemented without another
+adjudicative microgate. Commit `d177565` added a learned exact-state episode
+posting: an episode-template cell wins a first-spike race, its literal
+tokenizer atoms replay through successive physical races, and physical EOS
+closes the trajectory. Exact negative credit attaches to that episode cell;
+`EXACT_ASSEMBLY_OFF` removes the route and produces tonic STOP without changing
+the learned digest. Commit `0cd20e7` added a generic stable tool transport:
+neurons emit a numeric action wire containing action-name/key UTF-8 bytes and
+normal pointerizable payload values, while a deterministic environment adapter
+only canonicalizes the emitted structure into `<tool>` JSON.
+
+Focused modules passed 19 and 20 tests. A read-only diagnostic over the eight
+public bootstrap actions—not the V8 task stream—measured 8/8 byte-exact replay
+and 8/8 valid `submit_patch` decisions, versus 8/8 physical STOP under
+`EXACT_ASSEMBLY_OFF`; initial and post-neutral digests were identical. Normal
+inference ranged from 19.5 to 33.8 ms per action. This repairs the exact-memory
+and interface-transport boundaries exposed by V8 but says nothing yet about
+novel patch semantics. The next evidence comes from a separately authored,
+fresh V9 integrated TRAIN stream.
+
 ## 13. Retired directions
 
 Do not reopen these without a new falsifiable rationale and a newly named gate:

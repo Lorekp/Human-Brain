@@ -294,6 +294,36 @@ This is a clean pre-execution failure localization, not continual improvement,
 repository competence, Simple-SWE, SWE-bench, Gemma, Opus, or intelligence.
 R5 and R6 remain sealed.
 
+The immediate developmental successor is now frozen in commits `d177565` and
+`0cd20e7`. Exact learned observations recruit a sparse episode-template cell,
+then replay their literal tokenizer atoms and EOS through first-spike races.
+`EXACT_ASSEMBLY_OFF` keeps the identical learned digest but makes the exact
+router select physical STOP; a failed exact action inhibits only its selected
+episode. The model no longer asks the lower-confidence shared semantic race to
+reconstruct a known long particular.
+
+The generic neuronal tool bridge now learns a digit/punctuation-only action
+wire. The neuron-emitted action name and argument keys are UTF-8 byte lists;
+argument values remain normal pointerizable neuronal payload. A deterministic
+environment codec renders that emitted structure as canonical `<tool>` JSON,
+without choosing act/STOP, a tool, or payload content. Inner wire, public
+output, pending consequence, trace, and policy are digest-bound, and malformed
+recognized wires fail closed while retaining exactly-once negative resolution.
+
+Focused development passed 19 causal-sequence tests and 20 neuronal-tool tests.
+A separate read-only public-prior diagnostic then grew normal and
+`EXACT_ASSEMBLY_OFF` twins from the same eight actions. Normal replay improved
+from V8's 3/8 to 8/8 byte-exact outputs and 8/8 authentic `submit_patch`
+actions; the control selected physical STOP 8/8 with the same initial and
+post-neutral digest. Per-case normal inference was 19.5–33.8 ms. This is
+developmental episodic-retention and action-transport evidence only. No V8
+task, patch evaluator, sandbox, or protected input was run. Current source
+SHA-256 values are
+`e8d1ff323755209c0f71fb6e6617d7c677e8a2355454bc2e7658322cc3cd2495`
+for the causal sequence model and
+`15c6cb6e96f0b18f589cd2f38d1b23332d82b9ae4254d37bacfa8d5fa5699049`
+for the neuronal tool bridge.
+
 ### Frozen recurrent-inventory continual V5 result
 
 The fresh V5 integrated session is terminally spent. One persistent treatment
