@@ -335,6 +335,43 @@ evidence, the narrow optimization candidate is a compiled sequential exact-chain
 race that preserves each winner, spike time, tonic-STOP competition, EOS, and
 trace dependency.
 
+### Terminal fresh V9 transport result
+
+V9 was source-frozen in commit `73d6aa8` with twelve independently authored
+public-TRAIN repository tasks. Fixture, manifest, and runner SHA-256 values are
+respectively
+`2ff864ec3819e79dca5ef11dbd7ebe2a0b1dee2fe50bc47c65d424d3c8b5ef5d`,
+`b01d00a2ba26c3245ca39251a024db6764679533da15c8ab3bc00d17d8a06ddc`,
+and
+`6964c2be771b11c3eaadcd2271f7b1ec240636e61f688b84e152abcd5431262d`.
+The authenticated logical TRAIN-stream and stream-custody hashes are
+`72d246ec3d35abdbb3519bead1b2c1329d5cd36bfe838ba00cd170f4a707a124`
+and
+`a060dbb63fae53ebb0d295c520ed81ef7a24d81ac6c396cb4151f7a5914b71de`;
+the public/source preflight digest is
+`e03dccacb2b4962b908b113149dead1d5da457760d5a1d25000e6e995cf270b2`.
+
+The exactly-once spend is terminally `FAILED`. Treatment, no-update, and
+`CONTRAST_OFF` began from the same learned digest,
+`f1d46408f0a7333eb8d6c14675917cf46e57dd8a3c0ce2fb680cfc3b05a429cc`,
+but a recognized malformed neuronal action transport raised
+`NeuronalToolModelError` out of `infer` in the first treatment task's first
+episode. No task record completed, so complete arm streams did not exist.
+Consequently private posthoc scoring never opened: V9 establishes no semantic,
+evaluator-reach, pass-rate, continual-improvement, or coding-competence result.
+
+The immutable artifact is
+[`r4_integrated_continual_coding_session_v9.json`](../benchmarks/r4_integrated_continual_coding_session_v9.json),
+SHA-256
+`3dc0b74367b0fc2ae979e4e8d7e9ba73644b010bc717ec7ce117b417c0ba9737`,
+with embedded failure digest
+`65e0e95856636140e07ff8077901c54b318c582e595d1ed28fa0827126d324f1`;
+artifact commit `2e0e655` preserves it. V9 must not be rerun or edited. The next
+general correction is to make recognized malformed action transport fail closed
+as an ordinary generation failure, allowing consequence handling without a host
+semantic choice. That correction receives a fresh V10 stream and spend. R5 and
+R6 remain sealed.
+
 ### Frozen recurrent-inventory continual V5 result
 
 The fresh V5 integrated session is terminally spent. One persistent treatment

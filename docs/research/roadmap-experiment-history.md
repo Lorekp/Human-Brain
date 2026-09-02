@@ -2374,6 +2374,49 @@ the call boundary if it preserves winner, spike-time, tonic-STOP, EOS, and
 dependency parity. It should follow rather than perturb the frozen V9 source
 evaluation.
 
+### Terminal V9 fresh integrated spend and transport exception boundary
+
+The successor architecture was frozen before a separate author produced the V9
+cohort. Commit `73d6aa8` then froze twelve fresh public-TRAIN tasks, their
+manifest, and the hardened three-arm session runner. Fixture, manifest, and
+runner SHA-256 values are
+`2ff864ec3819e79dca5ef11dbd7ebe2a0b1dee2fe50bc47c65d424d3c8b5ef5d`,
+`b01d00a2ba26c3245ca39251a024db6764679533da15c8ab3bc00d17d8a06ddc`,
+and
+`6964c2be771b11c3eaadcd2271f7b1ec240636e61f688b84e152abcd5431262d`.
+The logical TRAIN-stream commitment is
+`72d246ec3d35abdbb3519bead1b2c1329d5cd36bfe838ba00cd170f4a707a124`,
+its custody commitment is
+`a060dbb63fae53ebb0d295c520ed81ef7a24d81ac6c396cb4151f7a5914b71de`,
+and the authenticated public/source preflight digest is
+`e03dccacb2b4962b908b113149dead1d5da457760d5a1d25000e6e995cf270b2`.
+
+The exactly-once run reserved its artifact and grew treatment, no-update, and
+`CONTRAST_OFF` from equal initial learned digest
+`f1d46408f0a7333eb8d6c14675917cf46e57dd8a3c0ce2fb680cfc3b05a429cc`.
+Pre-retention passed. During the first treatment task's first episode, a
+recognized malformed neuronal action transport raised `NeuronalToolModelError`
+out of `infer`. `_run_task` never returned, so no task record completed. The
+runner terminated `FAILED` before complete arm streams and before the private
+posthoc scorer could open. No semantic patch, evaluator-reach, pass-rate,
+recovery, or continual-improvement conclusion is available from V9.
+
+The spent artifact is
+[`r4_integrated_continual_coding_session_v9.json`](../../benchmarks/r4_integrated_continual_coding_session_v9.json),
+SHA-256
+`3dc0b74367b0fc2ae979e4e8d7e9ba73644b010bc717ec7ce117b417c0ba9737`,
+with embedded failure digest
+`65e0e95856636140e07ff8077901c54b318c582e595d1ed28fa0827126d324f1`.
+Artifact commit `2e0e655` preserves the terminal record. V9 is immutable and must
+not be rerun or tuned.
+
+This localizes the next general correction to the action interface rather than
+repository semantics. A recognized malformed transport must fail closed as a
+normal generation failure, so the ordinary consequence path can learn from it
+without a host adapter selecting an alternative action, tool, or payload. The
+corrected source receives a fresh V10 cohort and exactly-once spend. V9 licenses
+no protected, SWE, Gemma, Opus, or intelligence claim; R5/R6 remain sealed.
+
 ## 13. Retired directions
 
 Do not reopen these without a new falsifiable rationale and a newly named gate:

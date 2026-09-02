@@ -418,6 +418,39 @@ change to the learned representation. It must return every neuronal winner and
 spike time so the existing STOP/EOS causality and trace dependencies remain
 identical.
 
+Fresh integrated V9 was source-frozen at commit `73d6aa8`. Its task fixture,
+manifest, and session-runner hashes are
+`2ff864ec3819e79dca5ef11dbd7ebe2a0b1dee2fe50bc47c65d424d3c8b5ef5d`,
+`b01d00a2ba26c3245ca39251a024db6764679533da15c8ab3bc00d17d8a06ddc`,
+and
+`6964c2be771b11c3eaadcd2271f7b1ec240636e61f688b84e152abcd5431262d`;
+its logical TRAIN stream and custody hashes are
+`72d246ec3d35abdbb3519bead1b2c1329d5cd36bfe838ba00cd170f4a707a124`
+and
+`a060dbb63fae53ebb0d295c520ed81ef7a24d81ac6c396cb4151f7a5914b71de`.
+The preflight digest is
+`e03dccacb2b4962b908b113149dead1d5da457760d5a1d25000e6e995cf270b2`.
+
+The spent session exposed a narrower runtime seam before complete arm streams:
+all three independently grown arms began at learned digest
+`f1d46408f0a7333eb8d6c14675917cf46e57dd8a3c0ce2fb680cfc3b05a429cc`,
+passed pre-retention, then the first treatment task's first episode produced a
+recognized malformed action wire and `NeuronalToolModelError` escaped `infer`.
+No task record completed; no private scoring or evaluator claim followed. The immediate
+construction boundary is generic failure normalization: malformed recognized
+transport must become an ordinary fail-closed generation result that can receive
+consequence handling, while act/STOP, tool, and payload selection remain
+neuronal. After that source change, evaluation moves to a fresh V10 rather than
+rerunning V9.
+
+The immutable V9 artifact is
+`benchmarks/r4_integrated_continual_coding_session_v9.json`, SHA-256
+`3dc0b74367b0fc2ae979e4e8d7e9ba73644b010bc717ec7ce117b417c0ba9737`,
+with embedded failure digest
+`65e0e95856636140e07ff8077901c54b318c582e595d1ed28fa0827126d324f1`;
+artifact commit `2e0e655` preserves it. It is not semantic coding evidence, and
+R5/R6 remain sealed.
+
 ### Coding
 
 `PASS_PUBLIC_TYPED_SEMANTIC_SIMPLE_SWE_TRAIN_BRIDGE_V1` is the current
