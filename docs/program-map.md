@@ -1,9 +1,9 @@
 # Cell-Brain Program Map
 
 Maintained by the orchestrator. Updated 2026-09-02 after the fresh variability-
-aware Python V3 pass and the first opaque multi-document language scaffold.
-Persistent integration and fully neuronal language inference remain open. Exact
-scientific boundaries live in
+aware Python V3 pass, cell-executed exact-surface relational inference, and a
+sparse neuronal role/filler substrate. Persistent integration and learned
+language abstractions remain open. Exact scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -15,7 +15,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; V3 3/3; continual + neuronal language next]
+R4  Language/software continual coding               [OPEN; V3 3/3; persistent successors active]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -667,14 +667,20 @@ can be appended without parent replay.
 
 Language/knowledge work is co-equal. `442fb83` provides a lossless opaque
 multi-document event tape with provenance and occurrence-preserving raw-token
-views. `c999ea2` adds a first fixed two-hop surface-template reader that
-recombines learned forward/reverse forms on fresh entities, but host code still
-computes its frame/equality matches. It is a symbolic-scaffold microgate, not
-neuronal language understanding. The active successor moves byte equality,
-feature conjunction, frame binding, recurrent joins, ambiguity, and emission
-into simulated-cell circuits, while a sparse role-filler pointer substrate
-targets learned paraphrase structure. Both lanes are public TRAIN development;
-R5/R6 stay sealed.
+views. `c999ea2` introduced a fixed two-hop exact-surface reader; `7819520`
+moves its frozen byte/shape equality, feature conjunction/OR, frame binding,
+query and recurrent joins, document inhibition, ambiguity, and live emission
+into simulated-cell races. The answer-supervised training compiler still finds
+one proof, enumerates token pairs, and fixes one-slot/two-hop surface structure,
+so this is narrow neuronal execution rather than broad language understanding.
+
+`fde2ecb` adds 64-of-4,096 sparse neuronal addresses, reversible ordered
+role/filler binding, compact noisy-prototype superposition, and fitted-GLIF
+cleanup/STOP without a language or code ontology. It is a reusable mechanism,
+not yet learned paraphrase semantics or multi-item memory. The next language
+successor must combine learned latent relations with continual episodic
+provenance, revision, and fresh 1–3-hop reads. Both lanes are public TRAIN
+development; R5/R6 stay sealed.
 
 ### Coding
 

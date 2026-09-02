@@ -2732,19 +2732,36 @@ replay-free appending of generalized shards from independent current successes.
 In the co-equal language lane, `442fb83` adds a lossless opaque multi-document
 event tape with provenance, sentence structure, and distinct repeated token
 occurrences but no semantic or coding ontology. Its focused suite passes 5/5;
-ASCII lexical identities are the current bounded transport surface. Commit
-`c999ea2` adds an answer-supervised exact-surface two-hop reader scaffold. It
-recombines learned forward/reverse sentence frames on fresh names, document
-orders, positions, and distractors, with physical arbitration and STOP.
+ASCII lexical identities are the current bounded transport surface.
 
-An independent audit prevents overclaim: host code still discovers the unique
-two-hop training proof and computes frame/equality Boolean matches before GLIF
-arbitration. Therefore `c999ea2` is structural-recombination evidence, not fully
-neuronal predicate learning or language understanding. The active successor
-replaces those shortcuts with simulated equality/conjunction/frame/join/motor
-circuits; a sparse neuronal role-filler pointer substrate is also underway to
-support paraphrase abstraction without whole-template proliferation. These are
-public TRAIN-side development lanes; R5/R6 remain sealed.
+Commit `c999ea2` adds an answer-supervised exact-surface two-hop reader scaffold.
+An independent audit found that its host computed frame and equality Booleans
+before GLIF arbitration, so no neuronal-language claim was banked from that
+version. Commit `7819520` closes that inference-execution defect: raw byte and
+length sensory sheets drive fitted-GLIF coincidence cells, physical feature AND
+and learned-frame OR, query-to-document and recurrent equality joins, document
+inhibition, and a live-occurrence motor. Fresh entity recombination, learned
+forward/reverse surfaces, document/position changes, distractors, ambiguity,
+missing evidence, a one-byte query mutation, and four ablations remain causal.
+
+The boundary stays explicit. Training still uses an observed answer and host
+compiler to find one unique proof and exact one-slot/two-hop surfaces; inference
+still host-enumerates ordered token-pair candidates. Thus `7819520` is neuronal
+execution of a learned exact-surface schema, not predicate discovery,
+paraphrase understanding, or open-ended reading.
+
+Commit `fde2ecb` adds the adjacent domain-neutral binding substrate. Opaque
+bytes allocate one active cell in each of 64 blocks, fixed modular/product
+wiring supplies ordered reversible role/filler composition, an 8,192-byte
+synaptic state superposes noisy prototypes, and fitted-GLIF first-spike races
+perform transforms, cleanup, tonic STOP, and collision STOP. Its focused 6/6
+suite covers ordered distinction, nested unbinding, fresh identities, noisy
+cleanup, ambiguity/missing support, and causal controls. It contains no language,
+code, relation, or answer ontology. It is mechanism evidence only: learned
+surface-to-latent mappings, multi-item episodic retrieval, provenance-aware
+revision, and persistent 1–3-hop language use remain the next integration.
+
+These are public TRAIN-side development lanes; R5/R6 remain sealed.
 
 ## 13. Retired directions
 

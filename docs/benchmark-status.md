@@ -732,17 +732,31 @@ distinct repeated token occurrences without answer, target, predicate,
 relation, file, path, or edit fields. Its focused suite passes 5/5. Lexical
 identity views are currently ASCII; all other bytes remain lossless literals.
 
-Commit `c999ea2` is an initial two-hop relational-reading scaffold. From raw
-successful examples it retains exact query/sentence surface templates but no
-training endpoint fillers, recombines forward and reversed learned surfaces on
-fresh names and reordered documents, and uses GLIF races for arbitration and
-STOP. The focused suite passes 1/1. This is **not neuronal language-
-understanding evidence**: host code still finds the supervised two-hop training
-path and computes frame/equality matches before the races. The defensible claim
-is answer-supervised exact-surface induction plus fresh-name structural
-recombination. A successor replacing those Boolean shortcuts with simulated
-byte-equality, conjunction, frame, recurrent-join, and motor circuits is
-underway, alongside sparse role-filler pointers for learned paraphrase structure.
+Commit `c999ea2` introduced an answer-supervised two-hop relational-reading
+scaffold. Commit `7819520` replaces its frozen-inference Boolean shortcuts with
+one-hot byte/length sensory sheets and fitted-GLIF coincidence, conjunction,
+learned-frame OR, query-to-document equality, recurrent equality/document-
+inhibition, and live-occurrence motor circuits. Fresh names, reversed learned
+surfaces, reordered documents, distractors, ambiguity, missing evidence, a
+changed query byte, and four causal controls are covered by the focused 1/1
+suite. Training endpoint fillers are not retained.
+
+This remains **not broad language-understanding evidence**. Host code still
+uses the observed answer to compile one unique two-hop training proof, enumerates
+ordered token-pair candidates, and learns exact one-slot query and sentence
+surfaces. The narrow result is cell-executed inference over an answer-supervised
+exact-surface schema; predicate discovery, paraphrase learning, open-ended hop
+structure, and unsupervised knowledge acquisition remain open.
+
+Commit `fde2ecb` adds a separate domain-neutral sparse neuronal role/filler
+substrate: deterministic opaque bytes allocate a 64-of-4,096 cell address,
+fixed ordered product wiring binds and exactly unbinds addresses, an immutable
+8,192-byte synaptic superposition accumulates noisy prototypes, and fitted-GLIF
+races perform cleanup or physical tonic/collision STOP. The focused suite passes
+6/6. Hashing allocates sensory addresses and audit identities; it does not pick
+cleanup winners. This is representational mechanism evidence, not semantics:
+it has not yet learned surface-to-latent relations or become a multi-item
+episodic knowledge store.
 
 Integrated language/knowledge work remains co-equal with integrated coding.
 Both are public TRAIN-side development lanes; R5 and R6 remain sealed.
