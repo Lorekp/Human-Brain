@@ -37,6 +37,19 @@ class ExecutionResult:
 
 
 @dataclass(frozen=True)
+class FrozenWorkerExecution:
+    """Bounded output from an externally frozen structured worker."""
+
+    stdout: bytes
+    stderr: bytes
+    returncode: int | None
+    timed_out: bool
+    wall_seconds: float
+    sandboxed: bool
+    detail: str
+
+
+@dataclass(frozen=True)
 class _WorkerObservation:
     stdout: bytes
     stderr: bytes
@@ -577,6 +590,89 @@ def _decode_worker_result(
     )
 
 
+def execute_frozen_worker(
+    input_bytes: bytes,
+    limits: ExecutionLimits,
+    *,
+    python_executable: str | Path | None = None,
+    python_executable_sha256: str,
+    worker_source: bytes,
+    worker_sha256: str,
+) -> FrozenWorkerExecution:
+    """Run one frozen structured worker with the canonical process boundary."""
+
+    started = perf_counter()
+    if (
+        type(input_bytes) is not bytes
+        or type(worker_source) is not bytes
+        or not isinstance(worker_sha256, str)
+        or sha256(worker_source).hexdigest() != worker_sha256
+    ):
+        return FrozenWorkerExecution(
+            b"",
+            b"",
+            None,
+            False,
+            perf_counter() - started,
+            False,
+            "sandbox worker snapshot differs from its freeze",
+        )
+    executable = resolve_python_executable(python_executable)
+    if not _runtime_executable_matches(executable, python_executable_sha256):
+        return FrozenWorkerExecution(
+            b"",
+            b"",
+            None,
+            False,
+            perf_counter() - started,
+            False,
+            "sandbox Python executable differs from its freeze",
+        )
+    try:
+        observation = _run_worker_process(executable, worker_source, input_bytes, limits)
+    except _SandboxLaunchError as error:
+        return FrozenWorkerExecution(
+            b"",
+            b"",
+            None,
+            False,
+            perf_counter() - started,
+            False,
+            f"sandbox unavailable: {error}",
+        )
+    elapsed = perf_counter() - started
+    if not _runtime_executable_matches(executable, python_executable_sha256):
+        return FrozenWorkerExecution(
+            b"",
+            b"",
+            observation.returncode,
+            observation.timed_out,
+            elapsed,
+            False,
+            "sandbox Python executable changed during execution",
+        )
+    if observation.timed_out:
+        detail = "wall time exceeded"
+    elif (
+        len(observation.stdout) > limits.output_bytes
+        or len(observation.stderr) > limits.output_bytes
+    ):
+        detail = "sandbox output limit exceeded"
+    elif observation.returncode != 0:
+        detail = f"sandbox worker exited abnormally ({observation.returncode})"
+    else:
+        detail = ""
+    return FrozenWorkerExecution(
+        observation.stdout,
+        observation.stderr,
+        observation.returncode,
+        observation.timed_out,
+        elapsed,
+        True,
+        detail,
+    )
+
+
 def execute_completion(
     source: str,
     public: PublicTask,
@@ -658,9 +754,11 @@ def execute_completion(
 __all__ = [
     "SANDBOX_PYTHON_FLAGS",
     "ExecutionResult",
+    "FrozenWorkerExecution",
     "Outcome",
     "SandboxConfigurationError",
     "execute_completion",
+    "execute_frozen_worker",
     "load_worker_snapshot",
     "python_runtime_identity",
     "resolve_python_executable",
