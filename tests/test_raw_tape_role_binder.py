@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import fields
 from inspect import signature
 
+import humanbrain.raw_tape_role_binder as binder_module
+import pytest
 from humanbrain.occurrence_neighborhood_scorer import OccurrenceNeighborhoodScorer
 from humanbrain.raw_tape_role_binder import (
     NeuronalRawTapeRoleBinder,
@@ -175,6 +177,67 @@ def test_indexed_scores_match_the_scalar_fresh_and_ambiguous_cases() -> None:
                 for center in range(len(source))
             )
             assert scorer.score(features) == reference
+
+
+@pytest.mark.parametrize("candidate_count", (127, 128, 4096))
+def test_hybrid_score_validation_has_exact_scalar_race_parity(
+    candidate_count: int,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert binder_module._VECTOR_SCORE_VALIDATION_MIN_CANDIDATES == 128
+
+    for mode in ("winner", "tonic_stop", "collision"):
+        scores = [0] * candidate_count
+        tonic_stop_score = 1
+        if mode == "winner":
+            scores[candidate_count // 2] = 3
+            tonic_stop_score = 2
+        elif mode == "collision":
+            scores[candidate_count // 3] = 3
+            scores[(2 * candidate_count) // 3] = 3
+            tonic_stop_score = 2
+        score_tuple = tuple(scores)
+
+        monkeypatch.setattr(
+            binder_module,
+            "_VECTOR_SCORE_VALIDATION_MIN_CANDIDATES",
+            128,
+        )
+        default = binder_module._physical_race(
+            population="hybrid_parity",
+            scores=score_tuple,
+            tonic_stop_score=tonic_stop_score,
+        )
+        monkeypatch.setattr(
+            binder_module,
+            "_VECTOR_SCORE_VALIDATION_MIN_CANDIDATES",
+            candidate_count + 1,
+        )
+        scalar = binder_module._physical_race(
+            population="hybrid_parity",
+            scores=score_tuple,
+            tonic_stop_score=tonic_stop_score,
+        )
+        monkeypatch.setattr(
+            binder_module,
+            "_VECTOR_SCORE_VALIDATION_MIN_CANDIDATES",
+            0,
+        )
+        vector = binder_module._physical_race(
+            population="hybrid_parity",
+            scores=score_tuple,
+            tonic_stop_score=tonic_stop_score,
+        )
+
+        assert default == vector == scalar
+
+    if candidate_count >= 128:
+        with pytest.raises(RuntimeError, match="candidate score"):
+            binder_module._physical_race(
+                population="hybrid_bounds",
+                scores=(*((0,) * (candidate_count - 1)), 33),
+                tonic_stop_score=1,
+            )
 
 
 def test_equal_raw_tape_evidence_physically_stops_without_partial_cues() -> None:

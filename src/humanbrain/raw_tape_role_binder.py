@@ -48,6 +48,7 @@ _RACE_STEPS = 600
 _ZERO_SCORE_SPIKE_STEP = 568
 _SCORE_CAP = 32
 _RELATION_SCORE = 2
+_VECTOR_SCORE_VALIDATION_MIN_CANDIDATES = 128
 
 _CHECKPOINT_NAMESPACE = b"humanbrain.raw-tape-role-binder.checkpoint-v1\0"
 _QUERY_NAMESPACE = b"humanbrain.raw-tape-role-binder.query-v1\0"
@@ -250,11 +251,18 @@ def _physical_race(
 ) -> _RaceDecision:
     if not 0 <= tonic_stop_score <= _SCORE_CAP:
         raise RuntimeError("tonic STOP score left its calibrated bounds")
-    if any(not 0 <= score <= _SCORE_CAP for score in scores):
-        raise RuntimeError("candidate score left its calibrated bounds")
 
     all_scores = (*scores, tonic_stop_score)
-    currents = _SCORE_CURRENTS[np.asarray(all_scores, dtype=np.intp)]
+    if len(scores) < _VECTOR_SCORE_VALIDATION_MIN_CANDIDATES:
+        if any(not 0 <= score <= _SCORE_CAP for score in scores):
+            raise RuntimeError("candidate score left its calibrated bounds")
+        score_indices = np.asarray(all_scores, dtype=np.intp)
+    else:
+        score_values = np.asarray(all_scores)
+        if not np.all((score_values >= 0) & (score_values <= _SCORE_CAP)):
+            raise RuntimeError("candidate score left its calibrated bounds")
+        score_indices = score_values.astype(np.intp, copy=False)
+    currents = _SCORE_CURRENTS[score_indices]
     result = _CELL_RACE.race_many(currents[None, :], require_unique=False)[0]
     physical_cell_steps = len(all_scores) * _RACE_STEPS
     stopped = False
