@@ -1,8 +1,8 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-02 after persistent multiscale
-V1 appended two shards but failed renamed path-depth transfer. Exact scientific
-boundaries live in
+Maintained by the orchestrator. Updated 2026-09-02 after the variability-aware
+propagation micro-gate and single-observation multiscale broadcast optimization.
+Persistent integration remains open. Exact scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; persistent transfer 2/5, wildcard propagation next]
+R4  Language/software continual coding               [OPEN; wildcard integration + fresh cohort next]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -633,6 +633,29 @@ therefore memorizes the acquisition path rather than a renamed same-depth
 schema. The replacement mechanism is underway; it must be integrated behind a
 newly frozen successor and evaluated on a genuinely fresh cohort. R5/R6 remain
 sealed.
+
+Commit `ba7e016` supplies that replacement at mechanism level.
+`VariabilityAwareSegmentBinder` learns stable versus wildcard intermediate
+propagation from distinct independent demonstrations and BINDs fresh renamed
+first-, middle-, and last-segment probes. Stable corruption, unsupported depth,
+ambiguity, missing boundary, final role collision, and equality, propagation,
+and boundary ablations all physically STOP. Six of six focused tests pass. The
+mechanism is not yet part of the persistent controller, so this does not revise
+V1's failed 2/5 gate.
+
+Commit `2583bf8` then removes redundant observation preparation from multiscale
+inference. One immutable tape is built per stack response and broadcast to all
+shards, while exact controller/stack decision, trace, receipt, and checkpoint
+hashes plus `physical_cell_steps` remain fixed. Seven of seven focused tests
+pass. On the same synthetic 16-shard miss, median latency improves from
+42.5321 ms to 16.5495 ms (2.57x), with conceptual work unchanged at 8,352,600
+cell steps. No spent benchmark was rerun. This is a scale-enabling implementation
+improvement for larger persistent learners, not new task capability.
+
+Integrated language/knowledge work is now co-equal with integrated coding work.
+Next work includes both the newly frozen variability-aware persistent successor
+on a genuinely fresh coding cohort and non-code integrated language/knowledge
+generality. These remain TRAIN-side development lanes; R5/R6 stay sealed.
 
 ### Coding
 

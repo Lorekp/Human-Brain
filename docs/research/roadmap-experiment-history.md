@@ -2687,6 +2687,31 @@ from genuinely independent examples is the next causal seam and is already
 underway. V1 stays immutable; its correction requires a new successor and fresh
 cohort. R5/R6 remain sealed.
 
+Commit `ba7e016` then banks the localized variability-aware mechanism. From
+distinct independent demonstrations, `VariabilityAwareSegmentBinder` separates
+stable intermediate propagation events from wildcard positions. Fresh renamed
+first-, middle-, and last-segment probes BIND. Stable-event corruption,
+unsupported depth, equality ambiguity, missing boundary, final role collision,
+and equality, propagation, and boundary ablations physically STOP. The focused
+suite passes 6/6. This closes the isolated causal seam only; persistent
+controller integration and a fresh cohort remain pending, and V1 stays failed.
+
+Commit `2583bf8` follows with a scale-enabling inference optimization. The
+multiscale stack prepares one immutable observation per response and broadcasts
+it across its frozen shards rather than rebuilding it in each controller.
+Controller/stack decision, trace, receipt, and checkpoint hashes and reported
+`physical_cell_steps` remain exact; 7/7 focused tests pass. On the same synthetic
+16-shard miss, median latency changes from 42.5321 ms to 16.5495 ms (2.57x),
+while the conceptual neural work remains 8,352,600 cell steps. No spent benchmark
+was rerun. The result changes runtime cost, not the scientific capability claim,
+and makes larger persistent stacks more practical.
+
+The next development wave keeps integrated language/knowledge work co-equal with
+integrated coding: integrate the variability-aware mechanism in a newly frozen
+persistent successor and fresh coding cohort, while also starting non-code
+integrated language/knowledge generality work. Both are TRAIN-side development;
+R5/R6 remain sealed.
+
 ## 13. Retired directions
 
 Do not reopen these without a new falsifiable rationale and a newly named gate:

@@ -662,6 +662,42 @@ underway—is variability-induced wildcard propagation learned from genuinely
 independent examples. A correction must receive a new successor and fresh
 cohort. R5 and R6 remain sealed.
 
+### Variability-aware opaque propagation mechanism
+
+Commit `ba7e016` banks the causal micro-gate for the V1 path-depth failure.
+`VariabilityAwareSegmentBinder` compares distinct independent demonstrations and
+learns which intermediate propagation events are stable constraints versus
+wildcard positions. It BINDs fresh renamed first-, middle-, and last-segment
+probes. Stable-event corruption, unsupported depth, equality ambiguity, a
+missing boundary, final role-identity collision, and `EQUALITY_OFF`,
+`PROPAGATION_OFF`, and `BOUNDARY_OFF` all physically STOP. The focused suite
+passes 6/6.
+
+This is mechanism evidence only. It has not yet been integrated into the
+append-only multiscale controller or evaluated on a fresh persistent cohort, so
+it does not change V1's authoritative failed gate or open R5/R6.
+
+### One-observation multiscale broadcast
+
+Commit `2583bf8` prepares one immutable `MultiscaleOpaqueEventTape` per stack
+response and broadcasts that same observation to every frozen shard. Exact
+controller and stack decision, trace, receipt, and checkpoint hashes plus
+reported `physical_cell_steps` remain unchanged; the focused suite passes 7/7.
+On the same synthetic 16-shard miss, median latency fell from 42.5321 ms to
+16.5495 ms, a 2.57x speedup, while conceptual work stayed at 8,352,600 cell
+steps. No spent benchmark was rerun.
+
+The optimization adds no capability claim, but removes duplicated host-side
+observation construction from the per-shard path. That directly improves the
+feasibility of larger persistent learners while leaving their simulated neural
+work auditable.
+
+The immediate program now gives integrated language/knowledge work equal
+priority with integrated coding work. Alongside integrating the variability-
+aware binder into a newly frozen persistent successor and fresh coding cohort,
+the next workload should include non-code integrated language/knowledge
+generality. These are TRAIN-side development lanes; R5 and R6 remain sealed.
+
 ### Frozen recurrent-inventory continual V5 result
 
 The fresh V5 integrated session is terminally spent. One persistent treatment
