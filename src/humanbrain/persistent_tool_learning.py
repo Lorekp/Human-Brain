@@ -184,6 +184,7 @@ class GenerationTrace:
     prompt_sha256: str
     pre_inference_digest: str
     model_query_sha256: str
+    max_new_tokens: int
     raw_output: str
     selected_stop: bool
     sha256: str
@@ -195,11 +196,13 @@ class GenerationTrace:
         prompt: str,
         pre_inference_digest: str,
         emission: ModelEmission,
+        *,
+        max_new_tokens: int,
     ) -> GenerationTrace:
         expected_query = _query_sha256(
             prompt,
             pre_inference_digest,
-            _MAX_DECISION_TOKENS,
+            max_new_tokens,
             _STOP_TEXT,
         )
         if emission.query_sha256 != expected_query:
@@ -207,6 +210,7 @@ class GenerationTrace:
         payload = {
             "frame_sha256": frame.sha256,
             "model_query_sha256": emission.query_sha256,
+            "max_new_tokens": max_new_tokens,
             "pre_inference_digest": pre_inference_digest,
             "prompt_sha256": _prompt_sha256(prompt),
             "raw_output": emission.raw_output,
@@ -217,15 +221,17 @@ class GenerationTrace:
             payload["prompt_sha256"],
             pre_inference_digest,
             emission.query_sha256,
+            max_new_tokens,
             emission.raw_output,
             emission.selected_stop,
-            _digest("generation-trace-v1", payload),
+            _digest("generation-trace-v2", payload),
         )
 
     def __post_init__(self) -> None:
         payload = {
             "frame_sha256": self.frame_sha256,
             "model_query_sha256": self.model_query_sha256,
+            "max_new_tokens": self.max_new_tokens,
             "pre_inference_digest": self.pre_inference_digest,
             "prompt_sha256": self.prompt_sha256,
             "raw_output": self.raw_output,
@@ -236,9 +242,11 @@ class GenerationTrace:
             or not self.prompt_sha256
             or not self.pre_inference_digest
             or not self.model_query_sha256
+            or type(self.max_new_tokens) is not int
+            or self.max_new_tokens < 1
             or not isinstance(self.raw_output, str)
             or not isinstance(self.selected_stop, bool)
-            or self.sha256 != _digest("generation-trace-v1", payload)
+            or self.sha256 != _digest("generation-trace-v2", payload)
         ):
             raise ValueError("generation trace is not authentic")
 
@@ -518,11 +526,20 @@ class EpisodeResult:
 
 
 class PersistentToolLearner:
-    def __init__(self, model: PersistentToolModel, execution: ToolExecution) -> None:
+    def __init__(
+        self,
+        model: PersistentToolModel,
+        execution: ToolExecution,
+        *,
+        max_new_tokens: int = _MAX_DECISION_TOKENS,
+    ) -> None:
         if not model.training_digest:
             raise ValueError("persistent model must expose its training digest")
+        if type(max_new_tokens) is not int or max_new_tokens < 1:
+            raise ValueError("max_new_tokens must be a positive integer")
         self._model = model
         self._execution = execution
+        self._max_new_tokens = max_new_tokens
 
     def episode(self, frame: ObservationFrame) -> EpisodeResult:
         if not isinstance(frame, ObservationFrame):
@@ -530,11 +547,16 @@ class PersistentToolLearner:
         ObservationFrame(frame.blocks, frame.affordances, frame.sha256)
         prior_digest = self._model.training_digest
         prompt = _prompt(frame)
-        expected_query = _query_sha256(prompt, prior_digest, _MAX_DECISION_TOKENS, _STOP_TEXT)
+        expected_query = _query_sha256(
+            prompt,
+            prior_digest,
+            self._max_new_tokens,
+            _STOP_TEXT,
+        )
         try:
             emission = self._model.infer(
                 prompt,
-                max_new_tokens=_MAX_DECISION_TOKENS,
+                max_new_tokens=self._max_new_tokens,
                 stop_text=_STOP_TEXT,
             )
         except Exception as error:
@@ -553,7 +575,13 @@ class PersistentToolLearner:
             _cleanup_expected_query(self._model, expected_query, "query_binding_failed", error)
             raise error
         try:
-            trace = GenerationTrace._seal(frame, prompt, prior_digest, emission)
+            trace = GenerationTrace._seal(
+                frame,
+                prompt,
+                prior_digest,
+                emission,
+                max_new_tokens=self._max_new_tokens,
+            )
         except (TypeError, ValueError) as error:
             _cleanup_expected_query(
                 self._model, expected_query, "trace_authentication_failed", error

@@ -37,6 +37,7 @@ class FakeModel:
         self.pending: str | None = None
         self.calls: list[tuple[str, str, str | float | None]] = []
         self.prompt = ""
+        self.max_new_tokens: int | None = None
 
     @property
     def training_digest(self) -> str:
@@ -51,6 +52,7 @@ class FakeModel:
     ) -> ModelEmission:
         assert self.pending is None
         self.prompt = prompt
+        self.max_new_tokens = max_new_tokens
         expected = ModelEmission.seal(
             prompt,
             self.training_digest,
@@ -280,6 +282,16 @@ def test_empty_arbitrary_frame_is_authentic_and_can_stop() -> None:
         "observations": [],
     }
     assert_one_resolution(model, "neutral")
+
+
+def test_learner_binds_an_explicit_generation_budget_into_inference() -> None:
+    model = FakeModel("<stop>bounded</stop>")
+    learner = PersistentToolLearner(model, FakeExecution(), max_new_tokens=4096)
+
+    result = learner.episode(frame())
+
+    assert result.resolution == "neutral"
+    assert model.max_new_tokens == 4096
 
 
 def test_authentication_rejects_nested_and_trace_tampering() -> None:
