@@ -2706,6 +2706,15 @@ while the conceptual neural work remains 8,352,600 cell steps. No spent benchmar
 was rerun. The result changes runtime cost, not the scientific capability claim,
 and makes larger persistent stacks more practical.
 
+A later unfrozen engineering probe tested local fitted-GLIF batching in the
+relational reader. Its generic 2,048-by-257-cell kernel improved from 64.436 ms
+to 10.515 ms (6.13x) with exact race parity, but grouping and trace
+reconstruction made the complete reader fixture regress from 569.466 ms to
+587.880 ms while preserving its decision SHA, 7,175 traces, and 196,194,600
+cell steps. The candidate was removed byte-for-byte. This negative result points
+to batching complete causal frame-detector layers later, not accumulating local
+batching wrappers; it changes neither production code nor capability evidence.
+
 Commit `101edfb` then composes the variability-aware binder with the neuronal
 source motor. Two independent full transitions train one shared action plus
 stable/wildcard propagation. Physical fitted-GLIF races now also enforce role-
