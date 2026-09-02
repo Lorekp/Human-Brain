@@ -512,12 +512,23 @@ controls emit nothing. This remains one fixed exact-context motor program with
 successful-trajectory supervision, not learned issue-to-file applicability,
 continual learning, or broad repository intelligence.
 
+Commit `ee5b8df` freezes the next integrated pressure point. With three
+same-layout Python files per repository, the issue uniquely names the intended
+fresh symbol in two tasks and names two symbols in one ambiguity task. The
+controller emits nothing: both uniquely named tasks binder-STOP and the
+ambiguity correctly STOPs. The missing seam is generic cross-stream event
+equality plus learned propagation to the enclosing source segment/path, not
+another file suffix, target span, or task class.
+
 Scale work is attached to the same path. Commit `a99473b` adds exact batched
 independent first-spike races (26.2x on the reproduced 4,096-row microcase),
 commit `73929cf` indexes occurrence neighborhoods, and commit `2693901`
 integrates that index into the raw role binder. The actual 4,096-token,
 two-role binder query fell from 12.002 ms to 7.663 ms (1.57x; about 36% lower
 latency) without changing checkpoint, race, output, or STOP semantics.
+Commit `d64bbd9` then vectorizes bounds preparation above the measured
+128-candidate crossover; the isolated 4,096-candidate binder race improved from
+604 microseconds to 471 microseconds (1.28x) with exact scalar parity.
 
 The immediate construction seam is now persistent online structural growth:
 authenticate a successful execution, append only the newly required neuronal

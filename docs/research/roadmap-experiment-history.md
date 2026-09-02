@@ -2528,6 +2528,23 @@ an immutable replay-free successor learned from an authenticated execution
 success, followed by a later fresh task that treatment solves while a persistent
 no-update control STOPs. R5/R6 remain sealed.
 
+Commit `ee5b8df` then froze the harder multi-source applicability probe before
+any corrective mechanism was added. Two public issues each repeated one fresh
+symbol from one of three matched-layout Python files; a third issue repeated two
+symbols and was genuinely ambiguous. All three inference calls received one
+full issue stream plus one full workspace tape exactly once. The current
+controller emitted nothing: both uniquely named action tasks binder-STOPped and
+the ambiguity correctly STOPped. This cleanly localizes novel query/source event
+equality followed by learned enclosing-segment role propagation, without a
+target file, span, candidate action, or repaired fresh source.
+
+The large binder-race preparation path was separately optimized in commit
+`d64bbd9`. At the measured 128-candidate crossover it switches to vector bounds
+validation and reuses the score-index array. Exact scalar parity holds at 127,
+128, and 4,096 candidates; the isolated 4,096-candidate race fell from 604 to
+471 microseconds (1.28x). This changes speed, not the negative multi-source
+result or its scientific boundary.
+
 ## 13. Retired directions
 
 Do not reopen these without a new falsifiable rationale and a newly named gate:

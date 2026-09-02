@@ -470,6 +470,25 @@ SWE-bench competence, or comparison with Gemma or Opus. R5 and R6 remain sealed.
 The next integrated requirement is replay-free acquisition from authenticated
 execution success in one persistent learner.
 
+### Multi-source issue-to-file grounding localization
+
+Commit `ee5b8df` freezes a harder public-TRAIN probe before adding a corrective
+mechanism. Every repository contains three matched-layout `*_worker.py` files;
+the two action issues each uniquely repeat one fresh symbol from the intended
+file, while the third issue repeats two symbols and is genuinely ambiguous.
+Inference receives one complete issue stream plus one complete workspace tape
+and makes exactly one controller query. Target relationships and behavioral
+scoring are derived only after that query and never enter cognition.
+
+The current controller emitted 0/3. Both uniquely named action tasks physically
+binder-STOPped, and the two-symbol ambiguity correctly STOPped. Infrastructure,
+dependency custody, lossless transport, fresh/training symbol disjointness, and
+the observable evaluator all passed. Thus this is valid failure localization,
+not capability success: the missing general computation is learned equality
+binding from a novel issue event to its matching workspace occurrence, followed
+by propagation from that occurrence to its enclosing file/path role. No target
+hint or Python-specific rescue is licensed.
+
 ### Frozen recurrent-inventory continual V5 result
 
 The fresh V5 integrated session is terminally spent. One persistent treatment
