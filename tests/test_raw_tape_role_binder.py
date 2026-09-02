@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import fields
 from inspect import signature
 
+from humanbrain.occurrence_neighborhood_scorer import OccurrenceNeighborhoodScorer
 from humanbrain.raw_tape_role_binder import (
     NeuronalRawTapeRoleBinder,
     RawTapeRoleDemonstration,
@@ -136,6 +137,44 @@ def test_fresh_names_distractors_and_inventory_shift_feed_the_motor_tape() -> No
     assert action.decision == "EMIT"
     assert action.emissions == (b"aurora", b"zephyr")
     motor.resolve(TapeValence.NEUTRAL)
+
+
+def test_indexed_scores_match_the_scalar_fresh_and_ambiguous_cases() -> None:
+    ambiguous_source = (
+        b"noise",
+        b"left",
+        b"=",
+        b"alpha",
+        b";",
+        b"middle",
+        b"left",
+        b"=",
+        b"beta",
+        b";",
+        b"right",
+        b"=",
+        b"gamma",
+        b";",
+    )
+    role_features = (
+        frozenset({(-2, b"left"), (-1, b"="), (1, b";")}),
+        frozenset({(-2, b"right"), (-1, b"="), (1, b";")}),
+    )
+    for source in (_fresh_source(), ambiguous_source):
+        scorer = OccurrenceNeighborhoodScorer(source, neighborhood_radius=2)
+        for features in role_features:
+            reference = tuple(
+                len(
+                    features
+                    & frozenset(
+                        (offset, source[neighbor])
+                        for offset in (-2, -1, 1, 2)
+                        if 0 <= (neighbor := center + offset) < len(source)
+                    )
+                )
+                for center in range(len(source))
+            )
+            assert scorer.score(features) == reference
 
 
 def test_equal_raw_tape_evidence_physically_stops_without_partial_cues() -> None:

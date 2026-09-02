@@ -30,6 +30,7 @@ from hashlib import sha256
 import numpy as np
 
 from humanbrain.cells import AdaptiveGlifPopulation
+from humanbrain.occurrence_neighborhood_scorer import OccurrenceNeighborhoodScorer
 from humanbrain.resting_glif_race import CompiledRestingGlifRace
 
 __all__ = [
@@ -486,23 +487,18 @@ class NeuronalRawTapeRoleBinder:
             )
 
         schema = self._schemas[context_race.column]
+        occurrence_scorer = OccurrenceNeighborhoodScorer(
+            source,
+            self._config.neighborhood_radius,
+        )
         selected_identities: list[bytes] = []
         for role_slot, synapses in enumerate(schema.role_synapses):
             learned_features = frozenset(
                 (synapse.relative_offset, synapse.neighbor_event) for synapse in synapses
             )
-            occurrence_scores = tuple(
-                0
-                if event in selected_identities
-                else len(
-                    learned_features
-                    & _neighborhood_features(
-                        source,
-                        occurrence,
-                        self._config.neighborhood_radius,
-                    )
-                )
-                for occurrence, event in enumerate(source)
+            occurrence_scores = occurrence_scorer.score(
+                learned_features,
+                excluded_center_events=frozenset(selected_identities),
             )
             role_race = _physical_race(
                 population=f"role_{role_slot}_neighborhood",
