@@ -2611,6 +2611,18 @@ well. Five focused tests passed. This is mechanism evidence only and does not
 revise the immutable V1 score. Its new integrated successor and genuinely fresh
 cohort are still pending.
 
+Commit `74045b2` then freezes that integrated successor controller. It combines
+the `7a747f5` binder with the lossless multiscale event tape and the existing
+occurrence-preserving action tape while retaining
+`respond(query, files, *, ablation)` as the sole inference boundary, with
+`files` holding the complete workspace. It adds the `BOUNDARY_OFF` causal arm.
+Three focused composition tests passed fresh
+synthetic first-, middle-, and last-position targets, genuine ambiguity, and
+physical STOP under equality, propagation, and boundary ablation. This remains
+mechanism/integration evidence, not a real-Python successor result. A genuinely
+fresh Python V2 cohort was dispatched only after the controller freeze and is
+still pending.
+
 ## 13. Retired directions
 
 Do not reopen these without a new falsifiable rationale and a newly named gate:

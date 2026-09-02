@@ -566,6 +566,19 @@ mechanism evidence only: it neither changes the immutable 1/2 V1 result nor
 proves integrated editing. A newly named integrated successor and genuinely
 fresh cohort are still pending.
 
+Commit `74045b2` freezes the corresponding successor controller. It composes the
+`7a747f5` boundary-aware binder with the lossless multiscale observation and the
+existing occurrence-preserving action tape. Its sole inference boundary remains
+`respond(query, files, *, ablation)`, with `files` containing the complete
+workspace; no target location, delimiter, cue, or candidate action is supplied.
+The controller also exposes `BOUNDARY_OFF`
+alongside the equality and propagation controls. Three focused composition tests
+passed across fresh synthetic first-, middle-, and last-position targets,
+genuine ambiguity, and all three causal controls, which physically STOP. This is
+mechanism/integration evidence only. The genuinely fresh real-Python V2 cohort
+has been dispatched and remains pending, so no successor capability result is
+claimed yet.
+
 ### Frozen recurrent-inventory continual V5 result
 
 The fresh V5 integrated session is terminally spent. One persistent treatment

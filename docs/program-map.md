@@ -1,8 +1,8 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-02 after the first multiscale
-multi-source integration localized a boundary-position failure. Exact
-scientific boundaries live in
+Maintained by the orchestrator. Updated 2026-09-02 after the boundary-aware
+multiscale successor was composed; its fresh Python V2 cohort remains pending.
+Exact scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -14,7 +14,7 @@ R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; boundary binder banked, fresh integrated successor next]
+R4  Language/software continual coding               [OPEN; boundary successor banked, fresh Python V2 pending]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
 R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
@@ -551,8 +551,18 @@ nearest recurring opaque left/right delimiter relations from complete streams,
 then BINDs fresh renamed first-, middle-, and last-position targets. Ambiguity,
 a missing nearest boundary, and equality, propagation, or boundary ablation all
 physically STOP. The five focused tests establish the causal mechanism only;
-the new integrated controller successor and fresh cohort remain to be built and
-spent.
+the new integrated controller successor and fresh cohort still remained to be
+built and spent at that point.
+
+Commit `74045b2` now composes that binder with `MultiscaleOpaqueEventTape` and
+`OccurrencePreservingActionTape` as the boundary-aware multiscale source motor.
+Its only inference entry point remains `respond(query, files, *, ablation)`,
+with `files` holding the complete workspace; `BOUNDARY_OFF` joins the equality
+and propagation controls.
+Three focused composition tests pass fresh synthetic first/middle/last target
+positions, genuine ambiguity, and physical STOP under all three controls. This
+is integration-mechanism evidence; the dispatched genuinely fresh real-Python
+V2 cohort is still pending.
 
 Scale work is attached to the same path. Commit `a99473b` adds exact batched
 independent first-spike races (26.2x on the reproduced 4,096-row microcase),
@@ -576,11 +586,11 @@ STOP. Capacity and support values are explicitly estimates, and learned event
 bytes remain even though raw training sequences do not. This is a narrow
 continual-learning slice, not context abstraction or broad repository learning.
 
-The immediate integrated seam is to replace V1's fixed-radius containment with
-the banked boundary-aware binder in a newly named controller and genuinely fresh
-cohort, then converge that successor with replay-free append-only growth in one
-persistent multi-file learner. Failures there should drive generic abstraction
-and routing improvements rather than another supplied target or task family.
+The immediate integrated seam is to spend the dispatched genuinely fresh Python
+V2 cohort against the frozen boundary-aware successor, then converge it with
+replay-free append-only growth in one persistent multi-file learner. Failures
+there should drive generic abstraction and routing improvements rather than
+another supplied target or task family.
 
 ### Coding
 
