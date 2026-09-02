@@ -852,24 +852,40 @@ populations and a collision-preserving orientation race; the winner creates two
 directional bound routes. Frozen inference uses sparse frame cleanup, physical
 route unbinding, orientation cleanup, dynamic two-way filler binding, known-
 filler cleanup, opposite-filler unbinding, output cleanup, and one final motor
-race. Persistent state retains pointer/custody roots but zero raw documents,
-sentences, or lexical payload bytes. The focused 1/1 fixture passes prequential
-third-pair transfer, both slot directions, reverse surface traversal, reversed
-document order, a fully relabeled copy (`f11a5cd`), shuffled bindings, conflicting
-completion collision STOP, and six causal ablations.
+race. The frame-only checkpoint retains pointer/custody roots but zero raw
+documents, sentences, or lexical payload bytes. The `f11a5cd` relabeling guard
+confirms that the same mechanism survives an independently renamed vocabulary.
 
-The claim remains deliberately positional, exact-token, and shallow. The module
-discovers structural recurrence and transferable shared bindings, not meanings,
-truth, arbitrary question intent, similarity-based paraphrase, or broad language
-understanding. Host code tokenizes and collision-preservingly enumerates frame
-candidates; generic pair enumeration is quadratic; there is no learned
-provenance revision or recurrent multi-hop composition. The action bridge still
-uses answer-supervised upstream frames, training-only workspace differencing,
-host materialization, and a fixed motor program. Neither `955b32e` nor `b5ccc73`
-is a spent integrated benchmark. The next integrated forcing workload is
-specified in `docs/research/balanced-evidence-to-action-session-v1.md`; it gives
-language and knowledge greater episode count than coding and makes every code transfer depend
-on acquired prose relations.
+Commit `4f23658` renames and deepens that module as
+`neutral_neuronal_document_learner.py`. A consolidation may write facts only
+through frames already promoted in its parent checkpoint, so one episode cannot
+invent a frame and certify its own content. Every eligible occurrence receives
+a physical write-versus-tonic-STOP race. Winning facts retain bidirectional
+filler bindings, exact endpoint lexemes needed for later emission, and stable
+document, occurrence, and provenance roots, but no raw document or complete
+sentence. Identical facts merge distinct provenance roots; incompatible values
+remain separate. With all source documents absent, frozen response physically
+cleans the retained fact's frame pointer and reuses the learned route,
+orientation, alignment, unbinding, cleanup, and final motor path. Distinct
+remembered outputs receive equal drive and collision-STOP; no provenance count
+or append order chooses one. The decision exposes opaque supporting provenance
+roots. The focused 1/1 fixture passes delayed two-source recall in both slot
+directions, immutable-parent checks, retained conflict STOP, and causal fact-
+write and fact-retrieval ablations in addition to the earlier live-transfer,
+order, relabeling, ambiguity, and structural controls.
+
+The claim remains deliberately positional, exact-token, two-slot, and shallow.
+It is a persistent structural-memory result, not learned meanings, truth,
+arbitrary question intent, similarity-based paraphrase, provenance revision,
+recurrent multi-hop composition, or broad language understanding. Host code
+tokenizes and collision-preservingly enumerates positional candidates; generic
+pair and route learning remains costly. The action bridge still uses answer-
+supervised upstream frames, training-only workspace differencing, host
+materialization, and a fixed motor program. These mechanism commits are not a
+spent integrated benchmark. The next integrated forcing workload is specified
+in `docs/research/balanced-evidence-to-action-session-v1.md`; it gives language
+and knowledge greater episode count than coding and makes every code transfer
+depend on acquired prose relations.
 
 Integrated language/knowledge work remains co-equal with integrated coding.
 Both are public TRAIN-side development lanes; R5 and R6 remain sealed.

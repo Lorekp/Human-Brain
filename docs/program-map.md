@@ -1,9 +1,9 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-02 after the fresh variability-
-aware Python V3 pass, cell-executed exact-surface relational inference, and a
-sparse neuronal role/filler substrate. Persistent integration and learned
-language abstractions remain open. Exact scientific boundaries live in
+Maintained by the orchestrator. Updated 2026-09-03 after answer-free neutral
+frames acquired delayed provenance-bearing fact recall. Integrated revision,
+multi-hop recurrence, paraphrase learning, and learned language abstractions
+remain open. Exact scientific boundaries live in
 `docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
 
 ## Goal ladder
@@ -17,7 +17,7 @@ R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
 R4  Language/software continual coding               [OPEN; V3 3/3; persistent successors active]
 R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
-R2  Persistent knowledge and reading memory          [Rust Book action memory + reusable schemas banked]
+R2  Persistent knowledge and reading memory          [neutral delayed facts + reusable schemas banked]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
 ```
 
@@ -725,23 +725,40 @@ sensory projection/materialization, and the fixed action program remain
 scaffolding; this is neither a completed balanced session nor broad coding or
 language evidence.
 
-`955b32e` adds `neutral_neuronal_frame_induction.py` behind a deep three-entry
-interface: start an immutable network, consolidate neutral `OpaqueDocument`
-streams, and respond to a raw one-gap query plus live documents. Generic
-leave-two-out candidates feed provenance, pair, and two slot-variability support
-populations; their physical conjunction promotes a frame. Pair, left-source,
-and right-source support populations then drive SAME/SWAPPED conjunctions and
-one collision-preserving orientation race. Each learned alignment owns two
-directional sparse frame routes. Frozen response physically cleans up frames,
-unbinds the route, recovers its orientation, dynamically binds the live pair in
-both directions, aligns the known filler, unbinds the opposite filler, cleans up
-the output, and reaches one invariant motor/STOP race. The checkpoint retains
-no raw document, complete sentence, or lexical payload bytes. The focused 1/1
-fixture plus the `f11a5cd` relabeling guard covers fresh third-pair transfer,
-both slot and surface directions, order invariance, shuffled-binding STOP,
-conflicting-output collision, and six ablations. This is exact positional
-structural recurrence, not learned meaning, paraphrase similarity, truth,
-provenance revision, multi-hop recurrence, or an integrated result.
+`955b32e` first added answer-free neutral frame induction. Commit `4f23658`
+renames its owner to `neutral_neuronal_document_learner.py` and deepens the same
+three-entry interface: start an immutable learner, consolidate neutral
+`OpaqueDocument` streams, and respond to a raw one-gap query with live documents
+or no documents. Generic leave-two-out candidates feed provenance, pair, and
+two slot-variability support populations; their physical conjunction promotes a
+frame. Pair, left-source, and right-source support populations then drive
+SAME/SWAPPED conjunctions and one collision-preserving orientation race. Each
+learned alignment owns two directional sparse frame routes.
+
+Fact consolidation is temporally gated by the parent checkpoint: only a frame
+promoted before the current episode can admit a fact, and every eligible
+occurrence passes a physical write/STOP race. The immutable fact plane keeps
+bidirectional filler pointers, exact endpoint bytes needed for emission, and
+stable occurrence/document/provenance roots while retaining zero raw documents
+or complete sentences. Frozen source-absent response physically cleans the fact
+frame, unbinds its learned route, recovers orientation, dynamically binds both
+filler directions, aligns the known filler, unbinds the opposite filler, cleans
+up the output, and reaches the same invariant motor/STOP race. Supporting
+provenance roots are exposed only as opaque digests. Identical facts merge
+sources; distinct outputs remain separate equal-drive motor candidates and
+therefore collision-STOP.
+
+The focused 1/1 fixture plus the `f11a5cd` relabeling guard now covers fresh live
+transfer, delayed two-source recall after document removal, both slot and
+surface directions, parent immutability, order invariance, shuffled bindings,
+live and retained conflicts, fact-write/retrieval controls, and the prior six
+structural ablations. Descriptor-root postings narrow cleanup to every matching
+frame rather than scanning every frame; they do not choose a winner. This is
+exact positional two-slot structural memory, not learned meaning, paraphrase
+similarity, truth, provenance revision, multi-hop recurrence, or an integrated
+result. The `b5ccc73` action bridge still consumes the older `f92dd3d`/
+`3448797` answer-supervised memory path; this neutral learner has not yet
+replaced that upstream route.
 
 The next forcing workload is
 `docs/research/balanced-evidence-to-action-session-v1.md`: fifteen

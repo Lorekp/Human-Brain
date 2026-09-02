@@ -2852,36 +2852,45 @@ upstream frames remain answer-supervised exact ASCII surfaces. The result closes
 only the first retained-fact-to-occurrence seam.
 
 Commit `955b32e` removes the observed-answer compiler from a separate, neutral
-surface-learning path. One immutable `FrozenNeutralNeuronalFrameNetwork`
-consolidates only raw opaque documents. It proposes every two-position leave-out
-frame, but promotion requires physical provenance, pair, and both-slot
-variability support populations followed by a conjunction. Cross-frame SAME and
-SWAPPED hypotheses each require two shared pair pointers and independent source
-support before competing in one physical orientation population. A winner grows
-two reversible frame routes. The frozen response path uses sparse cleanup and
-bind/unbind populations to move a live filler pair across that route and emits
-only through a final unique motor race. No raw document, full sentence, or
-lexical payload byte survives in its checkpoint.
+surface-learning path. Its immutable learner consolidates only raw opaque
+documents. It proposes every two-position leave-out frame, but promotion
+requires physical provenance, pair, and both-slot variability support
+populations followed by a conjunction. Cross-frame SAME and SWAPPED hypotheses
+each require two shared pair pointers and independent source support before
+competing in one physical orientation population. A winner grows two reversible
+frame routes. Commit `f11a5cd` adds an independently relabeled copy of the same
+focused evidence.
 
-The single focused fixture passes after two sequential evidence episodes, then
-uses a fresh third pair to transfer between the surfaces in both directions. It
-also covers reversed document presentation, shuffled cross-bindings, conflicting
-completion collision STOP, six ablations, and—at `f11a5cd`—an independently
-relabeled copy. This banks a narrow structural-recurrence/shared-binding
-mechanism, not broad semantics: tokenization and quadratic positional
-enumeration remain host scaffolding; similarity-based paraphrase, truth,
-provenance revision, and recurrent multi-hop composition remain open. No
-integrated benchmark was run.
+Commit `4f23658` then renames the owner to
+`FrozenNeutralNeuronalDocumentLearner` in
+`neutral_neuronal_document_learner.py` and adds delayed fact memory without
+widening the public seam. A new episode may consolidate facts only through
+frames promoted in the parent checkpoint. Each eligible occurrence passes a
+physical write-versus-tonic race, then stores two-way filler bindings, exact
+endpoint lexemes, and opaque provenance/document/occurrence roots. Raw documents
+and complete sentences are not retained. Identical facts merge provenance;
+conflicting endpoint pairs stay separate.
 
-This is answer-supervised ASCII-tokenized exact-surface one-hop learning plus
-one-shot co-binding association and later target-neutral fact acquisition, not
-broad understanding or general paraphrase induction. Host path compilation,
-candidate enumeration, and sensory projection remain scaffolding in the older
-path; the neutral successor is still exact and positional. Belief revision and
-recurrent multi-hop retrieval remain unsolved. The planned balanced evidence-
-to-action session makes those capabilities prerequisites for both language and
-code outcomes rather than allowing coding throughput to stand in for
-understanding.
+When documents are later absent, fact-frame cleanup supplies the existing
+route/orientation/alignment/bind-unbind/output path. Supporting provenance roots
+remain visible as digests, while each distinct completion receives the same
+motor drive; incompatible memories therefore collision-STOP instead of using
+source count, append order, or a host truth rule. `FACT_CONSOLIDATION_OFF` and
+`FACT_RETRIEVAL_OFF` causally remove write and delayed read. The focused 1/1
+fixture passes live prequential transfer, delayed two-source recall in both slot
+directions, parent immutability, retained conflict STOP, relabeling, ordering,
+shuffled bindings, and the earlier structural controls. Descriptor-key postings
+now restrict cleanup to all matching frames without selecting among collisions.
+
+This banks exact positional two-slot structural recurrence plus persistent
+provenance-bearing fact recall, not broad semantics or language understanding.
+Tokenization and positional candidate enumeration remain host scaffolding;
+similarity-based paraphrase, truth learning, provenance revision, and recurrent
+multi-hop composition remain open. The older knowledge-to-action path still has
+answer-supervised upstream frames. No integrated benchmark was run. The planned
+balanced evidence-to-action session keeps those missing capabilities prerequisite
+for both language and code outcomes rather than allowing coding throughput to
+stand in for understanding.
 
 These are public TRAIN-side development lanes; R5/R6 remain sealed.
 

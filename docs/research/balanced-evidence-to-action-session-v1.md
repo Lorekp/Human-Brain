@@ -85,9 +85,10 @@ broad synthesis.
 3. Tool feedback must re-enter the recurrent workspace as another observation;
    it must not select a host-side task-specific solver.
 
-The active implementation order is neutral-frame integration with persistent
-facts, provenance/revision, shared recurrence, then replacement of the action
-bridge's supervised upstream route. Each addition should return to this
+The neutral-frame/persistent-fact prerequisite is now complete. The active
+implementation order is learned provenance revision and readout in that same
+learner, shared recurrent one-to-three-hop composition, then replacement of the
+action bridge's supervised upstream route. Each addition should return to this
 integrated session rather than grow an indefinite microgate series.
 
 ## Implementation progress and corrected prerequisites
@@ -99,21 +100,36 @@ to inference. It is not a session result and does not make later episodes
 eligible yet. The action program is fixed, and the upstream frame was still
 learned through an observed-answer compiler.
 
-Commit `955b32e` implements that language-first prerequisite in a separate
-neutral module. Raw documents induce anonymous positional two-slot frames from
-repeated structure, both readout directions are bound, and exact surfaces
-associate only after two independent shared pair pointers drive a physical SAME
-or SWAPPED race. The focused fixture includes a prequential third binding,
-matched shuffled-binding STOP, both direction changes, collision STOP, and the
-independently relabeled `f11a5cd` guard. Checkpoints retain pointers and custody
-roots but no raw document, complete sentence, or lexical payload bytes. This is
-still exact positional recurrence rather than broad language understanding, and
-it is not yet wired into the 24-episode persistent learner.
+Commit `955b32e` implements answer-free neutral frame induction. Raw documents
+induce anonymous positional two-slot frames from repeated structure, both
+readout directions are bound, and exact surfaces associate only after two
+independent shared pair pointers drive a physical SAME or SWAPPED race. The
+focused fixture includes a prequential third binding, matched shuffled-binding
+STOP, both direction changes, collision STOP, and the independently relabeled
+`f11a5cd` guard.
 
-The next integration order is provenance/revision, shared recurrent one-to-
-three-hop composition, then replacement of the action bridge's supervised
-upstream frames with this neutral substrate. Each step must return here rather
-than extending a disconnected language microgate sequence.
+Commit `4f23658` turns that substrate into one immutable neutral language-memory
+learner. Facts may be written only through frames promoted in the parent
+checkpoint, and each eligible occurrence passes a physical write/STOP race. A
+later episode consolidates two independently provenanced copies of one fresh
+fact into one pair with two source roots; exact endpoint lexemes are retained,
+but raw documents and complete sentences are not. After those documents vanish,
+two complementary raw queries recover both endpoints through the learned cross-
+frame route and return both opaque provenance roots. Disabling fact write or
+retrieval stops delayed recall. A later incompatible fact remains separate and
+the absent-source query collision-STOPs, while the immutable parent still emits.
+
+This completes a prerequisite, not the 24-episode session. Frames remain exact,
+positional, ASCII-tokenized, two-slot structures; facts retain uncompressed
+endpoint bytes; provenance hashes are carried but not understood or queried;
+every matching pair is written; and conflict can only STOP. There is no learned
+supersession/trust, paraphrase without shared bindings, recurrent multi-hop
+composition, large-corpus retention result, unified observation/action learner,
+or scaling result. The next integrated slice is consequence-learned provenance
+supersession and source-vote inhibition in this same checkpoint, preserving STOP
+for unknown or equally supported revision evidence. It should pressure episodes
+14, 16, 18, 20, and 22 before multi-hop work, then replace the action bridge's
+answer-supervised upstream frames.
 
 Episodes 16--20 also require a learned provenance asymmetry before scoring.
 Contradictory facts plus opaque source identities are symmetric: append order,
