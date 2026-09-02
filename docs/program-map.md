@@ -707,7 +707,7 @@ same-surface paths. It is not similarity-based or general paraphrase learning;
 `3448797` adds target-neutral all-match consolidation on learned document frames,
 provenance-bound fact assemblies, counted deduplicated answer lexemes, delayed
 absent-source recall, duplicate-source merging, and conflict STOP. Neutral frame
-induction, revision, and recurrence remain open.
+induction is addressed by the module below; revision and recurrence remain open.
 
 `b5ccc73` adds the first direct retained-fact-to-workspace bridge. Its frozen
 public inference surface is only a complete unified opaque observation and an
@@ -724,6 +724,24 @@ ablations. Training-only workspace differencing, exact lexical anchors, host
 sensory projection/materialization, and the fixed action program remain
 scaffolding; this is neither a completed balanced session nor broad coding or
 language evidence.
+
+`955b32e` adds `neutral_neuronal_frame_induction.py` behind a deep three-entry
+interface: start an immutable network, consolidate neutral `OpaqueDocument`
+streams, and respond to a raw one-gap query plus live documents. Generic
+leave-two-out candidates feed provenance, pair, and two slot-variability support
+populations; their physical conjunction promotes a frame. Pair, left-source,
+and right-source support populations then drive SAME/SWAPPED conjunctions and
+one collision-preserving orientation race. Each learned alignment owns two
+directional sparse frame routes. Frozen response physically cleans up frames,
+unbinds the route, recovers its orientation, dynamically binds the live pair in
+both directions, aligns the known filler, unbinds the opposite filler, cleans up
+the output, and reaches one invariant motor/STOP race. The checkpoint retains
+no raw document, complete sentence, or lexical payload bytes. The focused 1/1
+fixture plus the `f11a5cd` relabeling guard covers fresh third-pair transfer,
+both slot and surface directions, order invariance, shuffled-binding STOP,
+conflicting-output collision, and six ablations. This is exact positional
+structural recurrence, not learned meaning, paraphrase similarity, truth,
+provenance revision, multi-hop recurrence, or an integrated result.
 
 The next forcing workload is
 `docs/research/balanced-evidence-to-action-session-v1.md`: fifteen

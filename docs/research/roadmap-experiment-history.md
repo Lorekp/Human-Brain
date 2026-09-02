@@ -2851,14 +2851,37 @@ still tokenizes and materializes the selected byte substitution, and the
 upstream frames remain answer-supervised exact ASCII surfaces. The result closes
 only the first retained-fact-to-occurrence seam.
 
+Commit `955b32e` removes the observed-answer compiler from a separate, neutral
+surface-learning path. One immutable `FrozenNeutralNeuronalFrameNetwork`
+consolidates only raw opaque documents. It proposes every two-position leave-out
+frame, but promotion requires physical provenance, pair, and both-slot
+variability support populations followed by a conjunction. Cross-frame SAME and
+SWAPPED hypotheses each require two shared pair pointers and independent source
+support before competing in one physical orientation population. A winner grows
+two reversible frame routes. The frozen response path uses sparse cleanup and
+bind/unbind populations to move a live filler pair across that route and emits
+only through a final unique motor race. No raw document, full sentence, or
+lexical payload byte survives in its checkpoint.
+
+The single focused fixture passes after two sequential evidence episodes, then
+uses a fresh third pair to transfer between the surfaces in both directions. It
+also covers reversed document presentation, shuffled cross-bindings, conflicting
+completion collision STOP, six ablations, and—at `f11a5cd`—an independently
+relabeled copy. This banks a narrow structural-recurrence/shared-binding
+mechanism, not broad semantics: tokenization and quadratic positional
+enumeration remain host scaffolding; similarity-based paraphrase, truth,
+provenance revision, and recurrent multi-hop composition remain open. No
+integrated benchmark was run.
+
 This is answer-supervised ASCII-tokenized exact-surface one-hop learning plus
 one-shot co-binding association and later target-neutral fact acquisition, not
 broad understanding or general paraphrase induction. Host path compilation,
-candidate enumeration, and sensory projection remain scaffolding; neutral
-surface induction, belief revision, and recurrent multi-hop retrieval remain
-unsolved. The planned balanced evidence-to-action session makes those
-capabilities prerequisites for both language and code outcomes rather than
-allowing coding throughput to stand in for understanding.
+candidate enumeration, and sensory projection remain scaffolding in the older
+path; the neutral successor is still exact and positional. Belief revision and
+recurrent multi-hop retrieval remain unsolved. The planned balanced evidence-
+to-action session makes those capabilities prerequisites for both language and
+code outcomes rather than allowing coding throughput to stand in for
+understanding.
 
 These are public TRAIN-side development lanes; R5/R6 remain sealed.
 

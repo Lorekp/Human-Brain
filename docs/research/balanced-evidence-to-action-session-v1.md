@@ -85,10 +85,10 @@ broad synthesis.
 3. Tool feedback must re-enter the recurrent workspace as another observation;
    it must not select a host-side task-specific solver.
 
-The near-term implementation order is paraphrase association, neutral
-consolidation, provenance/revision, shared recurrence, then the knowledge-action
-bridge. Each addition should return to this integrated session rather than grow
-an indefinite microgate series.
+The active implementation order is neutral-frame integration with persistent
+facts, provenance/revision, shared recurrence, then replacement of the action
+bridge's supervised upstream route. Each addition should return to this
+integrated session rather than grow an indefinite microgate series.
 
 ## Implementation progress and corrected prerequisites
 
@@ -99,13 +99,21 @@ to inference. It is not a session result and does not make later episodes
 eligible yet. The action program is fixed, and the upstream frame was still
 learned through an observed-answer compiler.
 
-The next language-first successor must remove that compiler. Neutral documents
-should induce anonymous two-slot frames from repeated structure, store both
-readout directions, and associate exact surfaces only after two independent
-shared filler bindings physically establish a SAME or SWAPPED alignment. A
-prequential third binding, a matched shuffled-binding control, relabeling, and
-collision STOP are the minimum evidence; lexical recurrence alone is not broad
-language understanding.
+Commit `955b32e` implements that language-first prerequisite in a separate
+neutral module. Raw documents induce anonymous positional two-slot frames from
+repeated structure, both readout directions are bound, and exact surfaces
+associate only after two independent shared pair pointers drive a physical SAME
+or SWAPPED race. The focused fixture includes a prequential third binding,
+matched shuffled-binding STOP, both direction changes, collision STOP, and the
+independently relabeled `f11a5cd` guard. Checkpoints retain pointers and custody
+roots but no raw document, complete sentence, or lexical payload bytes. This is
+still exact positional recurrence rather than broad language understanding, and
+it is not yet wired into the 24-episode persistent learner.
+
+The next integration order is provenance/revision, shared recurrent one-to-
+three-hop composition, then replacement of the action bridge's supervised
+upstream frames with this neutral substrate. Each step must return here rather
+than extending a disconnected language microgate sequence.
 
 Episodes 16--20 also require a learned provenance asymmetry before scoring.
 Contradictory facts plus opaque source identities are symmetric: append order,

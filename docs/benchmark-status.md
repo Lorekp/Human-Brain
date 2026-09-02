@@ -841,17 +841,34 @@ missing-fact and conflicting-fact STOP, plus eight causal controls. The frozen
 bridge retains two evidence roots and learned structure, not training
 workspaces, paths, or payloads.
 
-The claim remains deliberately one-hop and exact-surface. Co-binding association
-is not general or similarity-based paraphrase induction. Training frames still
-come from an observed answer and host path compiler; host code enumerates opaque
-candidates, performs training-only full-workspace differencing, projects sensory
-events, and materializes the winning byte edit. The action microprogram is fixed,
-not learned, and `b5ccc73` is a focused implementation fixture rather than a
-spent integrated benchmark. There is no neutral surface induction,
-provenance-aware revision, recurrent multi-hop retrieval, or broad language
-understanding yet. The next integrated forcing workload is specified in
-`docs/research/balanced-evidence-to-action-session-v1.md`; it gives language and
-knowledge greater episode count than coding and makes every code transfer depend
+Commit `955b32e` adds the first answer-free surface-induction module. Its three-
+entry interface starts an immutable network, consolidates only raw opaque
+documents, and responds to a raw byte query plus current documents. Every
+two-position leave-out frame is proposed internally. Four neuronal support
+populations require independent provenance, distinct filler pairs, and variation
+in both positional slots before a conjunction can promote the frame. Two
+independently shared pair pointers similarly drive SAME and SWAPPED support
+populations and a collision-preserving orientation race; the winner creates two
+directional bound routes. Frozen inference uses sparse frame cleanup, physical
+route unbinding, orientation cleanup, dynamic two-way filler binding, known-
+filler cleanup, opposite-filler unbinding, output cleanup, and one final motor
+race. Persistent state retains pointer/custody roots but zero raw documents,
+sentences, or lexical payload bytes. The focused 1/1 fixture passes prequential
+third-pair transfer, both slot directions, reverse surface traversal, reversed
+document order, a fully relabeled copy (`f11a5cd`), shuffled bindings, conflicting
+completion collision STOP, and six causal ablations.
+
+The claim remains deliberately positional, exact-token, and shallow. The module
+discovers structural recurrence and transferable shared bindings, not meanings,
+truth, arbitrary question intent, similarity-based paraphrase, or broad language
+understanding. Host code tokenizes and collision-preservingly enumerates frame
+candidates; generic pair enumeration is quadratic; there is no learned
+provenance revision or recurrent multi-hop composition. The action bridge still
+uses answer-supervised upstream frames, training-only workspace differencing,
+host materialization, and a fixed motor program. Neither `955b32e` nor `b5ccc73`
+is a spent integrated benchmark. The next integrated forcing workload is
+specified in `docs/research/balanced-evidence-to-action-session-v1.md`; it gives
+language and knowledge greater episode count than coding and makes every code transfer depend
 on acquired prose relations.
 
 Integrated language/knowledge work remains co-equal with integrated coding.
