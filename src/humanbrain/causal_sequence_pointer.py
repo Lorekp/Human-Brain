@@ -1,10 +1,11 @@
 """Causal neuronal sequence composition over pointer-normalized text.
 
 The model stores transition synapses, not candidate programs.  Successful
-episodes leave exact contextual traces; only structure repeated across distinct
-observation states is allowed to drive a novel context.  Generation is one
-strictly forward traversal.  Every emitted chunk, EOS, STOP, live role binding,
-and role-loop boundary is selected by a fitted-cell first-spike race.
+episodes leave exact contextual traces.  Repeated structure and sensory
+differences isolated by matched successful episodes can both drive a novel
+context.  Generation is one strictly forward traversal.  Every emitted chunk,
+learned segment, EOS, STOP, live role binding, and role-loop boundary is
+selected by a fitted-cell first-spike race.
 
 Failure applies one local NoGo tick to the newest eligible transition keyed by
 observation state, predecessor state, and selected chunk.  The receipt is also
@@ -19,6 +20,7 @@ import re
 from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
+from difflib import SequenceMatcher
 from enum import Enum
 from hashlib import sha256
 from math import isfinite, log1p
@@ -40,7 +42,7 @@ __all__ = [
 ]
 
 
-_MODEL_SCHEMA = "humanbrain-causal-sequence-pointer-v1"
+_MODEL_SCHEMA = "humanbrain-causal-sequence-pointer-v2"
 _STOP_OUTPUT = "<stop>insufficient causal sequence evidence</stop>"
 _POINTER_EVENT = re.compile(r"<@(\d+)>")
 _CURRENT_SCALE_PA = 900.0
@@ -50,6 +52,8 @@ _SEMANTIC_EVIDENCE_FLOOR = 6.2
 _SENSORY_ACTIVITY_CAP = 2.5
 _SENSORY_COINCIDENCE_GAIN = 0.5
 _RECURRENT_DRIVE_BUDGET = 3.0
+_MIN_CONTRAST_SHARED_FEATURES = 2
+_MAX_CONTRAST_NEIGHBORS = 8
 
 _Feature = tuple[int, ...]
 _Prefix = tuple[int, ...]
@@ -64,6 +68,7 @@ class CausalSequenceAblation(Enum):
     """Focused controls over the two causal mechanisms under study."""
 
     NONE = "none"
+    CONTRAST_OFF = "contrast-off"
     RECURRENCE_OFF = "recurrence-off"
     NOGO_OFF = "nogo-off"
 
@@ -96,6 +101,8 @@ class CausalSequenceConfig:
     max_prefix_order: int = 3
     max_role_cursors: int = 32
     max_roles: int = 256
+    max_contrast_output_bytes: int = 4096
+    max_contrast_candidate_episodes: int = 256
     min_reuse_contexts: int = 2
     plasticity: bool = True
     ablation: CausalSequenceAblation = CausalSequenceAblation.NONE
@@ -110,6 +117,12 @@ class CausalSequenceConfig:
             ("max_prefix_order", self.max_prefix_order, 1),
             ("max_role_cursors", self.max_role_cursors, 1),
             ("max_roles", self.max_roles, 2),
+            ("max_contrast_output_bytes", self.max_contrast_output_bytes, 1),
+            (
+                "max_contrast_candidate_episodes",
+                self.max_contrast_candidate_episodes,
+                1,
+            ),
             ("min_reuse_contexts", self.min_reuse_contexts, 2),
         )
         for name, value, lower in integer_bounds:
@@ -195,6 +208,36 @@ class _PreparedExample:
 
 
 @dataclass(frozen=True, slots=True)
+class _ContrastEpisode:
+    episode_id: str
+    observation_state: str
+    features: tuple[_Feature, ...]
+    pointer_output: bytes
+    template_cell: int
+
+
+@dataclass(frozen=True, slots=True)
+class _ContrastSegment:
+    cell: int
+    base_episode_id: str
+    start: int
+    stop: int
+    replacement: bytes
+
+
+@dataclass(frozen=True, slots=True)
+class _ContrastCertificate:
+    certificate_id: str
+    witness_id: str
+    base_episode_id: str
+    variant_episode_id: str
+    factor_cell: int
+    positive_features: tuple[_Feature, ...]
+    negative_features: tuple[_Feature, ...]
+    segment_cells: tuple[int, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class _NoGoKey:
     observation_state: str
     step: int
@@ -207,8 +250,18 @@ class _PendingCompletion:
     query_sha256: str
     observation_state: str
     observation_features: tuple[_Feature, ...]
+    pointer_output: str
     semantic_tokens: tuple[int, ...]
     role_actions: tuple[tuple[int, int], ...]
+    eligible_nogo: tuple[_NoGoKey, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _ContrastCompletion:
+    raw_output: str
+    emitted_tokens: tuple[int, ...]
+    selected_stop: bool
+    selected_eos: bool
     eligible_nogo: tuple[_NoGoKey, ...]
 
 
@@ -259,6 +312,26 @@ def _observation_state(pointer_cue: str) -> str:
         b"humanbrain-causal-sequence-observation-v1",
         pointer_cue,
     )
+
+
+def _bounded_contrast_output(pointer_output: str, maximum_bytes: int) -> bytes:
+    output_bytes = pointer_output.encode("utf-8")
+    if len(output_bytes) > maximum_bytes:
+        raise CausalSequencePointerError("contrast output exceeds configured byte capacity")
+    return output_bytes
+
+
+def _contrast_segments_overlap(
+    left: _ContrastSegment,
+    right: _ContrastSegment,
+) -> bool:
+    if left.start == right.start:
+        return True
+    if left.start == left.stop:
+        return right.start < left.start < right.stop
+    if right.start == right.stop:
+        return left.start < right.start < left.stop
+    return max(left.start, right.start) < min(left.stop, right.stop)
 
 
 def _role_runs(pointer_output: str, role_count: int) -> tuple[_RoleRun, ...]:
@@ -350,9 +423,11 @@ class CausalSequencePointerModel:
         }
         self._role_spec_by_cell = {spec.action_cell: spec for spec in self._role_specs}
 
-        # Exact transitions are episodic.  The other tables are reusable only
-        # after their corresponding context sets cross min_reuse_contexts.
+        # Exact transitions are episodic.  The direct reusable path still
+        # requires repeated contexts; the contrast path below is the only way
+        # a singleton fragment may transfer to a novel observation.
         self._episodic: dict[tuple[str, int, _Prefix], _Distribution] = defaultdict(dict)
+        self._episodic_states: set[str] = set()
         self._sensory: dict[tuple[int, _Feature], _Distribution] = defaultdict(dict)
         self._sensory_contexts: dict[tuple[int, _Feature, int], set[str]] = defaultdict(set)
         self._transitions: dict[_Prefix, _Distribution] = defaultdict(dict)
@@ -365,6 +440,18 @@ class CausalSequencePointerModel:
         self._role_successor_contexts: dict[int, set[str]] = defaultdict(set)
         self._role_boundaries: dict[bool, _Distribution] = defaultdict(dict)
         self._role_boundary_contexts: dict[tuple[bool, int], set[str]] = defaultdict(set)
+        self._next_cell = self._exit_cell + 1
+        self._contrast_episodes: dict[str, _ContrastEpisode] = {}
+        self._contrast_episode_postings: dict[_Feature, dict[str, None]] = defaultdict(dict)
+        self._contrast_certificates: dict[str, _ContrastCertificate] = {}
+        self._contrast_certificate_postings: dict[_Feature, set[str]] = defaultdict(set)
+        self._contrast_factor_cells: dict[
+            tuple[tuple[_Feature, ...], tuple[_Feature, ...]], int
+        ] = {}
+        self._contrast_segments: dict[int, _ContrastSegment] = {}
+        self._contrast_segment_cells: dict[tuple[str, int, int, bytes], int] = {}
+        self._contrast_template_episodes: dict[int, str] = {}
+        self._contrast_cell_operations: dict[int, str] = {}
         self._nogo: Counter[_NoGoKey] = Counter()
         self._consequences: dict[str, tuple[int, ...]] = {}
         self._pending: _PendingCompletion | None = None
@@ -400,6 +487,10 @@ class CausalSequencePointerModel:
             pointer_prompt = pointerize(prompt, inventory)
             pointer_output = pointerize(output, inventory)
             pointer_cue = pointerize(cue_text, inventory)
+            _bounded_contrast_output(
+                pointer_output,
+                cfg.max_contrast_output_bytes,
+            )
             prepared.append(
                 _PreparedExample(
                     pointer_prompt=pointer_prompt,
@@ -450,6 +541,12 @@ class CausalSequencePointerModel:
                         len(row.inventory.symbols),
                         strength=1.0,
                     )
+            model._register_contrast_episode(
+                state,
+                model._contrast_cue_features(row.pointer_cue),
+                row.pointer_output,
+                row.provenance_id,
+            )
         model._training_digest = model._compute_training_digest()
         return model
 
@@ -499,6 +596,7 @@ class CausalSequencePointerModel:
         pointer_cue = pointerize(cue_text, inventory)
         state = _observation_state(pointer_cue)
         features = self._observation_features(pointer_prompt, pointer_cue, state)
+        contrast_features = self._contrast_cue_features(pointer_cue)
         prior_digest = self._training_digest
         steps: list[CausalSequenceRaceStep] = []
         semantic_step_indices: list[int] = []
@@ -508,6 +606,46 @@ class CausalSequencePointerModel:
         eligible: list[_NoGoKey] = []
         selected_stop = False
         selected_eos = False
+
+        contrast = (
+            None
+            if state in self._episodic_states
+            else self._contrast_complete(
+                state,
+                contrast_features,
+                steps,
+                max_new_tokens=max_new_tokens,
+            )
+        )
+        if contrast is not None:
+            raw_output = contrast.raw_output
+            semantic_tokens = list(contrast.emitted_tokens)
+            selected_stop = contrast.selected_stop
+            selected_eos = contrast.selected_eos
+            eligible = list(contrast.eligible_nogo)
+            if not selected_stop:
+                self._pending = _PendingCompletion(
+                    query_sha256=query_sha,
+                    observation_state=state,
+                    observation_features=features,
+                    pointer_output=raw_output,
+                    semantic_tokens=tuple(semantic_tokens),
+                    role_actions=(),
+                    eligible_nogo=tuple(eligible),
+                )
+            self._last_trace = CausalSequenceCompletionTrace(
+                query_sha256=query_sha,
+                prior_training_digest=prior_digest,
+                ablation=self._config.ablation,
+                observation_state=state,
+                observation_features=features,
+                emitted_token_ids=tuple(semantic_tokens),
+                raw_output=raw_output,
+                selected_stop=selected_stop,
+                selected_eos=selected_eos,
+                steps=tuple(steps),
+            )
+            return raw_output
 
         for output_step in range(max_new_tokens + 1):
             predecessor = tuple(semantic_tokens[-self._config.max_prefix_order :])
@@ -598,6 +736,7 @@ class CausalSequencePointerModel:
                 query_sha256=query_sha,
                 observation_state=state,
                 observation_features=features,
+                pointer_output=raw_output,
                 semantic_tokens=tuple(semantic_tokens),
                 role_actions=tuple(role_actions),
                 eligible_nogo=tuple(eligible),
@@ -685,28 +824,56 @@ class CausalSequencePointerModel:
         cue_text: str,
         strength: float = 1.0,
     ) -> CausalSequenceLearningUpdate:
-        """Consolidate the emitted success online, without replaying old rows."""
+        """Consolidate one observed successful sequence without replaying old rows."""
 
         _validate_text(output, "output")
         if not isfinite(strength) or strength <= 0.0:
             raise ValueError("strength must be one positive finite value")
         pending = self._require_pending(prompt, inventory, cue_text)
+        pointer_output = pointerize(output, inventory)
+        if pointer_output != pending.pointer_output:
+            raise CausalSequencePointerError(
+                "successful output does not match pending neuronal emission"
+            )
+        _bounded_contrast_output(
+            pointer_output,
+            self._config.max_contrast_output_bytes,
+        )
         prior_digest = self._training_digest
         changed: list[str] = []
         if self._config.plasticity:
+            observed_tokens = self._encode_output(
+                pointer_output,
+                len(inventory.symbols),
+            )
             self._ingest_success(
                 pending.observation_state,
                 pending.observation_features,
-                pending.semantic_tokens,
+                observed_tokens,
                 strength=float(strength),
             )
-            for action_cell, role_count in pending.role_actions:
-                self._ingest_role_cursor(
-                    pending.observation_state,
-                    self._role_spec_by_cell[action_cell],
-                    role_count,
-                    strength=float(strength),
-                )
+            for run in _role_runs(pointer_output, len(inventory.symbols)):
+                spec = self._role_spec_by_key.get(run.key)
+                if spec is not None:
+                    self._ingest_role_cursor(
+                        pending.observation_state,
+                        spec,
+                        len(inventory.symbols),
+                        strength=float(strength),
+                    )
+            provenance = _digest(
+                b"humanbrain-causal-sequence-online-success-v2",
+                {
+                    "query_sha256": pending.query_sha256,
+                    "output": pointer_output,
+                },
+            )
+            self._register_contrast_episode(
+                pending.observation_state,
+                self._contrast_cue_features(pointerize(cue_text, inventory)),
+                pointer_output,
+                provenance,
+            )
             self._consequences[pending.observation_state] = tuple(self._tokenizer.encode(output))
             changed.extend(
                 (
@@ -781,6 +948,24 @@ class CausalSequencePointerModel:
         )
         return tuple(ordered[: self._config.max_observation_features])
 
+    def _contrast_cue_features(self, pointer_cue: str) -> tuple[_Feature, ...]:
+        """Expose only sensory cue traces to matched-pair recruitment."""
+
+        ids = self._tokenizer.encode(pointer_cue)
+        features = {
+            tuple(ids[start : start + order])
+            for order in range(1, self._config.max_observation_order + 1)
+            for start in range(0, len(ids) - order + 1)
+        }
+        ordered = sorted(
+            features,
+            key=lambda feature: (
+                0 if len(feature) == 1 else 1,
+                _digest(b"humanbrain-contrast-cue-feature-v1", feature),
+            ),
+        )
+        return tuple(ordered[: self._config.max_observation_features])
+
     def _encode_output(self, pointer_output: str, role_count: int) -> tuple[int, ...]:
         encoded: list[int] = []
         cursor = 0
@@ -802,6 +987,7 @@ class CausalSequencePointerModel:
         *,
         strength: float,
     ) -> None:
+        self._episodic_states.add(state)
         sequence = (*tokens, self._eos_cell)
         prefix: list[int] = []
         for step, target in enumerate(sequence):
@@ -820,6 +1006,486 @@ class CausalSequencePointerModel:
             self._position_contexts[(step, target)].add(state)
             if target != self._eos_cell:
                 prefix.append(target)
+
+    def _allocate_contrast_cell(self, operation: str) -> int:
+        cell = self._next_cell
+        self._next_cell += 1
+        self._contrast_cell_operations[cell] = operation
+        return cell
+
+    def _resize_cortex(self) -> None:
+        # The cortex has no hidden learned weights.  Sparse synapse banks live
+        # on this model, so recruiting cells only expands the physical race
+        # substrate and preserves every learned edge.
+        self._cortex = DendriticCortex(
+            self._next_cell,
+            max_order=1,
+            seed=self._config.random_seed,
+        )
+
+    def _register_contrast_episode(
+        self,
+        state: str,
+        features: tuple[_Feature, ...],
+        pointer_output: str,
+        provenance_id: str,
+    ) -> None:
+        del provenance_id
+        ordered_features = tuple(sorted(set(features)))
+        output_bytes = _bounded_contrast_output(
+            pointer_output,
+            self._config.max_contrast_output_bytes,
+        )
+        episode_id = _digest(
+            b"humanbrain-causal-sequence-contrast-episode-v2",
+            {
+                "features": ordered_features,
+                "observation_state": state,
+                "pointer_output_hex": output_bytes.hex(),
+            },
+        )
+        if episode_id in self._contrast_episodes:
+            return
+
+        candidates = self._bounded_contrast_candidates(ordered_features)
+        feature_set = set(ordered_features)
+        matched: list[tuple[int, int, str]] = []
+        for candidate_id in candidates:
+            candidate = self._contrast_episodes[candidate_id]
+            candidate_features = set(candidate.features)
+            common = len(feature_set & candidate_features)
+            positive = feature_set - candidate_features
+            negative = candidate_features - feature_set
+            if (
+                common < _MIN_CONTRAST_SHARED_FEATURES
+                or not positive
+                or not negative
+                or candidate.pointer_output == output_bytes
+            ):
+                continue
+            matched.append((len(positive) + len(negative), -common, candidate_id))
+
+        template_cell = self._allocate_contrast_cell(f"TEMPLATE:{episode_id[:12]}")
+        episode = _ContrastEpisode(
+            episode_id=episode_id,
+            observation_state=state,
+            features=ordered_features,
+            pointer_output=output_bytes,
+            template_cell=template_cell,
+        )
+        self._contrast_episodes[episode_id] = episode
+        self._contrast_template_episodes[template_cell] = episode_id
+
+        if matched:
+            best_distance = min(row[0] for row in matched)
+            nearest = sorted(row for row in matched if row[0] == best_distance)[
+                :_MAX_CONTRAST_NEIGHBORS
+            ]
+            for _distance, _negative_common, candidate_id in nearest:
+                candidate = self._contrast_episodes[candidate_id]
+                self._register_contrast_direction(candidate, episode)
+                self._register_contrast_direction(episode, candidate)
+
+        for feature in ordered_features:
+            posting = self._contrast_episode_postings[feature]
+            posting.pop(episode_id, None)
+            posting[episode_id] = None
+            while len(posting) > self._config.max_contrast_candidate_episodes:
+                del posting[next(iter(posting))]
+        self._resize_cortex()
+
+    def _bounded_contrast_candidates(
+        self,
+        ordered_features: tuple[_Feature, ...],
+    ) -> tuple[str, ...]:
+        """Select a deterministic recent union without blocking online growth.
+
+        Each insertion-ordered feature posting is itself recency-bounded.  Pair
+        search walks sorted cue features and each posting newest-first, retaining
+        at most the configured number of distinct episode candidates.
+        """
+
+        candidates: dict[str, None] = {}
+        capacity = self._config.max_contrast_candidate_episodes
+        for feature in ordered_features:
+            for candidate_id in reversed(self._contrast_episode_postings.get(feature, {})):
+                candidates[candidate_id] = None
+                if len(candidates) == capacity:
+                    return tuple(candidates)
+        return tuple(candidates)
+
+    def _register_contrast_direction(
+        self,
+        base: _ContrastEpisode,
+        variant: _ContrastEpisode,
+    ) -> None:
+        base_features = set(base.features)
+        variant_features = set(variant.features)
+        positive = tuple(sorted(variant_features - base_features))
+        negative = tuple(sorted(base_features - variant_features))
+        if not positive or not negative:
+            return
+
+        opcodes = SequenceMatcher(
+            None,
+            base.pointer_output,
+            variant.pointer_output,
+            autojunk=False,
+        ).get_opcodes()
+        edits = tuple(
+            (start, stop, variant.pointer_output[replacement_start:replacement_stop])
+            for tag, start, stop, replacement_start, replacement_stop in opcodes
+            if tag != "equal"
+        )
+        if not edits:
+            return
+        witness_id = _digest(
+            b"humanbrain-causal-sequence-contrast-witness-v2",
+            sorted((base.episode_id, variant.episode_id)),
+        )
+        certificate_id = _digest(
+            b"humanbrain-causal-sequence-contrast-certificate-v2",
+            {
+                "base": base.episode_id,
+                "edits": [[start, stop, replacement.hex()] for start, stop, replacement in edits],
+                "negative": negative,
+                "positive": positive,
+                "variant": variant.episode_id,
+                "witness": witness_id,
+            },
+        )
+        if certificate_id in self._contrast_certificates:
+            return
+
+        factor_key = (positive, negative)
+        factor_cell = self._contrast_factor_cells.get(factor_key)
+        if factor_cell is None:
+            factor_cell = self._allocate_contrast_cell(f"FACTOR:{certificate_id[:12]}")
+            self._contrast_factor_cells[factor_key] = factor_cell
+
+        segment_cells: list[int] = []
+        for start, stop, replacement in edits:
+            segment_key = (base.episode_id, start, stop, replacement)
+            segment_cell = self._contrast_segment_cells.get(segment_key)
+            if segment_cell is None:
+                segment_cell = self._allocate_contrast_cell(
+                    f"SEGMENT:{certificate_id[:12]}:{start}:{stop}"
+                )
+                self._contrast_segment_cells[segment_key] = segment_cell
+                self._contrast_segments[segment_cell] = _ContrastSegment(
+                    cell=segment_cell,
+                    base_episode_id=base.episode_id,
+                    start=start,
+                    stop=stop,
+                    replacement=replacement,
+                )
+            segment_cells.append(segment_cell)
+
+        certificate = _ContrastCertificate(
+            certificate_id=certificate_id,
+            witness_id=witness_id,
+            base_episode_id=base.episode_id,
+            variant_episode_id=variant.episode_id,
+            factor_cell=factor_cell,
+            positive_features=positive,
+            negative_features=negative,
+            segment_cells=tuple(segment_cells),
+        )
+        self._contrast_certificates[certificate_id] = certificate
+        for feature in positive:
+            self._contrast_certificate_postings[feature].add(certificate_id)
+
+    def _contrast_activity(
+        self,
+        features: tuple[_Feature, ...],
+    ) -> dict[str, float]:
+        active_features = set(features)
+        candidate_ids: set[str] = set()
+        for feature in active_features:
+            candidate_ids.update(self._contrast_certificate_postings.get(feature, ()))
+
+        activity: dict[str, float] = {}
+        for certificate_id in candidate_ids:
+            certificate = self._contrast_certificates[certificate_id]
+            if not all(
+                feature in active_features for feature in certificate.positive_features
+            ) or any(feature in active_features for feature in certificate.negative_features):
+                continue
+            activity[certificate_id] = 1.0
+        return activity
+
+    def _contrast_complete(
+        self,
+        state: str,
+        features: tuple[_Feature, ...],
+        steps: list[CausalSequenceRaceStep],
+        *,
+        max_new_tokens: int,
+    ) -> _ContrastCompletion | None:
+        activity = self._contrast_activity(features)
+        if not activity:
+            return None
+
+        if self._config.ablation is CausalSequenceAblation.CONTRAST_OFF:
+            self._contrast_race(
+                {},
+                steps,
+                depends_on=(),
+                phase="contrast-template",
+            )
+            return self._contrast_stop()
+
+        factor_scores: dict[int, float] = {}
+        for certificate_id, score in activity.items():
+            factor_cell = self._contrast_certificates[certificate_id].factor_cell
+            factor_scores[factor_cell] = max(factor_scores.get(factor_cell, 0.0), score)
+        factor_steps: dict[int, int] = {}
+        for factor_cell, score in sorted(factor_scores.items()):
+            winner = self._contrast_race(
+                {factor_cell: score},
+                steps,
+                depends_on=(),
+                phase="contrast-factor",
+                normalize=False,
+            )
+            if winner == factor_cell:
+                factor_steps[factor_cell] = len(steps) - 1
+
+        activity = {
+            certificate_id: score
+            for certificate_id, score in activity.items()
+            if self._contrast_certificates[certificate_id].factor_cell in factor_steps
+        }
+        template_scores: defaultdict[int, float] = defaultdict(float)
+        for certificate_id, score in activity.items():
+            certificate = self._contrast_certificates[certificate_id]
+            episode = self._contrast_episodes[certificate.base_episode_id]
+            template_scores[episode.template_cell] += score
+        winner = self._contrast_race(
+            dict(template_scores),
+            steps,
+            depends_on=tuple(sorted(factor_steps.values())),
+            phase="contrast-template",
+        )
+        if winner == self._stop_cell:
+            return self._contrast_stop()
+        episode_id = self._contrast_template_episodes.get(winner)
+        if episode_id is None:
+            raise RuntimeError("contrast template race selected an unknown cell")
+        return self._render_contrast_template(
+            self._contrast_episodes[episode_id],
+            state,
+            activity,
+            factor_steps,
+            steps,
+            max_new_tokens=max_new_tokens,
+        )
+
+    def _render_contrast_template(
+        self,
+        episode: _ContrastEpisode,
+        state: str,
+        activity: dict[str, float],
+        factor_steps: dict[int, int],
+        steps: list[CausalSequenceRaceStep],
+        *,
+        max_new_tokens: int,
+    ) -> _ContrastCompletion:
+        segment_scores: dict[int, dict[int, float]] = defaultdict(dict)
+        segment_factor_steps: dict[int, set[int]] = defaultdict(set)
+        for certificate_id, score in activity.items():
+            certificate = self._contrast_certificates[certificate_id]
+            if certificate.base_episode_id != episode.episode_id:
+                continue
+            factor_step = factor_steps[certificate.factor_cell]
+            for segment_cell in certificate.segment_cells:
+                segment = self._contrast_segments[segment_cell]
+                by_cell = segment_scores[segment.start]
+                by_cell[segment_cell] = by_cell.get(segment_cell, 0.0) + score
+                segment_factor_steps[segment_cell].add(factor_step)
+
+        active_segments = tuple(
+            self._contrast_segments[cell]
+            for cell in sorted(cell for scores in segment_scores.values() for cell in scores)
+        )
+        if any(
+            _contrast_segments_overlap(left, right)
+            for index, left in enumerate(active_segments)
+            for right in active_segments[index + 1 :]
+        ):
+            self._contrast_race(
+                {},
+                steps,
+                depends_on=tuple(
+                    sorted(
+                        {
+                            len(steps) - 1,
+                            *(
+                                factor_step
+                                for factor_steps in segment_factor_steps.values()
+                                for factor_step in factor_steps
+                            ),
+                        }
+                    )
+                ),
+                phase="contrast-conflict",
+            )
+            return self._contrast_stop()
+
+        cursor = 0
+        processed_starts: set[int] = set()
+        emitted: list[int] = []
+        eligible: list[_NoGoKey] = []
+        dependency = len(steps) - 1
+        base = episode.pointer_output
+        while cursor <= len(base):
+            if any(start < cursor for start in set(segment_scores) - processed_starts):
+                self._contrast_race(
+                    {},
+                    steps,
+                    depends_on=(dependency,),
+                    phase="contrast-segment",
+                )
+                return self._contrast_stop()
+
+            at_cursor = segment_scores.get(cursor)
+            if at_cursor is not None and cursor not in processed_starts:
+                candidate_scores: dict[int, float] = {}
+                candidate_keys: dict[int, _NoGoKey] = {}
+                for segment_cell, score in at_cursor.items():
+                    key = _NoGoKey(
+                        observation_state=state,
+                        step=cursor,
+                        predecessor=(episode.template_cell,),
+                        selected_token=segment_cell,
+                    )
+                    candidate_keys[segment_cell] = key
+                    if self._config.ablation is not CausalSequenceAblation.RECURRENCE_OFF and (
+                        self._config.ablation is CausalSequenceAblation.NOGO_OFF
+                        or self._nogo.get(key, 0) == 0
+                    ):
+                        candidate_scores[segment_cell] = score
+                segment_dependencies = {dependency}
+                for segment_cell in at_cursor:
+                    segment_dependencies.update(segment_factor_steps[segment_cell])
+                winner = self._contrast_race(
+                    candidate_scores,
+                    steps,
+                    depends_on=tuple(sorted(segment_dependencies)),
+                    phase="contrast-segment",
+                )
+                dependency = len(steps) - 1
+                if winner == self._stop_cell:
+                    return self._contrast_stop()
+                segment = self._contrast_segments[winner]
+                eligible.append(candidate_keys[winner])
+                processed_starts.add(cursor)
+                for byte in segment.replacement:
+                    if len(emitted) >= max_new_tokens:
+                        raise CausalSequencePointerError(
+                            "neuronal output exceeds caller max_new_tokens"
+                        )
+                    winner_byte = self._contrast_race(
+                        {byte: 1.0},
+                        steps,
+                        depends_on=(dependency,),
+                        phase="contrast-segment-byte",
+                    )
+                    dependency = len(steps) - 1
+                    if winner_byte == self._stop_cell:
+                        return self._contrast_stop()
+                    emitted.append(byte)
+                if segment.stop > cursor:
+                    cursor = segment.stop
+                    continue
+
+            if cursor == len(base):
+                break
+            if len(emitted) >= max_new_tokens:
+                raise CausalSequencePointerError("neuronal output exceeds caller max_new_tokens")
+            byte_scores = (
+                {base[cursor]: 1.0}
+                if self._config.ablation is not CausalSequenceAblation.RECURRENCE_OFF
+                else {}
+            )
+            winner = self._contrast_race(
+                byte_scores,
+                steps,
+                depends_on=(dependency,),
+                phase="contrast-template-byte",
+            )
+            dependency = len(steps) - 1
+            if winner == self._stop_cell:
+                return self._contrast_stop()
+            emitted.append(winner)
+            cursor += 1
+
+        winner = self._contrast_race(
+            {self._eos_cell: 1.0},
+            steps,
+            depends_on=(dependency,),
+            phase="contrast-eos",
+        )
+        if winner != self._eos_cell:
+            return self._contrast_stop()
+        try:
+            raw_output = bytes(emitted).decode("utf-8")
+        except UnicodeDecodeError as error:
+            raise CausalSequencePointerError("neuronal output is not lossless UTF-8") from error
+        if not raw_output:
+            raise RuntimeError("contrast EOS won before any neuronal output was emitted")
+        return _ContrastCompletion(
+            raw_output=raw_output,
+            emitted_tokens=tuple(emitted),
+            selected_stop=False,
+            selected_eos=True,
+            eligible_nogo=tuple(eligible),
+        )
+
+    def _contrast_race(
+        self,
+        scores: dict[int, float],
+        steps: list[CausalSequenceRaceStep],
+        *,
+        depends_on: tuple[int, ...],
+        phase: str,
+        normalize: bool = True,
+    ) -> int:
+        target_cells = tuple(sorted(cell for cell, score in scores.items() if score > 0.0))
+        total = sum(scores[cell] for cell in target_cells)
+        denominator = total if normalize else 1.0
+        currents = (
+            [
+                _CURRENT_SCALE_PA * _CANDIDATE_GAIN * scores[cell] / denominator
+                for cell in target_cells
+            ]
+            if total > 0.0
+            else []
+        )
+        cells = (*target_cells, self._stop_cell)
+        currents.append(_CURRENT_SCALE_PA * _STOP_DRIVE)
+        race = self._cortex.race_currents_first_spike(cells, currents)
+        self._record_step(
+            steps,
+            phase=phase,
+            winner=race.winner,
+            operation=self._operation(race.winner),
+            spike_time_ms=race.spike_time_ms,
+            cells=cells,
+            currents=currents,
+            depends_on=depends_on,
+        )
+        return race.winner
+
+    @staticmethod
+    def _contrast_stop() -> _ContrastCompletion:
+        return _ContrastCompletion(
+            raw_output=_STOP_OUTPUT,
+            emitted_tokens=(),
+            selected_stop=True,
+            selected_eos=False,
+            eligible_nogo=(),
+        )
 
     def _candidate_scores(
         self,
@@ -891,6 +1557,15 @@ class CausalSequencePointerModel:
                 key = _NoGoKey(state, step, predecessor, target)
                 if self._nogo.get(key, 0) > 0:
                     del scores[target]
+        if step == 0 and not episodic:
+            # Context-free frequency is useful continuation evidence, but it
+            # must not choose the root of a novel sequence.  A reusable root
+            # needs sensory evidence or a contrast certificate.
+            sensory_targets = set(sensory_scores)
+            scores = defaultdict(
+                float,
+                {target: score for target, score in scores.items() if target in sensory_targets},
+            )
         return {target: score for target, score in scores.items() if score > 0.0}
 
     def _promoted_distribution(
@@ -1130,6 +1805,9 @@ class CausalSequencePointerModel:
             return "ROLE_CURSOR"
         if self._role_bind_base <= cell < self._continue_cell:
             return f"BIND:{cell - self._role_bind_base}"
+        contrast_operation = self._contrast_cell_operations.get(cell)
+        if contrast_operation is not None:
+            return contrast_operation
         return f"EMIT:{cell}"
 
     def _pure_table_rows(
@@ -1143,7 +1821,7 @@ class CausalSequencePointerModel:
 
     def _compute_training_digest(self) -> str:
         return _digest(
-            b"humanbrain-causal-sequence-state-v1",
+            b"humanbrain-causal-sequence-state-v2",
             {
                 "schema": _MODEL_SCHEMA,
                 "config": {
@@ -1152,6 +1830,10 @@ class CausalSequencePointerModel:
                     "max_prefix_order": self._config.max_prefix_order,
                     "max_role_cursors": self._config.max_role_cursors,
                     "max_roles": self._config.max_roles,
+                    "max_contrast_output_bytes": (self._config.max_contrast_output_bytes),
+                    "max_contrast_candidate_episodes": (
+                        self._config.max_contrast_candidate_episodes
+                    ),
                     "min_reuse_contexts": self._config.min_reuse_contexts,
                     "random_seed": self._config.random_seed,
                 },
@@ -1190,6 +1872,55 @@ class CausalSequencePointerModel:
                     [repr(key), sorted(value)]
                     for key, value in self._role_boundary_contexts.items()
                 ),
+                "contrast_episodes": [
+                    [
+                        episode.episode_id,
+                        episode.observation_state,
+                        episode.features,
+                        episode.pointer_output.hex(),
+                        episode.template_cell,
+                    ]
+                    for episode in sorted(
+                        self._contrast_episodes.values(),
+                        key=lambda value: value.episode_id,
+                    )
+                ],
+                "contrast_episode_postings": [
+                    [feature, list(posting)]
+                    for feature, posting in sorted(
+                        self._contrast_episode_postings.items(),
+                        key=lambda item: item[0],
+                    )
+                ],
+                "contrast_certificates": [
+                    [
+                        certificate.certificate_id,
+                        certificate.witness_id,
+                        certificate.base_episode_id,
+                        certificate.variant_episode_id,
+                        certificate.factor_cell,
+                        certificate.positive_features,
+                        certificate.negative_features,
+                        certificate.segment_cells,
+                    ]
+                    for certificate in sorted(
+                        self._contrast_certificates.values(),
+                        key=lambda value: value.certificate_id,
+                    )
+                ],
+                "contrast_segments": [
+                    [
+                        segment.cell,
+                        segment.base_episode_id,
+                        segment.start,
+                        segment.stop,
+                        segment.replacement.hex(),
+                    ]
+                    for segment in sorted(
+                        self._contrast_segments.values(),
+                        key=lambda value: value.cell,
+                    )
+                ],
                 "nogo": sorted(
                     [
                         key.observation_state,

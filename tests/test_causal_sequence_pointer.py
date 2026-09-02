@@ -4,6 +4,7 @@ import pytest
 from humanbrain.causal_sequence_pointer import (
     CausalSequenceAblation,
     CausalSequenceConfig,
+    CausalSequencePointerError,
     CausalSequencePointerModel,
     CausalSequenceTrainingExample,
 )
@@ -91,6 +92,371 @@ def _revision_rows() -> tuple[CausalSequenceTrainingExample, ...]:
     )
 
 
+def _contrast_config(
+    ablation: CausalSequenceAblation = CausalSequenceAblation.NONE,
+    *,
+    max_contrast_output_bytes: int = 4096,
+    max_contrast_candidate_episodes: int = 256,
+) -> CausalSequenceConfig:
+    return CausalSequenceConfig(
+        tokenizer=TokenizerConfig(max_phrases=256, min_frequency=1),
+        max_observation_order=2,
+        max_observation_features=256,
+        max_prefix_order=3,
+        max_role_cursors=8,
+        max_roles=16,
+        max_contrast_output_bytes=max_contrast_output_bytes,
+        max_contrast_candidate_episodes=max_contrast_candidate_episodes,
+        ablation=ablation,
+        random_seed=53,
+    )
+
+
+def _contrast_rows() -> tuple[CausalSequenceTrainingExample, ...]:
+    inventory = SymbolInventory(("slot",))
+    prompt = "compose two independently observed facets"
+    return (
+        _row(prompt, "palette amber form round", "aa/rr", inventory, "contrast-base"),
+        _row(
+            prompt,
+            "palette cobalt form round",
+            "ULTRAMARINE/rr",
+            inventory,
+            "contrast-palette",
+        ),
+        _row(prompt, "palette amber form square", "aa/s", inventory, "contrast-form"),
+    )
+
+
+def _contrast_query() -> tuple[str, str, SymbolInventory]:
+    return (
+        "compose two independently observed facets",
+        "palette cobalt form square",
+        SymbolInventory(("live",)),
+    )
+
+
+def test_contrast_certificates_compose_safe_singletons_with_variable_lengths() -> None:
+    rows = _contrast_rows()
+    model = CausalSequencePointerModel.grow(rows, _contrast_config())
+    prompt, cue, inventory = _contrast_query()
+
+    result = model.raw_complete(prompt, inventory, cue_text=cue, max_new_tokens=64)
+
+    assert result == "ULTRAMARINE/s"
+    assert result not in {row.output for row in rows}
+    trace = model.last_trace
+    assert trace is not None and trace.selected_eos and not trace.selected_stop
+    assert sum(step.phase == "contrast-factor" for step in trace.steps) == 2
+    assert sum(step.phase == "contrast-segment" for step in trace.steps) == 2
+    assert any(step.phase == "contrast-template-byte" for step in trace.steps)
+    assert trace.steps[-1].phase == "contrast-eos"
+    assert all(
+        dependency < step.index for step in trace.steps for dependency in step.depends_on_steps
+    )
+    model.resolve_pending_neutral(prompt, inventory, cue)
+
+
+def test_common_prompt_features_cannot_recruit_a_contrast_pair() -> None:
+    inventory = SymbolInventory(("slot",))
+    prompt = "the shared prompt must never be contrast evidence"
+    rows = (
+        _row(prompt, "AAAAAAAA", "left", inventory, "prompt-a"),
+        _row(prompt, "BBBBBBBB", "right", inventory, "prompt-b"),
+    )
+    model = CausalSequencePointerModel.grow(rows, _contrast_config())
+
+    result = model.raw_complete(
+        prompt,
+        inventory,
+        cue_text="BBBBBBBBX",
+        max_new_tokens=32,
+    )
+
+    assert result.startswith("<stop>")
+    trace = model.last_trace
+    assert trace is not None and trace.selected_stop
+    assert all(not step.phase.startswith("contrast-") for step in trace.steps)
+
+
+def test_contrast_conflict_physically_stops_instead_of_using_frequency() -> None:
+    inventory = SymbolInventory(("slot",))
+    prompt = "bind one observed contrast"
+    rows = (
+        _row(prompt, "signal quiet lane west", "aa/rr", inventory, "conflict-base"),
+        _row(prompt, "signal bright lane west", "FIRST/rr", inventory, "conflict-first"),
+        _row(prompt, "signal bright lane west", "SECOND/rr", inventory, "conflict-second"),
+    )
+    model = CausalSequencePointerModel.grow(rows, _contrast_config())
+
+    result = model.raw_complete(
+        prompt,
+        inventory,
+        cue_text="signal bright lane west now",
+        max_new_tokens=64,
+    )
+
+    assert result.startswith("<stop>")
+    trace = model.last_trace
+    assert trace is not None and trace.selected_stop
+    assert trace.steps[-1].phase == "contrast-conflict"
+    assert trace.steps[-1].winner_operation == "STOP"
+    assert len(trace.steps[-1].candidate_currents_pa) == 1
+
+
+def test_contrast_conflict_stops_even_with_two_to_one_replacement_support() -> None:
+    inventory = SymbolInventory(("slot",))
+    prompt = "bind independently observed switches"
+    rows = (
+        _row(
+            prompt,
+            "palette amber form round tone quiet",
+            "BASE/tail",
+            inventory,
+            "u-base",
+        ),
+        _row(
+            prompt,
+            "palette cobalt form round tone quiet",
+            "FIRST/tail",
+            inventory,
+            "u-a",
+        ),
+        _row(
+            prompt,
+            "palette amber form square tone quiet",
+            "FIRST/tail",
+            inventory,
+            "u-b",
+        ),
+        _row(
+            prompt,
+            "palette amber form round tone loud",
+            "SECOND/tail",
+            inventory,
+            "u-c",
+        ),
+    )
+    model = CausalSequencePointerModel.grow(rows, _contrast_config())
+
+    result = model.raw_complete(
+        prompt,
+        inventory,
+        cue_text="palette cobalt form square tone loud",
+        max_new_tokens=64,
+    )
+
+    assert result.startswith("<stop>")
+    trace = model.last_trace
+    assert trace is not None and trace.selected_stop
+    assert trace.steps[-1].phase == "contrast-conflict"
+    assert trace.steps[-1].winner_operation == "STOP"
+
+
+@pytest.mark.parametrize(
+    "ablation, terminal_phase",
+    (
+        (CausalSequenceAblation.CONTRAST_OFF, "contrast-template"),
+        (CausalSequenceAblation.RECURRENCE_OFF, "contrast-segment"),
+    ),
+)
+def test_contrast_controls_share_learned_state_and_physically_stop(
+    ablation: CausalSequenceAblation,
+    terminal_phase: str,
+) -> None:
+    rows = _contrast_rows()
+    treatment = CausalSequencePointerModel.grow(rows, _contrast_config())
+    control = CausalSequencePointerModel.grow(rows, _contrast_config(ablation))
+    prompt, cue, inventory = _contrast_query()
+
+    assert treatment.training_digest == control.training_digest
+    result = control.raw_complete(prompt, inventory, cue_text=cue, max_new_tokens=64)
+
+    assert result.startswith("<stop>")
+    trace = control.last_trace
+    assert trace is not None and trace.selected_stop
+    assert trace.steps[-1].phase == terminal_phase
+    assert trace.steps[-1].winner_operation == "STOP"
+
+
+def test_contrast_success_grows_online_and_retains_old_and_new_episodes() -> None:
+    rows = _contrast_rows()
+    model = CausalSequencePointerModel.grow(rows, _contrast_config())
+    prompt, cue, inventory = _contrast_query()
+    result = model.raw_complete(prompt, inventory, cue_text=cue, max_new_tokens=64)
+    prior_digest = model.training_digest
+
+    update = model.learn(prompt, result, inventory, cue_text=cue)
+
+    assert update.observed_success_sequence
+    assert update.training_digest != prior_digest
+    later_prompt = "retrieve the successful composition without replay"
+    assert model.raw_complete(later_prompt, inventory, cue_text=cue, max_new_tokens=64) == result
+    model.resolve_pending_neutral(later_prompt, inventory, cue)
+    old = rows[0]
+    assert model.raw_complete(
+        old.prompt,
+        old.inventory,
+        cue_text=old.cue_text,
+        max_new_tokens=64,
+    ) == pointerize(old.output, old.inventory)
+    model.resolve_pending_neutral(old.prompt, old.inventory, old.cue_text)
+
+
+def test_success_learning_rejects_mismatched_output_without_mutation() -> None:
+    rows = _contrast_rows()
+    model = CausalSequencePointerModel.grow(rows, _contrast_config())
+    prompt, cue, inventory = _contrast_query()
+    result = model.raw_complete(prompt, inventory, cue_text=cue, max_new_tokens=64)
+    prior_digest = model.training_digest
+
+    with pytest.raises(
+        CausalSequencePointerError,
+        match="does not match pending neuronal emission",
+    ):
+        model.learn(prompt, f"{result}-different", inventory, cue_text=cue)
+
+    assert model.training_digest == prior_digest
+    update = model.learn(prompt, result, inventory, cue_text=cue)
+    assert update.observed_success_sequence
+    assert update.prior_training_digest == prior_digest
+
+
+def test_contrast_output_bound_rejects_before_pair_diffing() -> None:
+    inventory = SymbolInventory(("slot",))
+    rows = (
+        _row(
+            "bounded sensory episode",
+            "small cue",
+            "12345",
+            inventory,
+            "oversized-output",
+        ),
+    )
+
+    with pytest.raises(
+        CausalSequencePointerError,
+        match="contrast output exceeds configured byte capacity",
+    ):
+        CausalSequencePointerModel.grow(
+            rows,
+            _contrast_config(max_contrast_output_bytes=4),
+        )
+
+
+def test_online_contrast_growth_remains_deterministic_under_tiny_candidate_cap() -> None:
+    rows = _contrast_rows()
+    prompt, cue, inventory = _contrast_query()
+    observations: list[object] = []
+
+    for _repeat in range(2):
+        model = CausalSequencePointerModel.grow(
+            rows,
+            _contrast_config(max_contrast_candidate_episodes=2),
+        )
+        result = model.raw_complete(prompt, inventory, cue_text=cue, max_new_tokens=64)
+        prior_digest = model.training_digest
+
+        update = model.learn(prompt, result, inventory, cue_text=cue)
+
+        assert result == "ULTRAMARINE/s"
+        assert update.observed_success_sequence
+        assert update.prior_training_digest == prior_digest
+        assert update.training_digest == model.training_digest != prior_digest
+        assert model._pending is None
+        assert max(map(len, model._contrast_episode_postings.values())) <= 2
+        assert (
+            max(
+                len(model._bounded_contrast_candidates(episode.features))
+                for episode in model._contrast_episodes.values()
+            )
+            <= 2
+        )
+
+        replay = model.raw_complete(
+            prompt,
+            inventory,
+            cue_text=cue,
+            max_new_tokens=64,
+        )
+        assert replay == result
+        model.resolve_pending_neutral(prompt, inventory, cue)
+        old = rows[0]
+        old_result = model.raw_complete(
+            old.prompt,
+            old.inventory,
+            cue_text=old.cue_text,
+            max_new_tokens=64,
+        )
+        assert old_result == pointerize(old.output, old.inventory)
+        model.resolve_pending_neutral(old.prompt, old.inventory, old.cue_text)
+        postings = tuple(
+            (feature, tuple(posting))
+            for feature, posting in sorted(model._contrast_episode_postings.items())
+        )
+        observations.append((result, replay, old_result, model.training_digest, postings))
+
+    assert observations[0] == observations[1]
+
+
+def test_contrast_negative_credit_is_local_exact_once_and_nogo_is_causal() -> None:
+    rows = _contrast_rows()
+    model = CausalSequencePointerModel.grow(rows, _contrast_config())
+    prompt, cue, inventory = _contrast_query()
+    assert model.raw_complete(prompt, inventory, cue_text=cue, max_new_tokens=64) == (
+        "ULTRAMARINE/s"
+    )
+
+    update = model.observe_failure(
+        prompt,
+        inventory,
+        cue_text=cue,
+        feedback_text="opaque local consequence 7f21",
+    )
+
+    assert sum(edge.startswith("nogo:") for edge in update.changed_synapses) == 1
+    with pytest.raises(RuntimeError, match="no pending"):
+        model.observe_failure(
+            prompt,
+            inventory,
+            cue_text=cue,
+            feedback_text="duplicate consequence",
+        )
+    assert model.raw_complete(prompt, inventory, cue_text=cue, max_new_tokens=64).startswith(
+        "<stop>"
+    )
+
+    unrelated_cue = "palette cobalt form round"
+    assert (
+        model.raw_complete(
+            prompt,
+            inventory,
+            cue_text=unrelated_cue,
+            max_new_tokens=64,
+        )
+        == "ULTRAMARINE/rr"
+    )
+    model.resolve_pending_neutral(prompt, inventory, unrelated_cue)
+
+    nogo_off = CausalSequencePointerModel.grow(
+        rows,
+        _contrast_config(CausalSequenceAblation.NOGO_OFF),
+    )
+    assert nogo_off.raw_complete(prompt, inventory, cue_text=cue, max_new_tokens=64) == (
+        "ULTRAMARINE/s"
+    )
+    nogo_off.observe_failure(
+        prompt,
+        inventory,
+        cue_text=cue,
+        feedback_text="opaque local consequence 7f21",
+    )
+    assert nogo_off.raw_complete(prompt, inventory, cue_text=cue, max_new_tokens=64) == (
+        "ULTRAMARINE/s"
+    )
+    nogo_off.resolve_pending_neutral(prompt, inventory, cue)
+
+
 def test_composes_an_unseen_whole_sequence_in_one_forward_trace() -> None:
     rows = _composition_rows()
     model = CausalSequencePointerModel.grow(rows, _config())
@@ -118,7 +484,7 @@ def test_composes_an_unseen_whole_sequence_in_one_forward_trace() -> None:
     prior_digest = model.training_digest
     update = model.learn(
         prompt,
-        "execution succeeded",
+        materialize(expected, inventory),
         inventory,
         cue_text=cue,
     )
