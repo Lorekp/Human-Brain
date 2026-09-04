@@ -33,24 +33,32 @@ passes its narrow recall, transfer, retention and no-action checks. Detailed
 scores and failures are in [benchmark status](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 The original eight-stage sequence below remains the integration contract.
 
-Next, compare representations and learning on six fresh knowledge-conditioned
-Python requests with longer natural sentences, distractors and repeated entities.
-Hold code layout fixed so language and motor failures remain distinguishable.
-Use comparable language-acquisition exposure before the source-absent tasks;
-the empty-seed, single-passage exam result did not provide that prior learning.
-Keep matched updating/frozen neuronal arms and a disclosed conventional reference.
-A frozen contextual encoder is an allowed candidate, not an adopted architecture:
-if investigated, also compare the external component alone with identical inputs
-and stored information, and measure the neuronal learning contribution.
+The one-encoder/two-rate comparison is complete and failed: both updating arms
+and conventional references score 0/5 supported fresh tasks. Selected edits do
+execute, but learned evidence scores collapse to a query-independent old answer.
+See [results and diagnosis](../../experiments/r4_integrated/contextual_evidence_result.md).
+The external encoder is still a research candidate, not an adopted architecture.
 
-Declare the concrete episodes and scoring before implementation. Initial budget:
-one representation candidate, two learning configurations, six transfer cases,
-at most one engineering day, then return to this loop with measured results.
-Require executable transfer, retained old skills, preserved decoys and an updating
-core advantage; external-only success does not demonstrate neuronal learning.
-Keep the original exam questions as an untuned diagnostic. Defer annotation
-layout changes until correct retained knowledge reaches the action path; address
-them through general structural addressing rather than an annotation-specific rule.
+Next, compare the existing absolute GO/NO_GO update with one **same-query
+pairwise ranking** rule. Retain the encoder, generic candidate family, motor and
+GLIF dynamics. After an executed wrong selection and an executed teacher repair,
+learn a margin between their eligibility vectors. A pure shared bias cannot
+change candidate differences. Do not label unexecuted candidates using answers.
+
+Use fresh developmental teaching in which each entity has two properties and
+each value is correct for one query and incorrect for the other; counterbalance
+order. Both update rules receive the same curriculum, with a matched frozen arm
+replaying each updater's exact executed feedback. Keep conventional learned-score
+and external-only references. Report fresh executable accuracy, both-property
+retention, unsupported STOPs and disagreement between learned scores and spikes.
+
+Budget: one ranking-head design, one learning rate, sixteen teaching requests,
+eight supported fresh requests, two unsupported probes, and two hours for
+implementation/diagnosis before returning a measured result. Declare actual
+cases and scoring first. Success requires fresh query-dependent selection and
+retained skills; another globally favored value does not qualify. Fix spike
+resolution only after the learned scores become useful. The original exam stays
+an untuned diagnostic; annotation layouts and broader challenges remain deferred.
 
 Use a small reusable TRAIN workload with the following eight stages. This is a
 capability sequence, not an already materialized or frozen eight-episode cohort;

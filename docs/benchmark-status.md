@@ -1,7 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the neutral-document/Python development session and
-an authentic public-exam diagnostic below.
+Updated 2026-09-05 with the contextual-encoder/Python comparison below.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -10,6 +9,26 @@ plan is the [small integrated session](research/balanced-evidence-to-action-sess
 with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. Hybrid permission does not relabel existing
 cell-only evidence or reopen protected evaluations.
+
+## Current contextual evidence-to-Python result
+
+The [contextual comparison](../experiments/r4_integrated/contextual_evidence_result.md)
+completed eight teaching cases, five supported fresh edits, one unsupported
+request, old-task replay and the original public-exam diagnostic. Neither
+learning rate solves a supported fresh task. Rate 1 selects `velvet` for every
+query; rate 3's conventional selector selects `cedar` throughout while its GLIF
+path stops on collisions. The conventional learned and external-only references
+also score 0/5 fresh tasks. Selected edits execute and preserve all decoys, so
+query-conditioned evidence ranking is the primary blocker. Frozen controls share
+the stores and exact executed feedback exposure; teacher repairs are separate.
+
+The checkout-native replay reproduces the initial run's decisions and synapses
+exactly. It takes 22.48 seconds and peaks at 244.95 MiB process working set for
+the whole comparison. Full resource accounting, formal pending exam marks and
+the two retained artifacts are in the result report. This is a failed hybrid
+candidate, with no generalization gate pass. The active plan now tests a
+same-query ranking objective with counterbalanced teaching before revisiting
+spike resolution or increasing scale.
 
 ## Current neutral reading-to-Python development result
 

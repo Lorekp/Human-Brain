@@ -82,6 +82,13 @@ identities through the existing attested loader. It can compile code; `doctor`
 does not. Complete the first build before launching parallel native jobs that
 share a cache. Build identity includes source location and compiler details.
 
+Those environment defaults apply to children launched by `tools/dev.py`; they
+do not change the calling shell. Before invoking a native experiment directly,
+set `$env:HUMANBRAIN_NATIVE_CACHE = Join-Path (Get-Location) '.native-cache'` and
+`$env:HUMANBRAIN_DEVICE = 'cpu'` unless deliberately testing another setting.
+Record the loaded library identity from the experiment itself. A doctor receipt
+alone does not prove that a later direct invocation used the same native cache.
+
 For change-specific QA, run reviewed existing test nodes with this interpreter.
 Use `-o addopts= -ra --durations=10` to expose counts, skips, and timing. Broader
 CPU/native, SciPy, and CUDA regressions require explicit selections and available

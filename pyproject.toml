@@ -14,6 +14,7 @@ test = ["pytest>=8.0"]
 dev = ["pytest>=8.0", "ruff==0.16.1"]
 swe = ["mini-swe-agent==2.4.6"]
 visualizer = ["dearpygui==2.3.1"]
+contextual = ["onnxruntime==1.29.0", "tokenizers==0.23.1"]
 g0 = ["minigrid==3.1.0"]
 # Dense-ridge statistics/consolidation backend for the ladder harness
 # (--ridge-backend scipy; required by the R0/R0-b mechanical gates,

@@ -4,7 +4,6 @@ from hashlib import sha256
 from inspect import signature
 
 import pytest
-
 from experiments.r4_integrated.neutral_document_python_session import run
 from humanbrain.knowledge_conditioned_occurrence_substitution import (
     FrozenKnowledgeConditionedOccurrenceSubstitution,
@@ -320,3 +319,48 @@ def test_neutral_document_python_session_executes_fresh_transfer(tmp_path) -> No
     variation = next(row for row in report["attempts"] if row["stage"] == "layout-variation")
     assert not variation["passed"]  # Keep the unlearned layout visible in development.
     assert variation["status"] == "STOP"
+
+
+def test_contextual_motor_uses_all_request_seeds_and_stops_on_competing_targets() -> None:
+    from experiments.r4_integrated.contextual_occurrence_motor import ContextualOccurrenceMotor
+    from experiments.r4_integrated.neutral_document_python_session import Case
+
+    motor = ContextualOccurrenceMotor()
+    first = Case("motor-a", "axel", "fresh", "motor_alpha", "cold")
+    checkpoint = motor.checkpoint_sha256
+    bad_after = (*first.files(corrected=True)[:-1], OpaqueWorkspaceFile("wrong.py", b"changed"))
+    with pytest.raises(ValueError, match="preserve all workspace paths"):
+        motor.learn(b"Configure axel", first.files(), bad_after)
+    assert motor.checkpoint_sha256 == checkpoint
+    for case in (first, Case("motor-b", "bora", "ready", "motor_beta", "warm")):
+        motor.learn(f"Configure {case.key}".encode(), case.files(), case.files(corrected=True))
+    assert motor.demonstration_count == 2
+    assert motor.retained_demonstration_event_bytes == 0
+    checkpoint = motor.checkpoint_sha256
+    case = Case("fresh", "cera", "bright", "fresh_options", "dark")
+    request = b"Configure cera for the service in this workspace"
+    decision = motor.apply(request, case.files(), b"bright")
+    assert decision.edited
+    assert decision.files == case.files(corrected=True)
+    assert decision.request_seed_count == len(set(request.split()))
+    assert len(decision.binder_decisions) == decision.request_seed_count
+    assert decision.physical_cell_steps > 0 and decision.evaluated_cells > 0
+    multiword = motor.apply(request, case.files(), b"bright blue")
+    assert multiword.edited
+    assert next(item.content for item in multiword.files if item.path == "fresh_options.py") == (
+        b"cera = 'bright blue'\n"
+    )
+    # Both natural-language entities support the same learned action pattern.
+    # Neither request order nor file order may break the physical collision.
+    files = tuple(
+        sorted(
+            (*case.files(), OpaqueWorkspaceFile("another.py", b"daro = 'dim'\n")),
+            key=lambda item: item.path,
+        )
+    )
+    collision = motor.apply(b"Configure cera and daro", files, b"bright")
+    assert not collision.edited
+    assert collision.files == files
+    assert collision.supported_role_count == 2
+    assert collision.selection_race.stop_reason == "collision"
+    assert motor.checkpoint_sha256 == checkpoint

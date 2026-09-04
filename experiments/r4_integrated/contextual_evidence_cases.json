@@ -1,0 +1,21 @@
+{
+  "kind": "self-authored public coding development, not an independent reading exam",
+  "training": [
+    {"name":"learn-a","key":"kelo","value":"amber","module":"alpha","stale":"dull","request":"Configure kelo using its documented transport setting.","document":"The service kelo uses amber as its transport setting. Its audit label is navy."},
+    {"name":"learn-b","key":"rilo","value":"cedar","module":"beta","stale":"pale","request":"Set rilo to the transport specified in the notes.","document":"For rilo, the audit label is silver. The transport setting for rilo is cedar."},
+    {"name":"learn-c","key":"nalo","value":"teal","module":"gamma","stale":"bland","request":"Configure nalo with its audit label.","document":"The transport setting for nalo is jade, while its audit label is teal."},
+    {"name":"learn-d","key":"pemi","value":"linen","module":"delta","stale":"faded","request":"Apply the documented audit label to pemi.","document":"The audit label linen identifies pemi. For normal transport, pemi uses coral."},
+    {"name":"learn-e","key":"sovu","value":"marble","module":"epsilon","stale":"dim","request":"Configure sovu using the documented transport.","document":"The staging service sovu has audit label ochre. Its transport setting is marble. Another service uses wheat."},
+    {"name":"learn-f","key":"tavi","value":"satin","module":"zeta","stale":"plain","request":"Use the transport setting documented for tavi.","document":"The transport setting is satin for tavi. The audit label for the same service is bronze."},
+    {"name":"learn-g","key":"vori","value":"denim","module":"eta","stale":"dusty","request":"Set the audit label for vori from the documentation.","document":"For vori, denim is the audit label. Its transport setting is flint."},
+    {"name":"learn-h","key":"wenu","value":"velvet","module":"theta","stale":"muted","request":"Apply wenu's documented audit label.","document":"The service wenu uses quartz for transport. The audit label associated with wenu is velvet."}
+  ],
+  "transfer": [
+    {"name":"direct","key":"moro","value":"copper","module":"fresh_options","stale":"gray","request":"Configure moro using its documented transport setting.","document":"The service moro uses copper as its transport setting. Its audit label is ivory."},
+    {"name":"reversed","key":"qelo","value":"Indigo","module":"renamed_values","stale":"white","request":"Set qelo to the transport specified in the notes.","document":"The audit label for qelo is pearl. Indigo is the transport setting used by qelo."},
+    {"name":"distractor","key":"zaro","value":"topaz","module":"third_config","stale":"empty","request":"Set the audit label for zaro from the documentation.","document":"The service heni uses olive as its audit label. The transport setting of zaro is silver. Zaro's audit label is topaz."},
+    {"name":"competing-relations","key":"benu","value":"plum","module":"fourth_config","stale":"hollow","request":"Apply benu's documented audit label.","document":"Benu uses honey for transport and plum for the audit label. The transport setting remains honey."},
+    {"name":"paraphrase","key":"dori","value":"birch","module":"fifth_config","stale":"vacant","request":"Which transport should dori use according to the documentation? Apply it.","document":"The audit trail of dori carries the label crimson. To communicate, dori is configured with the transport setting birch."},
+    {"name":"unsupported","key":"faro","value":null,"module":"sixth_config","stale":"untouched","request":"Configure faro using its documented transport setting.","document":"The audit label of faro is lilac. Faro is maintained by the operator neri. No transport setting is supplied here."}
+  ]
+}

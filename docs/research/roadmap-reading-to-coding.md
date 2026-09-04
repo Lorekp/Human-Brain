@@ -73,10 +73,14 @@ the same-seed frozen control solves none. Type-annotation layout variation
 fails, and an original public-exam diagnostic scores 0/2 with no acquired frames.
 See [measured evidence](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 This is exact positional reading and a learned literal-edit pattern, not the
-general integrated gate. Broaden language acquisition and evidence selection
-inside this loop before provenance revision, multi-hop composition, or the full
-balanced challenge. The [balanced session plan](balanced-evidence-to-action-session-v1.md)
-owns the next bounded comparison and later 24-episode challenge.
+general integrated gate. A subsequent frozen-contextual-encoder candidate fails
+all five supported fresh edits at both learning rates: its learned scores favor
+one old answer across queries, and finer spiking alone cannot fix that ranking.
+See the [comparison](../../experiments/r4_integrated/contextual_evidence_result.md).
+Improve query-conditioned learning inside this loop before provenance revision,
+multi-hop composition, or the full balanced challenge. The
+[balanced session plan](balanced-evidence-to-action-session-v1.md) owns the next
+bounded comparison and later 24-episode challenge.
 
 Alongside integration, apply two inexpensive sources of pressure:
 
