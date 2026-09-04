@@ -88,6 +88,9 @@ set `$env:HUMANBRAIN_NATIVE_CACHE = Join-Path (Get-Location) '.native-cache'` an
 `$env:HUMANBRAIN_DEVICE = 'cpu'` unless deliberately testing another setting.
 Record the loaded library identity from the experiment itself. A doctor receipt
 alone does not prove that a later direct invocation used the same native cache.
+Set these variables **before Python starts**: some existing modules initialize
+native cells during import, so assignments inside an experiment's `run()` can
+occur after the process has already loaded and cached a different library.
 
 For change-specific QA, run reviewed existing test nodes with this interpreter.
 Use `-o addopts= -ra --durations=10` to expose counts, skips, and timing. Broader

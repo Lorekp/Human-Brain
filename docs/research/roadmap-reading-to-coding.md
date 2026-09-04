@@ -76,8 +76,11 @@ This is exact positional reading and a learned literal-edit pattern, not the
 general integrated gate. A subsequent frozen-contextual-encoder candidate fails
 all five supported fresh edits at both learning rates: its learned scores favor
 one old answer across queries, and finer spiking alone cannot fix that ranking.
-See the [comparison](../../experiments/r4_integrated/contextual_evidence_result.md).
-Improve query-conditioned learning inside this loop before provenance revision,
+The [pairwise successor and diagnosis](../../experiments/r4_integrated/contextual_pairwise_result.md)
+also fail (0/8 fresh): its feedback permits a query-independent answer ordering
+and earlier pair margins are forgotten. Next compare actual old-query revisitation
+with and without bounded receipt replay, requiring evidence that the contrasts
+need query dependence. Improve learning inside this loop before provenance revision,
 multi-hop composition, or the full balanced challenge. The
 [balanced session plan](balanced-evidence-to-action-session-v1.md) owns the next
 bounded comparison and later 24-episode challenge.

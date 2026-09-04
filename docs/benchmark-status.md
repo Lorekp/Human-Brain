@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the contextual-encoder/Python comparison below.
+Updated 2026-09-05 with the pairwise learning comparison and receipt diagnosis.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -11,6 +11,26 @@ as complementary evaluation pressure. Hybrid permission does not relabel existin
 cell-only evidence or reopen protected evaluations.
 
 ## Current contextual evidence-to-Python result
+
+The [pairwise comparison](../experiments/r4_integrated/contextual_pairwise_result.md)
+also fails: absolute and pairwise updating policies both solve 0/8 fresh edits
+and 1/16 old requests, emitting `canvas` throughout. Neither retains both
+properties for any entity or stops on either unsupported query. Conventional
+and neuronal winners agree, so spike resolution is not the blocker here.
+
+The executed feedback forms a query-independent value chain; a span-only
+linear reference fits all sixteen contrasts. The diagnostic also measures
+forgetting of ten of eleven initially satisfied pair margins. This separates
+insufficient teaching contrasts from observed update interference; it does not
+establish a representation-capacity limit. The next comparison uses actual
+old-query revisitation with and without bounded receipt replay, as specified in
+the active plan and linked research review. Protected gates remain closed.
+
+The checkout-native replay exactly matches decisions and weights, takes 38.64
+seconds, and peaks at 246.74 MiB working set. The result report owns resource
+scope, retained-source disclosure, pending official exam scoring and both runs.
+
+## Earlier contextual encoder/rate comparison
 
 The [contextual comparison](../experiments/r4_integrated/contextual_evidence_result.md)
 completed eight teaching cases, five supported fresh edits, one unsupported
@@ -26,9 +46,8 @@ The checkout-native replay reproduces the initial run's decisions and synapses
 exactly. It takes 22.48 seconds and peaks at 244.95 MiB process working set for
 the whole comparison. Full resource accounting, formal pending exam marks and
 the two retained artifacts are in the result report. This is a failed hybrid
-candidate, with no generalization gate pass. The active plan now tests a
-same-query ranking objective with counterbalanced teaching before revisiting
-spike resolution or increasing scale.
+candidate, with no generalization gate pass. It motivated the completed
+same-query ranking comparison above.
 
 ## Current neutral reading-to-Python development result
 

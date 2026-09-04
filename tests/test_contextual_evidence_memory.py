@@ -152,3 +152,71 @@ def test_exported_synapses_are_independent_and_match_their_checksum(encoder) -> 
     for array in arrays.values():
         array.fill(0)
     assert memory.synapse_sha256 == digest
+
+
+def test_pairwise_update_improves_gap_without_changing_bias_or_pure_query_weights(encoder) -> None:
+    memory = ContextualEvidenceMemory(encoder)
+    memory.ingest((document(),))
+    query = b"How many messages does Cafe receive?"
+    # A preceding absolute update leaves a nonzero persistent bias: pairwise
+    # learning must neither use nor overwrite that state.
+    memory.observe_feedback(memory.decision_for_span(query, b"23"), 1)
+    rejected = memory.decision_for_span(query, b"23")
+    accepted = memory.decision_for_span(query, b"17")
+    delta = np.asarray(accepted.eligibility) - np.asarray(rejected.eligibility)
+    np.testing.assert_array_equal(delta[:384], np.zeros(384))
+    before = memory.checkpoint_arrays()
+    assert np.any(before["pacemaker_synapses_pa"] != 0)
+    receipt = memory.observe_comparison(rejected, accepted)
+    after = memory.checkpoint_arrays()
+    assert receipt["native_update_applied"] and receipt["synaptic_update"]
+    assert receipt["gap_after"] > receipt["gap_before"]
+    np.testing.assert_array_equal(after["pacemaker_synapses_pa"], before["pacemaker_synapses_pa"])
+    np.testing.assert_array_equal(
+        after["readout_synapses_pa"][:, :384], before["readout_synapses_pa"][:, :384]
+    )
+    assert memory.feedback_count == 3 and memory.update_count == 2
+    with pytest.raises(ValueError, match="stale parent"):
+        memory.observe_comparison(rejected, accepted)
+
+
+def test_pairwise_replay_freezes_weights_and_counts_two_matched_events(encoder) -> None:
+    update = ContextualEvidenceMemory(encoder)
+    frozen = ContextualEvidenceMemory(encoder, learning_enabled=False)
+    for memory in (update, frozen):
+        memory.ingest((document(),))
+    query = b"How many messages does Cafe receive?"
+    rejected = update.decision_for_span(query, b"23")
+    accepted = update.decision_for_span(query, b"17")
+    replay_rejected = frozen.replay_decision(rejected)
+    replay_accepted = frozen.replay_decision(accepted)
+    frozen_weights = frozen.synapse_sha256
+    first = update.observe_comparison(rejected, accepted)
+    second = frozen.observe_comparison(replay_rejected, replay_accepted)
+    assert first["eligibility_delta_sha256"] == second["eligibility_delta_sha256"]
+    assert first["native_update_applied"] and not second["native_update_applied"]
+    assert not second["synaptic_update"] and frozen.synapse_sha256 == frozen_weights
+    assert update.feedback_count == frozen.feedback_count == 2
+    assert update.update_count == 1 and frozen.update_count == 0
+    assert second["before"] != second["after"]
+    with pytest.raises(ValueError, match="stale parent"):
+        frozen.observe_comparison(replay_rejected, replay_accepted)
+
+
+def test_pairwise_rejects_mismatched_query_same_occurrence_and_stop_atomically(encoder) -> None:
+    memory = ContextualEvidenceMemory(encoder)
+    memory.ingest((document(),))
+    query = b"How many messages does Cafe receive?"
+    rejected = memory.decision_for_span(query, b"23")
+    accepted = memory.decision_for_span(b"How many messages does Hazel receive?", b"17")
+    before = memory.checkpoint_sha256
+    with pytest.raises(ValueError, match="same query"):
+        memory.observe_comparison(rejected, accepted)
+    with pytest.raises(ValueError, match="different candidate occurrences"):
+        memory.observe_comparison(rejected, rejected)
+    with pytest.raises(ValueError, match="STOP has no selected candidate"):
+        memory.observe_comparison(memory.respond(query), rejected)
+    with pytest.raises(ValueError, match="custody changed"):
+        memory.observe_comparison(rejected, replace(rejected, emitted=b"changed"))
+    assert memory.checkpoint_sha256 == before
+    assert memory.feedback_count == memory.update_count == 0

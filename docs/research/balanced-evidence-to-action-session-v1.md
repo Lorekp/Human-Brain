@@ -33,32 +33,40 @@ passes its narrow recall, transfer, retention and no-action checks. Detailed
 scores and failures are in [benchmark status](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 The original eight-stage sequence below remains the integration contract.
 
-The one-encoder/two-rate comparison is complete and failed: both updating arms
-and conventional references score 0/5 supported fresh tasks. Selected edits do
-execute, but learned evidence scores collapse to a query-independent old answer.
-See [results and diagnosis](../../experiments/r4_integrated/contextual_evidence_result.md).
-The external encoder is still a research candidate, not an adopted architecture.
+The one-encoder/two-rate comparison and its pairwise successor both failed.
+The [latest result and receipt diagnosis](../../experiments/r4_integrated/contextual_pairwise_result.md)
+find 0/8 fresh edits for either update rule, a constant old answer, and substantial
+forgetting of pair margins. The sixteen actual corrections also fit a purely
+query-independent value ordering. Counterbalancing question order did not supply
+conditional teaching. The encoder remains a candidate, not an adopted architecture.
 
-Next, compare the existing absolute GO/NO_GO update with one **same-query
-pairwise ranking** rule. Retain the encoder, generic candidate family, motor and
-GLIF dynamics. After an executed wrong selection and an executed teacher repair,
-learn a margin between their eligibility vectors. A pure shared bias cannot
-change candidate differences. Do not label unexecuted candidates using answers.
+Next compare **actual old-query revisitation** against the same schedule plus
+**bounded replay of executed correction pairs**. Keep the encoder, candidate
+family, pairwise features, learning rate, motor and GLIF dynamics fixed. The
+[research review](contextual-learning-review.md) supplies the alternatives,
+receipt requirements and diagnosis branches. Declare one fresh developmental
+cohort and exact schedule before running it: eight teaching entities, both
+properties, revisits after intervening corrections, eight supported fresh queries,
+two unsupported probes, then sixteen retention queries. Previous cohorts remain
+unchanged evidence.
 
-Use fresh developmental teaching in which each entity has two properties and
-each value is correct for one query and incorrect for the other; counterbalance
-order. Both update rules receive the same curriculum, with a matched frozen arm
-replaying each updater's exact executed feedback. Keep conventional learned-score
-and external-only references. Report fresh executable accuracy, both-property
-retention, unsupported STOPs and disagreement between learned scores and spikes.
+Only an executed wrong selection followed by an executed teacher PASS creates
+a new contrast. Reconstruct older receipt-backed pairs at the current checkpoint
+for replay. Measure cycles/opposite preferences on identical candidate occurrences
+and a query-independent fit reference: an A/B/A request order alone does not
+establish that experience requires query dependence. Each updater keeps a matched
+frozen arm with its exact feedback; retain conventional learned-score and
+external-only references, and disclose differing on-policy negative examples.
 
-Budget: one ranking-head design, one learning rate, sixteen teaching requests,
-eight supported fresh requests, two unsupported probes, and two hours for
-implementation/diagnosis before returning a measured result. Declare actual
-cases and scoring first. Success requires fresh query-dependent selection and
-retained skills; another globally favored value does not qualify. Fix spike
-resolution only after the learned scores become useful. The original exam stays
-an untuned diagnostic; annotation layouts and broader challenges remain deferred.
+Budget: one learning rate, at most three teaching passes (48 autonomous attempts),
+32 new correction pairs and 128 replay updates per arm, with two hours for
+implementation/diagnosis. Use one fixed cyclic sweep of up to four older pairs
+after each correction. Target at least 6/8 fresh and 12/16 retained executed edits,
+including both properties for three fresh entities; report unsupported behavior
+separately. Pair fitting alone is no capability pass. Keep the exam untuned.
+If cyclic contrasts cannot fit, reconsider representation; if fitting succeeds
+but learning is lost, address retention; if retained success lacks fresh transfer,
+address memorization. Annotation layouts and broader challenges remain deferred.
 
 Use a small reusable TRAIN workload with the following eight stages. This is a
 capability sequence, not an already materialized or frozen eight-episode cohort;

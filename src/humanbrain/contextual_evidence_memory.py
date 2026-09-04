@@ -375,3 +375,55 @@ class ContextualEvidenceMemory:
             "synaptic_update": changed,
             "mode": decision.mode,
         }
+
+    def observe_comparison(
+        self, rejected: ContextualEvidenceDecision, accepted: ContextualEvidenceDecision
+    ) -> dict:
+        """Learn one same-query ranking margin after caller-verified FAIL and PASS."""
+        before = self.checkpoint_sha256
+        if any(row.checkpoint_sha256 != before for row in (rejected, accepted)):
+            raise ValueError("comparison decision has a stale parent checkpoint")
+        if rejected.query != accepted.query:
+            raise ValueError("comparison decisions must have the same query")
+        self._validated_rows(rejected)
+        self._validated_rows(accepted)
+        if rejected.candidate_index == accepted.candidate_index:
+            raise ValueError("comparison requires two different candidate occurrences")
+        delta = np.asarray(accepted.eligibility) - np.asarray(rejected.eligibility)
+        gap_before = float((self._weights[0] - self._weights[1]) @ delta)
+        synapses_before = self.synapse_sha256
+        applied = False
+        if self.learning_enabled:
+            # The native learner also updates its bias. A fresh scratch bias
+            # excludes the persistent bias from the ranking margin and discards
+            # that non-ranking update; only shared dendritic weights survive.
+            pair_bias = np.zeros_like(self._bias)
+            pair_learner = NativeThreeFactorLearner(
+                eligibility=self._eligibility,
+                output_heterogeneity_pa=self._heterogeneity,
+                readout_synapses_pa=self._weights,
+                pacemaker_synapses_pa=pair_bias,
+            )
+            self._eligibility[:] = delta
+            try:
+                applied = pair_learner.update(0, self.learning_rate, 1.0) is not None
+            finally:
+                self._eligibility.fill(0.0)
+        self.feedback_count += 2
+        self.update_count += int(applied)
+        for decision, reward in ((rejected, -1), (accepted, 1)):
+            self._feedback_root = _digest([self._feedback_root, decision.sha256, reward])
+        return {
+            "before": before,
+            "after": self.checkpoint_sha256,
+            "rejected_decision_sha256": rejected.sha256,
+            "accepted_decision_sha256": accepted.sha256,
+            "eligibility_delta_sha256": sha256(delta.tobytes()).hexdigest(),
+            "gap_before": gap_before,
+            "gap_after": float((self._weights[0] - self._weights[1]) @ delta),
+            "native_update_applied": applied,
+            "synaptic_update": self.synapse_sha256 != synapses_before,
+            "bias_policy": "zero scratch pair bias; persistent bias excluded and unchanged",
+            "feedback_events": 2,
+            "mode": "same_query_pairwise",
+        }
