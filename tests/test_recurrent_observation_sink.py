@@ -2,18 +2,13 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
+import humanbrain.recurrent as recurrent_module
 import numpy as np
 import pytest
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-
 from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig
 
 
-def _circuit(feature_family: str = "spike_counts") -> RecurrentCellCircuit:
+def _circuit(feature_family: str = "spike_counts", **kwargs) -> RecurrentCellCircuit:
     return RecurrentCellCircuit(
         token_cells=16,
         config=RecurrentCircuitConfig(
@@ -24,7 +19,12 @@ def _circuit(feature_family: str = "spike_counts") -> RecurrentCellCircuit:
             readout_learning_rule="ridge",
             feature_family=feature_family,
         ),
+        **kwargs,
     )
+
+
+def _sink(circuit: RecurrentCellCircuit, step) -> None:
+    pass
 
 
 def _ids() -> list[int]:
@@ -40,15 +40,46 @@ def test_sink_defaults_to_none_and_validates() -> None:
     circuit.observation_sink = None  # reset stays legal
 
 
+def test_observation_sink_kwarg_survives_init() -> None:
+    circuit = _circuit(observation_sink=_sink)
+    assert circuit.observation_sink is _sink
+
+
+def test_observation_sink_requests_native_spike_count_mirroring(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    mirror_flags: list[bool] = []
+    original = recurrent_module.recurrent_kernel
+
+    def recording_kernel(*args, **kwargs):
+        mirror_flags.append(kwargs["mirror_token_spike_counts"])
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(recurrent_module, "recurrent_kernel", recording_kernel)
+    _circuit(observation_sink=_sink)
+    assert mirror_flags == [True]
+
+
+def test_restore_accepts_sink_before_native_rebind() -> None:
+    circuit = _circuit()
+    circuit.observe(0)
+    circuit.strengthen(1)
+    circuit.freeze_learning()
+    state = circuit.capture_cell_synapse_state()
+    restored = RecurrentCellCircuit.restore_cell_synapse_state(
+        state,
+        observation_sink=_sink,
+    )
+    assert restored.observation_sink is _sink
+
+
 def test_sink_fires_per_token_in_order_after_boundary() -> None:
     circuit = _circuit()
-    seen: list[tuple[int, tuple]] = []
+    seen: list[int] = []
     post_boundary: list[np.ndarray] = []
 
     def sink(circ: RecurrentCellCircuit, step) -> None:
-        seen.append(
-            (step.token_id, tuple(np.asarray(circ.feature_state_vector()).shape))
-        )
+        seen.append(step.token_id)
         post_boundary.append(np.asarray(circ.feature_state_vector()).copy())
 
     circuit.observation_sink = sink
@@ -58,7 +89,7 @@ def test_sink_fires_per_token_in_order_after_boundary() -> None:
         # Sink already fired for THIS token inside observe(): the captured
         # row must equal the post-observe vector the caller sees now.
         assert np.array_equal(post_boundary[-1], circuit.feature_state_vector())
-    assert [token_id for token_id, _ in seen] == ids
+    assert seen == ids
 
 
 def test_sink_is_readonly_observer_bit_identity() -> None:
@@ -73,7 +104,7 @@ def test_sink_is_readonly_observer_bit_identity() -> None:
         voltages.append(np.asarray(circ._reservoir.state.voltage_relative_mv).copy())
 
     observed.observation_sink = sink
-    for index, token_id in enumerate(ids):
+    for token_id in ids:
         bare.observe(token_id)
         observed.observe(token_id)
         assert np.array_equal(traces[-1], np.asarray(bare._feature_traces))

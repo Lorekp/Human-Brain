@@ -22,7 +22,6 @@ from humanbrain.windowed_probe import (
     eval_span_features,
     extract_windows,
     kernel_ridge_fit,
-    kernel_ridge_scores,
     load_logged_states,
     packed_result,
     soft_targets,
@@ -62,7 +61,6 @@ def test_packed_result_fields():
 
 def _window_fixture():
     """Five stride snapshots + three items; item2 has NO history."""
-    dim = 2
     rows = {}
     idx = []
     vals = {
@@ -138,7 +136,7 @@ def test_kernel_ridge_primal_dual_equivalence():
     alpha = kernel_ridge_fit(K, Y, lam)
     # dual predictions
     Xv = rng.normal(size=(11, 7))
-    dual = kernel_ridge_scores(Xv @ X.T, alpha)
+    dual = (Xv @ X.T) @ alpha
     # primal solution
     W = np.linalg.solve(X.T @ X + lam * np.eye(7), X.T @ Y)
     primal = Xv @ W
@@ -203,7 +201,7 @@ def test_span_scorer_ranked_consumption():
 
 def test_soft_targets_normalizes_within_vocab():
     classes = {"dog": 0, "cat": 1}
-    y = soft_targets(words_list := ["dog", "wolf", "cat"], classes)
+    y = soft_targets(["dog", "wolf", "cat"], classes)
     assert y.sum() == 1.0 and y[0] == 0.5 and y[1] == 0.5
 
 

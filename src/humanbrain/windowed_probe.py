@@ -301,10 +301,6 @@ def kernel_ridge_fit(K: np.ndarray, Y: np.ndarray, lam: float) -> np.ndarray:
     return np.linalg.solve(K + lam * np.eye(n), Y)
 
 
-def kernel_ridge_scores(K_test_train: np.ndarray, alpha: np.ndarray) -> np.ndarray:
-    return K_test_train @ alpha
-
-
 def topk_rankings(scores: np.ndarray, class_names: list[str], k: int = 64) -> list[list[str]]:
     return [[class_names[j] for j in np.argsort(-row)[:k]] for row in scores]
 
@@ -601,14 +597,14 @@ def eval_span_features(
     best = None
     for lam in cfg.ridge_lambdas:
         alpha = kernel_ridge_fit(K_tr, Ytr, lam)
-        res = _score_rankings(scorer, kernel_ridge_scores(K_va, alpha), class_names, cfg)
+        res = _score_rankings(scorer, K_va @ alpha, class_names, cfg)
         if best is None or res["accuracy"] > best[1]["accuracy"]:
             best = (lam, res)
     lam_best, ridge_res = best
     ridge_res["lambda_selected_on_val"] = lam_best
     out["ridge"] = ridge_res
     alpha_s = kernel_ridge_fit(K_tr, Ytr[perm], lam_best)
-    shuf_r = _score_rankings(scorer, kernel_ridge_scores(K_va, alpha_s), class_names, cfg)
+    shuf_r = _score_rankings(scorer, K_va @ alpha_s, class_names, cfg)
     shuf_r.pop("distinct_predicted_answers", None)
     shuf_r["lambda"] = lam_best
     out["ridge_shuffled_label_control"] = shuf_r
@@ -657,14 +653,14 @@ def eval_speaker_features(
     best = None
     for lam in cfg.ridge_lambdas:
         alpha = kernel_ridge_fit(K_tr, Ytr, lam)
-        res = acc_from(kernel_ridge_scores(K_va, alpha))
+        res = acc_from(K_va @ alpha)
         if best is None or res["accuracy"] > best[1]["accuracy"]:
             best = (lam, res)
     lam_best, ridge_res = best
     ridge_res["lambda_selected_on_val"] = lam_best
     out["ridge"] = ridge_res
     alpha_s = kernel_ridge_fit(K_tr, Ytr[perm], lam_best)
-    out["ridge_shuffled_label_control"] = acc_from(kernel_ridge_scores(K_va, alpha_s))
+    out["ridge_shuffled_label_control"] = acc_from(K_va @ alpha_s)
     return out
 
 
@@ -699,7 +695,6 @@ def run_windowed_probe(
 
     starts = np.array([r["start_global"] for r in rows], dtype=np.int64)
     bounds = np.array([r["boundary_global"] for r in rows], dtype=np.int64)
-    n_train = sum(1 for r in rows if r["split"] == "train")
     splits = np.array([r["split"] for r in rows])
 
     arms = load_logged_states(npz_path)

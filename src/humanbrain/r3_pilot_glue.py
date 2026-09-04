@@ -36,25 +36,20 @@ segment arrays, and logs.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import hashlib
 import json
-from typing import Any, Sequence
+from collections.abc import Sequence
+from dataclasses import dataclass, field
+from typing import Any
 
 import numpy as np
 
+from humanbrain.concept_tokens import CONCEPT_ID_BASE, MAX_CONCEPTS
 from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig
 from humanbrain.segment_growth import SegmentGrowthTracker
 
 # Frozen concept-band layout (humanbrain.concept_tokens; freeze §1).
-try:  # single source of truth if importable
-    from humanbrain.concept_tokens import CONCEPT_ID_BASE, MAX_CONCEPTS
-
-    CONCEPT_ID_CEILING = CONCEPT_ID_BASE + MAX_CONCEPTS  # exclusive: [1024, 1536)
-except Exception:  # pragma: no cover - frozen literals fallback
-    CONCEPT_ID_BASE = 1024
-    MAX_CONCEPTS = 512
-    CONCEPT_ID_CEILING = 1536
+CONCEPT_ID_CEILING = CONCEPT_ID_BASE + MAX_CONCEPTS  # exclusive: [1024, 1536)
 
 # k = 32 candidate cells per token pool (prereg §2; freeze §4).
 K_POOL = SegmentGrowthTracker.CELLS_PER_POOL

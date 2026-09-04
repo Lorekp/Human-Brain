@@ -11,9 +11,7 @@ import math
 from pathlib import Path
 from typing import Any, Literal
 
-from humanbrain.observatory import ACTIVITY_STREAM_FORMAT, activity_stream_path
-
-from .model import ExperimentRun
+from humanbrain.observatory import ACTIVITY_STREAM_FORMAT
 
 
 ActivityEventKind = Literal["phase", "state", "zero"]
@@ -411,10 +409,6 @@ class ActivityStreamReader:
         ):
             raise ValueError("sample channel lengths do not match sample_gids")
         return frame
-
-
-def reader_for_run(root: str | Path, run: ExperimentRun) -> ActivityStreamReader:
-    return ActivityStreamReader(activity_stream_path(root, run.experiment_id, run.arm))
 
 
 def _contains(values: array, position: int) -> bool:

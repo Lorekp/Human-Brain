@@ -10,13 +10,14 @@ import time
 
 import dearpygui.dearpygui as dpg
 
+from humanbrain.observatory import activity_stream_path
+
 from .catalog import ExperimentCatalog
 from .activity import (
     ActivityEventKind,
     ActivityFrame,
     ActivityPhaseRun,
     ActivityStreamReader,
-    reader_for_run,
 )
 from .model import ExperimentRun, ProportionEstimate
 from .structure import (
@@ -677,7 +678,9 @@ class Workbench:
         activity_path = (
             self._external_activity_stream
             if self._external_activity_stream is not None
-            else reader_for_run(self.catalog.root, self.selected_run).path
+            else activity_stream_path(
+                self.catalog.root, self.selected_run.experiment_id, self.selected_run.arm
+            )
         )
         self.activity_reader = ActivityStreamReader(activity_path)
         self.activity_reader.poll()

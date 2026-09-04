@@ -8,10 +8,6 @@ from pathlib import Path
 from .catalog import load_catalog
 
 
-def _default_experiments_root() -> Path:
-    return Path(__file__).resolve().parents[3] / "experiments"
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Explore Human Brain experiments in a native diagnostics workbench."
@@ -20,7 +16,7 @@ def main(argv: list[str] | None = None) -> int:
         "path",
         nargs="?",
         type=Path,
-        default=_default_experiments_root(),
+        default=Path(__file__).resolve().parents[3] / "experiments",
         help="experiments root containing <experiment>/<arm>.json",
     )
     parser.add_argument(
