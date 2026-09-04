@@ -1,0 +1,1528 @@
+{
+  "kind": "repeatable public development; narrow literal-edit integration",
+  "runner_sha256": "b4aa50a80ef7accc15b51acb4009858cf0da42088e4898baa43c77c599cbab83",
+  "source_sha256": {
+    "experiments/r4_integrated/neutral_document_python_session.py": "b4aa50a80ef7accc15b51acb4009858cf0da42088e4898baa43c77c599cbab83",
+    "src/humanbrain/neutral_document_action.py": "d1d8389b25c52478f2e00a2ae1ec8a8ece5ae4a1f081dc0a4f34d593c82404c5",
+    "src/humanbrain/neutral_neuronal_document_learner.py": "2f6d16219eb24679e0a09086e9807af5582a4bebb4c9bbc53ff3de9da2564284",
+    "src/humanbrain/knowledge_conditioned_occurrence_substitution.py": "d804e7f8e57b655f2083d90b6ef59e7109cc2a6fc58a87f60cc9413932c6173e",
+    "src/humanbrain/variability_aware_segment_binder.py": "03788ed36e7f2c95c5de4dae4f4bb13d610d898b206f86cc397d62a8a48f09e5",
+    "src/humanbrain/opaque_document_event_tape.py": "18ba1020c81ad9f9f4d0ad76560c1f9aecf8817d8ccaa2a59a8a8244c2c55cf6",
+    "src/humanbrain/unified_opaque_observation_tape.py": "e1a3c172e7d84cb878561fcda89af8e6df18b51ed5ea43e8268f34b296461ce5",
+    "src/humanbrain/sparse_neuronal_role_filler.py": "426d411b4af5dcb7e66a4cc52541923d962f1fcdb2055c5da08d0aac8bba04a8",
+    "src/humanbrain/resting_glif_race.py": "b78a14ad6f601800c170bbd9e53d6204e992842954f22ea646d5f9ec04accca0",
+    "src/humanbrain/cells.py": "5ca05a64a89f930db3ea351e3e236e3242bf21652fff127747a36d9ca488d2e6"
+  },
+  "narrow_integration_passed": true,
+  "history": {
+    "UPDATE": [
+      {
+        "event": "seed",
+        "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+        "parent": null,
+        "document_summary": {
+          "consolidation_episode_count": 0,
+          "retained_evidence_count": 0,
+          "promoted_frame_count": 0,
+          "directional_route_count": 0,
+          "consolidated_fact_count": 0,
+          "fact_source_count": 0,
+          "retained_raw_document_count": 0,
+          "retained_full_sentence_count": 0,
+          "retained_lexical_byte_count": 0,
+          "learning_physical_cell_steps": 0,
+          "learning_active_synapses": 0
+        },
+        "demonstrations": 0,
+        "pending_demonstration_event_bytes": 0,
+        "serialized_checkpoint_bytes": 324,
+        "binder_summary": null
+      },
+      {
+        "event": "structure-a",
+        "checkpoint": "ff48ce075dba36d64a395bbb4d2e18ff6eccbaaceddc8b0a354a3c709a460e04",
+        "parent": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+        "document_summary": {
+          "consolidation_episode_count": 1,
+          "retained_evidence_count": 6,
+          "promoted_frame_count": 0,
+          "directional_route_count": 0,
+          "consolidated_fact_count": 0,
+          "fact_source_count": 0,
+          "retained_raw_document_count": 0,
+          "retained_full_sentence_count": 0,
+          "retained_lexical_byte_count": 0,
+          "learning_physical_cell_steps": 30002400,
+          "learning_active_synapses": 2382
+        },
+        "demonstrations": 0,
+        "pending_demonstration_event_bytes": 0,
+        "serialized_checkpoint_bytes": 10736,
+        "binder_summary": null,
+        "offered_documents": [
+          {
+            "id": "structure-a/0",
+            "sha256": "1b3ceb099f5f7a9ec4d90ab3794a9968c8fda712ea083380d30fa3496cf42866"
+          },
+          {
+            "id": "structure-a/1",
+            "sha256": "cbf11f0bb723fe578af245b198b41a3c0efddc2ff42cd62524350a1724a7c86a"
+          }
+        ],
+        "update_applied": true,
+        "acquisition_seconds": 0.05870120000327006
+      },
+      {
+        "event": "structure-b",
+        "checkpoint": "50a0a90f42302d23cda2af2c94f40762353b1e2ac877e414d5c34c3ed41a7fc4",
+        "parent": "ff48ce075dba36d64a395bbb4d2e18ff6eccbaaceddc8b0a354a3c709a460e04",
+        "document_summary": {
+          "consolidation_episode_count": 2,
+          "retained_evidence_count": 12,
+          "promoted_frame_count": 2,
+          "directional_route_count": 2,
+          "consolidated_fact_count": 0,
+          "fact_source_count": 0,
+          "retained_raw_document_count": 0,
+          "retained_full_sentence_count": 0,
+          "retained_lexical_byte_count": 0,
+          "learning_physical_cell_steps": 65037000,
+          "learning_active_synapses": 5208
+        },
+        "demonstrations": 0,
+        "pending_demonstration_event_bytes": 0,
+        "serialized_checkpoint_bytes": 21999,
+        "binder_summary": null,
+        "offered_documents": [
+          {
+            "id": "structure-b/0",
+            "sha256": "84166ad7052ceee695bb72c1f4f543ca4af461f9ee542de79c0bf98eb178b649"
+          },
+          {
+            "id": "structure-b/1",
+            "sha256": "bf551fc6c2217ffeaaaa3a4ef00db9957f6da34257a070c340650a4b1f7976b8"
+          }
+        ],
+        "update_applied": true,
+        "acquisition_seconds": 0.08831550000468269
+      },
+      {
+        "event": "training-facts",
+        "checkpoint": "ace0a0664e5af3584982fb5a60e1b17a15bd1a2a2e2a5dffa445e82bf3e457f2",
+        "parent": "50a0a90f42302d23cda2af2c94f40762353b1e2ac877e414d5c34c3ed41a7fc4",
+        "document_summary": {
+          "consolidation_episode_count": 3,
+          "retained_evidence_count": 18,
+          "promoted_frame_count": 2,
+          "directional_route_count": 2,
+          "consolidated_fact_count": 2,
+          "fact_source_count": 2,
+          "retained_raw_document_count": 0,
+          "retained_full_sentence_count": 0,
+          "retained_lexical_byte_count": 16,
+          "learning_physical_cell_steps": 110094000,
+          "learning_active_synapses": 8988
+        },
+        "demonstrations": 0,
+        "pending_demonstration_event_bytes": 0,
+        "serialized_checkpoint_bytes": 35413,
+        "binder_summary": null,
+        "offered_documents": [
+          {
+            "id": "training-facts/0",
+            "sha256": "76b39392e31c0da7f854a430e13baa29ba5e5e508beee1c207af8ad6c1724fb5"
+          },
+          {
+            "id": "training-facts/1",
+            "sha256": "b7228dcd95601aeb5d7de7103ec7fe31ee7697e34f62dcd9567dcd3ad6f83996"
+          }
+        ],
+        "update_applied": true,
+        "acquisition_seconds": 0.1312206000002334
+      },
+      {
+        "event": "interference",
+        "checkpoint": "9aecbca74f9cb1cbccebd20ee180df26b35cf50d21d285920ca75ac21bc01cc1",
+        "parent": "ace0a0664e5af3584982fb5a60e1b17a15bd1a2a2e2a5dffa445e82bf3e457f2",
+        "document_summary": {
+          "consolidation_episode_count": 4,
+          "retained_evidence_count": 21,
+          "promoted_frame_count": 2,
+          "directional_route_count": 2,
+          "consolidated_fact_count": 2,
+          "fact_source_count": 2,
+          "retained_raw_document_count": 0,
+          "retained_full_sentence_count": 0,
+          "retained_lexical_byte_count": 16,
+          "learning_physical_cell_steps": 130211400,
+          "learning_active_synapses": 10753
+        },
+        "demonstrations": 0,
+        "pending_demonstration_event_bytes": 0,
+        "serialized_checkpoint_bytes": 40558,
+        "binder_summary": null,
+        "offered_documents": [
+          {
+            "id": "interference/0",
+            "sha256": "3655cd3b1b975a3435a206c278d81932081341b1ead651f3e680bbfa0e151507"
+          }
+        ],
+        "update_applied": true,
+        "acquisition_seconds": 0.11560619999363553
+      },
+      {
+        "event": "train-a",
+        "checkpoint": "324d2b0951573ea0615ced56722367400361220fead3c09830605ed1ca19b456",
+        "parent": "9aecbca74f9cb1cbccebd20ee180df26b35cf50d21d285920ca75ac21bc01cc1",
+        "document_summary": {
+          "consolidation_episode_count": 4,
+          "retained_evidence_count": 21,
+          "promoted_frame_count": 2,
+          "directional_route_count": 2,
+          "consolidated_fact_count": 2,
+          "fact_source_count": 2,
+          "retained_raw_document_count": 0,
+          "retained_full_sentence_count": 0,
+          "retained_lexical_byte_count": 16,
+          "learning_physical_cell_steps": 130211400,
+          "learning_active_synapses": 10753
+        },
+        "demonstrations": 1,
+        "pending_demonstration_event_bytes": 2493,
+        "serialized_checkpoint_bytes": 43367,
+        "binder_summary": null
+      },
+      {
+        "event": "train-b",
+        "checkpoint": "c39899c5ede406593653b810d51c4b38396590f92fbf930bdd80671958920b1c",
+        "parent": "324d2b0951573ea0615ced56722367400361220fead3c09830605ed1ca19b456",
+        "document_summary": {
+          "consolidation_episode_count": 4,
+          "retained_evidence_count": 21,
+          "promoted_frame_count": 2,
+          "directional_route_count": 2,
+          "consolidated_fact_count": 2,
+          "fact_source_count": 2,
+          "retained_raw_document_count": 0,
+          "retained_full_sentence_count": 0,
+          "retained_lexical_byte_count": 16,
+          "learning_physical_cell_steps": 130211400,
+          "learning_active_synapses": 10753
+        },
+        "demonstrations": 2,
+        "pending_demonstration_event_bytes": 0,
+        "serialized_checkpoint_bytes": 41775,
+        "binder_summary": {
+          "demonstration_count": 2,
+          "role_offset": 1,
+          "propagation_hop_count": 1,
+          "stable_intermediate_synapse_count": 0,
+          "wildcard_intermediate_hop_count": 0,
+          "wildcard_support_ticks": 0,
+          "boundary_synapse_count": 2,
+          "left_boundary_hop": 2,
+          "right_boundary_hop": 1,
+          "checkpoint_sha256": "d51f61e3367855469f7f79f3512867f2301315bd740a8d471f73356d5d0785c7"
+        }
+      },
+      {
+        "event": "fresh-facts",
+        "checkpoint": "f126d29e1a79e6bb32bab09f25db4e3773d3cf0275054b70de34400a8be8efef",
+        "parent": "c39899c5ede406593653b810d51c4b38396590f92fbf930bdd80671958920b1c",
+        "document_summary": {
+          "consolidation_episode_count": 5,
+          "retained_evidence_count": 27,
+          "promoted_frame_count": 2,
+          "directional_route_count": 2,
+          "consolidated_fact_count": 4,
+          "fact_source_count": 4,
+          "retained_raw_document_count": 0,
+          "retained_full_sentence_count": 0,
+          "retained_lexical_byte_count": 32,
+          "learning_physical_cell_steps": 175327200,
+          "learning_active_synapses": 14624
+        },
+        "demonstrations": 2,
+        "pending_demonstration_event_bytes": 0,
+        "serialized_checkpoint_bytes": 55158,
+        "binder_summary": {
+          "demonstration_count": 2,
+          "role_offset": 1,
+          "propagation_hop_count": 1,
+          "stable_intermediate_synapse_count": 0,
+          "wildcard_intermediate_hop_count": 0,
+          "wildcard_support_ticks": 0,
+          "boundary_synapse_count": 2,
+          "left_boundary_hop": 2,
+          "right_boundary_hop": 1,
+          "checkpoint_sha256": "d51f61e3367855469f7f79f3512867f2301315bd740a8d471f73356d5d0785c7"
+        },
+        "offered_documents": [
+          {
+            "id": "fresh-facts/0",
+            "sha256": "fc66ca045971bc3b538af8b2b98f6baf6ceb0a0b81c70b81577bac5fada80f72"
+          },
+          {
+            "id": "fresh-facts/1",
+            "sha256": "36f5ef2db6476d5fc1f7db17bb1c9ecdf1ef01d1d62c2e5ec5ea9b6f8f76a69c"
+          }
+        ],
+        "update_applied": true,
+        "acquisition_seconds": 0.1969678000023123
+      }
+    ],
+    "NO_UPDATE": [
+      {
+        "event": "seed",
+        "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+        "parent": null,
+        "document_summary": {
+          "consolidation_episode_count": 0,
+          "retained_evidence_count": 0,
+          "promoted_frame_count": 0,
+          "directional_route_count": 0,
+          "consolidated_fact_count": 0,
+          "fact_source_count": 0,
+          "retained_raw_document_count": 0,
+          "retained_full_sentence_count": 0,
+          "retained_lexical_byte_count": 0,
+          "learning_physical_cell_steps": 0,
+          "learning_active_synapses": 0
+        },
+        "demonstrations": 0,
+        "pending_demonstration_event_bytes": 0,
+        "serialized_checkpoint_bytes": 324,
+        "binder_summary": null
+      },
+      {
+        "event": "structure-a",
+        "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+        "parent": null,
+        "document_summary": {
+          "consolidation_episode_count": 0,
+          "retained_evidence_count": 0,
+          "promoted_frame_count": 0,
+          "directional_route_count": 0,
+          "consolidated_fact_count": 0,
+          "fact_source_count": 0,
+          "retained_raw_document_count": 0,
+          "retained_full_sentence_count": 0,
+          "retained_lexical_byte_count": 0,
+          "learning_physical_cell_steps": 0,
+          "learning_active_synapses": 0
+        },
+        "demonstrations": 0,
+        "pending_demonstration_event_bytes": 0,
+        "serialized_checkpoint_bytes": 324,
+        "binder_summary": null,
+        "offered_documents": [
+          {
+            "id": "structure-a/0",
+            "sha256": "1b3ceb099f5f7a9ec4d90ab3794a9968c8fda712ea083380d30fa3496cf42866"
+          },
+          {
+            "id": "structure-a/1",
+            "sha256": "cbf11f0bb723fe578af245b198b41a3c0efddc2ff42cd62524350a1724a7c86a"
+          }
+        ],
+        "update_applied": false,
+        "acquisition_seconds": 0.0
+      },
+      {
+        "event": "structure-b",
+        "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+        "parent": null,
+        "document_summary": {
+          "consolidation_episode_count": 0,
+          "retained_evidence_count": 0,
+          "promoted_frame_count": 0,
+          "directional_route_count": 0,
+          "consolidated_fact_count": 0,
+          "fact_source_count": 0,
+          "retained_raw_document_count": 0,
+          "retained_full_sentence_count": 0,
+          "retained_lexical_byte_count": 0,
+          "learning_physical_cell_steps": 0,
+          "learning_active_synapses": 0
+        },
+        "demonstrations": 0,
+        "pending_demonstration_event_bytes": 0,
+        "serialized_checkpoint_bytes": 324,
+        "binder_summary": null,
+        "offered_documents": [
+          {
+            "id": "structure-b/0",
+            "sha256": "84166ad7052ceee695bb72c1f4f543ca4af461f9ee542de79c0bf98eb178b649"
+          },
+          {
+            "id": "structure-b/1",
+            "sha256": "bf551fc6c2217ffeaaaa3a4ef00db9957f6da34257a070c340650a4b1f7976b8"
+          }
+        ],
+        "update_applied": false,
+        "acquisition_seconds": 0.0
+      },
+      {
+        "event": "training-facts",
+        "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+        "parent": null,
+        "document_summary": {
+          "consolidation_episode_count": 0,
+          "retained_evidence_count": 0,
+          "promoted_frame_count": 0,
+          "directional_route_count": 0,
+          "consolidated_fact_count": 0,
+          "fact_source_count": 0,
+          "retained_raw_document_count": 0,
+          "retained_full_sentence_count": 0,
+          "retained_lexical_byte_count": 0,
+          "learning_physical_cell_steps": 0,
+          "learning_active_synapses": 0
+        },
+        "demonstrations": 0,
+        "pending_demonstration_event_bytes": 0,
+        "serialized_checkpoint_bytes": 324,
+        "binder_summary": null,
+        "offered_documents": [
+          {
+            "id": "training-facts/0",
+            "sha256": "76b39392e31c0da7f854a430e13baa29ba5e5e508beee1c207af8ad6c1724fb5"
+          },
+          {
+            "id": "training-facts/1",
+            "sha256": "b7228dcd95601aeb5d7de7103ec7fe31ee7697e34f62dcd9567dcd3ad6f83996"
+          }
+        ],
+        "update_applied": false,
+        "acquisition_seconds": 0.0
+      },
+      {
+        "event": "interference",
+        "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+        "parent": null,
+        "document_summary": {
+          "consolidation_episode_count": 0,
+          "retained_evidence_count": 0,
+          "promoted_frame_count": 0,
+          "directional_route_count": 0,
+          "consolidated_fact_count": 0,
+          "fact_source_count": 0,
+          "retained_raw_document_count": 0,
+          "retained_full_sentence_count": 0,
+          "retained_lexical_byte_count": 0,
+          "learning_physical_cell_steps": 0,
+          "learning_active_synapses": 0
+        },
+        "demonstrations": 0,
+        "pending_demonstration_event_bytes": 0,
+        "serialized_checkpoint_bytes": 324,
+        "binder_summary": null,
+        "offered_documents": [
+          {
+            "id": "interference/0",
+            "sha256": "3655cd3b1b975a3435a206c278d81932081341b1ead651f3e680bbfa0e151507"
+          }
+        ],
+        "update_applied": false,
+        "acquisition_seconds": 0.0
+      },
+      {
+        "event": "train-a",
+        "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+        "parent": null,
+        "document_summary": {
+          "consolidation_episode_count": 0,
+          "retained_evidence_count": 0,
+          "promoted_frame_count": 0,
+          "directional_route_count": 0,
+          "consolidated_fact_count": 0,
+          "fact_source_count": 0,
+          "retained_raw_document_count": 0,
+          "retained_full_sentence_count": 0,
+          "retained_lexical_byte_count": 0,
+          "learning_physical_cell_steps": 0,
+          "learning_active_synapses": 0
+        },
+        "demonstrations": 0,
+        "pending_demonstration_event_bytes": 0,
+        "serialized_checkpoint_bytes": 324,
+        "binder_summary": null
+      },
+      {
+        "event": "train-b",
+        "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+        "parent": null,
+        "document_summary": {
+          "consolidation_episode_count": 0,
+          "retained_evidence_count": 0,
+          "promoted_frame_count": 0,
+          "directional_route_count": 0,
+          "consolidated_fact_count": 0,
+          "fact_source_count": 0,
+          "retained_raw_document_count": 0,
+          "retained_full_sentence_count": 0,
+          "retained_lexical_byte_count": 0,
+          "learning_physical_cell_steps": 0,
+          "learning_active_synapses": 0
+        },
+        "demonstrations": 0,
+        "pending_demonstration_event_bytes": 0,
+        "serialized_checkpoint_bytes": 324,
+        "binder_summary": null
+      },
+      {
+        "event": "fresh-facts",
+        "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+        "parent": null,
+        "document_summary": {
+          "consolidation_episode_count": 0,
+          "retained_evidence_count": 0,
+          "promoted_frame_count": 0,
+          "directional_route_count": 0,
+          "consolidated_fact_count": 0,
+          "fact_source_count": 0,
+          "retained_raw_document_count": 0,
+          "retained_full_sentence_count": 0,
+          "retained_lexical_byte_count": 0,
+          "learning_physical_cell_steps": 0,
+          "learning_active_synapses": 0
+        },
+        "demonstrations": 0,
+        "pending_demonstration_event_bytes": 0,
+        "serialized_checkpoint_bytes": 324,
+        "binder_summary": null,
+        "offered_documents": [
+          {
+            "id": "fresh-facts/0",
+            "sha256": "fc66ca045971bc3b538af8b2b98f6baf6ceb0a0b81c70b81577bac5fada80f72"
+          },
+          {
+            "id": "fresh-facts/1",
+            "sha256": "36f5ef2db6476d5fc1f7db17bb1c9ecdf1ef01d1d62c2e5ec5ea9b6f8f76a69c"
+          }
+        ],
+        "update_applied": false,
+        "acquisition_seconds": 0.0
+      }
+    ],
+    "CONFLICT_FORK": [
+      {
+        "event": "conflict",
+        "checkpoint": "5d89d9a1cfa6976875f73f204bc919db50275e4799e6e488343dfaad567096bb",
+        "parent": "f126d29e1a79e6bb32bab09f25db4e3773d3cf0275054b70de34400a8be8efef",
+        "document_summary": {
+          "consolidation_episode_count": 6,
+          "retained_evidence_count": 30,
+          "promoted_frame_count": 2,
+          "directional_route_count": 2,
+          "consolidated_fact_count": 5,
+          "fact_source_count": 5,
+          "retained_raw_document_count": 0,
+          "retained_full_sentence_count": 0,
+          "retained_lexical_byte_count": 41,
+          "learning_physical_cell_steps": 200479200,
+          "learning_active_synapses": 16902
+        },
+        "demonstrations": 2,
+        "pending_demonstration_event_bytes": 0,
+        "serialized_checkpoint_bytes": 61757,
+        "binder_summary": {
+          "demonstration_count": 2,
+          "role_offset": 1,
+          "propagation_hop_count": 1,
+          "stable_intermediate_synapse_count": 0,
+          "wildcard_intermediate_hop_count": 0,
+          "wildcard_support_ticks": 0,
+          "boundary_synapse_count": 2,
+          "left_boundary_hop": 2,
+          "right_boundary_hop": 1,
+          "checkpoint_sha256": "d51f61e3367855469f7f79f3512867f2301315bd740a8d471f73356d5d0785c7"
+        }
+      }
+    ]
+  },
+  "language": [
+    {
+      "arm": "UPDATE",
+      "stage": "delayed",
+      "request": "serves kelo",
+      "status": "EMIT",
+      "answer": "vesa",
+      "passed": true,
+      "checkpoint": "9aecbca74f9cb1cbccebd20ee180df26b35cf50d21d285920ca75ac21bc01cc1",
+      "physical_cell_steps": 17489400,
+      "elapsed_seconds": 0.09177070000441745
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "delayed",
+      "request": "vesa serves",
+      "status": "EMIT",
+      "answer": "kelo",
+      "passed": true,
+      "checkpoint": "9aecbca74f9cb1cbccebd20ee180df26b35cf50d21d285920ca75ac21bc01cc1",
+      "physical_cell_steps": 17489400,
+      "elapsed_seconds": 0.08289399999193847
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "delayed",
+      "request": "serves rilo",
+      "status": "EMIT",
+      "answer": "luma",
+      "passed": true,
+      "checkpoint": "9aecbca74f9cb1cbccebd20ee180df26b35cf50d21d285920ca75ac21bc01cc1",
+      "physical_cell_steps": 17489400,
+      "elapsed_seconds": 0.09039810000103898
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "delayed",
+      "request": "luma serves",
+      "status": "EMIT",
+      "answer": "rilo",
+      "passed": true,
+      "checkpoint": "9aecbca74f9cb1cbccebd20ee180df26b35cf50d21d285920ca75ac21bc01cc1",
+      "physical_cell_steps": 17489400,
+      "elapsed_seconds": 0.08393459999933839
+    },
+    {
+      "arm": "NO_UPDATE",
+      "stage": "delayed",
+      "request": "serves kelo",
+      "status": "STOP",
+      "answer": null,
+      "passed": false,
+      "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+      "physical_cell_steps": 600,
+      "elapsed_seconds": 0.005536999989999458
+    },
+    {
+      "arm": "NO_UPDATE",
+      "stage": "delayed",
+      "request": "vesa serves",
+      "status": "STOP",
+      "answer": null,
+      "passed": false,
+      "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+      "physical_cell_steps": 600,
+      "elapsed_seconds": 0.004773700013174675
+    },
+    {
+      "arm": "NO_UPDATE",
+      "stage": "delayed",
+      "request": "serves rilo",
+      "status": "STOP",
+      "answer": null,
+      "passed": false,
+      "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+      "physical_cell_steps": 600,
+      "elapsed_seconds": 0.004367900008219294
+    },
+    {
+      "arm": "NO_UPDATE",
+      "stage": "delayed",
+      "request": "luma serves",
+      "status": "STOP",
+      "answer": null,
+      "passed": false,
+      "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+      "physical_cell_steps": 600,
+      "elapsed_seconds": 0.003560000011930242
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "retention",
+      "request": "serves kelo",
+      "status": "EMIT",
+      "answer": "vesa",
+      "passed": true,
+      "checkpoint": "f126d29e1a79e6bb32bab09f25db4e3773d3cf0275054b70de34400a8be8efef",
+      "physical_cell_steps": 32478600,
+      "elapsed_seconds": 0.1729200999980094
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "retention",
+      "request": "vesa serves",
+      "status": "EMIT",
+      "answer": "kelo",
+      "passed": true,
+      "checkpoint": "f126d29e1a79e6bb32bab09f25db4e3773d3cf0275054b70de34400a8be8efef",
+      "physical_cell_steps": 32478600,
+      "elapsed_seconds": 0.1760570999904303
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "retention",
+      "request": "serves rilo",
+      "status": "EMIT",
+      "answer": "luma",
+      "passed": true,
+      "checkpoint": "f126d29e1a79e6bb32bab09f25db4e3773d3cf0275054b70de34400a8be8efef",
+      "physical_cell_steps": 32478600,
+      "elapsed_seconds": 0.16233579999243375
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "retention",
+      "request": "luma serves",
+      "status": "EMIT",
+      "answer": "rilo",
+      "passed": true,
+      "checkpoint": "f126d29e1a79e6bb32bab09f25db4e3773d3cf0275054b70de34400a8be8efef",
+      "physical_cell_steps": 32478600,
+      "elapsed_seconds": 0.18052399999578483
+    },
+    {
+      "arm": "NO_UPDATE",
+      "stage": "retention",
+      "request": "serves kelo",
+      "status": "STOP",
+      "answer": null,
+      "passed": false,
+      "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+      "physical_cell_steps": 600,
+      "elapsed_seconds": 0.012507099992944859
+    },
+    {
+      "arm": "NO_UPDATE",
+      "stage": "retention",
+      "request": "vesa serves",
+      "status": "STOP",
+      "answer": null,
+      "passed": false,
+      "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+      "physical_cell_steps": 600,
+      "elapsed_seconds": 0.004294900005334057
+    },
+    {
+      "arm": "NO_UPDATE",
+      "stage": "retention",
+      "request": "serves rilo",
+      "status": "STOP",
+      "answer": null,
+      "passed": false,
+      "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+      "physical_cell_steps": 600,
+      "elapsed_seconds": 0.005430699995486066
+    },
+    {
+      "arm": "NO_UPDATE",
+      "stage": "retention",
+      "request": "luma serves",
+      "status": "STOP",
+      "answer": null,
+      "passed": false,
+      "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+      "physical_cell_steps": 600,
+      "elapsed_seconds": 0.004600699990987778
+    }
+  ],
+  "attempts": [
+    {
+      "arm": "UPDATE",
+      "stage": "first-training-attempt",
+      "case": "train-a",
+      "ablation": "none",
+      "status": "STOP",
+      "stop_reason": "action:unlearned",
+      "checkpoint": "9aecbca74f9cb1cbccebd20ee180df26b35cf50d21d285920ca75ac21bc01cc1",
+      "decision_sha256": "e136c4c87ecebe336c2d58ff9032ad717e275a507099ef4bdda95bd08f574170",
+      "physical_cell_steps": 17489400,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.15751050000835676,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "dull\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-000-before",
+        "elapsed_seconds": 0.12904709999565966
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "dull\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-000-before",
+        "elapsed_seconds": 0.12904709999565966
+      },
+      "passed": false
+    },
+    {
+      "arm": "NO_UPDATE",
+      "stage": "first-training-attempt",
+      "case": "train-a",
+      "ablation": "none",
+      "status": "STOP",
+      "stop_reason": "motor:tonic_stop",
+      "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+      "decision_sha256": "40e927080a256091dfae7fd4d7a9c10451ade39c547378628757dc9b87b85b04",
+      "physical_cell_steps": 600,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.006379600003128871,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "dull\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-001-before",
+        "elapsed_seconds": 0.1155540000036126
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "dull\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-001-before",
+        "elapsed_seconds": 0.1155540000036126
+      },
+      "passed": false
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "first-training-attempt",
+      "case": "train-b",
+      "ablation": "none",
+      "status": "STOP",
+      "stop_reason": "action:unlearned",
+      "checkpoint": "324d2b0951573ea0615ced56722367400361220fead3c09830605ed1ca19b456",
+      "decision_sha256": "5f5d7e94b45237ab58b34c0588a779b6badfb7bf0d89e94cb8e2d5796da6e917",
+      "physical_cell_steps": 17489400,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.1328230000071926,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "pale\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-002-before",
+        "elapsed_seconds": 0.11430010000185575
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "pale\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-002-before",
+        "elapsed_seconds": 0.11430010000185575
+      },
+      "passed": false
+    },
+    {
+      "arm": "NO_UPDATE",
+      "stage": "first-training-attempt",
+      "case": "train-b",
+      "ablation": "none",
+      "status": "STOP",
+      "stop_reason": "motor:tonic_stop",
+      "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+      "decision_sha256": "0e12982da3cf94ec31011cc896b7a1ee784848f821bf8d8a1adb6ca07b9efd2f",
+      "physical_cell_steps": 600,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.004401900005177595,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "pale\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-003-before",
+        "elapsed_seconds": 0.11758499999996275
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "pale\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-003-before",
+        "elapsed_seconds": 0.11758499999996275
+      },
+      "passed": false
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "transfer",
+      "case": "transfer-a",
+      "ablation": "none",
+      "status": "EDIT",
+      "stop_reason": null,
+      "checkpoint": "f126d29e1a79e6bb32bab09f25db4e3773d3cf0275054b70de34400a8be8efef",
+      "decision_sha256": "c023cbc16edbaf7a7f7629a6a39889a82770bb5884397afb652865808ccf11cc",
+      "physical_cell_steps": 32548200,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.19973649999883492,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "gray\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-004-before",
+        "elapsed_seconds": 0.11845379999431316
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "zani\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": true,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-004",
+        "elapsed_seconds": 0.11520020000170916
+      },
+      "passed": true
+    },
+    {
+      "arm": "NO_UPDATE",
+      "stage": "transfer",
+      "case": "transfer-a",
+      "ablation": "none",
+      "status": "STOP",
+      "stop_reason": "motor:tonic_stop",
+      "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+      "decision_sha256": "ae06badefcdb62a8550ee51fff51ec04116c29181500cf05472aa57356e8a571",
+      "physical_cell_steps": 600,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.006377099998644553,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "gray\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-005-before",
+        "elapsed_seconds": 0.130542200000491
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "gray\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-005-before",
+        "elapsed_seconds": 0.130542200000491
+      },
+      "passed": false
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "transfer",
+      "case": "transfer-b",
+      "ablation": "none",
+      "status": "EDIT",
+      "stop_reason": null,
+      "checkpoint": "f126d29e1a79e6bb32bab09f25db4e3773d3cf0275054b70de34400a8be8efef",
+      "decision_sha256": "3aa07f03c5c853b731c7eedcd60a7bf703e4bfc6fda46ad8b02efd3e4bf18442",
+      "physical_cell_steps": 32548200,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.20715820000623353,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "white\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-006-before",
+        "elapsed_seconds": 0.12163890000374522
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "raku\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": true,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-006",
+        "elapsed_seconds": 0.12832560000242665
+      },
+      "passed": true
+    },
+    {
+      "arm": "NO_UPDATE",
+      "stage": "transfer",
+      "case": "transfer-b",
+      "ablation": "none",
+      "status": "STOP",
+      "stop_reason": "motor:tonic_stop",
+      "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+      "decision_sha256": "f33c6852f1b012e65272b0b3ab45f215de4eb20c9234607bad69f9f5dc415e97",
+      "physical_cell_steps": 600,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.006846600008429959,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "white\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-007-before",
+        "elapsed_seconds": 0.1422102999931667
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "white\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-007-before",
+        "elapsed_seconds": 0.1422102999931667
+      },
+      "passed": false
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "action-retention",
+      "case": "train-a",
+      "ablation": "none",
+      "status": "EDIT",
+      "stop_reason": null,
+      "checkpoint": "f126d29e1a79e6bb32bab09f25db4e3773d3cf0275054b70de34400a8be8efef",
+      "decision_sha256": "b148ad45ccc66adf07127e0058c8010051e971f5e319eda1d9c7f4ff2a533c54",
+      "physical_cell_steps": 32548200,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.24197250000725035,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "dull\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-008-before",
+        "elapsed_seconds": 0.1420196999970358
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "vesa\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": true,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-008",
+        "elapsed_seconds": 0.12915280000015628
+      },
+      "passed": true
+    },
+    {
+      "arm": "NO_UPDATE",
+      "stage": "action-retention",
+      "case": "train-a",
+      "ablation": "none",
+      "status": "STOP",
+      "stop_reason": "motor:tonic_stop",
+      "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+      "decision_sha256": "40e927080a256091dfae7fd4d7a9c10451ade39c547378628757dc9b87b85b04",
+      "physical_cell_steps": 600,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.0044135999924037606,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "dull\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-009-before",
+        "elapsed_seconds": 0.11774380000133533
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "dull\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-009-before",
+        "elapsed_seconds": 0.11774380000133533
+      },
+      "passed": false
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "action-retention",
+      "case": "train-b",
+      "ablation": "none",
+      "status": "EDIT",
+      "stop_reason": null,
+      "checkpoint": "f126d29e1a79e6bb32bab09f25db4e3773d3cf0275054b70de34400a8be8efef",
+      "decision_sha256": "c8328a8f54a48111e2b818250a182b8e82440e64e984064a6407342a2e003d91",
+      "physical_cell_steps": 32548200,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.2100815000012517,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "pale\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-010-before",
+        "elapsed_seconds": 0.11708229999931064
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "luma\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": true,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-010",
+        "elapsed_seconds": 0.11640060000354424
+      },
+      "passed": true
+    },
+    {
+      "arm": "NO_UPDATE",
+      "stage": "action-retention",
+      "case": "train-b",
+      "ablation": "none",
+      "status": "STOP",
+      "stop_reason": "motor:tonic_stop",
+      "checkpoint": "7dd332200abcf328c566d3f0073a4a701f157cb44c413634f88ce6804a378eea",
+      "decision_sha256": "0e12982da3cf94ec31011cc896b7a1ee784848f821bf8d8a1adb6ca07b9efd2f",
+      "physical_cell_steps": 600,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.004271000012522563,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "pale\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-011-before",
+        "elapsed_seconds": 0.11898840000503697
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "pale\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-011-before",
+        "elapsed_seconds": 0.11898840000503697
+      },
+      "passed": false
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "causal",
+      "case": "transfer-a",
+      "ablation": "core_off",
+      "status": "STOP",
+      "stop_reason": "motor:tonic_stop",
+      "checkpoint": "f126d29e1a79e6bb32bab09f25db4e3773d3cf0275054b70de34400a8be8efef",
+      "decision_sha256": "33efab0ce93f0d53432feeb009415c6e09848edc9f8a04b41895728a7cf403c0",
+      "physical_cell_steps": 32478600,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.18641789999674074,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "gray\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-012-before",
+        "elapsed_seconds": 0.11322630000358913
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "gray\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-012-before",
+        "elapsed_seconds": 0.11322630000358913
+      },
+      "passed": false
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "causal",
+      "case": "transfer-a",
+      "ablation": "knowledge_off",
+      "status": "STOP",
+      "stop_reason": "motor:tonic_stop",
+      "checkpoint": "f126d29e1a79e6bb32bab09f25db4e3773d3cf0275054b70de34400a8be8efef",
+      "decision_sha256": "555eb6ce054889ae32b79816dd78d55e7ce09df7c97c234d1cc88a42e90232ba",
+      "physical_cell_steps": 6600,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.14259950000268873,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "gray\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-013-before",
+        "elapsed_seconds": 0.11854149999271613
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "gray\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-013-before",
+        "elapsed_seconds": 0.11854149999271613
+      },
+      "passed": false
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "causal",
+      "case": "transfer-a",
+      "ablation": "action_off",
+      "status": "STOP",
+      "stop_reason": "action:disabled",
+      "checkpoint": "f126d29e1a79e6bb32bab09f25db4e3773d3cf0275054b70de34400a8be8efef",
+      "decision_sha256": "20c02b569d41199c4a454484c3b9823c048e5d31526d7b5e91c12f53f8a687f2",
+      "physical_cell_steps": 32548200,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.20661639999889303,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "gray\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-014-before",
+        "elapsed_seconds": 0.11644679999153595
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "gray\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-014-before",
+        "elapsed_seconds": 0.11644679999153595
+      },
+      "passed": false
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "causal",
+      "case": "transfer-a",
+      "ablation": "propagation_off",
+      "status": "STOP",
+      "stop_reason": "action:propagation:tonic_stop",
+      "checkpoint": "f126d29e1a79e6bb32bab09f25db4e3773d3cf0275054b70de34400a8be8efef",
+      "decision_sha256": "9cceb819bcd79a16c8fe8156a91b9cedf851f07b7e451bdf76fbb3bf6380601f",
+      "physical_cell_steps": 32513400,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.20073909999337047,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "gray\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-015-before",
+        "elapsed_seconds": 0.11772399999608751
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "gray\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-015-before",
+        "elapsed_seconds": 0.11772399999608751
+      },
+      "passed": false
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "no-action",
+      "case": "unsupported",
+      "ablation": "none",
+      "status": "STOP",
+      "stop_reason": "motor:tonic_stop",
+      "checkpoint": "f126d29e1a79e6bb32bab09f25db4e3773d3cf0275054b70de34400a8be8efef",
+      "decision_sha256": "f891d9532b9989d7cb94446321e5615f49011b0d5b4362def539de59d56eb843",
+      "physical_cell_steps": 29980200,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.1847741999954451,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "old\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-016-before",
+        "elapsed_seconds": 0.11775130000023637
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "old\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-016-before",
+        "elapsed_seconds": 0.11775130000023637
+      },
+      "passed": true
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "duplicate-anchor",
+      "case": "transfer-a",
+      "ablation": "none",
+      "status": "STOP",
+      "stop_reason": "action:equality:collision",
+      "checkpoint": "f126d29e1a79e6bb32bab09f25db4e3773d3cf0275054b70de34400a8be8efef",
+      "decision_sha256": "de098914262d06233c19e0138fa74253eafe2b788a9b82088e57ff735d36c795",
+      "physical_cell_steps": 32499600,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.1994202000059886,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "gray\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-017-before",
+        "elapsed_seconds": 0.13319469999987632
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "gray\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-017-before",
+        "elapsed_seconds": 0.13319469999987632
+      },
+      "passed": true
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "conflict",
+      "case": "transfer-a",
+      "ablation": "none",
+      "status": "STOP",
+      "stop_reason": "motor:collision",
+      "checkpoint": "5d89d9a1cfa6976875f73f204bc919db50275e4799e6e488343dfaad567096bb",
+      "decision_sha256": "398c5cca00746d4e7fecf8971a194c681528142167e1b78185bb37c1319517d5",
+      "physical_cell_steps": 42472200,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.231693699999596,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "gray\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-018-before",
+        "elapsed_seconds": 0.12842470000032336
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "gray\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-018-before",
+        "elapsed_seconds": 0.12842470000032336
+      },
+      "passed": true
+    },
+    {
+      "arm": "UPDATE",
+      "stage": "layout-variation",
+      "case": "transfer-a",
+      "ablation": "none",
+      "status": "STOP",
+      "stop_reason": "action:boundary:right_missing_boundary",
+      "checkpoint": "f126d29e1a79e6bb32bab09f25db4e3773d3cf0275054b70de34400a8be8efef",
+      "decision_sha256": "3c19394ee6d3ea9ba05cbb4b7772ac65b0903f55db39b8e96a9d6a11526f1993",
+      "physical_cell_steps": 32518800,
+      "source_documents_present": false,
+      "hidden_retries": 0,
+      "inference_seconds": 0.25053099999786355,
+      "before_execution": {
+        "returncode": 0,
+        "stdout": "gray\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-019-before",
+        "elapsed_seconds": 0.15363159999833442
+      },
+      "execution": {
+        "returncode": 0,
+        "stdout": "gray\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": false,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\run-019-before",
+        "elapsed_seconds": 0.15363159999833442
+      },
+      "passed": false
+    }
+  ],
+  "teachers": [
+    {
+      "arm": "UPDATE",
+      "case": "train-a",
+      "execution": {
+        "returncode": 0,
+        "stdout": "vesa\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": true,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\teacher-000",
+        "elapsed_seconds": 0.12531529999978375
+      },
+      "receipt_sha256": "17647524a247665d7dbc52d162af5031a33a556782a800a97c694a629b863a73",
+      "applied": true
+    },
+    {
+      "arm": "NO_UPDATE",
+      "case": "train-a",
+      "execution": {
+        "returncode": 0,
+        "stdout": "vesa\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": true,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\teacher-001",
+        "elapsed_seconds": 0.11388060000899713
+      },
+      "receipt_sha256": "526dd585e22192d56b8df760427134b157f207181817aeb18c03aed15700ade2",
+      "applied": false
+    },
+    {
+      "arm": "UPDATE",
+      "case": "train-b",
+      "execution": {
+        "returncode": 0,
+        "stdout": "luma\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": true,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\teacher-002",
+        "elapsed_seconds": 0.11423169999034144
+      },
+      "receipt_sha256": "51f5c9dd1ee95d4e7a2888e5186e793f1d983307eb96548e80613812eb95af16",
+      "applied": true
+    },
+    {
+      "arm": "NO_UPDATE",
+      "case": "train-b",
+      "execution": {
+        "returncode": 0,
+        "stdout": "luma\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": true,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\teacher-003",
+        "elapsed_seconds": 0.126017700007651
+      },
+      "receipt_sha256": "af0181693e8a607962e5d80a216d0d0ec9d8a4887c1ab508f64b63ea4c31512a",
+      "applied": false
+    }
+  ],
+  "reference": [
+    {
+      "case": "transfer-a",
+      "execution": {
+        "returncode": 0,
+        "stdout": "zani\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": true,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\reference-transfer-a",
+        "elapsed_seconds": 0.11843419999058824
+      }
+    },
+    {
+      "case": "transfer-b",
+      "execution": {
+        "returncode": 0,
+        "stdout": "raku\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": true,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\neutral-python-integration-final\\test_neutral_document_python_s0\\session\\reference-transfer-b",
+        "elapsed_seconds": 0.1460452999890549
+      }
+    }
+  ],
+  "elapsed_seconds": 8.832245300000068,
+  "peak_traced_python_bytes": 1733860,
+  "memory_limit": "tracemalloc excludes native allocations; total process peak not measured",
+  "limitations": [
+    "three-token positional reading",
+    "two-demonstration lexical-offset motor",
+    "host literal substitution and execution",
+    "no autonomous recovery",
+    "public development reuse; no protected or external-model comparison"
+  ]
+}

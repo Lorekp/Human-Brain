@@ -1,6 +1,6 @@
 # Roadmap: a general learner for language, knowledge, and software
 
-Status: living decision document. Updated 2026-09-04.
+Status: living decision document. Updated 2026-09-05.
 Owner: orchestrator. This document owns current priorities and architecture policy;
 frozen experiment protocols retain authority over their own evidence.
 
@@ -53,7 +53,7 @@ Mem0 remains development tooling outside the model and scientific pipeline.
 ## Immediate priority: one persistent end-to-end learner
 
 R2, R3, and R4 are capability dimensions of one active workload, not independent
-queues of mechanisms. The next milestone is:
+queues of mechanisms. The shared milestone is:
 
 ```text
 read raw documents -> retain a fact after source removal
@@ -67,11 +67,16 @@ Count executable behavior, not byte substitution in a text fixture, as software
 success. Teacher corrections may follow first attempts; they do not count as
 learner successes or autonomous recovery.
 
-Run this smallest useful integration before provenance revision, multi-hop
-composition, or the full balanced challenge. The latest neutral frame/memory
-results establish mechanisms; robustness and integration remain unverified.
-The [balanced session plan](balanced-evidence-to-action-session-v1.md) owns the
-development sequence and later 24-episode challenge.
+The first narrow development slice now passes delayed recall, two fresh
+executed Python edits, and old-skill retention after two action demonstrations;
+the same-seed frozen control solves none. Type-annotation layout variation
+fails, and an original public-exam diagnostic scores 0/2 with no acquired frames.
+See [measured evidence](../benchmark-status.md#current-neutral-reading-to-python-development-result).
+This is exact positional reading and a learned literal-edit pattern, not the
+general integrated gate. Broaden language acquisition and evidence selection
+inside this loop before provenance revision, multi-hop composition, or the full
+balanced challenge. The [balanced session plan](balanced-evidence-to-action-session-v1.md)
+owns the next bounded comparison and later 24-episode challenge.
 
 Alongside integration, apply two inexpensive sources of pressure:
 

@@ -1,0 +1,312 @@
+{
+  "protocol": "ks2-2024-streaky-squeaky-q6-public-development-v1",
+  "condition": "text-only passage-visible; Q6a/Q6b diagnostic subset",
+  "manifest": {
+    "authority": "Standards and Testing Agency, Department for Education, England",
+    "assessment": "2024 national curriculum tests, key stage 2 English reading",
+    "administration": "May 2024",
+    "published": "2024-05-24",
+    "retrieved": "2026-09-05 Europe/Berlin",
+    "passage": "Streaky and Squeaky",
+    "partition": "public development; whole 2024 paper developer-exposed",
+    "custody_owner": "Human Brain project development; evaluator rubric separate from learner worker",
+    "source_landing_url": "https://www.gov.uk/government/publications/key-stage-2-tests-2024-english-reading-test-materials",
+    "sources": {
+      "passage": {
+        "url": "https://assets.publishing.service.gov.uk/media/664dc1c9ae748c43d3793ff6/STA248811e_2024_ks2_English_reading_Reading_booklet.pdf",
+        "product_code": "STA/24/8811/e",
+        "printed_pages": [
+          4,
+          5
+        ],
+        "sha256": "8da84b7c1ba7642c26bb0424c34e806fbe4fbfb38ba48ca3d84f3eccb5e8655d"
+      },
+      "questions": {
+        "url": "https://assets.publishing.service.gov.uk/media/664dc1d8f34f9b5a56adcc23/STA248810e_2024_ks2_English_reading_Reading_answer_booklet.pdf",
+        "product_code": "STA/24/8810/e",
+        "printed_pages": [
+          5
+        ],
+        "sha256": "722a53c3fd6726d02c7065f7a913efbc4aa6e014019562a4c8846532265f688a"
+      },
+      "rubric": {
+        "url": "https://assets.publishing.service.gov.uk/media/664dc202f34f9b5a56adcc26/STA248812e_2024_ks2_English_reading_mark_schemes.pdf",
+        "product_code": "STA/24/8812/e",
+        "printed_pages": [
+          11
+        ],
+        "sha256": "55ff74d0de1a0a503c63129e8cd8652cfdd1e3cf3c994f7b5f18a666aab69faf"
+      }
+    },
+    "rights": {
+      "report_url": "https://www.gov.uk/government/publications/key-stage-2-tests-2024-mathematics-test-modified-materials/2024-copyright-ownership-key-stage-2-national-curriculum-tests",
+      "license_url": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+      "text_questions_scoring": "Crown copyright 2024; Open Government Licence v3.0",
+      "attribution": "Contains material developed by the Standards and Testing Agency for 2024 national curriculum assessments and licensed under Open Government Licence v3.0",
+      "excluded": "No images or logos retained in this fixture. In particular, the lowland streaked tenrec photograph, credited to Arto Hakola / Alamy Stock Photo (ENBJ9N), is excluded. The Crown map is also omitted. Original PDFs remain temporary research downloads outside the fixture."
+    },
+    "extraction": {
+      "version": "manual-visual-verified-text-v1",
+      "description": "Full original passage text, title and section headings transcribed against rendered printed pages 4-5. Introductory Madagascar box placed before body prose in visual reading order (pypdf emits it last). Line wrapping joined; NBSP rendered as ordinary space. Original dash retained. Added [Page 4] and [Page 5] location markers. No sentence simplification, answer annotations, or selected evidence spans.",
+      "visual_checks": "Passage pages 4-5, question page 5 and official rubric page 11 rendered using pdftoppm and visually inspected.",
+      "condition": "text-only adaptation, not original visual examination administration"
+    },
+    "selected_items": [
+      "6a",
+      "6b"
+    ],
+    "available_marks": 2,
+    "unevaluated_passage_items": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+      "12",
+      "13"
+    ],
+    "unevaluated_passage_marks": 14,
+    "whole_paper_available_marks": 50,
+    "exposure": "The preparation agent opened whole 2024 question and mark-scheme PDFs through web retrieval, including items from other passages. The whole 2024 paper is development-exposed and cannot be reserved evidence. No other year or protected R5/R6 data was opened. No pretrained LLM enters the evaluated learner; developer LLM exposure does not establish contamination-free future hybrid evaluation.",
+    "fixture_sha256": {
+      "passage.txt": "9a1553c3150d66d47eb68aef3d3e565dbfbb2100845800fbe0ca3d1f3704078f",
+      "questions.json": "4ae89fb3ec56e2e7ab566ede59ac1376fc64815bdbd2e8f97cb6a2c58bf7f6fa",
+      "rubric.json": "b4e94a4635a4a874823a0707a52cc7e780f566e427db97ac3a69f2c8382af974"
+    }
+  },
+  "runner_sha256": "d2dd05c0d2a967173bb1d1ddda52544c2a3196599bc32b56934ca3b9b0e55ce4",
+  "source_sha256": {
+    "neutral_neuronal_document_learner.py": "2f6d16219eb24679e0a09086e9807af5582a4bebb4c9bbc53ff3de9da2564284",
+    "opaque_document_event_tape.py": "18ba1020c81ad9f9f4d0ad76560c1f9aecf8817d8ccaa2a59a8a8244c2c55cf6",
+    "sparse_neuronal_role_filler.py": "426d411b4af5dcb7e66a4cc52541923d962f1fcdb2055c5da08d0aac8bba04a8",
+    "cells.py": "5ca05a64a89f930db3ea351e3e236e3242bf21652fff127747a36d9ca488d2e6",
+    "resting_glif_race.py": "b78a14ad6f601800c170bbd9e53d6204e992842954f22ea646d5f9ec04accca0"
+  },
+  "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]",
+  "memory_metric": "tracemalloc Python allocations; excludes native allocations and total process RSS; tracing overhead included in runtime",
+  "arms": [
+    {
+      "arm": "NO_UPDATE",
+      "terminal": "completed",
+      "returncode": 0,
+      "elapsed_seconds": 7.2624428999988595,
+      "worker_timeout_seconds": 90.0,
+      "events": [
+        {
+          "event": "seed",
+          "arm": "NO_UPDATE",
+          "checkpoint_sha256": "9a2be202d30e0517f920858dd159c6aebf222dce399d4b9a7f4ec0576f83144f",
+          "training_summary": {
+            "consolidation_episode_count": 0,
+            "retained_evidence_count": 0,
+            "promoted_frame_count": 0,
+            "directional_route_count": 0,
+            "consolidated_fact_count": 0,
+            "fact_source_count": 0,
+            "retained_raw_document_count": 0,
+            "retained_full_sentence_count": 0,
+            "retained_lexical_byte_count": 0,
+            "learning_physical_cell_steps": 0,
+            "learning_active_synapses": 0
+          },
+          "passage_bytes": 3578,
+          "acquisition_exposures": 0
+        },
+        {
+          "event": "query_started",
+          "item": "6a"
+        },
+        {
+          "event": "answer",
+          "item": "6a",
+          "query_sha256": "15323c247dadce82a274e798ab2dfaf0bdfbf4c4e9f731c800e19ede7072dd22",
+          "query_bytes": 133,
+          "emitted_hex": null,
+          "status": "STOP",
+          "stopped": true,
+          "stop_stage": "motor",
+          "stop_reason": "motor:tonic_stop",
+          "checkpoint_sha256": "9a2be202d30e0517f920858dd159c6aebf222dce399d4b9a7f4ec0576f83144f",
+          "decision_sha256": "0db54670bbeb0ab9a34e471a9fc8c2e10e2b18be3b00f7c81602720b3d855635",
+          "support_path_count": 0,
+          "physical_cell_steps": 600,
+          "active_synapses": 1,
+          "elapsed_seconds": 1.7977406999998493,
+          "python_traced_peak_bytes": 38248338
+        },
+        {
+          "event": "query_started",
+          "item": "6b"
+        },
+        {
+          "event": "answer",
+          "item": "6b",
+          "query_sha256": "49a59e8dfc752fdac43a3eaf0d0bbfeb6ddf4ff7559ce4ecf905e12c3cf16d11",
+          "query_bytes": 191,
+          "emitted_hex": null,
+          "status": "STOP",
+          "stopped": true,
+          "stop_stage": "motor",
+          "stop_reason": "motor:tonic_stop",
+          "checkpoint_sha256": "9a2be202d30e0517f920858dd159c6aebf222dce399d4b9a7f4ec0576f83144f",
+          "decision_sha256": "0db54670bbeb0ab9a34e471a9fc8c2e10e2b18be3b00f7c81602720b3d855635",
+          "support_path_count": 0,
+          "physical_cell_steps": 600,
+          "active_synapses": 1,
+          "elapsed_seconds": 1.6683150000026217,
+          "python_traced_peak_bytes": 38248338
+        },
+        {
+          "event": "completed",
+          "python_traced_peak_bytes": 38248338
+        }
+      ],
+      "stderr": "",
+      "scoring": {
+        "items": {
+          "6a": {
+            "marks": 0,
+            "outcome": "STOP"
+          },
+          "6b": {
+            "marks": 0,
+            "outcome": "STOP"
+          }
+        },
+        "earned_marks": 0,
+        "confirmed_marks": 0,
+        "pending_items": 0,
+        "available_marks": 2
+      }
+    },
+    {
+      "arm": "UPDATE",
+      "terminal": "completed",
+      "returncode": 0,
+      "elapsed_seconds": 61.91874499998812,
+      "worker_timeout_seconds": 90.0,
+      "events": [
+        {
+          "event": "seed",
+          "arm": "UPDATE",
+          "checkpoint_sha256": "9a2be202d30e0517f920858dd159c6aebf222dce399d4b9a7f4ec0576f83144f",
+          "training_summary": {
+            "consolidation_episode_count": 0,
+            "retained_evidence_count": 0,
+            "promoted_frame_count": 0,
+            "directional_route_count": 0,
+            "consolidated_fact_count": 0,
+            "fact_source_count": 0,
+            "retained_raw_document_count": 0,
+            "retained_full_sentence_count": 0,
+            "retained_lexical_byte_count": 0,
+            "learning_physical_cell_steps": 0,
+            "learning_active_synapses": 0
+          },
+          "passage_bytes": 3578,
+          "acquisition_exposures": 1
+        },
+        {
+          "event": "acquisition_started"
+        },
+        {
+          "event": "acquisition_completed",
+          "elapsed_seconds": 46.53632420000213,
+          "checkpoint_sha256": "d602c7fa14f44335c5c5cb988f66c5301c134cddba32c5d1a28a6e47f999920f",
+          "training_summary": {
+            "consolidation_episode_count": 1,
+            "retained_evidence_count": 5146,
+            "promoted_frame_count": 0,
+            "directional_route_count": 0,
+            "consolidated_fact_count": 0,
+            "fact_source_count": 0,
+            "retained_raw_document_count": 0,
+            "retained_full_sentence_count": 0,
+            "retained_lexical_byte_count": 0,
+            "learning_physical_cell_steps": 25732058400,
+            "learning_active_synapses": 2042962
+          }
+        },
+        {
+          "event": "query_started",
+          "item": "6a"
+        },
+        {
+          "event": "answer",
+          "item": "6a",
+          "query_sha256": "15323c247dadce82a274e798ab2dfaf0bdfbf4c4e9f731c800e19ede7072dd22",
+          "query_bytes": 133,
+          "emitted_hex": null,
+          "status": "STOP",
+          "stopped": true,
+          "stop_stage": "motor",
+          "stop_reason": "motor:tonic_stop",
+          "checkpoint_sha256": "d602c7fa14f44335c5c5cb988f66c5301c134cddba32c5d1a28a6e47f999920f",
+          "decision_sha256": "e6f05e78e1782ac21f4f10699153e15d406802cb4e515ea2d3882e7d43ed4e34",
+          "support_path_count": 0,
+          "physical_cell_steps": 600,
+          "active_synapses": 1,
+          "elapsed_seconds": 3.997791000001598,
+          "python_traced_peak_bytes": 130347390
+        },
+        {
+          "event": "query_started",
+          "item": "6b"
+        },
+        {
+          "event": "answer",
+          "item": "6b",
+          "query_sha256": "49a59e8dfc752fdac43a3eaf0d0bbfeb6ddf4ff7559ce4ecf905e12c3cf16d11",
+          "query_bytes": 191,
+          "emitted_hex": null,
+          "status": "STOP",
+          "stopped": true,
+          "stop_stage": "motor",
+          "stop_reason": "motor:tonic_stop",
+          "checkpoint_sha256": "d602c7fa14f44335c5c5cb988f66c5301c134cddba32c5d1a28a6e47f999920f",
+          "decision_sha256": "e6f05e78e1782ac21f4f10699153e15d406802cb4e515ea2d3882e7d43ed4e34",
+          "support_path_count": 0,
+          "physical_cell_steps": 600,
+          "active_synapses": 1,
+          "elapsed_seconds": 4.21723710000515,
+          "python_traced_peak_bytes": 130347390
+        },
+        {
+          "event": "completed",
+          "python_traced_peak_bytes": 130347390
+        }
+      ],
+      "stderr": "",
+      "scoring": {
+        "items": {
+          "6a": {
+            "marks": 0,
+            "outcome": "STOP"
+          },
+          "6b": {
+            "marks": 0,
+            "outcome": "STOP"
+          }
+        },
+        "earned_marks": 0,
+        "confirmed_marks": 0,
+        "pending_items": 0,
+        "available_marks": 2
+      }
+    }
+  ],
+  "source_sha256_after": {
+    "neutral_neuronal_document_learner.py": "2f6d16219eb24679e0a09086e9807af5582a4bebb4c9bbc53ff3de9da2564284",
+    "opaque_document_event_tape.py": "18ba1020c81ad9f9f4d0ad76560c1f9aecf8817d8ccaa2a59a8a8244c2c55cf6",
+    "sparse_neuronal_role_filler.py": "426d411b4af5dcb7e66a4cc52541923d962f1fcdb2055c5da08d0aac8bba04a8",
+    "cells.py": "5ca05a64a89f930db3ea351e3e236e3242bf21652fff127747a36d9ca488d2e6",
+    "resting_glif_race.py": "b78a14ad6f601800c170bbd9e53d6204e992842954f22ea646d5f9ec04accca0"
+  },
+  "source_stable": true,
+  "evidence_status": "public_development_observation"
+}

@@ -1,9 +1,11 @@
 # Public-exam reading comprehension evaluation
 
-Status: documentation-only proposal, 2026-09-04. Source landing pages and
-administrative guidance were checked; exam passages, questions, answers, and
-mark-scheme contents were not opened or downloaded. No evaluation ran. Source
-selection, permissions, manifests, thresholds, and implementation remain pending.
+Status: public development diagnostic implemented, 2026-09-05. The whole KS2
+2024 paper is now developer-exposed. Its original Q6a/b text-only passage-visible
+diagnostic scores 0/2 in both empty-seed arms; the remaining questions are
+unevaluated. [Source manifest, official rubric, runner and measured limits](../../experiments/reading_exam_development/README.md)
+record the selected passage's OGL attribution and excluded photography.
+Reserved material and adjudication thresholds remain unselected.
 
 ## Purpose and sequencing
 
@@ -21,8 +23,8 @@ answers, then reserve evaluation use for a separately frozen protocol.
 
 ## Candidate sources
 
-These are a shortlist, not a selected or frozen corpus. Start with one source and
-one level; a second source can later test whether improvements generalize.
+KS2 2024 supplies the first development subset. The shortlist below remains
+useful for subsequent material; no frozen reserved corpus has been selected.
 
 | Candidate | Verified availability and proposed use | Limits to resolve |
 | --- | --- | --- |
@@ -37,11 +39,11 @@ an adapted task and cannot be reported as the original exam.
 
 ## Development and reserved evaluation
 
-1. Author a source manifest later from official metadata. Record authority,
+1. Maintain a source manifest from official metadata. Record authority,
    level, year, release/version, source URLs, rights status, whole-paper or
    passage-group identity, intended partition, and custody owner. Register
    downloaded artifact hashes and extraction/version hashes during authorized
-   preparation; this note creates neither downloads nor a manifest.
+   preparation; the implemented KS2 manifest supplies the first example.
 2. Allocate reusable public development material and separately reserved
    evaluation material before model developers inspect the reserved content.
    Hold out whole papers/years where feasible. Keep every question sharing a

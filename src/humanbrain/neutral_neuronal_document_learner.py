@@ -477,6 +477,7 @@ class NeutralFrameDecision:
     producer_checkpoint_sha256: str
     support_path_count: int
     support_provenance_root_sha256s: tuple[str, ...]
+    support_query_lexemes: tuple[bytes, ...]
     cell_races: tuple[NeutralFrameRaceTrace, ...]
     cleanup_races: tuple[SparseCleanupRaceTrace, ...]
     transform_races: tuple[SparseTransformRaceTrace, ...]
@@ -1515,6 +1516,7 @@ def _decision(
     emitted: bytes | None,
     support_path_count: int,
     support_provenance_root_sha256s: tuple[str, ...],
+    support_query_lexemes: tuple[bytes, ...],
     cell_races: tuple[NeutralFrameRaceTrace, ...],
     cleanup_races: tuple[SparseCleanupRaceTrace, ...],
     transform_races: tuple[SparseTransformRaceTrace, ...],
@@ -1530,6 +1532,7 @@ def _decision(
         "stop_reason": None if not stopped else f"motor:{motor.stop_reason}",
         "support_path_count": support_path_count,
         "support_provenance_root_sha256s": support_provenance_root_sha256s,
+        "support_query_lexemes_hex": tuple(value.hex() for value in support_query_lexemes),
         "transform_race_sha256s": tuple(race.sha256 for race in transform_races),
     }
     return NeutralFrameDecision(
@@ -1541,6 +1544,7 @@ def _decision(
         producer_checkpoint_sha256=network.checkpoint_sha256,
         support_path_count=support_path_count,
         support_provenance_root_sha256s=support_provenance_root_sha256s,
+        support_query_lexemes=support_query_lexemes,
         cell_races=cell_races,
         cleanup_races=cleanup_races,
         transform_races=transform_races,
@@ -1607,7 +1611,7 @@ def _respond(
             [],
         ).append(route)
 
-    support_paths: list[tuple[_Lexeme, str]] = []
+    support_paths: list[tuple[_Lexeme, str, bytes]] = []
     for source in full:
         for target in partial:
             routes = route_by_pair.get(
@@ -1709,11 +1713,12 @@ def _respond(
                         (
                             next(iter(unique_lexemes.values())),
                             source.provenance_root_sha256,
+                            target.known_filler.value,
                         )
                     )
 
     unique_outputs: dict[str, _Lexeme] = {}
-    for lexeme, _provenance_root in support_paths:
+    for lexeme, _provenance_root, _known_value in support_paths:
         existing = unique_outputs.get(lexeme.value_sha256)
         if existing is not None and existing.value != lexeme.value:
             raise RuntimeError("one lexical root mapped to different bytes")
@@ -1733,8 +1738,14 @@ def _respond(
         emitted=emitted,
         support_path_count=len(support_paths),
         support_provenance_root_sha256s=tuple(
-            sorted({root for _lexeme, root in support_paths})
+            sorted({root for _lexeme, root, _known_value in support_paths})
         ),
+        # Expose every aligned query endpoint supporting the selected output.
+        # Downstream action grounding must preserve ambiguity between endpoints.
+        support_query_lexemes=tuple(sorted({
+            known_value for lexeme, _root, known_value in support_paths
+            if emitted is not None and lexeme.value == emitted
+        })),
         cell_races=tuple(cell_races),
         cleanup_races=tuple(cleanup_races),
         transform_races=tuple(transform_races),

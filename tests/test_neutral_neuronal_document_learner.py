@@ -59,6 +59,7 @@ def test_neutral_frames_learn_swapped_transfer_and_preserve_ambiguity() -> None:
     forward = brain.respond(b"neri kenu", _fresh(b"tava pavo neri"))
     assert forward.status == "EMIT"
     assert forward.emitted == b"tava"
+    assert forward.support_query_lexemes == (b"neri",)
     assert not forward.stopped
     assert forward.support_path_count >= 1
     assert forward.cell_races[-1].population == "response/motor"
@@ -66,6 +67,7 @@ def test_neutral_frames_learn_swapped_transfer_and_preserve_ambiguity() -> None:
 
     reverse_slot = brain.respond(b"kenu tava", _fresh(b"tava pavo neri"))
     assert reverse_slot.emitted == b"neri"
+    assert reverse_slot.support_query_lexemes == (b"tava",)
 
     reverse_route = brain.respond(b"tava pavo", _fresh(b"neri kenu tava"))
     assert reverse_route.emitted == b"neri"
@@ -86,6 +88,7 @@ def test_neutral_frames_learn_swapped_transfer_and_preserve_ambiguity() -> None:
     delayed = remembered.respond(b"neri kenu")
     assert delayed.status == "EMIT"
     assert delayed.emitted == b"tava"
+    assert delayed.support_query_lexemes == (b"neri",)
     assert len(delayed.support_provenance_root_sha256s) == 2
     assert remembered.respond(b"kenu tava").emitted == b"neri"
 
@@ -109,6 +112,7 @@ def test_neutral_frames_learn_swapped_transfer_and_preserve_ambiguity() -> None:
     delayed_conflict = conflicted.respond(b"neri kenu")
     assert delayed_conflict.stopped
     assert delayed_conflict.emitted is None
+    assert delayed_conflict.support_query_lexemes == ()
     assert delayed_conflict.cell_races[-1].stop_reason == "collision"
     assert remembered.respond(b"neri kenu").emitted == b"tava"
 

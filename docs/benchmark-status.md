@@ -1,6 +1,7 @@
 # Benchmark status
 
-Direction updated: 2026-09-04. This documentation revision adds no measured result.
+Updated 2026-09-05 with the neutral-document/Python development session and
+an authentic public-exam diagnostic below.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -9,6 +10,54 @@ plan is the [small integrated session](research/balanced-evidence-to-action-sess
 with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. Hybrid permission does not relabel existing
 cell-only evidence or reopen protected evaluations.
+
+## Current neutral reading-to-Python development result
+
+The repeatable [session](../experiments/r4_integrated/neutral_document_python_session.md)
+now connects answer-free neutral document acquisition to a persistent learned
+occurrence motor and actual Python execution. Its
+[recorded result](../benchmarks/neutral_document_python_development_v1.json)
+binds implementation hashes, checkpoint lineage, observations, teacher receipts,
+before/after execution, and unchanged decoys. This is public development, not a
+spent adjudication or broad coding result.
+
+| Measure | Updating learner | Same-seed NO_UPDATE |
+| --- | --- | --- |
+| Delayed fact recall, both directions | 4/4 | 0/4 |
+| First attempts before action demonstrations | 0/2 | 0/2 |
+| Fresh fact and renamed Python edit transfer | 2/2 | 0/2 |
+| Old fact recall after intervening work | 4/4 | 0/4 |
+| Old action retention | 2/2 | 0/2 |
+
+Two teacher-authored, execution-verified demonstrations follow the failed first
+attempts and do not count as learner successes. Core, fact-retrieval, action,
+and propagation ablations each stop fresh edits. Unsupported knowledge,
+duplicate anchors, and conflicting facts each produce appropriate no-action.
+The exact fact-table/literal-rule reference also solves both transfer cases;
+this slice demonstrates integration and learning over the frozen control, not
+an advantage over conventional methods. A type-annotated assignment fails with
+`action:boundary:right_missing_boundary`, exposing the fixed lexical walk.
+
+The verified run took 8.83 seconds with allocation tracing enabled. The serialized
+learner grew from 324 to 55,158 bytes; pending demonstration events are discarded
+after promotion. Traced Python peak was 1,733,860 bytes, excluding native
+allocations and process RSS. Cell-step counters are simulation accounting, not
+measured hardware operations. Five focused tests passed, including actual
+execution, stale-receipt rejection, and multi-anchor collision preservation.
+
+The [official KS2 2024 Q6 diagnostic](../experiments/reading_exam_development/README.md)
+uses the original passage and questions, with official evaluator-only marking.
+Both empty-seed arms score 0/2; the updating arm's single 3,578-byte passage
+exposure retains 5,146 evidence records but promotes no frames or facts, taking
+46.54 seconds. Both answers are physical STOPs. This conflates missing prior
+language acquisition with the exact-frame question interface; it does not
+isolate a question-understanding failure. The whole 2024 paper is development
+exposed; the remaining marks are unevaluated. Source stability and attribution
+are recorded in the diagnostic artifact.
+
+The next work is broader language acquisition and evidence selection in this
+same executed loop. Fixed-layout success, no autonomous recovery, and the exam
+failures leave the general integrated development gate, G0 and R5/R6 unpassed.
 
 ## What has passed
 

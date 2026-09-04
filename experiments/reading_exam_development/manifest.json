@@ -1,0 +1,55 @@
+{
+  "authority": "Standards and Testing Agency, Department for Education, England",
+  "assessment": "2024 national curriculum tests, key stage 2 English reading",
+  "administration": "May 2024",
+  "published": "2024-05-24",
+  "retrieved": "2026-09-05 Europe/Berlin",
+  "passage": "Streaky and Squeaky",
+  "partition": "public development; whole 2024 paper developer-exposed",
+  "custody_owner": "Human Brain project development; evaluator rubric separate from learner worker",
+  "source_landing_url": "https://www.gov.uk/government/publications/key-stage-2-tests-2024-english-reading-test-materials",
+  "sources": {
+    "passage": {
+      "url": "https://assets.publishing.service.gov.uk/media/664dc1c9ae748c43d3793ff6/STA248811e_2024_ks2_English_reading_Reading_booklet.pdf",
+      "product_code": "STA/24/8811/e",
+      "printed_pages": [4, 5],
+      "sha256": "8da84b7c1ba7642c26bb0424c34e806fbe4fbfb38ba48ca3d84f3eccb5e8655d"
+    },
+    "questions": {
+      "url": "https://assets.publishing.service.gov.uk/media/664dc1d8f34f9b5a56adcc23/STA248810e_2024_ks2_English_reading_Reading_answer_booklet.pdf",
+      "product_code": "STA/24/8810/e",
+      "printed_pages": [5],
+      "sha256": "722a53c3fd6726d02c7065f7a913efbc4aa6e014019562a4c8846532265f688a"
+    },
+    "rubric": {
+      "url": "https://assets.publishing.service.gov.uk/media/664dc202f34f9b5a56adcc26/STA248812e_2024_ks2_English_reading_mark_schemes.pdf",
+      "product_code": "STA/24/8812/e",
+      "printed_pages": [11],
+      "sha256": "55ff74d0de1a0a503c63129e8cd8652cfdd1e3cf3c994f7b5f18a666aab69faf"
+    }
+  },
+  "rights": {
+    "report_url": "https://www.gov.uk/government/publications/key-stage-2-tests-2024-mathematics-test-modified-materials/2024-copyright-ownership-key-stage-2-national-curriculum-tests",
+    "license_url": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+    "text_questions_scoring": "Crown copyright 2024; Open Government Licence v3.0",
+    "attribution": "Contains material developed by the Standards and Testing Agency for 2024 national curriculum assessments and licensed under Open Government Licence v3.0",
+    "excluded": "No images or logos retained in this fixture. In particular, the lowland streaked tenrec photograph, credited to Arto Hakola / Alamy Stock Photo (ENBJ9N), is excluded. The Crown map is also omitted. Original PDFs remain temporary research downloads outside the fixture."
+  },
+  "extraction": {
+    "version": "manual-visual-verified-text-v1",
+    "description": "Full original passage text, title and section headings transcribed against rendered printed pages 4-5. Introductory Madagascar box placed before body prose in visual reading order (pypdf emits it last). Line wrapping joined; NBSP rendered as ordinary space. Original dash retained. Added [Page 4] and [Page 5] location markers. No sentence simplification, answer annotations, or selected evidence spans.",
+    "visual_checks": "Passage pages 4-5, question page 5 and official rubric page 11 rendered using pdftoppm and visually inspected.",
+    "condition": "text-only adaptation, not original visual examination administration"
+  },
+  "selected_items": ["6a", "6b"],
+  "available_marks": 2,
+  "unevaluated_passage_items": ["1", "2", "3", "4", "5", "7", "8", "9", "10", "11", "12", "13"],
+  "unevaluated_passage_marks": 14,
+  "whole_paper_available_marks": 50,
+  "exposure": "The preparation agent opened whole 2024 question and mark-scheme PDFs through web retrieval, including items from other passages. The whole 2024 paper is development-exposed and cannot be reserved evidence. No other year or protected R5/R6 data was opened. No pretrained LLM enters the evaluated learner; developer LLM exposure does not establish contamination-free future hybrid evaluation.",
+  "fixture_sha256": {
+    "passage.txt": "9a1553c3150d66d47eb68aef3d3e565dbfbb2100845800fbe0ca3d1f3704078f",
+    "questions.json": "4ae89fb3ec56e2e7ab566ede59ac1376fc64815bdbd2e8f97cb6a2c58bf7f6fa",
+    "rubric.json": "b4e94a4635a4a874823a0707a52cc7e780f566e427db97ac3a69f2c8382af974"
+  }
+}

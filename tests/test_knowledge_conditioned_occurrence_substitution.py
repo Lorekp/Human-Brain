@@ -3,6 +3,9 @@ from __future__ import annotations
 from hashlib import sha256
 from inspect import signature
 
+import pytest
+
+from experiments.r4_integrated.neutral_document_python_session import run
 from humanbrain.knowledge_conditioned_occurrence_substitution import (
     FrozenKnowledgeConditionedOccurrenceSubstitution,
     KnowledgeSubstitutionAblation,
@@ -210,3 +213,110 @@ def test_frozen_fact_to_occurrence_substitution_transfer_and_stops() -> None:
         assert final.tonic_stop_cell_id == 1
         assert final.stopped
     assert bridge.checkpoint_sha256 == root
+
+
+def _neutral_action_seed():
+    from humanbrain.neutral_document_action import start as start_neutral
+
+    learner = start_neutral()
+    batches = (
+        (b"moru uses orli", b"orli serves moru"),
+        (b"sena uses ulon", b"ulon serves sena"),
+        (b"kelo uses vesa", b"rilo uses luma"),
+    )
+    for index, batch in enumerate(batches):
+        learner = learner.consolidate(
+            tuple(
+                _document(f"neutral-{index}", ordinal, content)
+                for ordinal, content in enumerate(batch)
+            )
+        )
+    return learner
+
+
+def _neutral_action_success(learner, key: bytes, value: bytes):
+    path = key.decode() + ".py"
+    decoy = OpaqueWorkspaceFile("decoy.py", b"foreign = 'spare'\n")
+    files = (decoy, OpaqueWorkspaceFile(path, key + b" = 'old" + key + b"'\n"))
+    after = (decoy, OpaqueWorkspaceFile(path, key + b" = '" + value + b"'\n"))
+    observation = UnifiedOpaqueObservationTape.observe(b"serves " + key, (), files)
+    # This is a receipt-custody unit fixture. The development runner separately
+    # exercises actual Python subprocess execution and behavioral scoring.
+    authority = KnowledgeSubstitutionExecutionAuthority(
+        lambda **kwargs: kwargs["after_workspace"] == after,
+        sha256(b"unit-receipt-acceptance").hexdigest(),
+    )
+    receipt = authority.execute_and_issue(
+        producer_checkpoint_sha256=learner.checkpoint_sha256,
+        observation=observation,
+        after_workspace=after,
+    )
+    return KnowledgeSubstitutionSuccess.seal(
+        observation=observation,
+        after_workspace=after,
+        execution_receipt=receipt,
+        provenance_id=b"unit-demonstration/" + key,
+    )
+
+
+def test_neutral_action_rejects_success_from_before_document_update() -> None:
+    learner = _neutral_action_seed()
+    success = _neutral_action_success(learner, b"kelo", b"vesa")
+    newer = learner.consolidate((_document("later", 0, b"qelo uses raku"),))
+    newer_root = newer.checkpoint_sha256
+    with pytest.raises(ValueError, match="another parent checkpoint"):
+        newer.learn_action(success)
+    assert newer.checkpoint_sha256 == newer_root
+    assert newer.demonstration_count == 0
+    learned = learner.learn_action(success)
+    assert learned.parent_checkpoint_sha256 == learner.checkpoint_sha256
+    assert learned.demonstration_count == 1
+
+
+def test_neutral_action_preserves_multi_anchor_ambiguity_after_transfer() -> None:
+    learner = _neutral_action_seed()
+    for key, value in ((b"kelo", b"vesa"), (b"rilo", b"luma")):
+        learner = learner.learn_action(_neutral_action_success(learner, key, value))
+    learner = learner.consolidate(
+        (
+            _document("fresh-a", 0, b"moro uses zani"),
+            _document("fresh-b", 0, b"qelo uses zani"),
+        )
+    )
+    assert learner.retained_demonstration_event_bytes == 0
+    files = (
+        OpaqueWorkspaceFile("fresh.py", b"moro = 'gray'\n"),
+        OpaqueWorkspaceFile("other.py", b"qelo = 'white'\n"),
+    )
+    checkpoint = learner.checkpoint_sha256
+    transfer = learner.respond(b"serves moro", files=files)
+    assert transfer.status == "EDIT"
+    assert transfer.after_workspace == (
+        OpaqueWorkspaceFile("fresh.py", b"moro = 'zani'\n"),
+        files[1],
+    )
+    collision = learner.respond(b"serves moro. serves qelo.", files=files)
+    assert collision.producer_decision.emitted == b"zani"
+    assert collision.producer_decision.support_query_lexemes == (b"moro", b"qelo")
+    assert collision.status == "STOP"
+    assert collision.stop_reason == "action:ambiguous_anchor"
+    assert collision.after_workspace is None
+    assert collision.motor_races[-1].stopped
+    assert learner.checkpoint_sha256 == checkpoint
+
+
+def test_neutral_document_python_session_executes_fresh_transfer(tmp_path) -> None:
+    report = run(tmp_path / "session")
+    assert report["narrow_integration_passed"]
+    transfer = [row for row in report["attempts"] if row["stage"] == "transfer"]
+    assert [row["passed"] for row in transfer] == [True, False, True, False]
+    assert [row["execution"]["stdout"].strip() for row in transfer] == [
+        "zani", "gray", "raku", "white",
+    ]
+    assert all(not row["before_execution"]["passed"] for row in transfer)
+    assert all(row["execution"]["decoys_unchanged"] for row in transfer)
+    assert all(row["execution"]["materialized_matches_action"] for row in transfer)
+    assert all(not row["source_documents_present"] for row in transfer)
+    variation = next(row for row in report["attempts"] if row["stage"] == "layout-variation")
+    assert not variation["passed"]  # Keep the unlearned layout visible in development.
+    assert variation["status"] == "STOP"

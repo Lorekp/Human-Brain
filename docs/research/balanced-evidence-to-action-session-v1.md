@@ -1,7 +1,7 @@
 # Balanced Evidence-to-Action Session V1
 
-Status: public-TRAIN development design, not frozen and not spent. Updated 2026-09-04.
-This revision plans follow-up work; it does not start implementation or experiments.
+Status: repeatable public-TRAIN development, not frozen or spent. Updated 2026-09-05.
+The first narrow integration has run; the broader challenge remains a design.
 
 ## Purpose and evidence boundary
 
@@ -11,8 +11,8 @@ learner**. Provenance revision, one-to-three-hop reasoning, and the broad sessio
 below follow that smallest integrated loop. Coding supplies exact feedback;
 language acquisition and retention must also succeed independently.
 
-Neutral frame induction and persistent facts are **mechanisms demonstrated;
-integration and robustness pending**. Commits `955b32e` and `4f23658` establish
+Neutral frame induction and persistent facts now drive a narrow executed Python
+session; broader robustness remains unverified. Commits `955b32e` and `4f23658` establish
 tiny exact-token, positional, two-slot memory fixtures. They do not demonstrate
 broad reading, learned provenance revision, or integrated software competence.
 The older `b5ccc73` action bridge still uses answer-supervised upstream frames
@@ -27,6 +27,30 @@ for disclosed hybrid components and contribution comparisons. This plan does
 not independently mandate an external store, tokenizer, or pretrained model.
 
 ## Immediate development sequence
+
+The [first executed slice](../../experiments/r4_integrated/neutral_document_python_session.md)
+passes its narrow recall, transfer, retention and no-action checks. Detailed
+scores and failures are in [benchmark status](../benchmark-status.md#current-neutral-reading-to-python-development-result).
+The original eight-stage sequence below remains the integration contract.
+
+Next, compare representations and learning on six fresh knowledge-conditioned
+Python requests with longer natural sentences, distractors and repeated entities.
+Hold code layout fixed so language and motor failures remain distinguishable.
+Use comparable language-acquisition exposure before the source-absent tasks;
+the empty-seed, single-passage exam result did not provide that prior learning.
+Keep matched updating/frozen neuronal arms and a disclosed conventional reference.
+A frozen contextual encoder is an allowed candidate, not an adopted architecture:
+if investigated, also compare the external component alone with identical inputs
+and stored information, and measure the neuronal learning contribution.
+
+Declare the concrete episodes and scoring before implementation. Initial budget:
+one representation candidate, two learning configurations, six transfer cases,
+at most one engineering day, then return to this loop with measured results.
+Require executable transfer, retained old skills, preserved decoys and an updating
+core advantage; external-only success does not demonstrate neuronal learning.
+Keep the original exam questions as an untuned diagnostic. Defer annotation
+layout changes until correct retained knowledge reaches the action path; address
+them through general structural addressing rather than an annotation-specific rule.
 
 Use a small reusable TRAIN workload with the following eight stages. This is a
 capability sequence, not an already materialized or frozen eight-episode cohort;

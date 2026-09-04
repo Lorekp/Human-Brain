@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Direction updated 2026-09-04; no new capability
-result accompanies this revision. This file inventories implementation and
+Maintained by the orchestrator. Updated 2026-09-05 with narrow neutral-document
+Python integration and the public-exam diagnostic. This file inventories implementation and
 historical frontiers. The [roadmap](research/roadmap-reading-to-coding.md) owns
 the active queue and architecture policy; [benchmark status](benchmark-status.md)
 owns measured evidence. Older "next" steps below are local historical context.
@@ -21,11 +21,23 @@ R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
 R4  Language/software continual coding               [shared integrated workload active]
 R3  General reasoning and abstraction                [shared workload; typed synthesis is one component]
-R2  Persistent knowledge and reading memory          [narrow neutral-memory mechanism; integration pending]
+R2  Persistent knowledge and reading memory          [narrow executed integration; broader reading fails]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
 ```
 
 ## Actual frontier
+
+`src/humanbrain/neutral_document_action.py` now owns one persistent neutral
+reader and a two-demonstration learned occurrence motor. Reader decisions expose
+all physically aligned query anchors supporting the selected output; ambiguity
+is preserved through the action race. The adapter reuses existing workspace
+projection and execution receipts; it does not alter the frozen old bridge.
+The [repeatable Python session](../experiments/r4_integrated/neutral_document_python_session.md)
+establishes delayed recall, fresh executed edit transfer and retention over a
+same-seed frozen control. The [public-exam runner](../experiments/reading_exam_development/README.md)
+preserves original questions and reports zero marks. See
+[current evidence](benchmark-status.md#current-neutral-reading-to-python-development-result)
+for counts and remaining language/layout limitations.
 
 ### Live R4 integrated coding frontier
 

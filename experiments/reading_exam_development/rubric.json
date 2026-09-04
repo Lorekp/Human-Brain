@@ -1,0 +1,19 @@
+{
+  "custody": "Evaluator only. This file is not loaded by the learner worker.",
+  "printed_page": 11,
+  "content_domain": "2b",
+  "items": {
+    "6a": {
+      "available_marks": 1,
+      "official_principle": "Award 1 mark for reference to (fore)paws / feet.",
+      "automatic_accept": ["forepaws", "paws", "feet"]
+    },
+    "6b": {
+      "available_marks": 1,
+      "official_principle": "Award 1 mark for reference to spines.",
+      "official_examples": ["spines on their backs", "their spines", "special spines"],
+      "automatic_accept": ["spines", "spines on their backs", "their spines", "special spines"]
+    }
+  },
+  "scoring": "Trim surrounding whitespace, casefold, collapse whitespace, and strip one terminal full stop for exact automatic accepted forms. STOP/missing answers earn zero. Every other response remains pending blinded human application of the official principle; exact matching is not the complete rubric. No LLM-only scoring."
+}

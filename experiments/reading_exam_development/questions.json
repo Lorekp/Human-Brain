@@ -1,0 +1,11 @@
+{
+  "source_item_id": "R030872",
+  "source_item_version": "17 October 2023 1:46 pm, Version 1",
+  "printed_page": 5,
+  "shared_stem": "Look at the sections: What do tenrecs eat? and What is stridulation?",
+  "parts": [
+    {"id": "6a", "text": "(a) Which part of their body do tenrecs use to encourage worms?"},
+    {"id": "6b", "text": "(b) Which part of their body do they use to make sounds?"}
+  ],
+  "interface": "Shared stem plus question parts through the current part, in original order; emit the answer to the final part. Earlier answers are never supplied."
+}
