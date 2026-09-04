@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 import pytest
@@ -9,13 +10,18 @@ from humanbrain.visualizer import ExperimentFormatError, load_catalog, load_run
 from humanbrain.visualizer.cli import main
 from humanbrain.visualizer.model import ProportionEstimate
 
-
 ROOT = Path(__file__).resolve().parents[1]
 DEMO = ROOT / "experiments" / "visualizer_demo"
 
 
-def test_demo_catalog_loads_through_the_canonical_result_path() -> None:
-    catalog = load_catalog(ROOT / "experiments")
+@pytest.fixture
+def public_catalog_root(tmp_path: Path) -> Path:
+    shutil.copytree(DEMO, tmp_path / "visualizer_demo")
+    return tmp_path
+
+
+def test_demo_catalog_loads_through_the_canonical_result_path(public_catalog_root: Path) -> None:
+    catalog = load_catalog(public_catalog_root)
     demo = catalog.for_experiment("visualizer_demo")
 
     assert [run.arm for run in demo] == ["demo-ridge-512", "demo-similarity-512"]
@@ -68,6 +74,6 @@ def test_catalog_keeps_unsupported_json_visible_as_an_issue(tmp_path: Path) -> N
     assert catalog.issues[0].unsupported is True
 
 
-def test_cli_rejects_an_unknown_experiment_before_opening_the_gui() -> None:
+def test_cli_rejects_an_unknown_experiment_before_opening_the_gui(public_catalog_root: Path) -> None:
     with pytest.raises(SystemExit, match="2"):
-        main([str(ROOT / "experiments"), "--experiment", "not-a-real-experiment"])
+        main([str(public_catalog_root), "--experiment", "not-a-real-experiment"])

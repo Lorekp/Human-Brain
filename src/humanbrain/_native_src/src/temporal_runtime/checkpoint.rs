@@ -6667,17 +6667,23 @@ pub(in crate::temporal_runtime) mod tests {
         let state = checkpoint_v1_state_view(&runtime);
         let mut column_replay = [0u32; ACTIVE_COLUMNS];
 
+        // Fresh identity recruitment permits used predecessors below their cap.
+        // Move both rows away from owner 0 so this predecessor is truly unused.
         assert_eq!(
             validate_checkpoint_v1_state(
                 state,
                 &mut column_replay,
-                |segment_id| runtime_owned_row(&runtime, segment_id),
-                |owner| {
-                    if owner == 0 {
-                        Some(1)
-                    } else {
-                        runtime.store.runtime_owner_load(owner)
+                |segment_id| {
+                    let mut owned = runtime_owned_row(&runtime, segment_id)?;
+                    if owned.owner == 0 {
+                        owned.owner = 2;
                     }
+                    Some(owned)
+                },
+                |owner| match owner {
+                    0 => Some(0),
+                    2 => Some(2),
+                    _ => runtime.store.runtime_owner_load(owner),
                 },
             ),
             Err(CheckpointV1StateError::CohortChronologyInvariant)
@@ -8176,8 +8182,25 @@ pub(in crate::temporal_runtime) mod tests {
         let starts = checkpoint_v1_test_section_starts(&previous_cohort_not_full);
         write_checkpoint_v1_u32(&mut previous_cohort_not_full, starts.segment_owners, 7, 25);
         refresh_body_and_logical_state_digests(&mut previous_cohort_not_full);
+        validate_checkpoint_v1_pass2(
+            validate_checkpoint_v1_pass1(&previous_cohort_not_full, &same_factory)
+                .expect("below-cap predecessor must pass envelope validation"),
+            &same_factory,
+        )
+        .expect("fresh identity recruitment permits used predecessors below their cap");
+
+        // Owner 23 still had one row above. Move that row too, keeping owner 25
+        // within its cap while leaving the prior cohort with an unused owner.
+        let mut previous_cohort_unused_owner = previous_cohort_not_full;
+        write_checkpoint_v1_u32(
+            &mut previous_cohort_unused_owner,
+            starts.segment_owners,
+            6,
+            25,
+        );
+        refresh_body_and_logical_state_digests(&mut previous_cohort_unused_owner);
         assert_eq!(
-            pass2_error(&previous_cohort_not_full, &same_factory),
+            pass2_error(&previous_cohort_unused_owner, &same_factory),
             CheckpointV1Pass2Error::State(CheckpointV1StateError::CohortChronologyInvariant)
         );
     }

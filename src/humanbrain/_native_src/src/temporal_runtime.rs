@@ -4443,6 +4443,13 @@ mod tests {
                 .iter()
                 .map(|&byte| u32::from(byte)),
         );
+        // Construction requires the complete four-slot control vocabulary even
+        // when this task only fills slots 0, 1, and 2.
+        for slot in 0..role_place_copy::SLOT_COUNT as u8 {
+            token_ids.push(role_place_copy::slot_start_token_id(slot).unwrap());
+            token_ids.push(role_place_copy::slot_end_token_id(slot).unwrap());
+            token_ids.push(role_place_copy::copy_slot_token_id(slot).unwrap());
+        }
         token_ids.push(COPY_END_TOKEN_ID);
         token_ids.sort_unstable();
         token_ids.dedup();
@@ -4592,10 +4599,15 @@ mod tests {
     }
 
     #[test]
-    fn literal_python_matching_band_trace_is_bit_exact() {
+    fn exact_source_learning_preserves_literal_python_matching_band_ticks() {
         let mut runtime = python_oracle_runtime(205);
         runtime.recognize(0).expect("boundary step");
-        let matching = runtime.recognize(1).expect("matching step");
+        // The historical matching-current physics remains valid. Since the
+        // identity/surface split, only exact-source LEARN reservations use it;
+        // potential-only READ_ONLY matches must take the novel-current path.
+        let matching = runtime
+            .step(1, TemporalStepMode::Learn)
+            .expect("exact-source reuse");
         let winner_ticks = [199, 198, 199, 199, 199, 199, 199, 199, 199, 199, 199];
         let basket_ticks = [200, 199, 200, 200, 200, 200, 200, 200, 200, 200, 200];
         assert!(!matching.predicted);
@@ -4613,10 +4625,24 @@ mod tests {
             basket_ticks.map(|tick| tick + 1)
         );
         assert_eq!(matching.event_count, 2);
+        assert_eq!(matching.allocated_segments, 0);
+        assert_eq!(matching.matching_segments, ACTIVE_COLUMNS);
+        assert_eq!(matching.active_segments, 0);
+        assert_eq!(runtime.store.runtime_segment_count(), ACTIVE_COLUMNS as u32);
+        for segment in 0..ACTIVE_COLUMNS as u32 {
+            assert_eq!(
+                runtime
+                    .store
+                    .runtime_segment_row(segment)
+                    .unwrap()
+                    .permanence_ticks,
+                [255; PAIRS_PER_SEGMENT],
+            );
+        }
     }
 
     #[test]
-    fn one_step_physically_classifies_active_matching_and_novel_columns() {
+    fn read_only_potential_matches_use_novel_drive_while_active_owners_keep_active_drive() {
         let config = config(22, 1, TemporalContextPolicy::BoundWinners);
         let sources = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
         let segments = [
@@ -4637,6 +4663,7 @@ mod tests {
         let step = runtime.recognize(1).expect("mixed classification step");
 
         assert_eq!(step.predicted_columns, 1);
+        assert_eq!(step.matching_segments, 2);
         assert!(!step.predicted);
         assert_eq!(step.winner_spikes[0].cell_id, 11);
         assert_eq!(step.winner_spikes[1].cell_id, 12);
@@ -4647,7 +4674,7 @@ mod tests {
         );
         assert_eq!(
             step.winner_spikes[1].tick,
-            singleton_latency_ticks(CandidateClass::Matching { load: 1 }.current_pa(), 0.0)
+            singleton_latency_ticks(CandidateClass::Novel { rank: 0, load: 1 }.current_pa(), 0.0)
                 .unwrap()
         );
         assert_eq!(
@@ -4689,10 +4716,27 @@ mod tests {
     }
 
     #[test]
-    fn multiple_active_and_matching_owners_enter_the_deterministic_physical_race() {
-        for (ticks, expected_predicted_columns, class) in [
-            (205, 0, CandidateClass::Matching { load: 1 }),
-            (255, 1, CandidateClass::Active { load: 1 }),
+    fn read_only_multi_owner_races_rank_active_by_segments_and_potential_only_by_afferents() {
+        for (ticks, expected_predicted_columns, winner_index, currents) in [
+            (
+                205,
+                0,
+                0,
+                [
+                    CandidateClass::Novel { rank: 0, load: 1 }.current_pa(),
+                    CandidateClass::Novel { rank: 1, load: 1 }.current_pa(),
+                ],
+            ),
+            (
+                255,
+                1,
+                1,
+                [
+                    CandidateClass::Active { load: 1 }.current_pa()
+                        - TEMPORAL_PHYSICS_IDENTITY.novel_rank_decrement_pa,
+                    CandidateClass::Active { load: 1 }.current_pa(),
+                ],
+            ),
         ] {
             let config = config(22, 2, TemporalContextPolicy::BoundWinners);
             let sources = vec![0, 2, 4, 6, 8, 10, 12, 14, 16, 18];
@@ -4715,26 +4759,50 @@ mod tests {
             let mut replay = runtime_with_offsets(config, offsets, &segments);
             first.recognize(0).expect("first context step");
             replay.recognize(0).expect("replay context step");
+            // The source-row order favors 43 for active ranking; the fixed
+            // seed/context favors 42 in the equal-load novel ranking.
+            assert!(
+                afferent_score(17, &first.previous_context, 42)
+                    > afferent_score(17, &first.previous_context, 43)
+            );
+            let before_rows = [
+                first.store.runtime_segment_row(0).unwrap(),
+                first.store.runtime_segment_row(1).unwrap(),
+            ];
 
             let raced = first.recognize(1).expect("multi-owner race");
             let repeated = replay.recognize(1).expect("deterministic replay");
             assert_eq!(raced, repeated);
-            assert_eq!(raced.winner_spikes[10].cell_id, 43);
+            assert_eq!(raced.winner_spikes[10].cell_id, 42 + winner_index as u32);
             assert_eq!(raced.predicted_columns, expected_predicted_columns);
+            assert_eq!(raced.matching_segments, 2);
+            let winner_offset = [-0.024_791_163_874_911_56, 0.033_505_381_138_863_34][winner_index];
             assert_eq!(
                 raced.winner_spikes[10].tick,
-                singleton_latency_ticks(class.current_pa(), 0.033_505_381_138_863_34).unwrap()
+                singleton_latency_ticks(currents[winner_index], winner_offset).unwrap()
             );
             assert_eq!(first.column_drive_scratch[0].cell_id, 42);
             assert_eq!(first.column_drive_scratch[1].cell_id, 43);
             assert_eq!(
                 first.column_drive_scratch[0].current_pa.to_bits(),
-                (class.current_pa() - TEMPORAL_PHYSICS_IDENTITY.novel_rank_decrement_pa).to_bits(),
+                currents[0].to_bits(),
             );
             assert_eq!(
                 first.column_drive_scratch[1].current_pa.to_bits(),
-                class.current_pa().to_bits(),
+                currents[1].to_bits(),
             );
+            assert_eq!(
+                raced.basket_spikes[10].tick,
+                raced.winner_spikes[10].tick + 1
+            );
+            assert_eq!(
+                raced.inhibition_onset_ticks[10],
+                raced.basket_spikes[10].tick + 1
+            );
+            assert_eq!(first.learning_step, 0);
+            assert_eq!(first.store.runtime_segment_count(), 2);
+            assert_eq!(first.store.runtime_segment_row(0).unwrap(), before_rows[0]);
+            assert_eq!(first.store.runtime_segment_row(1).unwrap(), before_rows[1]);
         }
     }
 
@@ -6473,6 +6541,11 @@ mod tests {
         ];
         let mut offsets = vec![0.0; physical_count(circuit_config)];
         offsets[22] = 1.0e9;
+        // LEARN reserves exact owner 22, so owner 23 receives zero current.
+        // It still participates physically under the ordinary policy. Force
+        // a spontaneous spike to test the capacity guard against that winner,
+        // without inventing an ordinary matching-owner fallback.
+        offsets[23] = -1.0e9;
         let mut runtime = runtime_with_offsets(circuit_config, offsets, &segments);
         runtime.step(0, TemporalStepMode::Learn).unwrap();
         runtime.learning_step = u64::MAX;

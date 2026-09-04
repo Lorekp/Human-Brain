@@ -10,3 +10,12 @@ bearer_token_env_var = "MEM0_API_KEY"
 [mcp_servers.codebase-memory-mcp]
 command = "C:/Users/laure/.local/bin/codebase-memory-mcp.exe"
 cwd = "C:/Users/laure/Desktop/DeepSim/Human Brain"
+
+[mcp_servers.codebase-memory-mcp.tools.index_status]
+approval_mode = "approve"
+
+[mcp_servers.codebase-memory-mcp.tools.search_graph]
+approval_mode = "approve"
+
+[mcp_servers.codebase-memory-mcp.tools.get_code_snippet]
+approval_mode = "approve"

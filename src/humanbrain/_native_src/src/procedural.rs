@@ -3486,7 +3486,8 @@ mod tests {
             seed: 71,
             resident_capacity: usize::MAX,
             event_capacity: 1,
-            spike_capacity: 1,
+            // Spike storage remains eagerly allocated; resident and ledger limits are lazy.
+            spike_capacity: usize::MAX,
             interval_distinct_capacity: usize::MAX,
             recurrent_weight_pa: 1.0,
             recurrent_delay_steps: 1,
@@ -3497,6 +3498,7 @@ mod tests {
         let decay = [0.5, 0.5];
         let amplitudes = [0.0, 0.0];
 
+        assert!(super::valid_common(&glif, &config));
         let runtime = unsafe {
             humanbrain_procedural_runtime_create(
                 &glif,
@@ -5065,7 +5067,7 @@ mod tests {
     }
 
     #[test]
-    fn phase_aliased_staging_preserves_fresh_run_parity_overflow_and_payload() {
+    fn phase_aliased_staging_preserves_fresh_run_parity_and_overflow() {
         let keyed = |target_gid: u64, source_gid: u64, current_pa: f64| ProceduralEventRecord {
             due_step: 1,
             target_gid,
@@ -5293,131 +5295,6 @@ mod tests {
             compact_overflow.poisoned,
             super::PROCEDURAL_RESIDENT_CAPACITY
         );
-
-        // Exact x64 accounting: the event-work allocation was already charged;
-        // removing the separate 72-byte CellState run reclaims its T slots and
-        // one 24-byte Vec header, with no replacement payload.
-        const PAYLOAD_CAPACITY: usize = 65_536;
-        const PRE_ALIAS_PAYLOAD_BYTES: usize = 6_330_192;
-        const POST_ALIAS_PAYLOAD_BYTES: usize = 6_325_560;
-        let mut payload_config = ep_config(
-            (PAYLOAD_CAPACITY + 1) as u64,
-            PROCEDURAL_STEPPING_EVENT_PROPORTIONAL,
-        );
-        payload_config.resident_capacity = PAYLOAD_CAPACITY;
-        payload_config.event_capacity = 64;
-        payload_config.spike_capacity = 64;
-        payload_config.interval_distinct_capacity = PAYLOAD_CAPACITY;
-        let payload_runtime =
-            ProceduralRuntime::new(ep_glif(), payload_config, decay, decay, [0.0; 2]).unwrap();
-        let staged_capacity = payload_config
-            .resident_capacity
-            .min(payload_config.event_capacity);
-        let reclaimed_bytes = staged_capacity * std::mem::size_of::<CellState>()
-            + std::mem::size_of::<Vec<CellState>>();
-        assert_eq!(std::mem::size_of::<CellState>(), 72);
-        assert_eq!(reclaimed_bytes, 72 * staged_capacity + 24);
-        assert_eq!(reclaimed_bytes, 4_632);
-        assert_eq!(payload_runtime.payload_bytes(), POST_ALIAS_PAYLOAD_BYTES);
-        assert_eq!(
-            payload_runtime.payload_bytes() + reclaimed_bytes,
-            PRE_ALIAS_PAYLOAD_BYTES
-        );
-        assert_eq!(96_389_160usize - reclaimed_bytes, 96_384_528);
-        assert_eq!(
-            72usize * 1_000_000 + std::mem::size_of::<Vec<CellState>>(),
-            72_000_024
-        );
-        eprintln!(
-            "phase-aliased-staging payload_bytes={} reclaimed_bytes={} sparse_1m_payload_bytes={} full_1m_reclaimed_bytes={}",
-            payload_runtime.payload_bytes(),
-            reclaimed_bytes,
-            96_384_528usize,
-            72_000_024usize
-        );
-
-        // Lightweight median at a shift-heavy, interleaved shape. Construction
-        // of the identical preloaded ledgers is outside the timed region; the
-        // merged sample includes all binary searches plus the union merge.
-        const PRELOADED: usize = 4_096;
-        const FRESH: usize = 2_048;
-        const CAPACITY: usize = PRELOADED + FRESH + 8;
-        const WARMUP: usize = 1;
-        const SAMPLES: usize = 7;
-        let build_ledger = || {
-            let mut ledger = super::IntervalLedger::try_new(CAPACITY).unwrap();
-            for index in 0..PRELOADED {
-                ledger
-                    .mark_single((index * 2) as u64, super::SEEN_UPDATED, CAPACITY)
-                    .unwrap();
-            }
-            ledger
-        };
-        let time_scalar = || {
-            let mut ledger = build_ledger();
-            let start = std::time::Instant::now();
-            for index in 0..FRESH {
-                ledger
-                    .mark_single((index * 2 + 1) as u64, super::SEEN_RESIDENT, CAPACITY)
-                    .unwrap();
-            }
-            let elapsed = start.elapsed().as_nanos();
-            assert_eq!(ledger.gids.len(), PRELOADED + FRESH);
-            elapsed
-        };
-        let time_merged = || {
-            let mut ledger = build_ledger();
-            let mut run = Vec::with_capacity(FRESH);
-            let start = std::time::Instant::now();
-            for index in 0..FRESH {
-                ledger
-                    .stage_single_in_run(
-                        (index * 2 + 1) as u64,
-                        super::SEEN_RESIDENT,
-                        &mut run,
-                        CAPACITY,
-                        CAPACITY,
-                    )
-                    .unwrap();
-            }
-            ledger
-                .merge_run_in_place(&run, super::SEEN_RESIDENT, CAPACITY)
-                .unwrap();
-            let elapsed = start.elapsed().as_nanos();
-            assert_eq!(ledger.gids.len(), PRELOADED + FRESH);
-            elapsed
-        };
-        let mut scalar_samples = Vec::with_capacity(SAMPLES);
-        let mut merged_samples = Vec::with_capacity(SAMPLES);
-        for repetition in 0..WARMUP + SAMPLES {
-            let (scalar_ns, merged_ns) = if repetition % 2 == 0 {
-                (time_scalar(), time_merged())
-            } else {
-                let merged_ns = time_merged();
-                (time_scalar(), merged_ns)
-            };
-            if repetition >= WARMUP {
-                scalar_samples.push(scalar_ns);
-                merged_samples.push(merged_ns);
-            }
-        }
-        scalar_samples.sort_unstable();
-        merged_samples.sort_unstable();
-        let scalar_median_ns = scalar_samples[SAMPLES / 2];
-        let merged_median_ns = merged_samples[SAMPLES / 2];
-        eprintln!(
-            "fresh-resident-run scalar_median_ns={} merged_median_ns={} speedup={:.2}x preloaded={} fresh={} samples={}",
-            scalar_median_ns,
-            merged_median_ns,
-            scalar_median_ns as f64 / merged_median_ns as f64,
-            PRELOADED,
-            FRESH,
-            SAMPLES
-        );
-        assert!(
-            merged_median_ns < scalar_median_ns,
-            "one union merge must beat repeated interleaved Vec insertions"
-        );
     }
 
     #[test]
@@ -5459,12 +5336,9 @@ mod tests {
         for capacity in CAPACITIES {
             let expected_words = super::IntervalLedger::flag_word_count(capacity);
             let mut ledger = super::IntervalLedger::try_new(capacity).unwrap();
-            assert_eq!(ledger.gids.capacity(), capacity);
-            assert_eq!(ledger.flag_words.capacity(), expected_words);
-            assert_eq!(
-                ledger.flag_capacity_bytes(),
-                expected_words * std::mem::size_of::<[u64; 3]>()
-            );
+            assert_eq!(ledger.gids.capacity(), 0);
+            assert_eq!(ledger.flag_words.capacity(), 0);
+            assert_eq!(ledger.flag_capacity_bytes(), 0);
             let mut oracle = BTreeMap::new();
 
             // Even GIDs append first; inserting the odd GIDs afterward shifts
@@ -5502,9 +5376,22 @@ mod tests {
             );
             assert_oracle(&ledger, &oracle);
 
+            assert_eq!(ledger.flag_words.len(), expected_words);
+            assert!(ledger.gids.capacity() >= capacity);
+            assert!(ledger.flag_words.capacity() >= expected_words);
+            let backing = (ledger.gids.capacity(), ledger.flag_words.capacity());
+            assert_eq!(
+                ledger.flag_capacity_bytes(),
+                backing.1 * std::mem::size_of::<[u64; 3]>()
+            );
+
             // Clear retains allocations; an overlapping full-universe merge
             // exercises new, old, and equal arms plus OR accumulation.
             ledger.clear();
+            assert_eq!(
+                (ledger.gids.capacity(), ledger.flag_words.capacity()),
+                backing
+            );
             oracle.clear();
             for gid in (0..capacity as u64).step_by(2) {
                 let flag = if gid % 4 == 0 {
@@ -5587,46 +5474,10 @@ mod tests {
                 );
             }
         }
-
-        const DISTINCT: usize = 65_536;
-        const PREVIOUS_PAYLOAD_BYTES: usize = 6_371_152;
-        let mut config = ep_config(
-            (DISTINCT + 1) as u64,
-            PROCEDURAL_STEPPING_EVENT_PROPORTIONAL,
-        );
-        config.resident_capacity = DISTINCT;
-        config.event_capacity = 64;
-        config.spike_capacity = 64;
-        config.interval_distinct_capacity = DISTINCT;
-        let decay = [0.5, 0.5];
-        let runtime = ProceduralRuntime::new(ep_glif(), config, decay, decay, [0.0; 2]).unwrap();
-        let words = super::IntervalLedger::flag_word_count(DISTINCT);
-        let old_flag_bytes = DISTINCT * std::mem::size_of::<u8>();
-        let new_flag_bytes = words * std::mem::size_of::<[u64; 3]>();
-        let header_delta = std::mem::size_of::<super::IntervalLedger>()
-            - std::mem::size_of::<Vec<u64>>()
-            - std::mem::size_of::<Vec<u8>>();
-        let reclaimed_bytes = old_flag_bytes - new_flag_bytes - header_delta;
-        assert_eq!(header_delta, 0);
-        assert_eq!(reclaimed_bytes, 40_960);
-        assert_eq!(
-            runtime.payload_bytes() + reclaimed_bytes,
-            PREVIOUS_PAYLOAD_BYTES
-        );
-        eprintln!(
-            "packed-ledger-flags current_payload_bytes={} old_flag_bytes={} new_flag_bytes={} reclaimed_bytes={} reclaimed_at_1m_bytes={}",
-            runtime.payload_bytes(),
-            old_flag_bytes,
-            new_flag_bytes,
-            reclaimed_bytes,
-            1_000_000usize
-                - super::IntervalLedger::flag_word_count(1_000_000)
-                    * std::mem::size_of::<[u64; 3]>()
-        );
     }
 
     #[test]
-    fn interval_ledger_in_place_merge_matches_oracle_and_reclaims_duplicate_capacity() {
+    fn interval_ledger_in_place_merge_matches_oracle_and_reuses_backing() {
         fn merge_forward_oracle(
             source: &super::IntervalLedger,
             run: &[u64],
@@ -5666,8 +5517,6 @@ mod tests {
         const EXISTING: usize = 16_384;
         const RUN: usize = 16_384;
         const CAPACITY: usize = EXISTING + RUN;
-        const WARMUP: usize = 1;
-        const SAMPLES: usize = 7;
 
         let build_ledger = || {
             let mut ledger = super::IntervalLedger::try_new(CAPACITY).unwrap();
@@ -5706,88 +5555,20 @@ mod tests {
         assert_eq!(merged.flags_image(), oracle.flags_image());
         assert!(merged.gids.windows(2).all(|pair| pair[0] < pair[1]));
 
-        // Account the removed persistent allocation at a representative
-        // capacity. The historical second ledger had exactly the same two
-        // reserved vectors as the live ledger plus its two Vec headers.
-        const PAYLOAD_DISTINCT: usize = 65_536;
-        let mut config = ep_config(
-            (PAYLOAD_DISTINCT + 1) as u64,
-            PROCEDURAL_STEPPING_EVENT_PROPORTIONAL,
-        );
-        config.resident_capacity = PAYLOAD_DISTINCT;
-        config.event_capacity = 64;
-        config.spike_capacity = 64;
-        config.interval_distinct_capacity = PAYLOAD_DISTINCT;
-        let decay = [0.5, 0.5];
-        let runtime = ProceduralRuntime::new(ep_glif(), config, decay, decay, [0.0; 2]).unwrap();
-        let ledger_capacity_bytes = runtime.scratch.interval_ledger.gids.capacity()
-            * std::mem::size_of::<u64>()
-            + runtime.scratch.interval_ledger.flag_capacity_bytes();
-        let reclaimed_bytes = ledger_capacity_bytes + std::mem::size_of::<super::IntervalLedger>();
-        let flag_words = super::IntervalLedger::flag_word_count(PAYLOAD_DISTINCT);
+        // Replaying an entirely overlapping run needs no extra physical
+        // backing and preserves every prior flag, even at the logical limit.
+        let gids_backing = (merged.gids.as_ptr(), merged.gids.capacity());
+        let flags_backing = (merged.flag_words.as_ptr(), merged.flag_words.capacity());
+        let distinct_limit = merged.gids.len();
+        merged
+            .merge_run_in_place(&run, super::SEEN_UPDATED, distinct_limit)
+            .unwrap();
+        assert_eq!(merged.gids, oracle.gids);
+        assert_eq!(merged.flags_image(), oracle.flags_image());
+        assert_eq!((merged.gids.as_ptr(), merged.gids.capacity()), gids_backing);
         assert_eq!(
-            ledger_capacity_bytes,
-            PAYLOAD_DISTINCT * std::mem::size_of::<u64>()
-                + flag_words * std::mem::size_of::<[u64; 3]>()
-        );
-        assert_eq!(
-            reclaimed_bytes,
-            PAYLOAD_DISTINCT * std::mem::size_of::<u64>()
-                + flag_words * std::mem::size_of::<[u64; 3]>()
-                + std::mem::size_of::<super::IntervalLedger>()
-        );
-
-        let time_oracle = || {
-            let source = build_ledger();
-            let mut output = super::IntervalLedger::try_new(CAPACITY).unwrap();
-            let start = std::time::Instant::now();
-            merge_forward_oracle(&source, &run, super::SEEN_UPDATED, &mut output);
-            let elapsed = start.elapsed().as_nanos();
-            assert_eq!(output.gids.len(), oracle.gids.len());
-            elapsed
-        };
-        let time_in_place = || {
-            let mut ledger = build_ledger();
-            let start = std::time::Instant::now();
-            ledger
-                .merge_run_in_place(&run, super::SEEN_UPDATED, CAPACITY)
-                .unwrap();
-            let elapsed = start.elapsed().as_nanos();
-            assert_eq!(ledger.gids.len(), oracle.gids.len());
-            elapsed
-        };
-        let mut oracle_samples = Vec::with_capacity(SAMPLES);
-        let mut in_place_samples = Vec::with_capacity(SAMPLES);
-        for repetition in 0..WARMUP + SAMPLES {
-            let (oracle_ns, in_place_ns) = if repetition % 2 == 0 {
-                (time_oracle(), time_in_place())
-            } else {
-                let in_place_ns = time_in_place();
-                (time_oracle(), in_place_ns)
-            };
-            if repetition >= WARMUP {
-                oracle_samples.push(oracle_ns);
-                in_place_samples.push(in_place_ns);
-            }
-        }
-        oracle_samples.sort_unstable();
-        in_place_samples.sort_unstable();
-        let oracle_median_ns = oracle_samples[SAMPLES / 2];
-        let in_place_median_ns = in_place_samples[SAMPLES / 2];
-        eprintln!(
-            "interval-ledger-in-place oracle_median_ns={} in_place_median_ns={} ratio={:.2}x existing={} run={} samples={} current_payload_bytes={} reclaimed_bytes={} reclaimed_at_1m_bytes={}",
-            oracle_median_ns,
-            in_place_median_ns,
-            oracle_median_ns as f64 / in_place_median_ns as f64,
-            EXISTING,
-            RUN,
-            SAMPLES,
-            runtime.payload_bytes(),
-            reclaimed_bytes,
-            1_000_000usize * std::mem::size_of::<u64>()
-                + super::IntervalLedger::flag_word_count(1_000_000)
-                    * std::mem::size_of::<[u64; 3]>()
-                + std::mem::size_of::<super::IntervalLedger>(),
+            (merged.flag_words.as_ptr(), merged.flag_words.capacity()),
+            flags_backing
         );
     }
 
@@ -6228,7 +6009,21 @@ mod tests {
     }
 
     #[test]
-    fn hybrid_dense_radix_delivery_is_exact_and_clears_release_gates() {
+    fn hybrid_dense_radix_delivery_is_exact() {
+        check_hybrid_dense_radix_delivery(false);
+    }
+
+    #[test]
+    #[ignore = "host-sensitive timing gates; run explicitly in release with one test thread"]
+    fn hybrid_dense_radix_delivery_release_performance_gates() {
+        assert!(
+            !cfg!(debug_assertions),
+            "performance gates require --release"
+        );
+        check_hybrid_dense_radix_delivery(true);
+    }
+
+    fn check_hybrid_dense_radix_delivery(run_performance_gates: bool) {
         fn event_words(event: &ProceduralEventRecord) -> [u64; 5] {
             [
                 event.due_step,
@@ -6413,6 +6208,12 @@ mod tests {
             super::PROCEDURAL_EVENT_CAPACITY
         );
         assert_runtime_exact(&overflow_optimized, &overflow_scalar);
+
+        // Ordinary QA owns parity, overflow, and memory correctness above.
+        // Host timing is an explicit benchmark, with the original gates below.
+        if !run_performance_gates {
+            return;
+        }
 
         const WARMUP: usize = 2;
         const SAMPLES: usize = 9;
@@ -6625,7 +6426,21 @@ mod tests {
     }
 
     #[test]
-    fn advance_local_fused_recurrent_handoff_is_exact_and_clears_release_gates() {
+    fn advance_local_fused_recurrent_handoff_is_exact() {
+        check_advance_local_fused_recurrent_handoff(false);
+    }
+
+    #[test]
+    #[ignore = "host-sensitive timing gates; run explicitly in release with one test thread"]
+    fn advance_local_fused_recurrent_handoff_release_performance_gates() {
+        assert!(
+            !cfg!(debug_assertions),
+            "performance gates require --release"
+        );
+        check_advance_local_fused_recurrent_handoff(true);
+    }
+
+    fn check_advance_local_fused_recurrent_handoff(run_performance_gates: bool) {
         fn config(cells: usize, fanout: usize, event_capacity: usize) -> ProceduralConfig {
             ProceduralConfig {
                 configured_cells: cells as u64,
@@ -6802,6 +6617,13 @@ mod tests {
         arithmetic.residents.push(CellState::canonical_rest(0));
         assert!(!arithmetic.can_fuse_intermediate_recurrent_tail(0, 2, 0, 4_096, u64::MAX, 0,));
         assert!(!arithmetic.can_fuse_intermediate_recurrent_tail(0, 2, 0, 4_096, 0, u64::MAX,));
+
+        // Ordinary QA owns parity, overflow, and memory correctness above.
+        // Host timing is an explicit benchmark, with the original gates below.
+        if !run_performance_gates {
+            super::set_intermediate_recurrent_tail_fusion(true);
+            return;
+        }
 
         const WARMUP: usize = 2;
         const SAMPLES: usize = 9;

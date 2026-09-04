@@ -13,5 +13,9 @@ target/
 *.pyc
 .pytest_cache/
 .pytest-tmp/
+.pytest_tmp/
+.ruff_cache/
+.worktrees/
+.idea/
 experiments/*/.observatory/*.jsonl
 experiments/procedural_adapter_spike/l4_seam_b_baseline_outputs.json

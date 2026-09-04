@@ -1,0 +1,6 @@
+# Known-good development baseline, Python 3.11, refreshed 2026-09-04.
+# Package compatibility ranges remain in pyproject.toml.
+numpy==2.4.6
+pytest==9.1.1
+ruff==0.16.1
+setuptools==79.0.1

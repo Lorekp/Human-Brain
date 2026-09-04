@@ -11,6 +11,7 @@ dependencies = ["numpy>=2.0"]
 
 [project.optional-dependencies]
 test = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "ruff==0.16.1"]
 swe = ["mini-swe-agent==2.4.6"]
 visualizer = ["dearpygui==2.3.1"]
 g0 = ["minigrid==3.1.0"]

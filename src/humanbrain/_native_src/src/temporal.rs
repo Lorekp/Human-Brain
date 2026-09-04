@@ -2643,7 +2643,7 @@ mod tests {
     }
 
     #[test]
-    fn runtime_introspection_copies_rows_and_materializes_every_active_segment_in_order() {
+    fn runtime_introspection_copies_rows_and_materializes_every_active_segment_once() {
         let mut store = TemporalStore::new(config(20, 3, 4)).unwrap();
         assert_eq!(
             store.allocate_runtime_segment(2, &[100, 101], &[250, 251]),
@@ -2699,6 +2699,9 @@ mod tests {
 
         let mut active = [NONE; 4];
         assert_eq!(store.runtime_active_segments_into(&mut active), Ok(3));
+        // Recognition preserves first-touch traversal rather than segment-ID
+        // order. Check every active ID exactly once and leave the tail untouched.
+        active[..3].sort_unstable();
         assert_eq!(active, [0, 1, 2, NONE]);
         assert_eq!(store.poisoned, TEMPORAL_OK);
     }

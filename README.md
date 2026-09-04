@@ -1,12 +1,23 @@
 # Human Brain
 
-Human Brain is a cell-only autoregressive language and program-learning
-research system. Its learned state and inference are implemented with simulated
-human cortical cells: dendritic branches, Allen human-data-fitted GLIF cells,
-sparse recurrent synapses, spike eligibility, and output-cell races.
+Human Brain researches a general learner for language, knowledge, and real-world
+software work, with simulated-neuron learning at its core. Current cell-only
+lanes use dendritic branches, Allen human-data-fitted GLIF cells, sparse recurrent
+synapses, spike eligibility, and output-cell races. These are research
+implementations, not a claim to simulate an entire biological brain.
 
-It is not a transformer, a dense artificial neural network, a pretrained
-embedding model, or a claim to simulate an entire biological brain.
+The [roadmap](docs/research/roadmap-reading-to-coding.md) owns current priorities
+and architecture policy. Cell models may change; external knowledge stores and
+pretrained LLM components may be investigated as disclosed hybrids whose neuronal
+contribution is measured. Existing cell-only results retain their original
+contracts. No hybrid implementation is claimed by this policy change.
+
+The immediate milestone is one persistent learner that reads documents, retains
+facts after source removal, uses them in an actual Python edit, executes the
+result, and transfers to a fresh task. See the
+[integration plan](docs/research/balanced-evidence-to-action-session-v1.md),
+[public-exam reading plan](docs/research/reading-comprehension-evaluation.md), and
+[reusable goal prompt](docs/project-goal.md).
 
 ## Repository family
 
@@ -97,7 +108,7 @@ inputs — are catalogued with per-document status in
 
 ## Architecture
 
-Two working sequence layers share the cell-only contract:
+Two existing sequence layers share the scoped cell-only experiment contract:
 
 1. The dendritic GLIF3 layer grows sparse higher-order branches by replaying
    token sequences. Matching branches produce NMDA-like plateau drive, and a
@@ -124,13 +135,16 @@ Python 3.11+, Rust/Cargo, and a C++ build environment are expected for a source
 checkout. CUDA is optional.
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[test]"
-.\.venv\Scripts\python.exe -m pytest -q
-
-$env:PYTHONPATH = "src"
-.\.venv\Scripts\python.exe -m humanbrain.cli "Human cortical cells " --tokens 24
+./tools/setup.ps1
+./.venv/Scripts/python.exe tools/dev.py qa native
+./.venv/Scripts/python.exe tools/dev.py qa integration
 ```
+
+Setup creates or reuses this checkout's `.venv`, installs the development tools,
+verifies imports, and runs a small public smoke suite. Use `-Python` to select
+an interpreter for a new environment; Python 3.11 is the tested baseline.
+See [development workflow](docs/development.md) for worktree creation, native
+preflight, QA receipts, debug access, and broader test selection.
 
 The GLIF5 path builds a content-addressed Rust kernel on first use and caches
 the release DLL by source hash. Set `HUMANBRAIN_DEVICE` to `auto`, `cpu`, or
@@ -303,8 +317,10 @@ They are point-cell prototypes, not multicompartment reconstructions.
 
 ## Project map
 
-- [Architecture](docs/architecture.md) — the cell-only contract and forbidden
-  shortcuts.
+- [Roadmap](docs/research/roadmap-reading-to-coding.md) — current priorities,
+  architecture policy, and evaluation order.
+- [Architecture](docs/architecture.md) — current implementations and scoped
+  experiment contracts.
 - [Benchmark status](docs/benchmark-status.md) — authoritative result index and
   claim boundaries.
 - [Research index](docs/research/INDEX.md) — every research document with a

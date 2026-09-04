@@ -1,5 +1,25 @@
 # Human Brain agent instructions
 
+## Direction and task scope
+
+Before choosing project work and after each context compaction, read the
+[roadmap](docs/research/roadmap-reading-to-coding.md) and its active linked plan.
+The roadmap owns current priorities and architecture policy; older plans do not
+override it. Frozen experiments retain their original contracts. Follow the
+current user task's scope: a documentation-only revision does not start project
+execution. The reusable execution prompt is [project-goal.md](docs/project-goal.md).
+
+For project execution, delegate independent work against the shared milestone.
+Use `high` reasoning effort for GPT-6 Astra subagents; review results and dispatch
+unblocked follow-ups without creating competing architecture queues.
+
+## Development workflow
+
+For setup, worktrees, QA, or debugging, read [development.md](docs/development.md).
+Use the selected checkout's `.venv` and run `tools/dev.py doctor` before tests.
+Choose the explicit public QA tier or reviewed affected tests; preserve the
+reported receipts when handing work off.
+
 ## Mem0 project memory
 
 Use Mem0 only as external development context. Keep it outside the cell models,

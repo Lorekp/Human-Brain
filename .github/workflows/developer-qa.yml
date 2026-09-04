@@ -1,0 +1,56 @@
+name: Developer QA
+
+on:
+  pull_request:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: developer-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-public-fixtures:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Bootstrap and smoke QA
+        run: ./tools/setup.ps1
+      - name: Lint developer tooling
+        run: ./.venv/Scripts/python.exe -m ruff check --config tools/ruff.toml tools/dev.py tests/test_dev_workflow.py
+      - name: Tooling failure and receipt tests
+        run: ./.venv/Scripts/python.exe tools/dev.py qa tooling
+      - name: Rust unit regressions
+        working-directory: src/humanbrain/_native_src
+        run: |
+          cargo test --locked --offline
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo test --locked --offline --features temporal-profile
+      - name: Attested native preflight and FFI QA
+        run: ./.venv/Scripts/python.exe tools/dev.py qa native
+      - name: Public headless integration QA
+        run: ./.venv/Scripts/python.exe tools/dev.py qa integration
+      - name: Preserve QA receipts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-public-qa
+          retention-days: 14
+          include-hidden-files: true
+          path: |
+            .pytest-tmp/dev/*/receipt.json
+            .pytest-tmp/dev/*/output.log
+            .pytest-tmp/dev/*/junit.xml
