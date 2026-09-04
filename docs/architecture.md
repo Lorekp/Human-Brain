@@ -3,8 +3,24 @@
 `Human Brain` is a sibling of `Fly Brain`. The projects share no runtime
 package and neither imports the other.
 
-The computational object is a sparse simulation of human-data-fitted cortical
-cells. A token activates a token cell. Replayed sequences grow local synapses
+## Scope and current direction
+
+Updated policy pointer: 2026-09-04. The
+[roadmap](research/roadmap-reading-to-coding.md#architecture-policy) owns the
+simulated-neuron learning commitment and permitted hybrid architecture research.
+Cell equations and GLIF may change. External stores, tokenization, and pretrained
+LLM knowledge components are permitted candidates with disclosed roles and
+measured neuronal contribution; this document does not claim they are integrated.
+
+The descriptions below document existing implementations. Their cell-only and
+fidelity constraints apply to those lanes and frozen experiments, not to every
+future architecture. The immediate integration sequence is in the
+[balanced session plan](research/balanced-evidence-to-action-session-v1.md).
+
+## Existing cell implementations
+
+The computational object in the dendritic lane is a sparse simulation of
+human-data-fitted cortical cells. A token activates a token cell. Replayed sequences grow local synapses
 onto dendritic branches. At recall, matching branches converge from short basal
 contexts to specific apical contexts. Distinct continuations determine how much
 lower-order current escapes into the next level, preventing a sparse long
@@ -141,11 +157,17 @@ The first working layer uses Allen Cell Types human specimen `488392806` and
 its fitted GLIF3 model `503612028`. The port retains the artifact's membrane
 capacitance, input resistance, threshold, reset, refractory cut, and two
 after-spike currents. It is a human-data-fitted point cell, not yet a whole
-human brain and not a claim of full Hodgkin–Huxley morphology. The strict
-fidelity gate remains the Eyal multicompartment model followed by a validated
-Neuron_Reduce/Jaxley port.
+human brain and not a claim of full Hodgkin–Huxley morphology. The separate
+fidelity research track targets the Eyal multicompartment model followed by a
+validated Neuron_Reduce/Jaxley port; that track is not a prerequisite for the
+roadmap's learning milestones or custom neuron models.
 
 ## Cell-only contract
+
+This contract defines the existing strict cell-only lane and claims made under
+it. It is not a blanket prohibition on the roadmap's hybrid research. New
+components require a separately declared experiment and contribution controls;
+they do not retroactively qualify under an earlier cell-only freeze.
 
 - No transformer, dense ANN, pretrained embedding, or ANN runtime participates
   in inference.
@@ -169,8 +191,8 @@ The current SQLFluff checkpoint is deliberately instance-specific. It is a
 plumbing and capacity demonstration, not the held-out checkpoint required for
 the final Gemma comparison.
 
-The next gate is deliberately smaller than SWE-bench: one frozen generic
-checkpoint must emit one complete function for family-disjoint hidden coding
+The historical typed-decoding gate is deliberately smaller than SWE-bench: one
+frozen generic checkpoint must emit one complete function for family-disjoint hidden coding
 tasks. The implemented Layer-1 typed prefix language lets recurrent fitted-cell
 output races choose semantic program tokens while a frozen deterministic
 grammar and compiler provide syntax-only plumbing—without search, retries, or

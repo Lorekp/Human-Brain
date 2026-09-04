@@ -1,8 +1,11 @@
 # Frozen-architecture cross-domain generalization gate
 
-Status: roadmap protocol; gate unspent.
+Status: standing roadmap protocol; fresh qualifying adjudication remains required.
+Earlier cohort outcomes remain recorded in [benchmark status](../benchmark-status.md)
+and the [program map](../program-map.md); this document is not a new result.
 
-Date: 2026-08-30.
+Protocol dated 2026-08-30; policy scope and sequencing clarified 2026-09-04.
+Existing frozen manifests, numerical protocols, and spent artifacts are unchanged.
 
 ## Purpose
 
@@ -62,9 +65,16 @@ named successor gate. The spent G0 cohort remains immutable.
 
 Every material component is classified before the freeze.
 
+The [roadmap architecture policy](roadmap-reading-to-coding.md#architecture-policy)
+permits modified neurons and disclosed hybrid components. A future hybrid G0
+must freeze the full system, external weights/data/access, and contribution
+controls before adjudication. It cannot reuse a strict cell-only cohort to claim
+a new hybrid result. Report whole-system generality separately from the neuronal
+core's learned contribution; the zero domain-specific machinery delta still applies.
+
 | Component | Expected classification |
 | --- | --- |
-| fitted-cell dynamics and recurrent synapses | general substrate |
+| fitted or custom neuron dynamics and recurrent synapses | general substrate |
 | local three-factor / teacher-gated plasticity | general learning |
 | winner-take-all / workspace competition | general control |
 | learned successor/world-model mechanism | general learning |
@@ -198,13 +208,20 @@ stronger evidence that shared cognitive machinery is being learned.
 G0 is intentionally scheduled before protected coding evaluation expands the
 architecture further. The intended order is:
 
-1. finish and freeze the current generic TRAIN semantic engine;
-2. finish and freeze canonical TRAIN prompt-to-factor learning and joint
-   integration;
-3. freeze the common architecture and all domain-neutral learning mechanisms;
-4. preregister and spend G0 on fresh non-coding domains;
-5. only then proceed to the family-disjoint public DEV gate and canonical
-   Simple-SWE M0 freeze/reveal sequence.
+1. satisfy the roadmap's integrated development gate through useful persistent
+   learning, retained knowledge, fresh transfer, and autonomous correction;
+2. freeze the common architecture, its domain-neutral learning rules, adapters,
+   external components if any, and the full adjudication protocol;
+3. preregister and spend a fresh G0 cohort on the required non-coding domains;
+4. only after a qualifying G0 **pass**, proceed to protected family-disjoint
+   coding R5 under its frozen protocol;
+5. only after R5 and the existing prerequisites pass, proceed to canonical
+   Simple-SWE R6/M0–M3 and later SWE comparisons.
+
+A G0 STOP does not open R5. Material architectural changes require fresh
+validation of affected claims. Public-exam reading development and separately
+reserved reading assessments may inform R2–R4 earlier; they neither replace G0
+nor authorize access to the protected coding surfaces.
 
 The coding DEV surface remains sealed while G0 is designed and executed. This
 prevents later coding-specific repairs from quietly becoming part of the

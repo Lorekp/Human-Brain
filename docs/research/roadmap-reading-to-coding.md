@@ -1,595 +1,191 @@
-# Roadmap: general intelligence through language, software, memory, and learning
+# Roadmap: a general learner for language, knowledge, and software
 
-Status: living decision document. Updated 2026-09-02.
-Owner: orchestrator.
+Status: living decision document. Updated 2026-09-04.
+Owner: orchestrator. This document owns current priorities and architecture policy;
+frozen experiment protocols retain authority over their own evidence.
 
-## North star
+## Objective
 
-Build a **general learning system capable of becoming superhumanly intelligent**:
-one that can acquire knowledge, form abstractions, reason, plan, learn continually,
-remember over long timescales, revise beliefs, and eventually operate through
-arbitrary interfaces.
+Build an intelligence network for real-world use that learns continually,
+acquires and retains knowledge, discovers reusable abstractions, reasons and
+plans, and improves through action and feedback. The ambition is eventually
+superhuman capability; experiments must establish each step.
 
-The immediate research focus is **software, language, coding, reasoning, and
-knowledge acquisition**. Vision, robotics, and motor control are explicitly out
-of scope for the current roadmap. They may become useful future interfaces, but
-the present objective is to solve the cognitive core first.
+Language comprehension, memory, and software are the current focus. Coding
+provides executable feedback; reading tests whether useful knowledge can be
+acquired beyond a programming ontology. Vision and robotics remain deferred.
 
-Coding is the primary application and benchmark because it gives exact feedback,
-rich compositional structure, cheap experimentation, and increasingly difficult
-closed-loop tasks. It is **not the definition of intelligence**.
+The long-run software targets are useful simple programming tasks, real
+repository work, a fair SWE comparison exceeding Gemma-4-12B (quantized allowed),
+then exceeding Opus 4.8 on DeepSWE. These are user-specified future targets:
+verify exact model identities, availability, benchmark versions, and budgets
+before preregistering a comparison. They are not present capability claims.
 
-The end target is not a neural program synthesizer. It is a learner whose useful
-mechanisms survive outside programming and whose architecture can continue to
-change substantially as experiments teach us what intelligence requires.
+## Architecture policy
 
-Reading and persistent memory remain important because:
+**Simulated-neuron learning remains the core research commitment for now.**
+Cell dynamics, connectivity, plasticity, representations, and network growth may
+change; GLIF and human-data fidelity are not mandatory global constraints.
 
-> "a network that can't remember the Bible won't remember code."
+The complete system need not be cell-only. Tokenization, conventional tooling,
+external or hybrid knowledge stores, and components from other researchers are
+allowed. Pretrained LLMs, including base/raw models as possible compressed
+knowledge resources, are permitted research candidates. This is permission to
+investigate, not a decision to integrate a particular model or store.
 
-The project therefore has five standing obligations:
+Reuse established work where useful. The research contribution should be a
+learner that acquires and uses reusable structure, rather than an ordinary LLM
+wrapper with an incidental neuronal component. For a hybrid proposal, state:
 
-1. **learn continually** from experience rather than depend on one offline fit;
-2. **acquire and retain knowledge** over long timescales;
-3. **compress experience into reusable abstractions** rather than memorize every
-   case independently;
-4. **reason, plan, act, and revise** in closed loops;
-5. **generalize beyond the ontology used to develop it**.
+- what the neuronal core learns and controls;
+- what the external component supplies, including any reasoning or action choices;
+- how matched core-disabled, learning-disabled, and external-component-only
+  controls will measure the core's contribution and improvement from experience;
+- what weights, retrieved data, prompts, and compute enter the evaluated system.
 
----
+Report hybrid-system and neuronal-component results separately. A final cell
+race alone does not establish that the core learned the computation. Keep
+target answers, hidden tests, and task-specific solvers out of undisclosed
+scaffolding. Existing cell-only experiments keep their original contracts;
+adding an external component requires a separately declared experiment.
+Mem0 remains development tooling outside the model and scientific pipeline.
 
-## What this roadmap should and should not specify
+## Immediate priority: one persistent end-to-end learner
 
-This document specifies **goals, scientific constraints, and evidence gates**.
-It should not freeze a detailed architecture.
-
-Current cell populations, memory systems, factor schemas, workspaces, planners,
-plasticity rules, representations, and compiler interfaces are **research
-hypotheses**. Any of them may be replaced if a better mechanism is discovered.
-A roadmap update should not be needed merely because one implementation is
-replaced by another.
-
-The roadmap should answer:
-
-- What capability are we trying to obtain?
-- What failure would falsify the current approach?
-- What evidence would justify a stronger claim?
-- What must remain sealed to preserve that evidence?
-- Does a proposed mechanism appear broadly useful, or only useful for one task?
-
-Implementation detail, exact experiment chronology, hashes, and retired variants
-belong elsewhere:
-
-- Current evidence / claim boundaries: [`docs/benchmark-status.md`](../benchmark-status.md)
-- Current implementation map: [`docs/program-map.md`](../program-map.md)
-- Experiment history: [`roadmap-experiment-history.md`](roadmap-experiment-history.md)
-- Cross-domain gate details: [`frozen-architecture-cross-domain-generalization.md`](frozen-architecture-cross-domain-generalization.md)
-
----
-
-# Design philosophy
-
-## 1. Intelligence is learning reusable structure
-
-Repeated failures in both reading and coding have pointed to the same broad
-problem: storing or replaying examples is not enough. Useful cognition requires
-internal states that can be distinguished, related, reused, and recombined in
-new situations.
-
-The working thesis is:
-
-> **Intelligence grows by discovering reusable structure in experience and using
-> that structure to predict, remember, reason, and act.**
-
-This is deliberately more general than any current implementation.
-
-## 2. Coding is the laboratory, not the ontology
-
-Python syntax, ASTs, types, compilers, sandboxes, and tests are useful parts of a
-coding environment. They must not quietly become the definition of the brain's
-internal ontology.
-
-When coding performance improves, ask:
-
-> Did the learner become better at acquiring/composing arbitrary structure, or
-> did we simply make Python easier for it?
-
-The former is progress toward the north star. The latter may still be useful
-engineering, but it is not evidence of general intelligence.
-
-## 3. Architecture is provisional
-
-Do not protect an architecture merely because substantial work has gone into it.
-The project is expected to change architecture repeatedly.
-
-A failed mechanism should normally lead to:
+R2, R3, and R4 are capability dimensions of one active workload, not independent
+queues of mechanisms. The next milestone is:
 
 ```text
-localize failure
-  -> propose a more general hypothesis
-  -> test it on controlled evidence
-  -> keep it only if it improves the relevant capability
+read raw documents -> retain a fact after source removal
+  -> use the fact to edit a small Python repository -> execute it
+  -> learn from declared feedback -> transfer to a fresh task and retain prior skills
 ```
 
-Avoid:
+Use the new answer-free document learner in the actual action path. Keep the
+first edit family narrow and explicitly label any demonstrated action schema.
+Count executable behavior, not byte substitution in a text fixture, as software
+success. Teacher corrections may follow first attempts; they do not count as
+learner successes or autonomous recovery.
 
-```text
-failure on X
-  -> encode X's answer more directly
-  -> call the benchmark solved
-```
+Run this smallest useful integration before provenance revision, multi-hop
+composition, or the full balanced challenge. The latest neutral frame/memory
+results establish mechanisms; robustness and integration remain unverified.
+The [balanced session plan](balanced-evidence-to-action-session-v1.md) owns the
+development sequence and later 24-episode challenge.
 
-The purpose of experiments is to discover the architecture, not to defend it.
+Alongside integration, apply two inexpensive sources of pressure:
 
-## 4. Prefer learned abstractions over hand-supplied abstractions
+- **Comprehension and transfer:** use authentic public-exam reading material and
+  official marking guidance, not LLM-written evaluation questions. Follow the
+  [reading evaluation plan](reading-comprehension-evaluation.md). Vary sentence
+  length, question form, incidental lexical overlap, repeated entities, and
+  distractors in public development. Renaming alone is not language generalization.
+- **Growth cost:** measure useful accuracy, STOP/error rates, ingestion and query
+  latency, total retained bytes, and work per new episode as facts, frame
+  diversity, sentence length, and session length grow. Count retained derived
+  evidence and repeated processing as well as raw data; zero retained documents
+  does not imply bounded incremental work or semantic compression.
 
-Some scaffolding is unavoidable while mechanisms are being discovered. But the
-long-run direction must move from:
+## Work-selection rule
 
-```text
-human defines concepts and relations
-network learns values inside them
-```
+Keep one shared integration target. Parallel agents may tackle independent
+blockers, reference research, evaluation design, and measured performance costs.
+Use roughly 3:1 effort on integrated capability versus isolated mechanism work.
 
-toward:
+Before a mechanism experiment, record its observed workload failure, reusable
+hypothesis, comparison, completion criterion, and time/compute or iteration
+budget. After its focused test, return to the shared workload. A mechanism pass
+earns integration, not another automatic mechanism milestone.
 
-```text
-experience
-  -> recurring structure discovered
-  -> reusable abstraction formed
-  -> abstraction becomes a building block for later learning
-```
+If the budget expires without a useful gain, stop extending that mechanism,
+summarize what was learned, and compare alternative explanations or architectures.
+Repeated failures should trigger a bounded research/reasoning review. Preserve
+negative results; replace ineffective approaches instead of accumulating
+task-specific patches or defending sunk work.
 
-Recursive abstraction formation is a core candidate capability for intelligence.
+Efficiency is integral to capability: faster useful simulation can support a
+larger effective learner. Optimize measured end-to-end bottlenecks, preserving
+the declared result. Kernel speedups that slow the workload are not improvements.
+The suggested 100-billion-neuron scale is exploratory, not an acceptance target.
+Distinguish addressable, stored, updated, and causally useful neurons; expand
+scale when learning and resource curves justify it. Resource detail belongs in
+the [scale study](100-billion-cell-architecture.md).
 
-## 5. Closed-loop learning beats static decoding
+## Evidence and advancement
 
-The preferred pattern is:
+### Development versus adjudication
 
-```text
-observe
-  -> internal state / memory
-  -> choose or infer
-  -> act / predict / answer
-  -> observe consequence
-  -> update beliefs or policy
-```
+Public **TRAIN development** is repeatable: use regression suites, instrumented
+failures, interface preflights, and reference implementations before freezing.
+Keep broad strata that the current model cannot handle visible in the results.
+A simplified single-match request may isolate a mechanism; it must not become
+the universal language contract or erase realistic failures.
 
-Coding sandboxes already provide this loop. Future domains may use different
-interfaces without requiring a different cognitive core.
+**Adjudication** uses a separately reserved fresh cohort and preregistered
+architecture, scoring, controls, and resource budgets. Freeze only after ordinary
+development contracts work. Spent adjudicative cohorts and artifacts remain
+immutable; improvements require fresh evidence. These terms do not rename or
+unseal the existing protected coding DEV/M0 surfaces.
 
-## 6. Ambiguity is information
+For public exams, separate whole papers/years and shared passages according to
+the reading plan, use official questions/rubrics, and record prior exposure.
+Passage-visible comprehension and delayed source-absent memory are separate
+tests. Public availability does not establish freedom from LLM pretraining
+contamination, and an exam score alone is not general-intelligence evidence.
 
-If available evidence supports multiple hypotheses, the system should be able to
-represent uncertainty, abstain, seek more evidence, retrieve relevant knowledge,
-or run an experiment.
+### What earns advancement
 
-Do not resolve genuine uncertainty using hidden tests, fixed candidate order, or
-host-side semantic knowledge.
+Require useful behavior change, not merely checkpoint mutation or physical
+activity. Compare an updating learner with a frozen learner from the same
+initial checkpoint; where stochastic, use matched seeds and multiple fresh
+development streams. Include simple memorization/template/retrieval references
+appropriate to the workload, plus causal ablations. Keep reference algorithms
+outside the evaluated learner unless explicitly testing a hybrid architecture.
 
-## 7. Scale follows useful learning
+Report first-attempt executable success and reading marks, later-task learning
+gain, recovery, retention/forgetting, sample efficiency, and total resource cost.
+Separate correct abstentions from solved tasks and unsuccessful retries from
+recovery. Inspect failure distributions and gains within each capability rather
+than hiding a weak lane behind an aggregate score.
 
-Large cell counts and fast kernels are enabling technology. They are not a
-substitute for a useful learning mechanism.
+Before advancing beyond the integrated development gate, one persistent learner
+must improve later fresh tasks over the frozen control, retain prior skills,
+use acquired knowledge in real actions, and recover from some failures through
+its own multi-step behavior. Numerical margins, uncertainty estimates, and budgets
+belong in the successor protocol and must be fixed before its adjudication.
+The initial narrow integration slice is progress toward this gate, not its pass.
 
-Demonstrate the mechanism at a scale where it can be falsified, then scale it
-without changing what the experiment claims.
+Distinguish replay, composition, within-domain transfer, cross-domain learning,
+and positive cross-domain transfer. Treat reusable compression, source revision,
+uncertainty-driven evidence seeking, and longer plans as subsequent workload
+requirements. Self-models and internal drives come later, when sustained agency
+provides something meaningful to model and regulate.
 
----
+## Stage and evaluation order
 
-# Knowledge, memory, and compression
-
-Knowledge is a first-class part of the intelligence target, not merely training
-data for a reasoning system.
-
-A sufficiently capable learner with access to a large fraction of public human
-knowledge could gain an enormous advantage, but only if it can **retain,
-organize, retrieve, generalize, and revise** that knowledge rather than merely
-memorize text.
-
-The roadmap intentionally does **not** prescribe whether this ultimately lives
-in synaptic state, episodic memory, learned latent structures, external stores,
-or a hybrid. Research should determine that.
-
-The capabilities that matter are:
-
-- **Acquisition** — learn useful information from text, code, interaction, tools,
-  and future data sources without requiring full retraining.
-- **Episodic retention** — preserve particular experiences and source-specific
-  details when abstraction would lose important information.
-- **Semantic consolidation / compression** — turn many related observations into
-  shorter reusable models, concepts, rules, relations, or predictive structures.
-- **Retrieval** — make relevant prior knowledge available from current cognitive
-  state through learned, context-sensitive retrieval.
-- **Provenance and confidence** — distinguish observation, inference, source,
-  uncertainty, and conflict.
-- **Revision** — update or supersede old knowledge when new evidence arrives.
-- **Transfer** — reuse knowledge and abstractions when underlying structure is
-  shared across contexts.
-
-A useful conceptual target is:
-
-```text
-raw experience
-     |
-     +--> particular memories / provenance
-     |
-     +--> reusable compressed structure
-                  |
-                  v
-        prediction / reasoning / planning
-                  |
-                  v
-              new evidence
-                  |
-                  v
-         confirmation or revision
-```
-
----
-
-# Cognitive capability spine
-
-The original 11-property framework remains useful as a checklist, but it does
-not prescribe implementations.
-
-| Property | Capability requirement |
+| Stage | Advancement requirement |
 | --- | --- |
-| **P1 Strong recurrence** | Past internal state can affect later computation in a useful, learned way. |
-| **P2 Integrated representations** | Information from different sources/roles can become a coherent reusable state. |
-| **P3 Global workspace** | Relevant information can win competition and influence subsequent computation. |
-| **P4 Persistent internal state** | Useful state survives long enough to support memory, reasoning, and learning. |
-| **P5 Metacognition** | Confidence, uncertainty, error, and missing information can change later behavior. |
-| **P6 Attention** | The system learns what information is relevant rather than receiving the answer through routing metadata. |
-| **P7 Self-model** | With sufficient agency/history, the system can represent its own capabilities, actions, and failures. |
-| **P8 Autobiographical / episodic memory** | Specific experiences can be retained and recalled by learned cues. |
-| **P9 Goal-directed agency** | The system can select actions over multiple steps to achieve a goal. |
-| **P10 Closed-loop interaction** | Actions alter future observations and learning uses those consequences. |
-| **P11 Homeostasis / valence** | Internal signals stabilize learning and prioritize behavior in measurable ways. |
-
-These properties are not a mandatory build order. Their interactions should be
-discovered experimentally.
-
----
-
-# Cross-cutting capability gates
-
-Do not create one gate or module per cognitive property. Use a small number of
-architecture-neutral gates to force the weaker capabilities to become real as
-the rest of the system matures.
-
-| Gate | Main properties | Required evidence |
-| --- | --- | --- |
-| **Continuity** | P1, P4, P8 | Across a long fresh workload, retain specific experiences, retrieve them from learned cues, consolidate reusable knowledge, revise contradictions, and continue learning without destructive forgetting. |
-| **Autonomous correction** | P3, P5, P6, P9, P10 | Given a novel goal and tools, choose relevant information, act over multiple steps, detect uncertainty or failure, seek/retrieve evidence, revise the plan, and recover without a hidden oracle. |
-| **Self-regulation** | P7, P11 | After substantial prior experience, represent useful facts about the system's own capabilities/state/resources and use internal regulation to measurably improve strategy, stability, or learning. |
-
-The gates are staged rather than simultaneous. **Continuity** should mature in
-parallel with R2 and knowledge ingestion. **Autonomous correction** becomes a
-prerequisite for strong autonomous-agent claims. **Self-regulation** is
-intentionally later: forcing a self-model or drives before meaningful memory and
-agency exist would mostly create hand-built theater.
-
-For each gate: freeze the relevant architecture, use fresh tasks, require causal
-ablations/controls, keep the spent cohort immutable, and treat failure as
-localization of a general mechanism.
-
----
-
-# Integrated capability forcing gate
-
-Micro-gates validate localized mechanisms; they should **not** become the main
-generator of the roadmap. R3/R4 should now be driven primarily by a persistent
-learner facing larger public TRAIN-only integrated workloads.
-
-Default research loop:
-
-```text
-integrated task fails
-  -> localize the missing general computation
-  -> test the smallest reusable mechanism with a causal micro-gate
-  -> integrate it
-  -> return to the larger workload
-```
-
-As a working allocation, bias roughly **3:1 toward integrated capability work
-versus isolated mechanism gates**. Adjust when a failure genuinely needs tighter
-localization.
-
-The integrated workload should require combinations of task/language
-understanding, repository/source inspection, memory and knowledge retrieval,
-tool use, editing, real execution/test feedback, multi-step correction, and
-learning across tasks. It should be difficult enough that failure modes remain
-visible.
-
-Do not quietly supply target spans, answer-bearing diagnostic classes, candidate
-patches, prebuilt repaired sources, or task-specific ontologies unless that
-scaffold is itself the explicit object of study.
-
-**Gate before opening protected R5/R6:** on fresh public TRAIN-only mesoscopic
-tasks, one persistent learner should:
-
-1. solve materially harder end-to-end problems than current microfixtures;
-2. improve later behavior using prior task experience without reset or full replay;
-3. recover from at least some failures over multiple steps;
-4. preserve STOP/uncertainty behavior and causal-ablation discipline.
-
-Track the **failure distribution and capability curve**, not only pass rate. The
-larger workload should identify bottlenecks; micro-gates should test proposed
-general mechanisms. Avoid endless sequences that merely add one more candidate,
-position, relation, or ontology unless the integrated workload demonstrates that
-it is the bottleneck.
-
-This gate does not authorize opening protected DEV/M0 evidence early.
-
----
-
-# Generalization ladder
-
-Claims should distinguish several levels:
-
-1. **Replay** — reproduce a learned case.
-2. **Compositional generalization** — recombine learned pieces in a new way.
-3. **Within-domain transfer** — solve genuinely new families inside one domain.
-4. **Cross-domain learning** — acquire useful structure in a substantially
-   different domain without domain-specific cognitive machinery.
-5. **Cross-domain transfer** — knowledge or mechanisms learned in one domain
-   measurably improve another.
-
-Coding work is currently the main laboratory for levels 1-3. Cross-domain tests
-exist to prevent us from mistaking specialization for general intelligence.
-
----
-
-# Current research focus
-
-## Priority A — Language, coding, and reasoning
-
-This is the main active frontier.
-
-The system should increasingly be able to:
-
-- understand natural-language task descriptions;
-- acquire reusable concepts and relations from examples and experience;
-- write, inspect, execute, debug, and revise code;
-- plan across multiple dependent steps;
-- use feedback without brute-force hidden search;
-- represent uncertainty and request/retrieve missing information;
-- transfer learned abstractions to new task families;
-- improve continually rather than reset between tasks.
-
-Current experiments on semantic synthesis, learned prompt structure, factor
-binding, planning, and closed-loop coding are **means to this end**, not frozen
-architectural commitments.
-
-The current local integration gap and exact implementation status belong in
-[`docs/benchmark-status.md`](../benchmark-status.md), not in the roadmap.
-
-## Priority B — Persistent knowledge and memory
-
-Develop and test the ability to ingest long streams, retain particular facts and
-relationships, retrieve relevant information later, and consolidate repeated
-experience into reusable structure.
-
-Near-term evidence should include:
-
-- long-delay retention;
-- source/relationship recall;
-- useful retrieval from learned cues;
-- resistance to catastrophic forgetting;
-- updating knowledge after contradictory evidence;
-- measurable compression/generalization rather than independent memorization of
-  every example.
-
-The Bible/reading lane is one convenient stress test, not the eventual knowledge
-corpus.
-
-## Priority C — Generality guardrails
-
-Maintain cross-domain tests as a falsification tool for coding overfit.
-
-They should constrain claims and reveal architectural specialization, but they
-do not need to become the main engineering priority while the software/language
-core is still being developed.
-
-Vision and motor competence are not required in the present roadmap. A future
-robot should ideally connect sensors and actions to a mature general learner;
-robotics should not be used now to distract from solving cognition.
-
----
-
-# Roadmap stages
-
-These are capability stages, not architectural prescriptions.
-
-## R1 — Auditable learning substrate — CONTINUOUS
-
-Maintain an experimental substrate where learning, memory, competition, and
-inference can be measured and falsified.
-
-Important constraints:
-
-- read-only inference should not silently modify learned state;
-- causal controls should distinguish real learning from host scaffolding;
-- performance optimizations should preserve the scientific result;
-- host code should not secretly make the decision attributed to the learner.
-
-The specific neuron models, data structures, and execution backends may change.
-
-## R2 — Persistent memory and knowledge — ACTIVE
-
-Demonstrate that the system can acquire and retain large bodies of information
-and later use them productively.
-
-Required progression:
-
-- reliable long-term retention;
-- retrieval by learned context;
-- relationships and source provenance;
-- continual updates without catastrophic destruction;
-- consolidation/compression into reusable abstractions;
-- reasoning using both retained particulars and generalized knowledge.
-
-The existing reading replay is one experiment inside this stage, not the stage's
-architectural definition.
-
-## R3 — General reasoning, abstraction, and world models — ACTIVE
-
-Develop mechanisms that can learn consequences, relations, latent structure,
-and multi-step plans from experience.
-
-Evidence should increasingly demonstrate:
-
-- novel composition;
-- causal/predictive learning;
-- planning without host enumeration of answers;
-- abstraction that reduces repeated work;
-- uncertainty when evidence is insufficient;
-- reuse of learned structure across tasks.
-
-Coding semantics are currently the richest development environment for this.
-
-## R4 — Language, software, and continual coding intelligence — ACTIVE
-
-Combine language understanding, knowledge, reasoning, memory, planning, and
-feedback into increasingly autonomous software capability.
-
-Important milestones include:
-
-- robust TRAIN generalization without family-specific patches;
-- mesoscopic integrated repository/task competence;
-- persistent learning across tasks;
-- debugging and multi-step revision loops;
-- knowledge-assisted coding using previously learned documentation, codebases,
-  algorithms, and general world knowledge;
-- family-disjoint coding transfer;
-- prompt-only coding performance.
-
-Narrow mechanism evidence already banks useful pieces of consequence learning,
-replanning, memory, factor/cue binding, source-context learning, edit
-materialization, and bounded occurrence localization. These are **components**,
-not proof of end-to-end software intelligence. Exact evidence and current
-frontiers live in `benchmark-status.md`, `program-map.md`, and experiment history.
-
-R4 development should now use the **Integrated capability forcing gate** as the
-primary source of architectural pressure rather than extending a micro-gate
-sequence indefinitely.
-
-## G0 — Cross-domain falsification gate — REQUIRED FOR STRONG GENERALITY CLAIMS
-
-Use at least two non-coding domains to test whether the learned cognitive
-mechanisms survive outside the programming ontology.
-
-The detailed protocol is frozen separately. The roadmap only requires that:
-
-- domain-specific cognitive solvers are not added after the relevant freeze;
-- whole systems/problems are held out;
-- names/symbols can be changed without destroying learned relations;
-- new relation compositions are tested;
-- learning and memory ablations behave causally;
-- failures are treated as evidence about general mechanisms.
-
-G0 is a claim/evidence gate, not a requirement to prioritize vision or robotics.
-
-## R5 — Protected family-disjoint coding transfer — SEALED
-
-Use the protected coding split to test whether the developed software/language
-system transfers beyond the TRAIN families.
-
-Do not open it until the integrated capability forcing gate is satisfied and the
-architecture to be evaluated is frozen. No tuning on the protected result.
-
-## R6 — Prompt-only coding ladder — SEALED
-
-Run the existing Simple-SWE M0-M3 ladder after the prerequisites for a meaningful
-transfer claim are frozen.
-
-The exact milestone baselines remain in the benchmark documentation.
-
-## R7+ — Real-world software intelligence
-
-Progress toward increasingly difficult real repositories, debugging, design,
-tool use, long-horizon tasks, and continual improvement.
-
-External-model comparisons matter here, but the ultimate objective is capability,
-not benchmark theater.
-
----
-
-# Research discipline
-
-## Preserve falsifiability
-
-A spent protected/adjudicative gate is immutable. Fixes receive a new experiment
-or fresh cohort.
-
-## Keep evaluation surfaces sealed
-
-Do not use DEV/evaluation/held-out outcomes to choose the architecture that will
-be scored on them.
-
-## Separate environment adapters from cognition
-
-Parsers, compilers, sandboxes, serializers, and tools can exist around the
-learner. They should not silently encode the reasoning result.
-
-## Prefer narrow true claims
-
-Distinguish:
-
-- mechanism success;
-- learned replay;
-- compositional generalization;
-- within-domain transfer;
-- cross-domain learning;
-- broad autonomous capability.
-
-## Track architecture debt
-
-Whenever a new mechanism is added, ask whether it is:
-
-- plausibly reusable across many domains;
-- temporary scaffolding for an experiment;
-- or a domain-specific shortcut.
-
-Temporary scaffolding is allowed, but should not become invisible evidence for a
-generality claim.
-
----
-
-# Immediate direction
-
-The agent should **not** interpret this roadmap as an instruction to preserve the
-current architecture.
-
-Near-term work should optimize for progress on these questions:
-
-1. **Can one persistent learner improve across larger integrated TRAIN tasks, with
-   failures in those tasks driving the next architectural questions?**
-2. **Can the language/coding system learn missing relationships and useful
-   abstractions from causal data rather than host annotations/ontologies?**
-3. **Can learned representations become reusable abstractions instead of growing
-   one new mechanism per coding pattern?**
-4. **Can persistent memory evolve from exact retention toward useful knowledge
-   consolidation, retrieval, provenance, and revision?**
-5. **Can coding competence become continual—learning from repositories,
-   documentation, executions, and prior tasks without full retraining?**
-6. **Do proposed improvements look useful for arbitrary structured experience,
-   even while coding remains the primary testbed?**
-
-When deciding between two implementation directions, prefer the one that teaches
-us more about these questions, even if it requires replacing substantial existing
-code.
-
-Do not broaden into computer vision or robotics merely to appear more general.
-Solve language, software, knowledge, memory, reasoning, and continual learning
-first; keep cross-domain tests as a guardrail against accidental specialization.
-
-The long-run standard remains demanding:
-
-> A system that can ingest enormous amounts of human knowledge, compress it into
-> useful abstractions while retaining important particulars and provenance,
-> reason and plan beyond what it has seen, learn continually from consequences,
-> revise itself when wrong, and transfer those capabilities to new problems.
-
-That—not any specific current architecture—is the roadmap's target.
+| R1 — substrate, continuous | Auditable learning and inference, explicit state mutation, credible resource accounting. |
+| R2–R4 — memory, reasoning, language/software, active | Small integrated session, then broader comprehension, revision, composition and autonomous correction; satisfy the integrated development gate above. |
+| G0 — cross-domain gate | Freeze the common architecture and learning rules; pass fresh adjudication in two non-coding domains under the [G0 protocol](frozen-architecture-cross-domain-generalization.md). |
+| R5 — protected coding transfer, sealed | Integrated development gate and G0 pass on the architecture to be evaluated, then one protected family-disjoint coding evaluation. |
+| R6 — prompt-only Simple-SWE, sealed | R5 pass and the existing frozen M0–M3 prerequisites. |
+| R7+ — real-world software and comparisons | Increasingly difficult repositories and continual work; preregister fair Gemma and later Opus/DeepSWE comparisons. |
+
+Public-exam development and its separately reserved reading assessments can
+inform R2–R4; they neither replace G0 nor unlock protected coding evaluation.
+A G0 STOP does not authorize R5. Material changes after a gate require fresh
+validation of the affected claims; a prior architecture's pass does not transfer
+automatically. Existing numerical protocols and spent evidence are unchanged.
+
+## Where detail belongs
+
+- [Benchmark status](../benchmark-status.md): measured results and limitations.
+- [Program map](../program-map.md): implementation inventory, not a competing queue.
+- [Experiment history](roadmap-experiment-history.md): chronology and retired paths.
+- [Architecture](../architecture.md): current implementations and scoped contracts.
+- [Reusable goal prompt](../project-goal.md): execution instructions for future work.
+
+Read this roadmap before choosing work and after each context compaction. Load
+the linked plan for the active milestone; old implementation plans are evidence
+and design inputs, not authority to override current priorities.

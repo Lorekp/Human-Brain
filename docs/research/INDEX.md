@@ -15,9 +15,17 @@ harness scripts, per the repo's committed-evidence convention.
 
 ## Program strategy and roadmaps
 
+For current work selection and architecture policy, follow the living roadmap.
+Other "current" entries are available technical references, not simultaneous
+work queues. Historical cell-only restrictions remain binding for their frozen
+experiments; they do not override the roadmap's permitted hybrid research.
+
 | Document | One-line description | Status |
 | --- | --- | --- |
-| [roadmap-reading-to-coding.md](roadmap-reading-to-coding.md) | Living roadmap: read/remember text first (Bible), coding as north star; phase gates R0→R5 and the immediate queue | current |
+| [roadmap-reading-to-coding.md](roadmap-reading-to-coding.md) | Authoritative priorities: neuronal learning core, disclosed hybrids, integrated reading/memory/software, evidence and gate order | current |
+| [project-goal.md](../project-goal.md) | Reusable execution prompt aligned with the roadmap; saving it does not start work | current |
+| [balanced-evidence-to-action-session-v1.md](balanced-evidence-to-action-session-v1.md) | Small persistent reading-to-executable-edit sequence, then the later 24-episode challenge | current design; not frozen or spent |
+| [reading-comprehension-evaluation.md](reading-comprehension-evaluation.md) | Official public-exam sources, development/reserve separation, scoring and contribution comparisons | current design; selection and execution pending |
 | [experiment-level-ladder.md](experiment-level-ladder.md) | Survey + dependency graph from single-cell to brain-level experiments with box-aware parallelization plan | current |
 | [custom-architecture-directions.md](custom-architecture-directions.md) | Post-reservoir-falsification directions; spawned U-STATE (A), APICAL-AND (B), race-pivot, T-ROUTE | current |
 | [r0c-strategy-decision.md](r0c-strategy-decision.md) | Adopted post-R0/R0-b mainline: associative-memory-through-race; P1/P2/P3 probes gating D5 | superseded — mainline advanced through U-STATE/APICAL-AND/T-ROUTE chain ([t-route-program-conclusion.md](t-route-program-conclusion.md)) |

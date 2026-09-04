@@ -1,6 +1,14 @@
 # Benchmark status
 
-Status date: 2026-09-02
+Direction updated: 2026-09-04. This documentation revision adds no measured result.
+
+The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
+architecture policy. Sections below retain the history and contracts of their
+experiments; older "next" steps are not a competing work queue. The immediate
+plan is the [small integrated session](research/balanced-evidence-to-action-session-v1.md),
+with [public-exam comprehension](research/reading-comprehension-evaluation.md)
+as complementary evaluation pressure. Hybrid permission does not relabel existing
+cell-only evidence or reopen protected evaluations.
 
 ## What has passed
 
@@ -882,10 +890,11 @@ tokenizes and collision-preservingly enumerates positional candidates; generic
 pair and route learning remains costly. The action bridge still uses answer-
 supervised upstream frames, training-only workspace differencing, host
 materialization, and a fixed motor program. These mechanism commits are not a
-spent integrated benchmark. The next integrated forcing workload is specified
-in `docs/research/balanced-evidence-to-action-session-v1.md`; it gives language
-and knowledge greater episode count than coding and makes every code transfer
-depend on acquired prose relations.
+spent integrated benchmark. The next integrated forcing workload is the small
+neutral-memory-to-executable-edit sequence in
+[the balanced plan](research/balanced-evidence-to-action-session-v1.md).
+The later 24-episode challenge gives language and knowledge greater episode count
+than coding and makes every code transfer depend on acquired prose relations.
 
 Integrated language/knowledge work remains co-equal with integrated coding.
 Both are public TRAIN-side development lanes; R5 and R6 remain sealed.

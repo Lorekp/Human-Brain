@@ -1,23 +1,27 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-03 after answer-free neutral
-frames acquired delayed provenance-bearing fact recall. Integrated revision,
-multi-hop recurrence, paraphrase learning, and learned language abstractions
-remain open. Exact scientific boundaries live in
-`docs/research/roadmap-reading-to-coding.md` and `docs/benchmark-status.md`.
+Maintained by the orchestrator. Direction updated 2026-09-04; no new capability
+result accompanies this revision. This file inventories implementation and
+historical frontiers. The [roadmap](research/roadmap-reading-to-coding.md) owns
+the active queue and architecture policy; [benchmark status](benchmark-status.md)
+owns measured evidence. Older "next" steps below are local historical context.
+
+The active target is the [small integrated session](research/balanced-evidence-to-action-session-v1.md):
+neutral reading, delayed memory, real Python editing/execution, and fresh transfer
+through one persistent learner, before revision or multi-hop expansion.
 
 ## Goal ladder
 
 ```
-R9  Beat Opus 4.8 on DeepSWE                         [end state]
-R8  Beat Gemma-4-12B-Q4 on a fair chosen SWE bench  [design exists; unopened]
+R9  Beat Opus 4.8 on DeepSWE                         [future target; verify exact identity]
+R8  Beat Gemma-4-12B on a fair SWE bench              [quantized allowed; comparison unopened]
 R7  Real held-out SWE benchmark                      [after simple-SWE ladder]
 R6  Canonical prompt-only simple-SWE M0–M3           [evaluation sealed]
 R5  Family-disjoint public DEV transfer              [one paired gate; unopened]
 G0  Frozen-architecture cross-domain generalization  [capacity STOP; fresh cohort needed]
-R4  Language/software continual coding               [OPEN; V3 3/3; persistent successors active]
-R3  Bottom-up typed semantic synthesis               [occurrence→executable bridge banked; raw grouping next]
-R2  Persistent knowledge and reading memory          [neutral delayed facts + reusable schemas banked]
+R4  Language/software continual coding               [shared integrated workload active]
+R3  General reasoning and abstraction                [shared workload; typed synthesis is one component]
+R2  Persistent knowledge and reading memory          [narrow neutral-memory mechanism; integration pending]
 R1  Fast, auditable simulated-cell substrate         [continuous; compiled race + scratch reductions banked]
 ```
 
@@ -760,11 +764,11 @@ result. The `b5ccc73` action bridge still consumes the older `f92dd3d`/
 `3448797` answer-supervised memory path; this neutral learner has not yet
 replaced that upstream route.
 
-The next forcing workload is
-`docs/research/balanced-evidence-to-action-session-v1.md`: fifteen
-language/knowledge episodes and nine coding episodes, with every code action
-dependent on acquired prose facts and a minimum-of-domain balanced score. Both
-lanes are public TRAIN development; R5/R6 stay sealed.
+The next forcing workload is the small persistent neutral-memory-to-executable-
+edit sequence in [the balanced plan](research/balanced-evidence-to-action-session-v1.md).
+Its later 24-episode challenge retains fifteen language/knowledge episodes and
+nine coding episodes, with acquired prose facts required for every code action.
+Both are public TRAIN development designs; R5/R6 stay sealed.
 
 ### Coding
 
@@ -1387,14 +1391,11 @@ the shared 25-literal sentinel checkpoint is
 Independent audit passed, and implementer/root verification each passed
 100/100 tests. This is self-posed runtime-safety evidence only.
 
-The protected opening order is now:
-
-1. freeze the fresh packed cross-type panel successor, preserve factor-workspace
-   V4, freeze the prompt-selection V4 successor, and run canonical TRAIN controls;
-2. spend frozen-architecture G0 on regulatory and spatial non-coding domains;
-3. only after the G0 verdict, spend the 27 family-disjoint DEV tasks once;
-4. only a paired transfer pass licenses canonical M0-M3 and later SWE/model
-   comparisons.
+The [roadmap evaluation order](research/roadmap-reading-to-coding.md#stage-and-evaluation-order)
+supersedes implementation-specific opening queues: integrated capability
+evidence, common architecture freeze and G0 **pass**, then protected R5 and R6
+under their frozen protocols. A G0 STOP does not authorize protected coding.
+The checkpoints above remain historical evidence, not mandatory architecture.
 
 ### Reading and persistent memory
 
