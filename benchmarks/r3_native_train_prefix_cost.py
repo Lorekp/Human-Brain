@@ -31,7 +31,7 @@ if str(REPO_ROOT) not in sys.path:
 from experiments.r3_pilot import calibration_v3_protocol as protocol_authority
 from experiments.r3_pilot.calibration_v3_definitions import build_r3_f0_definition
 from experiments.r3_pilot.r3_f0_train_input import load_verified_train_input
-from humanbrain.native import loaded_library_identity
+from humanbrain.native import _enable_temporal_profile_build, loaded_library_identity
 import humanbrain.native_temporal_runtime as runtime_adapter
 from humanbrain.native_temporal_runtime import (
     NativeTemporalCircuit,
@@ -195,6 +195,7 @@ def _run_prefix(
 ) -> tuple[
     dict[str, list[int]],
     dict[str, int | bool],
+    dict[str, int],
     dict[str, int | str] | None,
 ]:
     series = {
@@ -290,6 +291,9 @@ def _run_prefix(
 
     if scientific_stop is not None:
         scientific_stop["elapsed_replay_wall_ns"] = replay_wall_ns
+    phase_totals = circuit.engineering_profile_summary().to_record()
+    if phase_totals["completed_steps"] != len(series["latency_ns"]):
+        raise RuntimeError("native phase profile completed-step count drifted")
     return (
         series,
         {
@@ -300,12 +304,14 @@ def _run_prefix(
             "all_winner_to_basket_ticks": causal_winner_to_basket,
             "all_basket_to_gaba_ticks": causal_basket_to_gaba,
         },
+        phase_totals,
         scientific_stop,
     )
 
 
 def main() -> int:
     args = _parse_args()
+    _enable_temporal_profile_build()
     prefix_tokens = args.prefix_tokens
     output_path = args.output
     verified, first_book, prefix, input_load_ns = _load_prefix(prefix_tokens)
@@ -326,7 +332,7 @@ def main() -> int:
         construction_started_ns = time.perf_counter_ns()
         with NativeTemporalCircuit.fresh(bounded) as circuit:
             native_construction_ns = time.perf_counter_ns() - construction_started_ns
-            series, physical, scientific_stop = _run_prefix(circuit, prefix)
+            series, physical, phase_totals, scientific_stop = _run_prefix(circuit, prefix)
             final_identity = (
                 None if scientific_stop is not None else circuit.checkpoint_identity()
             )
@@ -334,7 +340,7 @@ def main() -> int:
 
     if scientific_stop is not None:
         payload = {
-            "schema_version": 1,
+            "schema_version": 2,
             "benchmark": "r3-native-train-prefix-cost",
             "generated_at_utc": datetime.now(UTC).isoformat(),
             "outcome": "SCIENTIFIC_STOP",
@@ -369,6 +375,8 @@ def main() -> int:
                 "mode": "LEARN",
                 "timer": "time.perf_counter_ns",
                 "gc_during_replay": "disabled",
+                "native_phase_timer": "std::time::Instant",
+                "temporal_phase_totals": phase_totals,
                 "distributions": {
                     name: _completed_distribution(values)
                     for name, values in series.items()
@@ -388,6 +396,7 @@ def main() -> int:
                 "native_source_digest": native_identity.source_digest,
                 "native_binary_size": native_identity.binary_size,
                 "native_binary_sha256": native_identity.binary_sha256,
+                "native_cargo_features": ["temporal-profile"],
             },
         }
         output_path.write_text(
@@ -428,7 +437,7 @@ def main() -> int:
     }
 
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "benchmark": "r3-native-train-prefix-cost",
         "generated_at_utc": datetime.now(UTC).isoformat(),
         "claim_boundary": (
@@ -473,6 +482,8 @@ def main() -> int:
             "mode": "LEARN",
             "timer": "time.perf_counter_ns",
             "gc_during_replay": "disabled",
+            "native_phase_timer": "std::time::Instant",
+            "temporal_phase_totals": phase_totals,
             "book_resets": 1,
             "transition_steps": prefix_tokens - 1,
             "latency_ns": latency,
@@ -502,6 +513,7 @@ def main() -> int:
             "native_source_digest": native_identity.source_digest,
             "native_binary_size": native_identity.binary_size,
             "native_binary_sha256": native_identity.binary_sha256,
+            "native_cargo_features": ["temporal-profile"],
         },
     }
     output_path.write_text(

@@ -4260,6 +4260,8 @@ fn assemble_validated_checkpoint_v1_inner<'a>(
         basket_offset: derived.basket_offset,
         proximal_offset: derived.proximal_offset,
         proximal_relay_offset: derived.proximal_relay_offset,
+        #[cfg(feature = "temporal-profile")]
+        engineering_profile: super::TemporalEngineeringProfileSummary::default(),
     };
 
     let preparation = CheckpointV1ExportPreparation {

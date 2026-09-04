@@ -99,6 +99,16 @@ class _NativeCheckpointIdentity(ctypes.Structure):
     _fields_ = [("header", ctypes.c_uint8 * _CHECKPOINT_V1_HEADER_BYTES)]
 
 
+class _NativeEngineeringProfileSummary(ctypes.Structure):
+    _fields_ = [
+        ("recognition_active_extraction_ns", ctypes.c_uint64),
+        ("reserve_drive_prep_ns", ctypes.c_uint64),
+        ("physical_races_relay_construction_ns", ctypes.c_uint64),
+        ("learning_preflight_commit_ns", ctypes.c_uint64),
+        ("completed_steps", ctypes.c_uint64),
+    ]
+
+
 class _NativeConfig(ctypes.Structure):
     _fields_ = [
         ("column_count", ctypes.c_uint32),
@@ -396,6 +406,12 @@ def _assert_frozen_abi() -> None:
         raise RuntimeError("native temporal runtime requires little-endian x64 Python")
     _require_frozen_layout(_NativeAuthority, 64, 1, (0, 32))
     _require_frozen_layout(_NativeCheckpointIdentity, 256, 1, (0,))
+    _require_frozen_layout(
+        _NativeEngineeringProfileSummary,
+        40,
+        8,
+        (0, 8, 16, 24, 32),
+    )
     _require_frozen_layout(
         _NativeConfig,
         32,
@@ -1112,6 +1128,36 @@ class TemporalCircuitStep:
 
 
 @dataclass(frozen=True, slots=True)
+class TemporalEngineeringProfile:
+    """Benchmark-only cumulative timings for completed native temporal steps."""
+
+    recognition_active_extraction_ns: int
+    reserve_drive_prep_ns: int
+    physical_races_relay_construction_ns: int
+    learning_preflight_commit_ns: int
+    completed_steps: int
+
+    @property
+    def profiled_phase_total_ns(self) -> int:
+        return (
+            self.recognition_active_extraction_ns
+            + self.reserve_drive_prep_ns
+            + self.physical_races_relay_construction_ns
+            + self.learning_preflight_commit_ns
+        )
+
+    def to_record(self) -> dict[str, int]:
+        return {
+            "completed_steps": self.completed_steps,
+            "learning_preflight_commit_ns": self.learning_preflight_commit_ns,
+            "physical_races_relay_construction_ns": self.physical_races_relay_construction_ns,
+            "profiled_phase_total_ns": self.profiled_phase_total_ns,
+            "recognition_active_extraction_ns": self.recognition_active_extraction_ns,
+            "reserve_drive_prep_ns": self.reserve_drive_prep_ns,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class TemporalGeneration:
     """One native physical election-and-state-advance transaction."""
 
@@ -1363,6 +1409,18 @@ def _bind_temporal_symbols(library: object) -> None:
         report_output,
     ]
     destroy.argtypes = [ctypes.c_void_p]
+    engineering_profile = getattr(
+        library,
+        "humanbrain_temporal_circuit_runtime_engineering_profile_v1",
+        None,
+    )
+    if engineering_profile is not None:
+        engineering_profile.argtypes = [
+            ctypes.c_void_p,
+            ctypes.POINTER(_NativeEngineeringProfileSummary),
+            report_output,
+        ]
+        engineering_profile.restype = ctypes.c_uint32
     for function in (
         definition_identity,
         create,
@@ -3556,6 +3614,42 @@ class NativeTemporalCircuit:
             )
             return _decode_checkpoint_identity(returned, native_identity, report, fresh_authority)
 
+    def engineering_profile_summary(self) -> TemporalEngineeringProfile:
+        """Return profiler totals from a ``temporal-profile`` native build."""
+
+        with self._operation_lock:
+            handle = self._require_open()
+            function = getattr(
+                self._library,
+                "humanbrain_temporal_circuit_runtime_engineering_profile_v1",
+                None,
+            )
+            if function is None:
+                raise _NativeBuildError(
+                    "native temporal engineering profile requires the temporal-profile feature"
+                )
+            native = _NativeEngineeringProfileSummary()
+            report = _NativeReport()
+            returned = function(handle, ctypes.byref(native), ctypes.byref(report))
+            decoded = _decode_report(returned, report, maximum_completed_prefix=0)
+            if decoded.status is not NativeTemporalRuntimeStatus.OK:
+                _raise_report(decoded)
+            if decoded.required or decoded.observed or decoded.location:
+                raise _invariant_error(
+                    "successful engineering profile carries unexpected scalar diagnostics"
+                )
+            return TemporalEngineeringProfile(
+                recognition_active_extraction_ns=int(
+                    native.recognition_active_extraction_ns
+                ),
+                reserve_drive_prep_ns=int(native.reserve_drive_prep_ns),
+                physical_races_relay_construction_ns=int(
+                    native.physical_races_relay_construction_ns
+                ),
+                learning_preflight_commit_ns=int(native.learning_preflight_commit_ns),
+                completed_steps=int(native.completed_steps),
+            )
+
 
 __all__ = [
     "NativeTemporalCircuitConfig",
@@ -3583,6 +3677,7 @@ __all__ = [
     "TemporalPublicationErrorStage",
     "TemporalPublicationOutcome",
     "TemporalCircuitStep",
+    "TemporalEngineeringProfile",
     "TemporalGeneration",
     "TemporalGenerationPath",
     "TemporalContextPolicy",

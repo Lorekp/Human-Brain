@@ -61,6 +61,9 @@ use super::{
 };
 use crate::temporal_physics::SpikeEvent;
 
+#[cfg(feature = "temporal-profile")]
+use super::TemporalEngineeringProfileSummary;
+
 #[cfg(test)]
 use super::checkpoint_publisher::{
     fail_next_destination_allocation, fail_next_immutable_payload_allocation,
@@ -519,6 +522,41 @@ impl From<TemporalCircuitStep> for TemporalCircuitStepV2 {
             winner_context: step.winner_context,
             proximal_context: step.proximal_context,
             context: step.context,
+        }
+    }
+}
+
+#[cfg(feature = "temporal-profile")]
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct TemporalEngineeringProfileSummaryV1 {
+    pub recognition_active_extraction_ns: u64,
+    pub reserve_drive_prep_ns: u64,
+    pub physical_races_relay_construction_ns: u64,
+    pub learning_preflight_commit_ns: u64,
+    pub completed_steps: u64,
+}
+
+#[cfg(feature = "temporal-profile")]
+impl TemporalEngineeringProfileSummaryV1 {
+    const ZERO: Self = Self {
+        recognition_active_extraction_ns: 0,
+        reserve_drive_prep_ns: 0,
+        physical_races_relay_construction_ns: 0,
+        learning_preflight_commit_ns: 0,
+        completed_steps: 0,
+    };
+}
+
+#[cfg(feature = "temporal-profile")]
+impl From<TemporalEngineeringProfileSummary> for TemporalEngineeringProfileSummaryV1 {
+    fn from(summary: TemporalEngineeringProfileSummary) -> Self {
+        Self {
+            recognition_active_extraction_ns: summary.recognition_active_extraction_ns,
+            reserve_drive_prep_ns: summary.reserve_drive_prep_ns,
+            physical_races_relay_construction_ns: summary.physical_races_relay_construction_ns,
+            learning_preflight_commit_ns: summary.learning_preflight_commit_ns,
+            completed_steps: summary.completed_steps,
         }
     }
 }
@@ -1889,6 +1927,73 @@ pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_generate_typed_v1(
             "typed generation exceeded its fixed surface budget",
         ),
     )
+}
+
+/// Return benchmark-only cumulative phase timings for successfully completed steps.
+///
+/// # Safety
+///
+/// The module-level unsafe caller contract applies. `output` may be
+/// uninitialized and is zeroed before handle validation.
+#[cfg(feature = "temporal-profile")]
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_temporal_circuit_runtime_engineering_profile_v1(
+    handle: *const TemporalCircuitRuntimeHandle,
+    output: *mut TemporalEngineeringProfileSummaryV1,
+    report_out: *mut TemporalCircuitReportV1,
+) -> u32 {
+    if !begin_report(report_out) {
+        return TEMPORAL_RUNTIME_INVALID_ARGUMENT;
+    }
+    let report = report(report_out);
+    if !fixed_pointer_is_valid(output.cast_const()) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "engineering profile output is null or misaligned",
+        );
+    }
+    if regions_overlap(
+        output.cast(),
+        size_of::<TemporalEngineeringProfileSummaryV1>(),
+        report_out.cast(),
+        size_of::<TemporalCircuitReportV1>(),
+    ) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "engineering profile output and report overlap",
+        );
+    }
+    output.write(TemporalEngineeringProfileSummaryV1::ZERO);
+    if !fixed_pointer_is_valid(handle) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "runtime handle is null or misaligned",
+        );
+    }
+    let fixed_regions = [
+        RawRegion {
+            pointer: handle.cast(),
+            byte_count: size_of::<TemporalCircuitRuntimeHandle>(),
+        },
+        RawRegion {
+            pointer: output.cast(),
+            byte_count: size_of::<TemporalEngineeringProfileSummaryV1>(),
+        },
+        RawRegion {
+            pointer: report_out.cast(),
+            byte_count: size_of::<TemporalCircuitReportV1>(),
+        },
+    ];
+    if !raw_regions_are_disjoint(&fixed_regions) {
+        return report.finish(
+            TEMPORAL_RUNTIME_INVALID_ARGUMENT,
+            "engineering profile fixed regions overlap",
+        );
+    }
+    let handle = &*handle;
+    let runtime = lock_runtime(handle);
+    output.write(runtime.engineering_profile_summary().into());
+    report.finish(TEMPORAL_RUNTIME_OK, "")
 }
 
 /// Validate exportability and report the exact checkpoint length in

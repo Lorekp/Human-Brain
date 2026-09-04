@@ -43,6 +43,7 @@ _BUILD_LOCK = threading.Lock()
 _LIBRARY: ctypes.CDLL | None = None
 _LIBRARY_PATH: Path | None = None
 _LOADED_BUILD_PLAN: _NativeBuildPlan | None = None
+_NATIVE_CARGO_FEATURES: tuple[str, ...] = ()
 _TARGET_ROOT_PLACEHOLDER = "@HUMANBRAIN_NATIVE_TARGET_ROOT@"
 _MAX_NATIVE_SOURCE_FILE_BYTES = 1024 * 1024
 # The audited sha2 plus target-specific libc/windows-sys closure is 26--27 MiB.
@@ -88,6 +89,20 @@ _U64_POINTER = ctypes.POINTER(ctypes.c_uint64)
 
 class NativeBuildError(RuntimeError):
     """Raised when the required native cell kernel cannot be built or loaded."""
+
+
+def _enable_temporal_profile_build() -> None:
+    """Select the benchmark-only temporal profiler before native library loading."""
+
+    global _NATIVE_CARGO_FEATURES
+    with _BUILD_LOCK:
+        if _NATIVE_CARGO_FEATURES == ("temporal-profile",):
+            return
+        if _LIBRARY is not None:
+            raise NativeBuildError(
+                "temporal profiling must be enabled before native library loading"
+            )
+        _NATIVE_CARGO_FEATURES = ("temporal-profile",)
 
 
 class _GlifConfig(ctypes.Structure):
@@ -595,12 +610,18 @@ def _native_build_plan(source_root: Path | None = None) -> _NativeBuildPlan:
     cargo_home = _cargo_home()
     _reject_cargo_configuration(root, cargo_home)
     toolchain = _discover_native_toolchain(root)
+    feature_arguments = (
+        ()
+        if not _NATIVE_CARGO_FEATURES
+        else ("--features", ",".join(_NATIVE_CARGO_FEATURES))
+    )
     command = (
         toolchain.cargo_path,
         "build",
         "--release",
         "--locked",
         "--offline",
+        *feature_arguments,
         "--manifest-path",
         str(root / "Cargo.toml"),
         "--target",

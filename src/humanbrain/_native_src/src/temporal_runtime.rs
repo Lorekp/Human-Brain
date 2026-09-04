@@ -21,6 +21,8 @@ use crate::temporal_physics::{
     coupled_first_spike_race, singleton_latency_ticks, BasketDrive, CandidateClass, CandidateDrive,
     CoupledRaceScratch, SpikeEvent, TemporalPhysicsStop, TEMPORAL_PHYSICS_IDENTITY,
 };
+#[cfg(feature = "temporal-profile")]
+use std::time::Instant;
 
 pub(crate) mod checkpoint;
 #[cfg(any(unix, windows))]
@@ -426,6 +428,46 @@ fn append_prevalidated_slice<T: Copy>(values: &mut Vec<T>, appended: &[T]) {
     }
 }
 
+#[cfg(feature = "temporal-profile")]
+#[derive(Clone, Copy, Default)]
+pub(crate) struct TemporalEngineeringProfileSummary {
+    pub(crate) recognition_active_extraction_ns: u64,
+    pub(crate) reserve_drive_prep_ns: u64,
+    pub(crate) physical_races_relay_construction_ns: u64,
+    pub(crate) learning_preflight_commit_ns: u64,
+    pub(crate) completed_steps: u64,
+}
+
+#[cfg(feature = "temporal-profile")]
+impl TemporalEngineeringProfileSummary {
+    fn record_completed_step(
+        &mut self,
+        recognition_active_extraction_ns: u64,
+        reserve_drive_prep_ns: u64,
+        physical_races_relay_construction_ns: u64,
+        learning_preflight_commit_ns: u64,
+    ) {
+        self.recognition_active_extraction_ns = self
+            .recognition_active_extraction_ns
+            .saturating_add(recognition_active_extraction_ns);
+        self.reserve_drive_prep_ns = self
+            .reserve_drive_prep_ns
+            .saturating_add(reserve_drive_prep_ns);
+        self.physical_races_relay_construction_ns = self
+            .physical_races_relay_construction_ns
+            .saturating_add(physical_races_relay_construction_ns);
+        self.learning_preflight_commit_ns = self
+            .learning_preflight_commit_ns
+            .saturating_add(learning_preflight_commit_ns);
+        self.completed_steps = self.completed_steps.saturating_add(1);
+    }
+}
+
+#[cfg(feature = "temporal-profile")]
+fn temporal_profile_elapsed_ns(started: Instant) -> u64 {
+    started.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64
+}
+
 pub(crate) struct TemporalCircuitRuntime {
     config: TemporalCircuitConfig,
     token_codebook: Vec<TokenCode>,
@@ -456,6 +498,8 @@ pub(crate) struct TemporalCircuitRuntime {
     basket_offset: u32,
     proximal_offset: u32,
     proximal_relay_offset: u32,
+    #[cfg(feature = "temporal-profile")]
+    engineering_profile: TemporalEngineeringProfileSummary,
 }
 
 #[derive(Clone, Copy)]
@@ -847,7 +891,14 @@ impl TemporalCircuitRuntime {
             basket_offset,
             proximal_offset,
             proximal_relay_offset,
+            #[cfg(feature = "temporal-profile")]
+            engineering_profile: TemporalEngineeringProfileSummary::default(),
         })
+    }
+
+    #[cfg(feature = "temporal-profile")]
+    pub(crate) fn engineering_profile_summary(&self) -> TemporalEngineeringProfileSummary {
+        self.engineering_profile
     }
 
     pub(crate) fn recognize(
@@ -2161,6 +2212,8 @@ impl TemporalCircuitRuntime {
             }
         };
         let recognition_sources = &transient.previous_context[..recognition_source_count];
+        #[cfg(feature = "temporal-profile")]
+        let recognition_started = Instant::now();
         let summary = match self
             .store
             .recognize_runtime_context(recognition_sources, &mut self.recognition_scratch)
@@ -2189,6 +2242,14 @@ impl TemporalCircuitRuntime {
         } else {
             0
         };
+        #[cfg(feature = "temporal-profile")]
+        let recognition_active_extraction_ns = temporal_profile_elapsed_ns(recognition_started);
+        #[cfg(feature = "temporal-profile")]
+        let mut reserve_drive_prep_ns = 0u64;
+        #[cfg(feature = "temporal-profile")]
+        let mut physical_races_relay_construction_ns = 0u64;
+        #[cfg(feature = "temporal-profile")]
+        let physical_started = Instant::now();
         let mut proximal_spikes = [EMPTY_SPIKE; ACTIVE_COLUMNS];
         let mut proximal_relay_spikes = [EMPTY_SPIKE; ACTIVE_COLUMNS];
         for (index, &column) in columns.iter().enumerate() {
@@ -2235,7 +2296,14 @@ impl TemporalCircuitRuntime {
                 tick: relay_tick,
             };
         }
+        #[cfg(feature = "temporal-profile")]
+        {
+            physical_races_relay_construction_ns = physical_races_relay_construction_ns
+                .saturating_add(temporal_profile_elapsed_ns(physical_started));
+        }
 
+        #[cfg(feature = "temporal-profile")]
+        let reserve_started = Instant::now();
         let exact_source_reservations = if mode == TemporalStepMode::Learn
             && self.config.plasticity_policy == TemporalPlasticityPolicy::Plastic
             && transient.previous_context_len != 0
@@ -2266,6 +2334,11 @@ impl TemporalCircuitRuntime {
                 ..EMPTY_RESERVE_PLAN
             }
         };
+        #[cfg(feature = "temporal-profile")]
+        {
+            reserve_drive_prep_ns =
+                reserve_drive_prep_ns.saturating_add(temporal_profile_elapsed_ns(reserve_started));
+        }
 
         let mut winner_spikes = [EMPTY_SPIKE; ACTIVE_COLUMNS];
         let mut basket_spikes = [EMPTY_SPIKE; ACTIVE_COLUMNS];
@@ -2280,6 +2353,8 @@ impl TemporalCircuitRuntime {
             && self.config.plasticity_policy == TemporalPlasticityPolicy::Plastic
             && transient.previous_context_len != 0;
         for (index, &column) in columns.iter().enumerate() {
+            #[cfg(feature = "temporal-profile")]
+            let reserve_started = Instant::now();
             let surface_predicted = if persistent_identity_election {
                 match self.column_has_active_owner(column, diagnostic_count) {
                     Ok(predicted) => predicted,
@@ -2300,6 +2375,13 @@ impl TemporalCircuitRuntime {
                 Ok(candidate_count) => candidate_count,
                 Err(stop) => return self.fail(stop),
             };
+            #[cfg(feature = "temporal-profile")]
+            {
+                reserve_drive_prep_ns = reserve_drive_prep_ns
+                    .saturating_add(temporal_profile_elapsed_ns(reserve_started));
+            }
+            #[cfg(feature = "temporal-profile")]
+            let physical_started = Instant::now();
             let basket_id = self.basket_offset + column;
             let candidates = &self.column_drive_scratch[..candidate_count];
             let race = match coupled_first_spike_race(
@@ -2362,8 +2444,15 @@ impl TemporalCircuitRuntime {
             if reservation.exists() && reservation.owner == race.winner.cell_id {
                 winner_learning_segments[index] = reservation.segment_id;
             }
+            #[cfg(feature = "temporal-profile")]
+            {
+                physical_races_relay_construction_ns = physical_races_relay_construction_ns
+                    .saturating_add(temporal_profile_elapsed_ns(physical_started));
+            }
         }
 
+        #[cfg(feature = "temporal-profile")]
+        let physical_started = Instant::now();
         let mut winner_relay_spikes = [EMPTY_SPIKE; ACTIVE_COLUMNS];
         for (index, winner) in winner_spikes.iter().enumerate() {
             let relay_id = self.relay_offset + winner.cell_id;
@@ -2416,7 +2505,14 @@ impl TemporalCircuitRuntime {
                 location: 0,
             });
         };
+        #[cfg(feature = "temporal-profile")]
+        {
+            physical_races_relay_construction_ns = physical_races_relay_construction_ns
+                .saturating_add(temporal_profile_elapsed_ns(physical_started));
+        }
 
+        #[cfg(feature = "temporal-profile")]
+        let learning_started = Instant::now();
         let prepared_learning = if mode == TemporalStepMode::Learn
             && self.config.plasticity_policy == TemporalPlasticityPolicy::Plastic
         {
@@ -2453,6 +2549,16 @@ impl TemporalCircuitRuntime {
         self.previous_winner_context = winner_context;
         self.previous_winner_context_len = CONTEXT_CELLS as u8;
         self.event_count = event_count;
+        #[cfg(feature = "temporal-profile")]
+        {
+            let learning_preflight_commit_ns = temporal_profile_elapsed_ns(learning_started);
+            self.engineering_profile.record_completed_step(
+                recognition_active_extraction_ns,
+                reserve_drive_prep_ns,
+                physical_races_relay_construction_ns,
+                learning_preflight_commit_ns,
+            );
+        }
 
         Ok(TemporalCircuitStep {
             token_id,
