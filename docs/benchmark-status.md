@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the completed three-stream robustness comparison.
+Updated 2026-09-05 with the completed compact-versus-varied teaching comparison.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -12,39 +12,41 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current contextual evidence-to-Python result
 
-The [three-stream robustness comparison](../experiments/r4_integrated/contextual_robustness_result.md)
-fails adoption: **RESERVED remains the baseline**. The predeclared affine
-neuronal path gives the following RESERVED → PROTECTED results:
+The [teaching-diversity comparison](../experiments/r4_integrated/contextual_curriculum_result.md)
+fails adoption: **compact teaching with RESERVED allocation remains the baseline**.
+Both arms use the same facts, 48 encounters and 150 pair offers; source and
+question presentation differ. The affine neuronal path gives:
 
-| Stream | Fresh executed edits | Retained executed edits | Correct unsupported STOPs |
-| --- | --- | --- | --- |
-| Wording | 5/8 → 1/8 | 4/16 → 9/16 | 0/2 → 0/2 |
-| Questions | 3/8 → 2/8 | 5/16 → 10/16 | 0/2 → 0/2 |
-| Competition | 0/8 → 1/8 | 4/16 → 10/16 | 0/2 → 0/2 |
+| Measure | COMPACT | VARIED |
+| --- | --- | --- |
+| Fresh executed edits | 2/8 | 2/8 |
+| Familiar / broader fresh edits | 1/4 / 1/4 | 0/4 / 2/4 |
+| Common retained edits | 4/16 | 4/16 |
+| Correct unsupported STOPs | 0/2 | 0/2 |
 
-Protection improves retention in every stream but regresses fresh execution in
-two. Neither policy meets the absolute integrated targets. The same sixteen
-old queries and per-policy learning checkpoints recur across streams; these are
-new source contexts, not independent learning replications. Authored development
-cases establish no independent reading or protected-gate result.
+VARIED gains one broader-form success and loses a familiar one. Neither policy
+meets the integrated targets. Actual taught-query raw correctness is 5/16 versus
+8/16, but common questions score 5/16 in both arms before fresh ingestion and
+4/16 afterward. Same-checkpoint query changes expose form sensitivity; these
+diagnostic probes are not additional executed successes.
 
-All nineteen protected contrasts survive; 4,992 repeated numerical checks show
-zero violations, and all fourteen checkpoint arrays match the preceding protection
-run exactly. All 156 updating raw/affine choices agree. Frozen affine and external
-references solve no supported tasks. The 1,716 transfer/retention executions
-verify selected edits, decoys and live source absence. Remaining errors involve
-incomplete acquisition, relation/span ranking and uncovered competitors. One
-correct `sand martin` edit demonstrates two-word motor support. Internally retained
-raw sources and the controls' shared learned motor limit attribution claims.
+Each arm ends with twelve negative admitted TRAIN margins, all previously at
+least one: learned comparisons are later lost. Exact numerical reconstruction
+passes for all 600 updater/frozen offers, and COMPACT's saved arrays match the
+prior RESERVED checkpoint. All 52 updating raw/affine choices agree; all 572
+transfer/retention executions preserve decoys and materialize their selected
+actions. Frozen affine and external references solve no supported task. Internally
+retained raw sources and the controls' shared motor limit attribution claims.
 
-All three executions complete without retry in 1,021.55 seconds total; per-run
-parent peak working set ranges from 346.43 to 364.23 MiB, excluding child memory.
-PROTECTED retains 502,892 learned auxiliary bytes plus scratch; frozen learned
-auxiliary state stays zero. Repeated official exam answers remain pending human
-scoring. The result report owns full paired outcomes, hashes, costs and audits.
+The single comparison completes without retry in 367.50 seconds and peaks at
+346.43 MiB parent working set, excluding child memory. Both official exam outputs
+remain pending human scoring. Full paired outcomes, costs and hashes are in the
+result report. No independent reading, protected evaluation or roadmap gate passes.
 
-The active plan now selects a bounded compact-versus-varied teaching comparison
-using the existing RESERVED learner. The robustness exercise is closed. The
+The [acquisition review](research/contextual-acquisition-review.md) prioritizes
+one covariance-aware learning comparison with fixed representations and matched
+experience budgets. The completed
+[three-stream robustness result](../experiments/r4_integrated/contextual_robustness_result.md),
 [original protection result and reporting recovery](../experiments/r4_integrated/contextual_protected_contrast_result.md),
 [reservation improvement](../experiments/r4_integrated/contextual_reserved_feedback_result.md),
 [TRAIN-only host feasibility check](../experiments/r4_integrated/contextual_representation_feasibility_result.md),

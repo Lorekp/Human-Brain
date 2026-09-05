@@ -33,36 +33,43 @@ passes its narrow recall, transfer, retention and no-action checks. Detailed
 scores and failures are in [benchmark status](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 The original eight-stage sequence below remains the integration contract.
 
-The completed [three-stream robustness comparison](../../experiments/r4_integrated/contextual_robustness_result.md)
-keeps **RESERVED allocation**, fixed rate-one BINDING updates and affine actions
-as the development baseline. PROTECTED improves retention in every stream but
-reduces fresh execution in wording and questions, failing adoption again. Both
-policies act wrongly on all unsupported requests. The result owns scores, paired
-outcomes, unchanged-weight source competition, numerical audits, hashes and costs.
-All nineteen protected contrasts survive; remaining failures concern acquisition,
-relation/span ranking and competitors absent from successful teaching contrasts.
-Raw-score/affine agreement and one correct two-word edit locate these failures
-upstream of action execution.
+The [teaching-diversity comparison](../../experiments/r4_integrated/contextual_curriculum_result.md)
+fails adoption: both arms execute 2/8 fresh and 4/16 retained edits, with no
+correct unsupported STOPs. VARIED gains one broader-form task but loses a familiar
+one. Keep **compact teaching, RESERVED allocation**, fixed rate-one BINDING
+updates and affine actions as the baseline. The result owns paired outcomes,
+source competition, query-form sensitivity, numerical audits, hashes and costs.
 
-**Next integrated priority:** the [compact-versus-varied teaching protocol](../../experiments/r4_integrated/contextual_curriculum_protocol.md)
-tests the presentation of the same sixteen facts with the existing RESERVED
-learner. The fixed encoder already supplies contextual features; teaching
-diversity is a hypothesis, not an established cause. Both arms keep the 48-encounter
-schedule, 150-offer limit and current motor. Use one source rendition per arm to
-preserve unique teacher-span custody, with common old-fact probes and a new shared
-transfer roster. The protocol owns exact routing, controls and scoring limits.
+Two failures remain separately measured. Both arms end with twelve negative
+TRAIN contrasts that previously reached unit margin. VARIED answers 8/16 actual
+taught queries but 5/16 common original queries at the same checkpoint, then
+4/16 after fresh source competition. Those raw probes are not extra executed
+successes. Better taught-form performance did not yield better fresh action.
 
-Preparation is bounded to two hours from **04:57 UTC**, then one comparison
-within thirty minutes of total runtime. Freeze reviewed source and all fixtures
-before outputs. Adoption requires greater fresh execution with no regression
-in familiar forms, broader forms, common retention or unsupported STOPs.
-Report actual taught-query acquisition separately from common query-form transfer;
-equal facts and offer limits do not mean equal candidates, feedback or compute.
+**Next integrated priority:** follow the [bounded acquisition review](contextual-acquisition-review.md)
+with one fixed covariance-aware synaptic-update comparison. Keep compact sources,
+the 48 primary encounters, 150-offer limit, frozen encoder/features, motor and
+fresh evaluation interface. A learned covariance can change update direction;
+this tests a different stability mechanism from scalar step capping or hard
+contrast protection. Disclose its conventional training arithmetic and state;
+native placement alone is not evidence that cells discovered the algorithm.
 
-Close the comparison at its budget boundary. If varied teaching gives no useful
-gain, compare acquisition/feedback coverage with representation limits in a bounded
-research review; do not launch a rate sweep, extra-epoch search or fresh-label solver.
-The unchanged-policy robustness exercise, [projection trial](../../experiments/r4_integrated/contextual_protected_contrast_result.md)
+Freeze the exact update, covariance initialization/regularization, mutation
+rules, controls and a new common familiar/broader transfer roster before outputs.
+Use matched frozen learners, including explicit accounting for initial versus
+learned covariance state. Require improved retained execution without regression
+in fresh totals, either language stratum or unsupported STOPs. Record actual
+query acquisition, erased contrasts and query-form transfer separately; fitting
+the ledger alone is insufficient. Count dense training-state memory and total
+runtime alongside capability. Bound preparation to two hours and one comparison
+to thirty minutes of wall time; no regularization sweep or extra teacher dose.
+
+If acquisition improves but transfer remains poor, return to the shared learned
+binding alternative in the review. If acquisition still fails, reassess the
+learning architecture using that evidence rather than extending the covariance
+trial. The [wording comparison](../../experiments/r4_integrated/contextual_curriculum_protocol.md),
+[robustness exercise](../../experiments/r4_integrated/contextual_robustness_result.md),
+[projection trial](../../experiments/r4_integrated/contextual_protected_contrast_result.md)
 and [capped trial](../../experiments/r4_integrated/contextual_capped_update_result.md)
 are closed. The [TRAIN-only feasibility witness](../../experiments/r4_integrated/contextual_representation_feasibility_result.md)
 stays outside the learner.

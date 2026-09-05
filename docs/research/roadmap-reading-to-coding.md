@@ -73,21 +73,24 @@ the same-seed frozen control solves none. Type-annotation layout variation
 fails, and an original public-exam diagnostic scores 0/2 with no acquired frames.
 See [measured evidence](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 This is exact positional reading and a learned literal-edit pattern, not the
-general integrated gate. The [three-stream robustness comparison](../../experiments/r4_integrated/contextual_robustness_result.md)
-finds better retention under contrast protection in every stream, but fresh
-execution regresses in two. Protection fails adoption again; keep fixed updates,
-affine neuronal actions and RESERVED feedback allocation. Both policies act
-wrongly on every unsupported request. Protected margins and edit execution work,
-while acquisition, relation/span ranking and competitor coverage remain weak.
+general integrated gate. The [teaching-diversity comparison](../../experiments/r4_integrated/contextual_curriculum_result.md)
+ties at 2/8 fresh and 4/16 retained edits, with all unsupported requests handled
+wrongly. Varied teaching improves one language stratum but regresses another,
+failing adoption. Keep compact teaching, fixed updates, affine neuronal actions
+and RESERVED allocation as the baseline. Both arms lose twelve previously
+learned contrasts; varied teaching also loses correctness when equivalent
+questions change at the same checkpoint. Acquisition and transfer remain distinct
+problems, with reliable numerical and edit execution underneath them.
 
-The [balanced session plan](balanced-evidence-to-action-session-v1.md) selects
-one bounded comparison of compact versus varied teaching with the existing
-RESERVED learner. Match fact and feedback budgets, freeze fresh transfer inputs
-before outputs, and measure acquisition, transfer, retention and unsupported
-behavior. Close unchanged-policy recertification; teaching diversity is a
-hypothesis to test, not a diagnosed cause. The completed TRAIN-only host witness
-stays excluded. Improve this loop before provenance revision, multi-hop
-composition or the full challenge.
+The [balanced session plan](balanced-evidence-to-action-session-v1.md) uses the
+[acquisition review](contextual-acquisition-review.md) to choose one bounded
+covariance-aware synaptic-learning comparison with fixed representations and
+matched experience budgets. Measure retained and fresh execution, query-form
+transfer, unsupported behavior and the cost of learned training state. This is
+a candidate stability mechanism, not a demonstrated solution to comprehension.
+The closed wording, capping, protection and robustness trials stay closed; the
+TRAIN-only host witness stays excluded. Improve this loop before provenance
+revision, multi-hop composition or the full challenge.
 
 Alongside integration, apply two inexpensive sources of pressure:
 
