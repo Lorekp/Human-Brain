@@ -1,6 +1,6 @@
 # Reusable project goal
 
-Updated 2026-09-04. Paste the following into `/goal` when authorizing project
+Updated 2026-09-06. Paste the following into `/goal` when authorizing project
 execution. Saving this prompt does not start a goal or authorize implementation
 during a documentation-only task. The [roadmap](research/roadmap-reading-to-coding.md)
 owns priorities, architecture policy, and evaluation order.
@@ -11,6 +11,16 @@ continually, retains and uses knowledge, discovers reusable abstractions, and
 improves through action and feedback. Keep simulated-neuron learning as the core
 research commitment for now. You may modify the neurons, replace GLIF, change
 learning rules, and grow or redesign the network.
+
+The main learner must learn online through local cell and synapse rules using
+its own state, pre/post activity, eligibility traces and declared teaching,
+reward or error signals. Do not conceal reverse-mode gradients or externally
+computed per-synapse updates inside those signals. Backpropagation through time,
+Adam and other global weight-fitting methods are comparison tools, not the main
+learning mechanism. Repeated experience and explicit replay are allowed with
+their exposure and costs reported. Demonstrate language and context learning in
+the neuronal system; locality alone is not evidence of understanding.
+Vectorize faithful implementations of these local rules when useful for speed.
 
 Read docs/research/roadmap-reading-to-coding.md now and after each context
 compaction. Follow its current milestone and linked plan rather than obsolete
@@ -26,6 +36,9 @@ learning and causal contribution measurable against matched controls, including
 the external component alone. Disclose every component and its role; avoid
 turning the project into an ordinary LLM wrapper or a collection of task-specific
 solvers. Preserve the original contracts of frozen experiments.
+External knowledge inputs remain allowed, but outsourcing understanding or
+action choices and merely gating/copying the result does not establish the
+core's capability. Keep any assisted result distinct from neuron-only evidence.
 
 Treat efficiency as integral to the system. Optimize measured end-to-end
 bottlenecks so useful learning can scale. The suggested 100-billion-neuron scale

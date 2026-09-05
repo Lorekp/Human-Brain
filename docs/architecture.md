@@ -5,17 +5,20 @@ package and neither imports the other.
 
 ## Scope and current direction
 
-Updated policy pointer: 2026-09-04. The
+Updated policy pointer: 2026-09-06. The
 [roadmap](research/roadmap-reading-to-coding.md#architecture-policy) owns the
 simulated-neuron learning commitment and permitted hybrid architecture research.
 Cell equations and GLIF may change. External stores, tokenization, and pretrained
 LLM knowledge components are permitted candidates with disclosed roles and
 measured neuronal contribution; this document does not claim they are integrated.
+The main learner now requires local, online cell/synapse updates. Historical
+global-gradient and matrix-solve implementations remain documented comparisons;
+their presence does not satisfy that current learning constraint.
 
 The descriptions below document existing implementations. Their cell-only and
 fidelity constraints apply to those lanes and frozen experiments, not to every
-future architecture. The immediate integration sequence is in the
-[balanced session plan](research/balanced-evidence-to-action-session-v1.md).
+future architecture. Current integration work is in the
+[persistent memory and output plan](research/persistent-memory-byte-development.md).
 
 ## Existing cell implementations
 

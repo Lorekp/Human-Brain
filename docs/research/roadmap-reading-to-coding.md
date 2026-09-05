@@ -27,6 +27,18 @@ before preregistering a comparison. They are not present capability claims.
 Cell dynamics, connectivity, plasticity, representations, and network growth may
 change; GLIF and human-data fidelity are not mandatory global constraints.
 
+**The main learner must use local, online cell/synapse learning**, as clarified
+by the user on 2026-09-06. Updates may use a synapse's own state, pre/post activity,
+locally maintained eligibility and explicitly declared teaching, reward or error
+signals. Those signals must not conceal reverse-mode gradients through retained
+network history or externally computed per-synapse updates. Backpropagation
+through time, Adam and other global weight-fitting methods belong in separately
+declared comparisons, not the main learner. Repeated experience and explicit
+replay are allowed; count their exposure and cost. Locality is an architectural
+constraint, not proof of biological fidelity or language understanding.
+Vectorized simulation of these rules is allowed: locality concerns the information
+used by an update, not whether the implementation uses a tensor operation.
+
 The complete system need not be cell-only. Tokenization, conventional tooling,
 external or hybrid knowledge stores, and components from other researchers are
 allowed. Pretrained LLMs, including base/raw models as possible compressed
@@ -48,6 +60,10 @@ race alone does not establish that the core learned the computation. Keep
 target answers, hidden tests, and task-specific solvers out of undisclosed
 scaffolding. Existing cell-only experiments keep their original contracts;
 adding an external component requires a separately declared experiment.
+External knowledge or features may supply inputs, but outsourcing understanding,
+reasoning or action selection and then merely gating/copying the result does not
+establish the neuronal core's capability. Any such assistance remains hybrid
+evidence; it cannot establish neuron-only comprehension.
 Mem0 remains development tooling outside the model and scientific pipeline.
 
 ## Immediate priority: one persistent end-to-end learner
@@ -91,6 +107,11 @@ live values. Develop the components
 against shared interfaces and return them promptly to one persistent workload.
 Their focused checks do not establish prose learning, source-absent transfer or
 stable learning from action feedback.
+
+The prepared BPTT/Adam joint fit was withdrawn before training when the user
+specified local online learning. Its frozen recipe remains a possible comparison,
+with no acquired-capability result. Reuse appropriate forward/state components
+while developing local learning for the same persistent workload.
 
 The closed acquisition diagnostics use explicit answer/STOP supervision over retained
 raw sources and a frozen external encoder. These are not answer-free internalization,

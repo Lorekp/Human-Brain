@@ -1,0 +1,16 @@
+{
+  "status": "withdrawn_before_execution",
+  "decided_utc": "2026-09-05T23:12:43.9887112Z",
+  "reason": "User explicitly requires local, online cell/synapse learning for the main system. This prepared experiment trains controllers through BPTT and Adam.",
+  "source_revision": "e1aabfac888f17e05be0d23290ca8cdfe2949de1",
+  "admission_path": "benchmarks/source_absent_memory_byte_v1.admission.json",
+  "admission_sha256": "6e009c8ff2789f0d13e17e4602e9b1b360da33f27a463812a40bd7a73be06839",
+  "capability_evaluation_started": false,
+  "disposition": "Preserve frozen recipe and preparation QA as engineering/reference work. No automatic launch or main-learner adoption. Any comparison run needs a separately declared scope and admission.",
+  "active_plan": "docs/research/persistent-memory-byte-development.md",
+  "planned_256_step_fit_started": false,
+  "planned_fit_optimizer_steps": 0,
+  "preparation_optimizer_steps": 12,
+  "preparation_supervised_episodes": 48,
+  "preparation_scope": "Discarded-state timing QA; not adopted learning or scored capability evidence"
+}
