@@ -98,7 +98,7 @@ fails and no architecture is adopted. The subsequent
 [fixed-rehearsal comparison](../../experiments/r4_integrated/fixed_rehearsal_result.md)
 passes its narrow qualification: cells and conventional rehearsal retain and
 execute all 16 taught cases at the same new-offer budget; conventional fits sooner.
-The active [next decision](../../experiments/r4_integrated/fixed_rehearsal_result.md#next-decision)
+The active [fresh-source action plan](fresh-source-action-plan.md)
 returns these parents to fresh questions and a cumulative source pool in real
 actions. The current pass still supplies each question's correct paragraph;
 remove that oracle routing and keep source-absent memory explicitly pending.
