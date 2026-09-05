@@ -1,0 +1,116 @@
+{
+  "kind": "authored public-development robustness stream: wording; untouched transfer instances; original sixteen teaching requests and 48 encounters reused; no independent comprehension claim",
+  "training_source": "experiments/r4_integrated/contextual_binding_cases.json",
+  "transfer": [
+    {
+      "name": "fresh-imra-transport",
+      "key": "imra",
+      "value": "kestrel",
+      "module": "robust_wording_0",
+      "stale": "unconfigured",
+      "request": "Configure imra using its documented transport setting.",
+      "document_id": "robust-wording-imra",
+      "document": "Although imra writes only a short startup report, its transport setting is kestrel. The audit label assigned to imra is linnet.",
+      "stratum": "wording_concessive"
+    },
+    {
+      "name": "fresh-imra-audit",
+      "key": "imra",
+      "value": "linnet",
+      "module": "robust_wording_0",
+      "stale": "unconfigured",
+      "request": "Apply the documented audit label to imra.",
+      "document_id": "robust-wording-imra",
+      "document": "Although imra writes only a short startup report, its transport setting is kestrel. The audit label assigned to imra is linnet.",
+      "stratum": "wording_concessive"
+    },
+    {
+      "name": "fresh-jefi-audit",
+      "key": "jefi",
+      "value": "dunlin",
+      "module": "robust_wording_1",
+      "stale": "unconfigured",
+      "request": "Set the audit label for jefi from the documentation.",
+      "document_id": "robust-wording-jefi",
+      "document": "An audit label of dunlin is assigned to jefi, whose transport has been set to curlew. During routine restarts the status page stays quiet; that behavior does not alter either setting.",
+      "stratum": "wording_passive"
+    },
+    {
+      "name": "fresh-jefi-transport",
+      "key": "jefi",
+      "value": "curlew",
+      "module": "robust_wording_1",
+      "stale": "unconfigured",
+      "request": "Use the transport setting documented for jefi.",
+      "document_id": "robust-wording-jefi",
+      "document": "An audit label of dunlin is assigned to jefi, whose transport has been set to curlew. During routine restarts the status page stays quiet; that behavior does not alter either setting.",
+      "stratum": "wording_passive"
+    },
+    {
+      "name": "fresh-kova-transport",
+      "key": "kova",
+      "value": "gannet",
+      "module": "robust_wording_2",
+      "stale": "unconfigured",
+      "request": "Which transport should kova use according to the documentation? Apply it.",
+      "document_id": "robust-wording-kova",
+      "document": "For kova, the configured transport is gannet, a choice recorded beside the deployment notes rather than in the startup banner. The audit label, merlin, is printed whenever kova writes an audit record.",
+      "stratum": "wording_parenthetical"
+    },
+    {
+      "name": "fresh-kova-audit",
+      "key": "kova",
+      "value": "merlin",
+      "module": "robust_wording_2",
+      "stale": "unconfigured",
+      "request": "Configure kova with its audit label.",
+      "document_id": "robust-wording-kova",
+      "document": "For kova, the configured transport is gannet, a choice recorded beside the deployment notes rather than in the startup banner. The audit label, merlin, is printed whenever kova writes an audit record.",
+      "stratum": "wording_parenthetical"
+    },
+    {
+      "name": "fresh-lysu-audit",
+      "key": "lysu",
+      "value": "snipe",
+      "module": "robust_wording_3",
+      "stale": "unconfigured",
+      "request": "Which audit marker is recorded for lysu? Apply it.",
+      "document_id": "robust-wording-lysu",
+      "document": "The transport used by lysu is avocet. After an operator checks the health report and clears the maintenance notice, the service continues to label its audit records snipe.",
+      "stratum": "wording_long_context"
+    },
+    {
+      "name": "fresh-lysu-transport",
+      "key": "lysu",
+      "value": "avocet",
+      "module": "robust_wording_3",
+      "stale": "unconfigured",
+      "request": "Set lysu's transport from the documented connection choice.",
+      "document_id": "robust-wording-lysu",
+      "document": "The transport used by lysu is avocet. After an operator checks the health report and clears the maintenance notice, the service continues to label its audit records snipe.",
+      "stratum": "wording_long_context"
+    },
+    {
+      "name": "unsupported-meka-transport",
+      "key": "meka",
+      "value": null,
+      "module": "robust_wording_4",
+      "stale": "unconfigured",
+      "request": "Configure meka using its documented transport setting.",
+      "document_id": "robust-wording-meka",
+      "document": "The meka service appears in the deployment checklist. Its health report is reviewed by nupi, but the checklist lists neither a configured transport nor an audit label.",
+      "stratum": "unsupported"
+    },
+    {
+      "name": "unsupported-nupi-audit",
+      "key": "nupi",
+      "value": null,
+      "module": "robust_wording_5",
+      "stale": "unconfigured",
+      "request": "Apply the documented audit label to nupi.",
+      "document_id": "robust-wording-nupi",
+      "document": "Transport for nupi is plover. The entry ends without naming an audit label.",
+      "stratum": "unsupported"
+    }
+  ]
+}

@@ -58,13 +58,14 @@ and [projection trial](../../experiments/r4_integrated/contextual_protected_cont
 retain their original outcomes; their budgets are closed. Do not add a rate sweep,
 basis eviction, extra teaching epochs or a host-solver fallback to those trials.
 
-**Next integrated priority:** preregister one bounded robustness comparison of
-unchanged RESERVED and PROTECTED policies on untouched public-development streams.
+**Next integrated priority:** the [robustness protocol](../../experiments/r4_integrated/contextual_robustness_protocol.md)
+specifies one bounded comparison of unchanged RESERVED and PROTECTED policies
+on untouched public-development streams; freeze its source and fixtures before outputs.
 Use three predeclared streams that broaden sentence/question form, repeated-entity
 and source competition beyond renaming. Keep the current motor and matched frozen
 and external references. Fix the data, teaching exposure, feedback budgets,
 resource limit and decision rule before outputs; allow at most two hours for
-fixture/harness preparation and one run per stream. Do not alter learning rules,
+fixture/harness preparation from 04:09 UTC and one run per stream. Do not alter learning rules,
 projection thresholds or replay priorities. This comparison is not yet frozen or
 run, and it does not erase the completed failed adoption verdict.
 

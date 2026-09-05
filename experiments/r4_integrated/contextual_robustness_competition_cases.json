@@ -1,0 +1,116 @@
+{
+  "kind": "authored public-development robustness stream: competition; untouched transfer instances; original sixteen teaching requests and 48 encounters reused; no independent comprehension claim",
+  "training_source": "experiments/r4_integrated/contextual_binding_cases.json",
+  "transfer": [
+    {
+      "name": "unsupported-zofi-audit",
+      "key": "zofi",
+      "value": null,
+      "module": "robust_competition_4",
+      "stale": "unconfigured",
+      "request": "Apply the documented audit label to zofi.",
+      "document_id": "robust-competition-zofi",
+      "document": "The zofi service uses redshank for transport. An audit timetable mentions zofi alongside uvra, whose audit label is reed bunting; the timetable does not state an audit label for zofi.",
+      "stratum": "unsupported"
+    },
+    {
+      "name": "fresh-wapi-audit",
+      "key": "wapi",
+      "value": "water rail",
+      "module": "robust_competition_2",
+      "stale": "unconfigured",
+      "request": "Configure wapi with its audit label.",
+      "document_id": "robust-competition-wapi",
+      "document": "A report about the cuxa service repeats the heading audit label several times; cuxa's audit label is jackdaw.\n\nWapi is named in a separate paragraph: water rail is its audit label, and snow goose is the transport used by wapi. A later note lists wapi's owner without changing either setting.",
+      "stratum": "competition_reversed_value_order"
+    },
+    {
+      "name": "fresh-wapi-transport",
+      "key": "wapi",
+      "value": "snow goose",
+      "module": "robust_competition_2",
+      "stale": "unconfigured",
+      "request": "Which transport should wapi use according to the documentation? Apply it.",
+      "document_id": "robust-competition-wapi",
+      "document": "A report about the cuxa service repeats the heading audit label several times; cuxa's audit label is jackdaw.\n\nWapi is named in a separate paragraph: water rail is its audit label, and snow goose is the transport used by wapi. A later note lists wapi's owner without changing either setting.",
+      "stratum": "competition_reversed_value_order"
+    },
+    {
+      "name": "fresh-uvra-transport",
+      "key": "uvra",
+      "value": "marsh harrier",
+      "module": "robust_competition_0",
+      "stale": "unconfigured",
+      "request": "Configure uvra using its documented transport setting.",
+      "document_id": "robust-competition-uvra",
+      "document": "The anvu service logs a reminder headed transport review; its audit label is nightjar. The uvra service appears next on that review list. For uvra, transport is marsh harrier. Every audit record from uvra carries reed bunting.",
+      "stratum": "competition_checklist_neighbor"
+    },
+    {
+      "name": "fresh-uvra-audit",
+      "key": "uvra",
+      "value": "reed bunting",
+      "module": "robust_competition_0",
+      "stale": "unconfigured",
+      "request": "Apply the documented audit label to uvra.",
+      "document_id": "robust-competition-uvra",
+      "document": "The anvu service logs a reminder headed transport review; its audit label is nightjar. The uvra service appears next on that review list. For uvra, transport is marsh harrier. Every audit record from uvra carries reed bunting.",
+      "stratum": "competition_checklist_neighbor"
+    },
+    {
+      "name": "fresh-xylo-audit",
+      "key": "xylo",
+      "value": "little grebe",
+      "module": "robust_competition_3",
+      "stale": "unconfigured",
+      "request": "Which audit marker is recorded for xylo? Apply it.",
+      "document_id": "robust-competition-xylo",
+      "document": "The audit label configured for xylo is little grebe. The dewu service uses swift for transport. A scheduling note associates xylo with an audit review of dewu, not with dewu's transport configuration. Xylo's own transport choice is grey wagtail.",
+      "stratum": "competition_cross_entity"
+    },
+    {
+      "name": "fresh-xylo-transport",
+      "key": "xylo",
+      "value": "grey wagtail",
+      "module": "robust_competition_3",
+      "stale": "unconfigured",
+      "request": "Set xylo's transport from the documented connection choice.",
+      "document_id": "robust-competition-xylo",
+      "document": "The audit label configured for xylo is little grebe. The dewu service uses swift for transport. A scheduling note associates xylo with an audit review of dewu, not with dewu's transport configuration. Xylo's own transport choice is grey wagtail.",
+      "stratum": "competition_cross_entity"
+    },
+    {
+      "name": "fresh-vexo-transport",
+      "key": "vexo",
+      "value": "sand martin",
+      "module": "robust_competition_1",
+      "stale": "unconfigured",
+      "request": "Use the transport setting documented for vexo.",
+      "document_id": "robust-competition-vexo",
+      "document": "Vexo labels its audit records tree pipit. A maintenance note mentions vexo again beside the words transport and audit, but records only a restart time. For transport, vexo uses sand martin. The bipi service, mentioned in the same note, has audit label rook.",
+      "stratum": "competition_repeated_entity"
+    },
+    {
+      "name": "fresh-vexo-audit",
+      "key": "vexo",
+      "value": "tree pipit",
+      "module": "robust_competition_1",
+      "stale": "unconfigured",
+      "request": "Set the audit label for vexo from the documentation.",
+      "document_id": "robust-competition-vexo",
+      "document": "Vexo labels its audit records tree pipit. A maintenance note mentions vexo again beside the words transport and audit, but records only a restart time. For transport, vexo uses sand martin. The bipi service, mentioned in the same note, has audit label rook.",
+      "stratum": "competition_repeated_entity"
+    },
+    {
+      "name": "unsupported-yedu-transport",
+      "key": "yedu",
+      "value": null,
+      "module": "robust_competition_5",
+      "stale": "unconfigured",
+      "request": "Configure yedu using its documented transport setting.",
+      "document_id": "robust-competition-yedu",
+      "document": "An audit review of yedu discusses whether the word transport appears in the checklist. The only configured value stated for yedu is its audit label, oriole. No transport setting is provided.",
+      "stratum": "unsupported"
+    }
+  ]
+}

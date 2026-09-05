@@ -1,0 +1,116 @@
+{
+  "kind": "authored public-development robustness stream: questions; untouched transfer instances; original sixteen teaching requests and 48 encounters reused; no independent comprehension claim",
+  "training_source": "experiments/r4_integrated/contextual_binding_cases.json",
+  "transfer": [
+    {
+      "name": "fresh-obnu-transport",
+      "key": "obnu",
+      "value": "acacia",
+      "module": "robust_questions_0",
+      "stale": "unconfigured",
+      "request": "Find the setting that obnu uses to carry traffic between services and configure obnu with it.",
+      "document_id": "robust-questions-obnu",
+      "document": "The service obnu sends interservice traffic using acacia; its audit records carry alder. The status display can be reset without changing either configured value.",
+      "stratum": "questions_traffic_paraphrase"
+    },
+    {
+      "name": "fresh-obnu-audit",
+      "key": "obnu",
+      "value": "alder",
+      "module": "robust_questions_0",
+      "stale": "unconfigured",
+      "request": "What label identifies obnu's audit records? Write that label into obnu's configuration.",
+      "document_id": "robust-questions-obnu",
+      "document": "The service obnu sends interservice traffic using acacia; its audit records carry alder. The status display can be reset without changing either configured value.",
+      "stratum": "questions_traffic_paraphrase"
+    },
+    {
+      "name": "fresh-pire-audit",
+      "key": "pire",
+      "value": "cypress",
+      "module": "robust_questions_1",
+      "stale": "unconfigured",
+      "request": "Read pire's record-tagging choice and apply it as the audit label.",
+      "document_id": "robust-questions-pire",
+      "document": "The audit entries produced by pire are tagged cypress. For communication between services, pire's transport setting is aspen.",
+      "stratum": "questions_record_tag"
+    },
+    {
+      "name": "fresh-pire-transport",
+      "key": "pire",
+      "value": "aspen",
+      "module": "robust_questions_1",
+      "stale": "unconfigured",
+      "request": "For pire, which configured value is used for service-to-service transport? Use that value.",
+      "document_id": "robust-questions-pire",
+      "document": "The audit entries produced by pire are tagged cypress. For communication between services, pire's transport setting is aspen.",
+      "stratum": "questions_record_tag"
+    },
+    {
+      "name": "fresh-qonu-transport",
+      "key": "qonu",
+      "value": "mangrove",
+      "module": "robust_questions_2",
+      "stale": "unconfigured",
+      "request": "Update qonu to the transport choice stated in its maintenance documentation.",
+      "document_id": "robust-questions-qonu",
+      "document": "The service qonu retains mangrove as its transport setting, even during maintenance; audit records from qonu bear the label sequoia.",
+      "stratum": "questions_contrastive"
+    },
+    {
+      "name": "fresh-qonu-audit",
+      "key": "qonu",
+      "value": "sequoia",
+      "module": "robust_questions_2",
+      "stale": "unconfigured",
+      "request": "Use the marker attached to qonu's audit records, rather than its transport choice.",
+      "document_id": "robust-questions-qonu",
+      "document": "The service qonu retains mangrove as its transport setting, even during maintenance; audit records from qonu bear the label sequoia.",
+      "stratum": "questions_contrastive"
+    },
+    {
+      "name": "fresh-roki-audit",
+      "key": "roki",
+      "value": "sycamore",
+      "module": "robust_questions_3",
+      "stale": "unconfigured",
+      "request": "Which identifier is stamped onto roki's audit records? Configure roki with that identifier.",
+      "document_id": "robust-questions-roki",
+      "document": "For roki, tamarack handles the transport role. The identifier stamped on its audit records is sycamore.",
+      "stratum": "questions_role_phrase"
+    },
+    {
+      "name": "fresh-roki-transport",
+      "key": "roki",
+      "value": "tamarack",
+      "module": "robust_questions_3",
+      "stale": "unconfigured",
+      "request": "Set roki to whichever documented value performs the transport role.",
+      "document_id": "robust-questions-roki",
+      "document": "For roki, tamarack handles the transport role. The identifier stamped on its audit records is sycamore.",
+      "stratum": "questions_role_phrase"
+    },
+    {
+      "name": "unsupported-sazu-transport",
+      "key": "sazu",
+      "value": null,
+      "module": "robust_questions_4",
+      "stale": "unconfigured",
+      "request": "According to the documentation, what transport choice should sazu use? Apply it.",
+      "document_id": "robust-questions-sazu",
+      "document": "The sazu service writes audit records tagged redwood. Its documentation describes no transport setting.",
+      "stratum": "unsupported"
+    },
+    {
+      "name": "unsupported-teli-audit",
+      "key": "teli",
+      "value": null,
+      "module": "robust_questions_5",
+      "stale": "unconfigured",
+      "request": "What label identifies teli's audit records? Write that label into teli's configuration.",
+      "document_id": "robust-questions-teli",
+      "document": "For teli, the transport setting is hemlock. The remaining notes describe maintenance dates without identifying any audit label.",
+      "stratum": "unsupported"
+    }
+  ]
+}
