@@ -1,0 +1,1700 @@
+{
+  "kind": "Authored reusable public-development TRAIN for full-choice supervised acquisition; no fresh adjudication or official reading claim.",
+  "exposure": {
+    "partition": "public_development_train",
+    "learner_inputs": "Raw documents and query bytes only; task labels, properties, expected source IDs, strata and workspace expectations are evaluator/authorized-teacher metadata.",
+    "teacher_authorization": "After the learner attempt, supervise all occurrences of the exact answer bytes, or STOP for absence of the requested property in the complete consistent TRAIN pool. Unexecuted candidates receive surrogate gradients, not fabricated execution failures.",
+    "growth_scope": "Four unrelated documents are ingested only after teaching for updates-off interference probes; no growth targets or training replay.",
+    "schedule_scope": "One fixed balanced64-task order repeated four times; actual query for each ID is unchanged across encounters. Alternate queries are updates-off development probes, not extra teaching."
+  },
+  "documents": [
+    {
+      "id": "full-choice-source-00",
+      "text": "For avrek, transport is andalusite and audit records carry alpine aster. The service besin uses blue eyed grass for transport. The audit inspection of besin is scheduled for Tuesday."
+    },
+    {
+      "id": "full-choice-source-01",
+      "text": "The audit records of derum carry common spotted orchid. The service calvo exchanges messages using bog myrtle; its audit label is anorthite. A transport review also lists derum as a participant."
+    },
+    {
+      "id": "full-choice-source-02",
+      "text": "The service eskar labels audit records eastern red cedar. To exchange messages, eskar uses bur oak as its transport setting; fovin chooses apatite for transport. A review mentions the audit timetable for fovin."
+    },
+    {
+      "id": "full-choice-source-03",
+      "text": "The transport setting used by gelru is false goats beard. Audit records belonging to havis are marked aragonite, whereas gelru marks its own audit records candy tuft. The transport inspection list also names havis."
+    },
+    {
+      "id": "full-choice-source-04",
+      "text": "Messages for irven travel using giant feather grass. For audit records, irven uses the label augite. Transport for joral is set to coral bells; an audit meeting names both services."
+    },
+    {
+      "id": "full-choice-source-05",
+      "text": "For lesam, desert sage labels audit records. The notes assign kedru the transport value benitoite and the audit label hairy bitter cress. A separate transport checklist mentions lesam."
+    },
+    {
+      "id": "full-choice-source-06",
+      "text": "The transport entries list morvi with boracite and nelux with large white trillium. The audit label for morvi is evening primrose. The service nelux attends the weekly audit review together with morvi."
+    },
+    {
+      "id": "full-choice-source-07",
+      "text": "The service orvek uses brookite to identify audit records and fox sedge for transport between services. The audit label for pasir is lesser water plantain. A transport timetable lists both names for maintenance planning."
+    },
+    {
+      "id": "full-choice-source-08",
+      "text": "For qevan, transport is golden currant and audit records carry northern sea oats. The service rosil uses cerussite for transport. The audit inspection of rosil is scheduled for Tuesday."
+    },
+    {
+      "id": "full-choice-source-09",
+      "text": "The audit records of talun carry chromite. The service sevar exchanges messages using pale yellow iris; its audit label is heath violet. A transport review also lists talun as a participant."
+    },
+    {
+      "id": "full-choice-source-10",
+      "text": "The service urevi labels audit records clinozoisite. To exchange messages, urevi uses red flowering currant as its transport setting; vesor chooses indigo bush for transport. A review mentions the audit timetable for vesor."
+    },
+    {
+      "id": "full-choice-source-11",
+      "text": "The transport setting used by walim is cordierite. Audit records belonging to xevur are marked japanese quince, whereas walim marks its own audit records small leaved lime. The transport inspection list also names xevur."
+    },
+    {
+      "id": "full-choice-source-12",
+      "text": "Messages for yarvo travel using corundum. For audit records, yarvo uses the label kentucky coffeetree. Transport for zelin is set to southern wax myrtle; an audit meeting names both services."
+    },
+    {
+      "id": "full-choice-source-13",
+      "text": "For bovek, tall meadow rue labels audit records. The notes assign adrix the transport value lemon balm and the audit label crocoite. A separate transport checklist mentions bovek."
+    },
+    {
+      "id": "full-choice-source-14",
+      "text": "The transport entries list cernu with meadow cranesbill and delvi with cuprite. The audit label for cernu is western sword fern. The service delvi attends the weekly audit review together with cernu."
+    },
+    {
+      "id": "full-choice-source-15",
+      "text": "The service erqon uses nodding onion to identify audit records and yellow horned poppy for transport between services. The audit label for fesul is diaspore. A transport timetable lists both names for maintenance planning."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "full-choice-avrek-transport",
+      "entity": "avrek",
+      "property": "transport",
+      "answer": "andalusite",
+      "expected_source_id": "full-choice-source-00",
+      "query": "Configure avrek using its documented transport setting.",
+      "workspace": {
+        "module": "full_choice_00",
+        "key": "avrek",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 1,
+      "query_form_group": "form-0"
+    },
+    {
+      "id": "full-choice-avrek-audit",
+      "entity": "avrek",
+      "property": "audit",
+      "answer": "alpine aster",
+      "expected_source_id": "full-choice-source-00",
+      "query": "Apply the documented audit label to avrek.",
+      "workspace": {
+        "module": "full_choice_00",
+        "key": "avrek",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 2,
+      "query_form_group": "form-0"
+    },
+    {
+      "id": "full-choice-besin-transport",
+      "entity": "besin",
+      "property": "transport",
+      "answer": "blue eyed grass",
+      "expected_source_id": "full-choice-source-00",
+      "query": "Set the transport configuration specified for besin.",
+      "workspace": {
+        "module": "full_choice_01",
+        "key": "besin",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 3,
+      "query_form_group": "form-3"
+    },
+    {
+      "id": "full-choice-besin-audit",
+      "entity": "besin",
+      "property": "audit",
+      "answer": null,
+      "expected_source_id": "full-choice-source-00",
+      "query": "Use the value specified for identifying besin audit records.",
+      "workspace": {
+        "module": "full_choice_01",
+        "key": "besin",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "absent_requested_property",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 0,
+      "query_form_group": "form-3"
+    },
+    {
+      "id": "full-choice-calvo-transport",
+      "entity": "calvo",
+      "property": "transport",
+      "answer": "bog myrtle",
+      "expected_source_id": "full-choice-source-01",
+      "query": "Use the transport value assigned to calvo in the notes.",
+      "workspace": {
+        "module": "full_choice_02",
+        "key": "calvo",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 2,
+      "query_form_group": "form-1"
+    },
+    {
+      "id": "full-choice-calvo-audit",
+      "entity": "calvo",
+      "property": "audit",
+      "answer": "anorthite",
+      "expected_source_id": "full-choice-source-01",
+      "query": "Set the audit label for calvo from the notes.",
+      "workspace": {
+        "module": "full_choice_02",
+        "key": "calvo",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 1,
+      "query_form_group": "form-1"
+    },
+    {
+      "id": "full-choice-derum-transport",
+      "entity": "derum",
+      "property": "transport",
+      "answer": null,
+      "expected_source_id": "full-choice-source-01",
+      "query": "Find what derum uses for transport and configure that value.",
+      "workspace": {
+        "module": "full_choice_03",
+        "key": "derum",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "absent_requested_property",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 0,
+      "query_form_group": "form-4"
+    },
+    {
+      "id": "full-choice-derum-audit",
+      "entity": "derum",
+      "property": "audit",
+      "answer": "common spotted orchid",
+      "expected_source_id": "full-choice-source-01",
+      "query": "Find the audit label assigned to derum and apply it.",
+      "workspace": {
+        "module": "full_choice_03",
+        "key": "derum",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 3,
+      "query_form_group": "form-4"
+    },
+    {
+      "id": "full-choice-eskar-transport",
+      "entity": "eskar",
+      "property": "transport",
+      "answer": "bur oak",
+      "expected_source_id": "full-choice-source-02",
+      "query": "Which setting carries messages between services for eskar? Apply it.",
+      "workspace": {
+        "module": "full_choice_04",
+        "key": "eskar",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 2,
+      "query_form_group": "form-2"
+    },
+    {
+      "id": "full-choice-eskar-audit",
+      "entity": "eskar",
+      "property": "audit",
+      "answer": "eastern red cedar",
+      "expected_source_id": "full-choice-source-02",
+      "query": "Which value labels the audit records of eskar? Configure it.",
+      "workspace": {
+        "module": "full_choice_04",
+        "key": "eskar",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 3,
+      "query_form_group": "form-2"
+    },
+    {
+      "id": "full-choice-fovin-transport",
+      "entity": "fovin",
+      "property": "transport",
+      "answer": "apatite",
+      "expected_source_id": "full-choice-source-02",
+      "query": "Apply the documented setting for communication between services by fovin.",
+      "workspace": {
+        "module": "full_choice_05",
+        "key": "fovin",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 1,
+      "query_form_group": "form-5"
+    },
+    {
+      "id": "full-choice-fovin-audit",
+      "entity": "fovin",
+      "property": "audit",
+      "answer": null,
+      "expected_source_id": "full-choice-source-02",
+      "query": "Configure fovin with the value used to mark its audit records.",
+      "workspace": {
+        "module": "full_choice_05",
+        "key": "fovin",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "absent_requested_property",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 0,
+      "query_form_group": "form-5"
+    },
+    {
+      "id": "full-choice-gelru-transport",
+      "entity": "gelru",
+      "property": "transport",
+      "answer": "false goats beard",
+      "expected_source_id": "full-choice-source-03",
+      "query": "Set the transport configuration specified for gelru.",
+      "workspace": {
+        "module": "full_choice_06",
+        "key": "gelru",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 3,
+      "query_form_group": "form-3"
+    },
+    {
+      "id": "full-choice-gelru-audit",
+      "entity": "gelru",
+      "property": "audit",
+      "answer": "candy tuft",
+      "expected_source_id": "full-choice-source-03",
+      "query": "Use the value specified for identifying gelru audit records.",
+      "workspace": {
+        "module": "full_choice_06",
+        "key": "gelru",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 2,
+      "query_form_group": "form-3"
+    },
+    {
+      "id": "full-choice-havis-transport",
+      "entity": "havis",
+      "property": "transport",
+      "answer": null,
+      "expected_source_id": "full-choice-source-03",
+      "query": "What transport value belongs to havis? Use the notes to set it.",
+      "workspace": {
+        "module": "full_choice_07",
+        "key": "havis",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "absent_requested_property",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 0,
+      "query_form_group": "form-6"
+    },
+    {
+      "id": "full-choice-havis-audit",
+      "entity": "havis",
+      "property": "audit",
+      "answer": "aragonite",
+      "expected_source_id": "full-choice-source-03",
+      "query": "What label belongs on havis audit records? Set it from the notes.",
+      "workspace": {
+        "module": "full_choice_07",
+        "key": "havis",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 1,
+      "query_form_group": "form-6"
+    },
+    {
+      "id": "full-choice-irven-transport",
+      "entity": "irven",
+      "property": "transport",
+      "answer": "giant feather grass",
+      "expected_source_id": "full-choice-source-04",
+      "query": "Find what irven uses for transport and configure that value.",
+      "workspace": {
+        "module": "full_choice_08",
+        "key": "irven",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 3,
+      "query_form_group": "form-4"
+    },
+    {
+      "id": "full-choice-irven-audit",
+      "entity": "irven",
+      "property": "audit",
+      "answer": "augite",
+      "expected_source_id": "full-choice-source-04",
+      "query": "Find the audit label assigned to irven and apply it.",
+      "workspace": {
+        "module": "full_choice_08",
+        "key": "irven",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 1,
+      "query_form_group": "form-4"
+    },
+    {
+      "id": "full-choice-joral-transport",
+      "entity": "joral",
+      "property": "transport",
+      "answer": "coral bells",
+      "expected_source_id": "full-choice-source-04",
+      "query": "Configure joral with the transport value in its service description.",
+      "workspace": {
+        "module": "full_choice_09",
+        "key": "joral",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 2,
+      "query_form_group": "form-7"
+    },
+    {
+      "id": "full-choice-joral-audit",
+      "entity": "joral",
+      "property": "audit",
+      "answer": null,
+      "expected_source_id": "full-choice-source-04",
+      "query": "Use the audit value in the service description for joral.",
+      "workspace": {
+        "module": "full_choice_09",
+        "key": "joral",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "absent_requested_property",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 0,
+      "query_form_group": "form-7"
+    },
+    {
+      "id": "full-choice-kedru-transport",
+      "entity": "kedru",
+      "property": "transport",
+      "answer": "benitoite",
+      "expected_source_id": "full-choice-source-05",
+      "query": "Apply the documented setting for communication between services by kedru.",
+      "workspace": {
+        "module": "full_choice_10",
+        "key": "kedru",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 1,
+      "query_form_group": "form-5"
+    },
+    {
+      "id": "full-choice-kedru-audit",
+      "entity": "kedru",
+      "property": "audit",
+      "answer": "hairy bitter cress",
+      "expected_source_id": "full-choice-source-05",
+      "query": "Configure kedru with the value used to mark its audit records.",
+      "workspace": {
+        "module": "full_choice_10",
+        "key": "kedru",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 3,
+      "query_form_group": "form-5"
+    },
+    {
+      "id": "full-choice-lesam-transport",
+      "entity": "lesam",
+      "property": "transport",
+      "answer": null,
+      "expected_source_id": "full-choice-source-05",
+      "query": "Configure lesam using its documented transport setting.",
+      "workspace": {
+        "module": "full_choice_11",
+        "key": "lesam",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "absent_requested_property",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 0,
+      "query_form_group": "form-0"
+    },
+    {
+      "id": "full-choice-lesam-audit",
+      "entity": "lesam",
+      "property": "audit",
+      "answer": "desert sage",
+      "expected_source_id": "full-choice-source-05",
+      "query": "Apply the documented audit label to lesam.",
+      "workspace": {
+        "module": "full_choice_11",
+        "key": "lesam",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 2,
+      "query_form_group": "form-0"
+    },
+    {
+      "id": "full-choice-morvi-transport",
+      "entity": "morvi",
+      "property": "transport",
+      "answer": "boracite",
+      "expected_source_id": "full-choice-source-06",
+      "query": "What transport value belongs to morvi? Use the notes to set it.",
+      "workspace": {
+        "module": "full_choice_12",
+        "key": "morvi",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 1,
+      "query_form_group": "form-6"
+    },
+    {
+      "id": "full-choice-morvi-audit",
+      "entity": "morvi",
+      "property": "audit",
+      "answer": "evening primrose",
+      "expected_source_id": "full-choice-source-06",
+      "query": "What label belongs on morvi audit records? Set it from the notes.",
+      "workspace": {
+        "module": "full_choice_12",
+        "key": "morvi",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 2,
+      "query_form_group": "form-6"
+    },
+    {
+      "id": "full-choice-nelux-transport",
+      "entity": "nelux",
+      "property": "transport",
+      "answer": "large white trillium",
+      "expected_source_id": "full-choice-source-06",
+      "query": "Use the transport value assigned to nelux in the notes.",
+      "workspace": {
+        "module": "full_choice_13",
+        "key": "nelux",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 3,
+      "query_form_group": "form-1"
+    },
+    {
+      "id": "full-choice-nelux-audit",
+      "entity": "nelux",
+      "property": "audit",
+      "answer": null,
+      "expected_source_id": "full-choice-source-06",
+      "query": "Set the audit label for nelux from the notes.",
+      "workspace": {
+        "module": "full_choice_13",
+        "key": "nelux",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "absent_requested_property",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 0,
+      "query_form_group": "form-1"
+    },
+    {
+      "id": "full-choice-orvek-transport",
+      "entity": "orvek",
+      "property": "transport",
+      "answer": "fox sedge",
+      "expected_source_id": "full-choice-source-07",
+      "query": "Configure orvek with the transport value in its service description.",
+      "workspace": {
+        "module": "full_choice_14",
+        "key": "orvek",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 2,
+      "query_form_group": "form-7"
+    },
+    {
+      "id": "full-choice-orvek-audit",
+      "entity": "orvek",
+      "property": "audit",
+      "answer": "brookite",
+      "expected_source_id": "full-choice-source-07",
+      "query": "Use the audit value in the service description for orvek.",
+      "workspace": {
+        "module": "full_choice_14",
+        "key": "orvek",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 1,
+      "query_form_group": "form-7"
+    },
+    {
+      "id": "full-choice-pasir-transport",
+      "entity": "pasir",
+      "property": "transport",
+      "answer": null,
+      "expected_source_id": "full-choice-source-07",
+      "query": "Which setting carries messages between services for pasir? Apply it.",
+      "workspace": {
+        "module": "full_choice_15",
+        "key": "pasir",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "absent_requested_property",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 0,
+      "query_form_group": "form-2"
+    },
+    {
+      "id": "full-choice-pasir-audit",
+      "entity": "pasir",
+      "property": "audit",
+      "answer": "lesser water plantain",
+      "expected_source_id": "full-choice-source-07",
+      "query": "Which value labels the audit records of pasir? Configure it.",
+      "workspace": {
+        "module": "full_choice_15",
+        "key": "pasir",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 3,
+      "query_form_group": "form-2"
+    },
+    {
+      "id": "full-choice-qevan-transport",
+      "entity": "qevan",
+      "property": "transport",
+      "answer": "golden currant",
+      "expected_source_id": "full-choice-source-08",
+      "query": "Configure qevan using its documented transport setting.",
+      "workspace": {
+        "module": "full_choice_16",
+        "key": "qevan",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 2,
+      "query_form_group": "form-0"
+    },
+    {
+      "id": "full-choice-qevan-audit",
+      "entity": "qevan",
+      "property": "audit",
+      "answer": "northern sea oats",
+      "expected_source_id": "full-choice-source-08",
+      "query": "Apply the documented audit label to qevan.",
+      "workspace": {
+        "module": "full_choice_16",
+        "key": "qevan",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 3,
+      "query_form_group": "form-0"
+    },
+    {
+      "id": "full-choice-rosil-transport",
+      "entity": "rosil",
+      "property": "transport",
+      "answer": "cerussite",
+      "expected_source_id": "full-choice-source-08",
+      "query": "Set the transport configuration specified for rosil.",
+      "workspace": {
+        "module": "full_choice_17",
+        "key": "rosil",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 1,
+      "query_form_group": "form-3"
+    },
+    {
+      "id": "full-choice-rosil-audit",
+      "entity": "rosil",
+      "property": "audit",
+      "answer": null,
+      "expected_source_id": "full-choice-source-08",
+      "query": "Use the value specified for identifying rosil audit records.",
+      "workspace": {
+        "module": "full_choice_17",
+        "key": "rosil",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "absent_requested_property",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 0,
+      "query_form_group": "form-3"
+    },
+    {
+      "id": "full-choice-sevar-transport",
+      "entity": "sevar",
+      "property": "transport",
+      "answer": "pale yellow iris",
+      "expected_source_id": "full-choice-source-09",
+      "query": "Use the transport value assigned to sevar in the notes.",
+      "workspace": {
+        "module": "full_choice_18",
+        "key": "sevar",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 3,
+      "query_form_group": "form-1"
+    },
+    {
+      "id": "full-choice-sevar-audit",
+      "entity": "sevar",
+      "property": "audit",
+      "answer": "heath violet",
+      "expected_source_id": "full-choice-source-09",
+      "query": "Set the audit label for sevar from the notes.",
+      "workspace": {
+        "module": "full_choice_18",
+        "key": "sevar",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 2,
+      "query_form_group": "form-1"
+    },
+    {
+      "id": "full-choice-talun-transport",
+      "entity": "talun",
+      "property": "transport",
+      "answer": null,
+      "expected_source_id": "full-choice-source-09",
+      "query": "Find what talun uses for transport and configure that value.",
+      "workspace": {
+        "module": "full_choice_19",
+        "key": "talun",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "absent_requested_property",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 0,
+      "query_form_group": "form-4"
+    },
+    {
+      "id": "full-choice-talun-audit",
+      "entity": "talun",
+      "property": "audit",
+      "answer": "chromite",
+      "expected_source_id": "full-choice-source-09",
+      "query": "Find the audit label assigned to talun and apply it.",
+      "workspace": {
+        "module": "full_choice_19",
+        "key": "talun",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 1,
+      "query_form_group": "form-4"
+    },
+    {
+      "id": "full-choice-urevi-transport",
+      "entity": "urevi",
+      "property": "transport",
+      "answer": "red flowering currant",
+      "expected_source_id": "full-choice-source-10",
+      "query": "Which setting carries messages between services for urevi? Apply it.",
+      "workspace": {
+        "module": "full_choice_20",
+        "key": "urevi",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 3,
+      "query_form_group": "form-2"
+    },
+    {
+      "id": "full-choice-urevi-audit",
+      "entity": "urevi",
+      "property": "audit",
+      "answer": "clinozoisite",
+      "expected_source_id": "full-choice-source-10",
+      "query": "Which value labels the audit records of urevi? Configure it.",
+      "workspace": {
+        "module": "full_choice_20",
+        "key": "urevi",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 1,
+      "query_form_group": "form-2"
+    },
+    {
+      "id": "full-choice-vesor-transport",
+      "entity": "vesor",
+      "property": "transport",
+      "answer": "indigo bush",
+      "expected_source_id": "full-choice-source-10",
+      "query": "Apply the documented setting for communication between services by vesor.",
+      "workspace": {
+        "module": "full_choice_21",
+        "key": "vesor",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 2,
+      "query_form_group": "form-5"
+    },
+    {
+      "id": "full-choice-vesor-audit",
+      "entity": "vesor",
+      "property": "audit",
+      "answer": null,
+      "expected_source_id": "full-choice-source-10",
+      "query": "Configure vesor with the value used to mark its audit records.",
+      "workspace": {
+        "module": "full_choice_21",
+        "key": "vesor",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "absent_requested_property",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 0,
+      "query_form_group": "form-5"
+    },
+    {
+      "id": "full-choice-walim-transport",
+      "entity": "walim",
+      "property": "transport",
+      "answer": "cordierite",
+      "expected_source_id": "full-choice-source-11",
+      "query": "Set the transport configuration specified for walim.",
+      "workspace": {
+        "module": "full_choice_22",
+        "key": "walim",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 1,
+      "query_form_group": "form-3"
+    },
+    {
+      "id": "full-choice-walim-audit",
+      "entity": "walim",
+      "property": "audit",
+      "answer": "small leaved lime",
+      "expected_source_id": "full-choice-source-11",
+      "query": "Use the value specified for identifying walim audit records.",
+      "workspace": {
+        "module": "full_choice_22",
+        "key": "walim",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 3,
+      "query_form_group": "form-3"
+    },
+    {
+      "id": "full-choice-xevur-transport",
+      "entity": "xevur",
+      "property": "transport",
+      "answer": null,
+      "expected_source_id": "full-choice-source-11",
+      "query": "What transport value belongs to xevur? Use the notes to set it.",
+      "workspace": {
+        "module": "full_choice_23",
+        "key": "xevur",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "absent_requested_property",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 0,
+      "query_form_group": "form-6"
+    },
+    {
+      "id": "full-choice-xevur-audit",
+      "entity": "xevur",
+      "property": "audit",
+      "answer": "japanese quince",
+      "expected_source_id": "full-choice-source-11",
+      "query": "What label belongs on xevur audit records? Set it from the notes.",
+      "workspace": {
+        "module": "full_choice_23",
+        "key": "xevur",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 2,
+      "query_form_group": "form-6"
+    },
+    {
+      "id": "full-choice-yarvo-transport",
+      "entity": "yarvo",
+      "property": "transport",
+      "answer": "corundum",
+      "expected_source_id": "full-choice-source-12",
+      "query": "Find what yarvo uses for transport and configure that value.",
+      "workspace": {
+        "module": "full_choice_24",
+        "key": "yarvo",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 1,
+      "query_form_group": "form-4"
+    },
+    {
+      "id": "full-choice-yarvo-audit",
+      "entity": "yarvo",
+      "property": "audit",
+      "answer": "kentucky coffeetree",
+      "expected_source_id": "full-choice-source-12",
+      "query": "Find the audit label assigned to yarvo and apply it.",
+      "workspace": {
+        "module": "full_choice_24",
+        "key": "yarvo",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 2,
+      "query_form_group": "form-4"
+    },
+    {
+      "id": "full-choice-zelin-transport",
+      "entity": "zelin",
+      "property": "transport",
+      "answer": "southern wax myrtle",
+      "expected_source_id": "full-choice-source-12",
+      "query": "Configure zelin with the transport value in its service description.",
+      "workspace": {
+        "module": "full_choice_25",
+        "key": "zelin",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 3,
+      "query_form_group": "form-7"
+    },
+    {
+      "id": "full-choice-zelin-audit",
+      "entity": "zelin",
+      "property": "audit",
+      "answer": null,
+      "expected_source_id": "full-choice-source-12",
+      "query": "Use the audit value in the service description for zelin.",
+      "workspace": {
+        "module": "full_choice_25",
+        "key": "zelin",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "absent_requested_property",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 0,
+      "query_form_group": "form-7"
+    },
+    {
+      "id": "full-choice-adrix-transport",
+      "entity": "adrix",
+      "property": "transport",
+      "answer": "lemon balm",
+      "expected_source_id": "full-choice-source-13",
+      "query": "Apply the documented setting for communication between services by adrix.",
+      "workspace": {
+        "module": "full_choice_26",
+        "key": "adrix",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 2,
+      "query_form_group": "form-5"
+    },
+    {
+      "id": "full-choice-adrix-audit",
+      "entity": "adrix",
+      "property": "audit",
+      "answer": "crocoite",
+      "expected_source_id": "full-choice-source-13",
+      "query": "Configure adrix with the value used to mark its audit records.",
+      "workspace": {
+        "module": "full_choice_26",
+        "key": "adrix",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 1,
+      "query_form_group": "form-5"
+    },
+    {
+      "id": "full-choice-bovek-transport",
+      "entity": "bovek",
+      "property": "transport",
+      "answer": null,
+      "expected_source_id": "full-choice-source-13",
+      "query": "Configure bovek using its documented transport setting.",
+      "workspace": {
+        "module": "full_choice_27",
+        "key": "bovek",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "absent_requested_property",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 0,
+      "query_form_group": "form-0"
+    },
+    {
+      "id": "full-choice-bovek-audit",
+      "entity": "bovek",
+      "property": "audit",
+      "answer": "tall meadow rue",
+      "expected_source_id": "full-choice-source-13",
+      "query": "Apply the documented audit label to bovek.",
+      "workspace": {
+        "module": "full_choice_27",
+        "key": "bovek",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 3,
+      "query_form_group": "form-0"
+    },
+    {
+      "id": "full-choice-cernu-transport",
+      "entity": "cernu",
+      "property": "transport",
+      "answer": "meadow cranesbill",
+      "expected_source_id": "full-choice-source-14",
+      "query": "What transport value belongs to cernu? Use the notes to set it.",
+      "workspace": {
+        "module": "full_choice_28",
+        "key": "cernu",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 2,
+      "query_form_group": "form-6"
+    },
+    {
+      "id": "full-choice-cernu-audit",
+      "entity": "cernu",
+      "property": "audit",
+      "answer": "western sword fern",
+      "expected_source_id": "full-choice-source-14",
+      "query": "What label belongs on cernu audit records? Set it from the notes.",
+      "workspace": {
+        "module": "full_choice_28",
+        "key": "cernu",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 3,
+      "query_form_group": "form-6"
+    },
+    {
+      "id": "full-choice-delvi-transport",
+      "entity": "delvi",
+      "property": "transport",
+      "answer": "cuprite",
+      "expected_source_id": "full-choice-source-14",
+      "query": "Use the transport value assigned to delvi in the notes.",
+      "workspace": {
+        "module": "full_choice_29",
+        "key": "delvi",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 1,
+      "query_form_group": "form-1"
+    },
+    {
+      "id": "full-choice-delvi-audit",
+      "entity": "delvi",
+      "property": "audit",
+      "answer": null,
+      "expected_source_id": "full-choice-source-14",
+      "query": "Set the audit label for delvi from the notes.",
+      "workspace": {
+        "module": "full_choice_29",
+        "key": "delvi",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "absent_requested_property",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 0,
+      "query_form_group": "form-1"
+    },
+    {
+      "id": "full-choice-erqon-transport",
+      "entity": "erqon",
+      "property": "transport",
+      "answer": "yellow horned poppy",
+      "expected_source_id": "full-choice-source-15",
+      "query": "Configure erqon with the transport value in its service description.",
+      "workspace": {
+        "module": "full_choice_30",
+        "key": "erqon",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 3,
+      "query_form_group": "form-7"
+    },
+    {
+      "id": "full-choice-erqon-audit",
+      "entity": "erqon",
+      "property": "audit",
+      "answer": "nodding onion",
+      "expected_source_id": "full-choice-source-15",
+      "query": "Use the audit value in the service description for erqon.",
+      "workspace": {
+        "module": "full_choice_30",
+        "key": "erqon",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 2,
+      "query_form_group": "form-7"
+    },
+    {
+      "id": "full-choice-fesul-transport",
+      "entity": "fesul",
+      "property": "transport",
+      "answer": null,
+      "expected_source_id": "full-choice-source-15",
+      "query": "Which setting carries messages between services for fesul? Apply it.",
+      "workspace": {
+        "module": "full_choice_31",
+        "key": "fesul",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "absent_requested_property",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 0,
+      "query_form_group": "form-2"
+    },
+    {
+      "id": "full-choice-fesul-audit",
+      "entity": "fesul",
+      "property": "audit",
+      "answer": "diaspore",
+      "expected_source_id": "full-choice-source-15",
+      "query": "Which value labels the audit records of fesul? Configure it.",
+      "workspace": {
+        "module": "full_choice_31",
+        "key": "fesul",
+        "stale": "unconfigured"
+      },
+      "teacher_scope": {
+        "kind": "exact_answer_bytes",
+        "source_scope": "complete_train_pool",
+        "entity_present": true
+      },
+      "answer_word_count": 1,
+      "query_form_group": "form-2"
+    }
+  ],
+  "alternate_queries": {
+    "full-choice-avrek-transport": "Which transport should avrek use according to its service notes? Apply it.",
+    "full-choice-avrek-audit": "What value identifies audit records belonging to avrek? Apply it.",
+    "full-choice-besin-transport": "What does besin use to send messages between services? Configure that setting.",
+    "full-choice-besin-audit": "Which audit label is assigned to besin? Use that value.",
+    "full-choice-calvo-transport": "Set calvo to the documented value for transport.",
+    "full-choice-calvo-audit": "Configure calvo with its documented audit label.",
+    "full-choice-derum-transport": "Use the transport configuration recorded for derum.",
+    "full-choice-derum-audit": "Apply the value used by derum to label audit records.",
+    "full-choice-eskar-transport": "Apply the transport setting named for eskar.",
+    "full-choice-eskar-audit": "Set the audit value recorded for eskar.",
+    "full-choice-fovin-transport": "Find the setting that transports messages for fovin and apply it.",
+    "full-choice-fovin-audit": "Find the documented audit label for fovin and configure it.",
+    "full-choice-gelru-transport": "What does gelru use to send messages between services? Configure that setting.",
+    "full-choice-gelru-audit": "Which audit label is assigned to gelru? Use that value.",
+    "full-choice-havis-transport": "Configure transport for havis according to the documentation.",
+    "full-choice-havis-audit": "Use the label marking the audit records of havis.",
+    "full-choice-irven-transport": "Use the transport configuration recorded for irven.",
+    "full-choice-irven-audit": "Apply the value used by irven to label audit records.",
+    "full-choice-joral-transport": "Set the value used by joral for communication between services.",
+    "full-choice-joral-audit": "Set joral to the audit label in the notes.",
+    "full-choice-kedru-transport": "Find the setting that transports messages for kedru and apply it.",
+    "full-choice-kedru-audit": "Find the documented audit label for kedru and configure it.",
+    "full-choice-lesam-transport": "Which transport should lesam use according to its service notes? Apply it.",
+    "full-choice-lesam-audit": "What value identifies audit records belonging to lesam? Apply it.",
+    "full-choice-morvi-transport": "Configure transport for morvi according to the documentation.",
+    "full-choice-morvi-audit": "Use the label marking the audit records of morvi.",
+    "full-choice-nelux-transport": "Set nelux to the documented value for transport.",
+    "full-choice-nelux-audit": "Configure nelux with its documented audit label.",
+    "full-choice-orvek-transport": "Set the value used by orvek for communication between services.",
+    "full-choice-orvek-audit": "Set orvek to the audit label in the notes.",
+    "full-choice-pasir-transport": "Apply the transport setting named for pasir.",
+    "full-choice-pasir-audit": "Set the audit value recorded for pasir.",
+    "full-choice-qevan-transport": "Which transport should qevan use according to its service notes? Apply it.",
+    "full-choice-qevan-audit": "What value identifies audit records belonging to qevan? Apply it.",
+    "full-choice-rosil-transport": "What does rosil use to send messages between services? Configure that setting.",
+    "full-choice-rosil-audit": "Which audit label is assigned to rosil? Use that value.",
+    "full-choice-sevar-transport": "Set sevar to the documented value for transport.",
+    "full-choice-sevar-audit": "Configure sevar with its documented audit label.",
+    "full-choice-talun-transport": "Use the transport configuration recorded for talun.",
+    "full-choice-talun-audit": "Apply the value used by talun to label audit records.",
+    "full-choice-urevi-transport": "Apply the transport setting named for urevi.",
+    "full-choice-urevi-audit": "Set the audit value recorded for urevi.",
+    "full-choice-vesor-transport": "Find the setting that transports messages for vesor and apply it.",
+    "full-choice-vesor-audit": "Find the documented audit label for vesor and configure it.",
+    "full-choice-walim-transport": "What does walim use to send messages between services? Configure that setting.",
+    "full-choice-walim-audit": "Which audit label is assigned to walim? Use that value.",
+    "full-choice-xevur-transport": "Configure transport for xevur according to the documentation.",
+    "full-choice-xevur-audit": "Use the label marking the audit records of xevur.",
+    "full-choice-yarvo-transport": "Use the transport configuration recorded for yarvo.",
+    "full-choice-yarvo-audit": "Apply the value used by yarvo to label audit records.",
+    "full-choice-zelin-transport": "Set the value used by zelin for communication between services.",
+    "full-choice-zelin-audit": "Set zelin to the audit label in the notes.",
+    "full-choice-adrix-transport": "Find the setting that transports messages for adrix and apply it.",
+    "full-choice-adrix-audit": "Find the documented audit label for adrix and configure it.",
+    "full-choice-bovek-transport": "Which transport should bovek use according to its service notes? Apply it.",
+    "full-choice-bovek-audit": "What value identifies audit records belonging to bovek? Apply it.",
+    "full-choice-cernu-transport": "Configure transport for cernu according to the documentation.",
+    "full-choice-cernu-audit": "Use the label marking the audit records of cernu.",
+    "full-choice-delvi-transport": "Set delvi to the documented value for transport.",
+    "full-choice-delvi-audit": "Configure delvi with its documented audit label.",
+    "full-choice-erqon-transport": "Set the value used by erqon for communication between services.",
+    "full-choice-erqon-audit": "Set erqon to the audit label in the notes.",
+    "full-choice-fesul-transport": "Apply the transport setting named for fesul.",
+    "full-choice-fesul-audit": "Set the audit value recorded for fesul."
+  },
+  "growth_documents": [
+    {
+      "id": "full-choice-growth-00",
+      "text": "The town museum keeps an archive of transport posters. Volunteers review the paper condition during an annual audit. A faded caption describes a railway exhibition, while the catalogue records the dimensions of each display case."
+    },
+    {
+      "id": "full-choice-growth-01",
+      "text": "Garden volunteers exchange messages about watering times. Their meeting notes separate weather observations from an equipment audit. The transport of compost is discussed on another page, along with the dates when the gates will be open."
+    },
+    {
+      "id": "full-choice-growth-02",
+      "text": "At the lakeside station, observers record wind direction and water levels. An audit checks whether every measurement has a date. The visitor leaflet describes local transport links and the path from the bus stop to the shore."
+    },
+    {
+      "id": "full-choice-growth-03",
+      "text": "The community theatre labels storage boxes by room number. During its safety audit, the team inspects lamps and cables. A transport notice gives the delivery timetable for scenery; it does not describe software services or their configuration."
+    }
+  ],
+  "schedule": [
+    "full-choice-avrek-transport",
+    "full-choice-avrek-audit",
+    "full-choice-besin-transport",
+    "full-choice-besin-audit",
+    "full-choice-calvo-audit",
+    "full-choice-derum-transport",
+    "full-choice-derum-audit",
+    "full-choice-calvo-transport",
+    "full-choice-fovin-transport",
+    "full-choice-fovin-audit",
+    "full-choice-eskar-transport",
+    "full-choice-eskar-audit",
+    "full-choice-havis-audit",
+    "full-choice-gelru-transport",
+    "full-choice-gelru-audit",
+    "full-choice-havis-transport",
+    "full-choice-irven-transport",
+    "full-choice-irven-audit",
+    "full-choice-joral-transport",
+    "full-choice-joral-audit",
+    "full-choice-kedru-audit",
+    "full-choice-lesam-transport",
+    "full-choice-lesam-audit",
+    "full-choice-kedru-transport",
+    "full-choice-nelux-transport",
+    "full-choice-nelux-audit",
+    "full-choice-morvi-transport",
+    "full-choice-morvi-audit",
+    "full-choice-pasir-audit",
+    "full-choice-orvek-transport",
+    "full-choice-orvek-audit",
+    "full-choice-pasir-transport",
+    "full-choice-qevan-transport",
+    "full-choice-qevan-audit",
+    "full-choice-rosil-transport",
+    "full-choice-rosil-audit",
+    "full-choice-sevar-audit",
+    "full-choice-talun-transport",
+    "full-choice-talun-audit",
+    "full-choice-sevar-transport",
+    "full-choice-vesor-transport",
+    "full-choice-vesor-audit",
+    "full-choice-urevi-transport",
+    "full-choice-urevi-audit",
+    "full-choice-xevur-audit",
+    "full-choice-walim-transport",
+    "full-choice-walim-audit",
+    "full-choice-xevur-transport",
+    "full-choice-yarvo-transport",
+    "full-choice-yarvo-audit",
+    "full-choice-zelin-transport",
+    "full-choice-zelin-audit",
+    "full-choice-adrix-audit",
+    "full-choice-bovek-transport",
+    "full-choice-bovek-audit",
+    "full-choice-adrix-transport",
+    "full-choice-delvi-transport",
+    "full-choice-delvi-audit",
+    "full-choice-cernu-transport",
+    "full-choice-cernu-audit",
+    "full-choice-fesul-audit",
+    "full-choice-erqon-transport",
+    "full-choice-erqon-audit",
+    "full-choice-fesul-transport",
+    "full-choice-avrek-transport",
+    "full-choice-avrek-audit",
+    "full-choice-besin-transport",
+    "full-choice-besin-audit",
+    "full-choice-calvo-audit",
+    "full-choice-derum-transport",
+    "full-choice-derum-audit",
+    "full-choice-calvo-transport",
+    "full-choice-fovin-transport",
+    "full-choice-fovin-audit",
+    "full-choice-eskar-transport",
+    "full-choice-eskar-audit",
+    "full-choice-havis-audit",
+    "full-choice-gelru-transport",
+    "full-choice-gelru-audit",
+    "full-choice-havis-transport",
+    "full-choice-irven-transport",
+    "full-choice-irven-audit",
+    "full-choice-joral-transport",
+    "full-choice-joral-audit",
+    "full-choice-kedru-audit",
+    "full-choice-lesam-transport",
+    "full-choice-lesam-audit",
+    "full-choice-kedru-transport",
+    "full-choice-nelux-transport",
+    "full-choice-nelux-audit",
+    "full-choice-morvi-transport",
+    "full-choice-morvi-audit",
+    "full-choice-pasir-audit",
+    "full-choice-orvek-transport",
+    "full-choice-orvek-audit",
+    "full-choice-pasir-transport",
+    "full-choice-qevan-transport",
+    "full-choice-qevan-audit",
+    "full-choice-rosil-transport",
+    "full-choice-rosil-audit",
+    "full-choice-sevar-audit",
+    "full-choice-talun-transport",
+    "full-choice-talun-audit",
+    "full-choice-sevar-transport",
+    "full-choice-vesor-transport",
+    "full-choice-vesor-audit",
+    "full-choice-urevi-transport",
+    "full-choice-urevi-audit",
+    "full-choice-xevur-audit",
+    "full-choice-walim-transport",
+    "full-choice-walim-audit",
+    "full-choice-xevur-transport",
+    "full-choice-yarvo-transport",
+    "full-choice-yarvo-audit",
+    "full-choice-zelin-transport",
+    "full-choice-zelin-audit",
+    "full-choice-adrix-audit",
+    "full-choice-bovek-transport",
+    "full-choice-bovek-audit",
+    "full-choice-adrix-transport",
+    "full-choice-delvi-transport",
+    "full-choice-delvi-audit",
+    "full-choice-cernu-transport",
+    "full-choice-cernu-audit",
+    "full-choice-fesul-audit",
+    "full-choice-erqon-transport",
+    "full-choice-erqon-audit",
+    "full-choice-fesul-transport",
+    "full-choice-avrek-transport",
+    "full-choice-avrek-audit",
+    "full-choice-besin-transport",
+    "full-choice-besin-audit",
+    "full-choice-calvo-audit",
+    "full-choice-derum-transport",
+    "full-choice-derum-audit",
+    "full-choice-calvo-transport",
+    "full-choice-fovin-transport",
+    "full-choice-fovin-audit",
+    "full-choice-eskar-transport",
+    "full-choice-eskar-audit",
+    "full-choice-havis-audit",
+    "full-choice-gelru-transport",
+    "full-choice-gelru-audit",
+    "full-choice-havis-transport",
+    "full-choice-irven-transport",
+    "full-choice-irven-audit",
+    "full-choice-joral-transport",
+    "full-choice-joral-audit",
+    "full-choice-kedru-audit",
+    "full-choice-lesam-transport",
+    "full-choice-lesam-audit",
+    "full-choice-kedru-transport",
+    "full-choice-nelux-transport",
+    "full-choice-nelux-audit",
+    "full-choice-morvi-transport",
+    "full-choice-morvi-audit",
+    "full-choice-pasir-audit",
+    "full-choice-orvek-transport",
+    "full-choice-orvek-audit",
+    "full-choice-pasir-transport",
+    "full-choice-qevan-transport",
+    "full-choice-qevan-audit",
+    "full-choice-rosil-transport",
+    "full-choice-rosil-audit",
+    "full-choice-sevar-audit",
+    "full-choice-talun-transport",
+    "full-choice-talun-audit",
+    "full-choice-sevar-transport",
+    "full-choice-vesor-transport",
+    "full-choice-vesor-audit",
+    "full-choice-urevi-transport",
+    "full-choice-urevi-audit",
+    "full-choice-xevur-audit",
+    "full-choice-walim-transport",
+    "full-choice-walim-audit",
+    "full-choice-xevur-transport",
+    "full-choice-yarvo-transport",
+    "full-choice-yarvo-audit",
+    "full-choice-zelin-transport",
+    "full-choice-zelin-audit",
+    "full-choice-adrix-audit",
+    "full-choice-bovek-transport",
+    "full-choice-bovek-audit",
+    "full-choice-adrix-transport",
+    "full-choice-delvi-transport",
+    "full-choice-delvi-audit",
+    "full-choice-cernu-transport",
+    "full-choice-cernu-audit",
+    "full-choice-fesul-audit",
+    "full-choice-erqon-transport",
+    "full-choice-erqon-audit",
+    "full-choice-fesul-transport",
+    "full-choice-avrek-transport",
+    "full-choice-avrek-audit",
+    "full-choice-besin-transport",
+    "full-choice-besin-audit",
+    "full-choice-calvo-audit",
+    "full-choice-derum-transport",
+    "full-choice-derum-audit",
+    "full-choice-calvo-transport",
+    "full-choice-fovin-transport",
+    "full-choice-fovin-audit",
+    "full-choice-eskar-transport",
+    "full-choice-eskar-audit",
+    "full-choice-havis-audit",
+    "full-choice-gelru-transport",
+    "full-choice-gelru-audit",
+    "full-choice-havis-transport",
+    "full-choice-irven-transport",
+    "full-choice-irven-audit",
+    "full-choice-joral-transport",
+    "full-choice-joral-audit",
+    "full-choice-kedru-audit",
+    "full-choice-lesam-transport",
+    "full-choice-lesam-audit",
+    "full-choice-kedru-transport",
+    "full-choice-nelux-transport",
+    "full-choice-nelux-audit",
+    "full-choice-morvi-transport",
+    "full-choice-morvi-audit",
+    "full-choice-pasir-audit",
+    "full-choice-orvek-transport",
+    "full-choice-orvek-audit",
+    "full-choice-pasir-transport",
+    "full-choice-qevan-transport",
+    "full-choice-qevan-audit",
+    "full-choice-rosil-transport",
+    "full-choice-rosil-audit",
+    "full-choice-sevar-audit",
+    "full-choice-talun-transport",
+    "full-choice-talun-audit",
+    "full-choice-sevar-transport",
+    "full-choice-vesor-transport",
+    "full-choice-vesor-audit",
+    "full-choice-urevi-transport",
+    "full-choice-urevi-audit",
+    "full-choice-xevur-audit",
+    "full-choice-walim-transport",
+    "full-choice-walim-audit",
+    "full-choice-xevur-transport",
+    "full-choice-yarvo-transport",
+    "full-choice-yarvo-audit",
+    "full-choice-zelin-transport",
+    "full-choice-zelin-audit",
+    "full-choice-adrix-audit",
+    "full-choice-bovek-transport",
+    "full-choice-bovek-audit",
+    "full-choice-adrix-transport",
+    "full-choice-delvi-transport",
+    "full-choice-delvi-audit",
+    "full-choice-cernu-transport",
+    "full-choice-cernu-audit",
+    "full-choice-fesul-audit",
+    "full-choice-erqon-transport",
+    "full-choice-erqon-audit",
+    "full-choice-fesul-transport"
+  ]
+}

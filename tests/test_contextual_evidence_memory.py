@@ -1462,3 +1462,196 @@ def test_projected_bilinear_policy_rejects_invalid_or_cross_feature_custody() ->
     with pytest.raises(ValueError, match="custody changed"):
         projected.observe_comparison(changed, _protection_pair(projected)[1])
     assert projected.checkpoint_sha256 == before and projected.feedback_count == 0
+
+
+def _full_choice_memory(*, duplicate=False, **options):
+    from humanbrain.full_choice_evidence_memory import FullChoiceEvidenceMemory
+
+    memory = FullChoiceEvidenceMemory(_SyntheticProtectionEncoder(), **options)
+    docs = [OpaqueDocument(b"synthetic-one", b"synthetic-test", b"alpha beta gamma")]
+    if duplicate:
+        docs.append(OpaqueDocument(b"synthetic-two", b"synthetic-test", b"alpha delta"))
+    memory.ingest(tuple(docs))
+    memory.seal_training_pool()
+    return memory
+
+
+def _full_choice_lesson(memory, query=b"alpha", answer=b"alpha"):
+    teacher = {
+        "passed": True, "test_scope": "synthetic numerical test, not an execution claim",
+        "teacher_kind": "authorized_exact_answer" if answer is not None else
+        "authorized_absent_evidence_stop",
+        "answer_hex": None if answer is None else answer.hex(),
+        "workspace_unchanged": answer is None,
+    }
+    return memory.teacher_lesson(
+        memory.raw_score_reference(query), answer, teacher_id="synthetic-test-teacher",
+        attempt_receipt={"passed": False, "test_scope": "synthetic receipt"},
+        teacher_receipt=teacher,
+    )
+
+
+@pytest.mark.parametrize("gold", [(0,), (0, 2), (4,)])
+def test_full_choice_marginal_gradient_matches_finite_differences(gold) -> None:
+    from humanbrain.full_choice_evidence_memory import full_choice_loss_gradient
+
+    features = np.array([[1., 0., 2.], [0., 2., 1.], [1., -1., 0.], [-2., 0., 1.]])
+    theta = np.array([0.2, -0.1, 0.3, -0.4])
+    loss, gradient, logits = full_choice_loss_gradient(features, theta[:-1], theta[-1], gold)
+    expected = np.log(np.exp(logits).sum()) - np.log(np.exp(logits[list(gold)]).sum())
+    assert loss == pytest.approx(expected, abs=1e-14)
+    numerical = np.empty(4)
+    for i in range(4):
+        positive, negative = theta.copy(), theta.copy()
+        positive[i] += 1e-6
+        negative[i] -= 1e-6
+        numerical[i] = (
+            full_choice_loss_gradient(features, positive[:-1], positive[-1], gold)[0]
+            - full_choice_loss_gradient(features, negative[:-1], negative[-1], gold)[0]
+        ) / 2e-6
+    np.testing.assert_allclose(gradient, numerical, atol=1e-9, rtol=1e-9)
+    # An unexecuted high-scoring competitor still enters the normalization.
+    more = np.vstack((features, [8., -8., 8.]))
+    extended_gold = (5,) if gold == (4,) else gold
+    assert full_choice_loss_gradient(more, theta[:-1], theta[-1], extended_gold)[0] > loss
+
+
+def test_full_choice_duplicate_credit_frozen_replay_and_exact_sgd() -> None:
+    update = _full_choice_memory(duplicate=True)
+    frozen = _full_choice_memory(duplicate=True, learning_enabled=False)
+    assert update.checkpoint_sha256 == frozen.checkpoint_sha256
+    lesson = _full_choice_lesson(update)
+    json.dumps(lesson.record(), allow_nan=False)
+    initial = frozen.checkpoint_arrays()
+    receipt = update.observe_teacher(lesson)
+    control = frozen.observe_teacher(lesson)
+    assert len(receipt["gold_indices"]) == 2
+    assert receipt["gradient_sha256"] == control["gradient_sha256"]
+    assert receipt["features_sha256"] == control["features_sha256"]
+    gradient = np.asarray(receipt["gradient"]) * receipt["clip_scale"]
+    eta = update.learning_rate
+    arrays = update.checkpoint_arrays()
+    np.testing.assert_array_equal(arrays["readout_synapses_pa"],
+                                  [-0.5 * eta * gradient[:-1], 0.5 * eta * gradient[:-1]])
+    assert arrays["stop_score"][0] == -eta * gradient[-1]
+    assert not arrays["pacemaker_synapses_pa"].any()
+    assert receipt["sgd_update_applied"] and not receipt["native_update_applied"]
+    assert control["effective_learning_rate"] == 0 and not control["sgd_update_applied"]
+    for key in initial:
+        np.testing.assert_array_equal(frozen.checkpoint_arrays()[key], initial[key])
+    replay = update.observe_teacher(lesson)
+    assert replay["lesson_sha256"] == receipt["lesson_sha256"]
+    assert replay["before"] == receipt["after"]
+    assert replay["gradient_sha256"] != receipt["gradient_sha256"]
+    assert replay["new_execution_credit"] is False
+    assert update.storage_summary["native_learning_update_count"] == 0
+
+
+def test_full_choice_custody_stop_authorization_growth_and_legacy_rejection() -> None:
+    memory = _full_choice_memory()
+    lesson = _full_choice_lesson(memory, b"another", None)
+    before = memory.checkpoint_sha256
+    for changed in (replace(lesson, answer=b"beta"), replace(lesson, teacher_id="forged")):
+        with pytest.raises(ValueError, match="custody"):
+            memory.observe_teacher(changed)
+    assert memory.checkpoint_sha256 == before
+    bad_teacher = json.loads(lesson.teacher_receipt_json)
+    bad_teacher["workspace_unchanged"] = False
+    with pytest.raises(ValueError, match="explicitly authorize"):
+        memory.teacher_lesson(
+            memory.raw_score_reference(b"another"), None, teacher_id="test",
+            attempt_receipt={"passed": True}, teacher_receipt=bad_teacher,
+        )
+    with pytest.raises(ValueError, match="no occurrence"):
+        _full_choice_lesson(memory, answer=b"not present")
+    receipt = memory.observe_teacher(lesson)
+    assert receipt["gold_indices"] == [memory.storage_summary["candidate_count"]]
+    assert memory.raw_score_reference(b"another").stopped
+    with pytest.raises(ValueError, match="current original action checkpoint"):
+        memory.teacher_lesson(
+            lesson.original_decision, None, teacher_id="test",
+            attempt_receipt={"passed": False},
+            teacher_receipt=json.loads(lesson.teacher_receipt_json),
+        )
+    for method in (memory.observe_comparison, memory.observe_feedback, memory.revisit_decision):
+        with pytest.raises(ValueError, match="authenticated"):
+            method(lesson.original_decision)
+    weights = memory.synapse_sha256
+    memory.ingest((OpaqueDocument(b"growth", b"synthetic-test", b"epsilon zeta"),))
+    assert memory.synapse_sha256 == weights
+    with pytest.raises(ValueError, match="unchanged sealed"):
+        memory.observe_teacher(lesson)
+    with pytest.raises(ValueError, match="cannot be replaced"):
+        memory.seal_training_pool()
+    memory.respond(b"another")  # Source growth remains valid read-only inference.
+    assert memory.synapse_sha256 == weights
+
+
+def test_full_choice_fixed_synthetic_policy_acquires_supported_and_stop_queries() -> None:
+    memory = _full_choice_memory()
+    frozen = _full_choice_memory(learning_enabled=False)
+    cases = [(word + b" request" + str(i).encode(), word)
+             for i in range(16) for word in (b"alpha", b"beta", b"gamma")]
+    cases += [(b"another request" + str(i).encode(), None) for i in range(16)]
+    previous = None
+    for _ in range(4):
+        for query, answer in cases:
+            lesson = _full_choice_lesson(memory, query, answer)
+            memory.observe_teacher(lesson)
+            frozen.observe_teacher(lesson)
+            if previous is not None:
+                memory.observe_teacher(previous)
+                frozen.observe_teacher(previous)
+            previous = lesson
+    assert memory.feedback_count == frozen.feedback_count == 511
+    selections = [memory.raw_score_reference(query) for query, _ in cases]
+    assert sum(
+        d.emitted == answer for d, (_, answer) in zip(selections[:48], cases[:48], strict=True)
+    ) >= 44
+    assert sum(d.stopped for d in selections[48:]) >= 15
+    parent = memory.checkpoint_sha256
+    for decision, (query, _) in zip(selections, cases, strict=True):
+        assert memory.respond_affine_interpolated(query).candidate_index == decision.candidate_index
+    assert memory.checkpoint_sha256 == parent
+    assert frozen.update_count == 0 and not frozen.checkpoint_arrays()["stop_score"].any()
+
+
+def test_full_choice_compact_audit_export_preserves_input_custody() -> None:
+    memory = _full_choice_memory()
+    queries = (b"alpha", b"another request")
+    parent = memory.checkpoint_sha256
+    basis = memory.export_audit_basis(queries)
+    arrays, meta = basis["arrays"], basis["metadata"]
+    assert len(arrays["candidate_vectors"]) == memory.storage_summary["candidate_count"]
+    assert arrays["query_sentence_vectors"].shape == (2, 384)
+    assert arrays["query_word_vectors"].shape == (3, 384)
+    assert [bytes.fromhex(q["query_hex"]) for q in meta["queries"]] == list(queries)
+    assert meta["source_pool"] == memory.source_pool
+    assert meta["readout_policy"] == memory.readout_policy
+    for array in arrays.values():
+        assert array.ndim <= 2 and array.dtype != object
+    json.dumps(meta, allow_nan=False)
+    arrays["candidate_vectors"][:] = 999
+    assert memory.checkpoint_sha256 == parent
+    fresh = memory.export_audit_basis(queries)
+    assert not np.any(fresh["arrays"]["candidate_vectors"] == 999)
+
+
+def test_full_choice_empty_stop_noop_and_nonfinite_rejection() -> None:
+    from humanbrain.full_choice_evidence_memory import (
+        FullChoiceEvidenceMemory,
+        full_choice_loss_gradient,
+    )
+
+    memory = FullChoiceEvidenceMemory(_SyntheticProtectionEncoder())
+    memory.seal_training_pool()
+    initial = memory.synapse_sha256
+    receipt = memory.observe_teacher(_full_choice_lesson(memory, b"another", None))
+    assert receipt["loss_before"] == receipt["loss_after"] == 0
+    assert receipt["gradient_norm"] == 0 and receipt["effective_learning_rate"] == 0
+    assert memory.synapse_sha256 == initial and memory.update_count == 0
+    assert memory.respond(b"another").stopped and memory.raw_score_reference(b"another").stopped
+    with pytest.raises(ValueError, match="finite"):
+        full_choice_loss_gradient(np.array([[np.nan]]), np.zeros(1), 0., (0,))
+    with pytest.raises(ValueError, match="nonempty unique subset"):
+        full_choice_loss_gradient(np.ones((1, 1)), np.zeros(1), 0., ())
