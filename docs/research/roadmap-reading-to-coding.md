@@ -86,11 +86,14 @@ does not proceed: its [frozen reader qualification](../../experiments/r4_integra
 fails even with the correct document supplied (24/48 and 28/48 exact answers).
 Within-source entity/property errors and incorrect abstentions remain; more sources
 worsen performance. No router is fitted and no reader replacement follows
-automatically. The [next acquisition plan](public-qa-acquisition-plan.md) selects
-broader human-written public-QA teaching with the unchanged cell computation and
-sensory encoder, a trained conventional reader and learning-disabled controls.
-It separately measures acquisition, retained TRAIN fit and return to the executed
-loop; the source/data/cost contract must be frozen before its one scored run.
+automatically. The [broader public-QA comparison](../../experiments/r4_integrated/public_qa_acquisition_result.md)
+also closes without adoption: cells acquire 0/192 supported public answers,
+0/48 final TRAIN answers and 0/48 executed answers in both wordings. Conventional
+results are weak too; neither supplies a useful positive acquisition control.
+The [next decision](../../experiments/r4_integrated/public_qa_acquisition_result.md#next-decision)
+is a bounded actual-language learning qualification tied directly to execution,
+before another broad comparison. It must establish joint answer/STOP fit and
+retention with a positive conventional control, under one declared teaching budget.
 Do not automatically extend attention, epochs, rates, labels, thresholds or solver
 budgets, or treat declining loss as useful acquisition. The
 [previous failure review](rate-cell-failure-review.md) remains historical.

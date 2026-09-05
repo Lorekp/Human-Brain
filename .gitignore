@@ -19,3 +19,5 @@ target/
 .idea/
 experiments/*/.observatory/*.jsonl
 experiments/procedural_adapter_spike/l4_seam_b_baseline_outputs.json
+# Large local checkpoint/vector archive; the committed report records its hash.
+/benchmarks/public_qa_acquisition_v1.npz

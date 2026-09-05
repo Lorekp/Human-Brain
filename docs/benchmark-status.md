@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the failed frozen external-reader qualification.
+Updated 2026-09-05 with the completed, failed broader public-QA acquisition.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -10,7 +10,27 @@ with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. Hybrid permission does not relabel existing
 cell-only evidence or reopen protected evaluations.
 
-## Current external-reader qualification
+## Current public-QA acquisition and Python return
+
+The [broader acquisition comparison](../experiments/r4_integrated/public_qa_acquisition_result.md)
+completes without adoption. After 1,024 human-written public TRAIN lessons and
+2,047 offers per updating policy, cells answer 0/192 supported article-disjoint
+probes, with 63/64 correct STOPs; final TRAIN is 0/48 and 16/16. The conventional
+control reaches 8/192 and 24/64 on probes, and 3/48 and 3/16 on final TRAIN.
+Neither establishes useful acquisition. Cells solve 0/48 Python requests and
+preserve 16/16 STOPs in both original wordings. Rising abstention is not acquired
+reading or demonstrated forgetting; the result bounds what a gate-only change
+could possibly repair.
+
+One scored run takes 202.043 seconds including primary artifact output, with
+922.336 MiB peak parent working set. All 6,141 update histories and 642 executed
+workspaces pass saved audits. One failed native-bootstrap launch and its disclosed
+startup recovery remain separate; the conservative total wall clock is 1,066.752
+seconds. No new official or protected evaluation runs. The next bounded work is
+actual-input learning qualification with a conventional positive control and
+an immediate return of the same learned answers to real Python execution.
+
+## Earlier external-reader qualification
 
 The [fixed pretrained reader](../experiments/r4_integrated/frozen_reader_qualification_result.md)
 fails qualification. Known relevant sources produce 24/48 exact supported answers
@@ -26,7 +46,7 @@ unretained logits are not independently recomputed. There are no learning update
 Python actions, official-exam scores or neuronal claims in this external component
 check. No replacement reader or fit to its successful subset follows automatically.
 
-## Latest contextual evidence-to-Python result
+## Earlier query-aligned contextual evidence-to-Python result
 
 The [query-aligned rate-cell comparison](../experiments/r4_integrated/query_aligned_rate_cell_result.md)
 is **closed without adoption**. Trainable aligned cells solve 0/48 supported
