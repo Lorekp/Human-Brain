@@ -23,6 +23,8 @@ ranges; the constraints are a known-good baseline, not a complete dependency loc
 Installation requires package-index access or a populated pip cache.
 
 Always invoke tooling through this checkout's `.venv`; activation is optional.
+Ruff's repository configuration targets Python 3.11 and owns the lint rules;
+parent-project settings must not introduce syntax unsupported by this interpreter.
 `tools/dev.py doctor` checks Git root, environment root, and the actual imported
 package before pytest can prepend `src`. It records the revision, tracked-diff
 hash, dirty/untracked status, versions, and device. Untracked file contents are

@@ -1690,3 +1690,257 @@ def test_full_choice_feasibility_verifies_unselected_competitors_and_stop():
     # A high STOP is another actual competitor, not a fixed zero bias.
     result = verify_witness(features.__getitem__, [0], np.array([1.0, 4.0]))
     assert result["violations"] == 2
+
+
+def _rate_cell_synthetic_inputs():
+    from humanbrain.rate_cell_reader import SpanInventory, TokenDocument, TokenInput, _word_spans
+
+    rng = np.random.default_rng(971)
+
+    def tokens(raw):
+        spans = _word_spans(raw)
+        vectors = rng.standard_normal((len(spans), 384))
+        vectors /= np.linalg.norm(vectors, axis=1, keepdims=True)
+        return TokenInput(raw, spans, vectors, "synthetic-encoder")
+
+    query = tokens(b"which river")
+    documents = (
+        TokenDocument(b"one", b"synthetic", tokens(b"a quiet silver river crosses the old field")),
+        TokenDocument(
+            b"two", b"synthetic", tokens(b"the quiet silver river reaches another place")
+        ),
+    )
+    return query, SpanInventory(documents)
+
+
+def test_rate_cell_manual_bptt_recurrent_and_head_finite_differences():
+    from humanbrain.rate_cell_reader import RateCellReader
+
+    query, inventory = _rate_cell_synthetic_inputs()
+    model = RateCellReader()
+    gold = inventory.gold_indices(b"quiet silver river")
+    assert len(gold) == 2
+    _, gradients, audit = model.loss_and_gradients(query, inventory, gold)
+    assert audit["gate_loss"] > 0 and audit["span_loss"] > 0
+    checks = {
+        "input_weights": [(3, 19), (9, 384), (12, 385)],
+        "recurrent_weights": [(2, 7), (8, 8)],
+        "cell_bias": [(4,)],
+        "span_heads": [(0, 5), (1, 13), (2, 19)],
+        "stop_head": [(9,)], "stop_bias": [(0,)],
+    }
+    epsilon = 1e-6
+    for name, coordinates in checks.items():
+        for index in coordinates:
+            original = model._weights[name][index]
+            model._weights[name][index] = original + epsilon
+            plus = model.loss_and_gradients(query, inventory, gold)[0]
+            model._weights[name][index] = original - epsilon
+            minus = model.loss_and_gradients(query, inventory, gold)[0]
+            model._weights[name][index] = original
+            assert gradients[name][index] == pytest.approx(
+                (plus - minus) / (2 * epsilon), abs=2e-7, rel=2e-5)
+    # A producer direction tests all recurrent coordinates together.
+    rng = np.random.default_rng(71)
+    direction = rng.standard_normal((64, 64))
+    direction /= np.linalg.norm(direction)
+    original = model._weights["recurrent_weights"].copy()
+    model._weights["recurrent_weights"] = original + epsilon * direction
+    plus = model.loss_and_gradients(query, inventory, gold)[0]
+    model._weights["recurrent_weights"] = original - epsilon * direction
+    minus = model.loss_and_gradients(query, inventory, gold)[0]
+    model._weights["recurrent_weights"] = original
+    assert np.sum(gradients["recurrent_weights"] * direction) == pytest.approx(
+        (plus - minus) / (2 * epsilon), abs=2e-7, rel=2e-5)
+
+
+def test_rate_cell_duplicate_marginalization_and_stop_optimizer_freeze():
+    from humanbrain.rate_cell_reader import RateCellReader
+
+    query, inventory = _rate_cell_synthetic_inputs()
+    model = RateCellReader()
+    gold = inventory.gold_indices(b"quiet silver river")
+    loss, _, _ = model.loss_and_gradients(query, inventory, gold)
+    singleton_loss = model.loss_and_gradients(query, inventory, (gold[0],))[0]
+    assert loss < singleton_loss
+    model.observe(query, inventory, gold)
+    before = model.checkpoint_arrays()
+    assert np.any(before["adam_first_span_heads"] != 0)
+    _, gradients, _ = model.loss_and_gradients(query, inventory, None)
+    assert not np.any(gradients["span_heads"])
+    receipt = model.observe(query, inventory, None)
+    after = model.checkpoint_arrays()
+    for key in ("weight_span_heads", "adam_first_span_heads", "adam_second_span_heads"):
+        np.testing.assert_array_equal(after[key], before[key])
+    assert receipt["adam_steps_before"]["span_heads"] == receipt["adam_steps_after"]["span_heads"]
+    assert receipt["adam_steps_after"]["stop_head"] == 2
+    assert not np.array_equal(after["weight_input_weights"], before["weight_input_weights"])
+    clipped = RateCellReader()
+    pool = clipped._forward(query, inventory)["pooled"]
+    clipped._weights["stop_head"] = 1000 * pool / np.linalg.norm(pool)
+    _, raw_gradients, _ = clipped.loss_and_gradients(query, inventory, gold)
+    receipt = clipped.observe(query, inventory, gold)
+    assert receipt["gradient_norm"] > 1
+    assert receipt["clip_scale"] == pytest.approx(1 / receipt["gradient_norm"])
+    for name in receipt["active_parameters"]:
+        np.testing.assert_allclose(
+            clipped._first[name], 0.1 * receipt["clip_scale"] * raw_gradients[name],
+            atol=1e-15, rtol=1e-14,
+        )
+
+
+def test_rate_cell_replay_recomputes_and_controls_preserve_held_state():
+    from humanbrain.rate_cell_reader import PRODUCER_NAMES, RateCellReader
+
+    query, inventory = _rate_cell_synthetic_inputs()
+    gold = inventory.gold_indices(b"quiet silver river")
+    model = RateCellReader()
+    first = model.observe(query, inventory, gold)
+    second = model.observe(query, inventory, gold)
+    assert second["before"] == first["after"]
+    assert second["gradient_sha256"] != first["gradient_sha256"]
+    checkpoint = model.checkpoint_sha256
+    prediction = model.predict(query, inventory)
+    assert model.checkpoint_sha256 == checkpoint
+    with pytest.raises(ValueError):
+        prediction.span_scores.setflags(write=True)
+    for mode in ("frozen_producer", "bypass", "frozen"):
+        control = RateCellReader(mode=mode)
+        before = control.checkpoint_arrays()
+        receipt = control.observe(query, inventory, gold)
+        after = control.checkpoint_arrays()
+        for name in PRODUCER_NAMES:
+            for prefix in ("weight_", "adam_first_", "adam_second_"):
+                np.testing.assert_array_equal(after[prefix + name], before[prefix + name])
+            assert receipt["adam_steps_after"][name] == 0
+        if mode == "frozen":
+            for key in before:
+                np.testing.assert_array_equal(after[key], before[key])
+            assert receipt["parameter_update_applied"] is False
+        else:
+            assert receipt["parameter_update_applied"] is True
+
+
+def test_rate_cell_all_word_spans_hierarchical_stop_and_query_conditioned_bypass():
+    from humanbrain.rate_cell_reader import (
+        RateCellReader,
+        SpanInventory,
+        TokenDocument,
+        TokenInput,
+        _word_spans,
+    )
+
+    for count in range(4, 9):
+        raw = b" ".join(f"word{i}".encode() for i in range(count))
+        vectors = np.zeros((count, 384))
+        vectors[:, 2] = 1
+        vectors[0] = 0
+        vectors[0, 0] = 1
+        vectors[-1] = 0
+        vectors[-1, 1] = 1
+        tokens = TokenInput(raw, _word_spans(raw), vectors, "synthetic")
+        qv = np.zeros((1, 384))
+        qv[0, 3] = 1
+        query = TokenInput(b"query", ((0, 5),), qv, "synthetic")
+        inventory = SpanInventory((TokenDocument(b"long", b"test", tokens),))
+        assert len(inventory.candidates) == count * (count + 1) // 2
+        model = RateCellReader(mode="bypass")
+        model._weights["input_weights"][:] = 0
+        model._weights["input_weights"][0, 0] = 1
+        model._weights["input_weights"][1, 1] = 1
+        model._weights["span_heads"][:] = 0
+        model._weights["span_heads"][0, 0] = 1
+        model._weights["span_heads"][1, 1] = 1
+        model._weights["stop_head"][:] = 0
+        model._weights["stop_bias"][0] = -1
+        result = model.predict(query, inventory)
+        assert inventory.candidates[result.candidate_index].emitted == raw
+        model._weights["stop_bias"][0] = 0
+        assert model.predict(query, inventory).stop_reason == "answerability_STOP"
+    query, inventory = _rate_cell_synthetic_inputs()
+    model = RateCellReader(mode="bypass")
+    alternate = TokenInput(query.raw, query.byte_spans, -query.vectors, query.encoder_sha256)
+    assert not np.array_equal(model.predict(query, inventory).span_scores,
+                              model.predict(alternate, inventory).span_scores)
+
+
+def test_rate_cell_token_input_preserves_utf8_and_complete_subtoken_pooling():
+    from humanbrain.frozen_context_encoder import ContextEncoding
+    from humanbrain.rate_cell_reader import TokenInput
+
+    raw = "Café river".encode()
+    vectors = np.zeros((3, 384), dtype=np.float32)
+    vectors[0, 0], vectors[1, 1], vectors[2, 2] = 1, 1, 1
+    encoding = ContextEncoding(vectors, ((0, 3), (3, 5), (6, 11)), (0, 0, 1),
+                               np.zeros(384), sha256(raw).hexdigest(), len(raw), "synthetic", 5)
+    tokens = TokenInput.from_encoding(raw, encoding)
+    assert tokens.byte_spans == ((0, 5), (6, 11))
+    np.testing.assert_allclose(tokens.vectors[0, :2], [1 / np.sqrt(2)] * 2)
+    with pytest.raises(ValueError):
+        tokens.vectors.setflags(write=True)
+    with pytest.raises(ValueError, match="authenticate"):
+        TokenInput.from_encoding(b"different", encoding)
+
+
+def test_rate_cell_executed_adapter_custody_replay_and_all_controls(tmp_path):
+    from dataclasses import replace
+
+    from experiments.r4_integrated import contextual_evidence_python_session as shared
+    from experiments.r4_integrated.contextual_pairwise_python_session import _motor
+    from experiments.r4_integrated.contextual_rate_cell_python_session import ARMS, ExecutedReader
+    from humanbrain.rate_cell_reader import SpanInventory, TokenDocument, TokenInput, _word_spans
+
+    rng = np.random.default_rng(817)
+
+    def tokens(raw):
+        spans = _word_spans(raw)
+        vectors = rng.standard_normal((len(spans), 384))
+        vectors /= np.linalg.norm(vectors, axis=1, keepdims=True)
+        return TokenInput(raw, spans, vectors, "synthetic-adapter")
+
+    query = tokens(b"Configure axel")
+    document = TokenDocument(b"synthetic", b"test", tokens(b"axel uses fresh"))
+    inventory = SpanInventory((document,))
+    cache = {query.raw: query}
+    readers = {mode: ExecutedReader(mode, inventory, cache) for mode in ARMS}
+    cache[query.raw] = tokens(query.raw)
+    assert all(reader.queries[query.raw].sha256 == query.sha256 for reader in readers.values())
+    with pytest.raises(ValueError, match="cache keys"):
+        ExecutedReader("trainable", inventory, {b"different": query})
+    motor_report = {}
+    motor = _motor(tmp_path, motor_report)
+    assert all(row["execution"]["passed"] for row in motor_report["motor_demonstrations"])
+    case = shared.Case("adapter", "axel", "fresh", "adapter_config", "cold")
+    item = {"name": case.name, "key": case.key, "value": case.value,
+            "module": case.module, "stale": case.stale, "request": query.raw.decode()}
+    teacher = shared.execute(case, case.files(corrected=True), case.files(), tmp_path / "teacher")
+    assert teacher["passed"]
+    teacher.update(teacher_kind="authorized_exact_answer", answer_hex=b"fresh".hex(),
+                   workspace_unchanged=False)
+    for mode, reader in readers.items():
+        before = reader.core.checkpoint_arrays()
+        row, decision = shared.attempt(reader, "respond", motor, item, tmp_path / mode)
+        assert decision.query_input_sha256 == query.sha256
+        attempt = {**row["execution"], "own_decision_sha256": decision.sha256}
+        with pytest.raises(ValueError, match="bound to this arm"):
+            reader.teacher_lesson(decision, b"fresh", "teacher", {**attempt,
+                                  "own_decision_sha256": "another-arm"}, teacher)
+        with pytest.raises(ValueError, match="exact answer"):
+            reader.teacher_lesson(decision, b"fresh", "teacher", attempt,
+                                  {**teacher, "answer_hex": b"wrong".hex()})
+        lesson = reader.teacher_lesson(decision, b"fresh", "teacher", attempt, teacher)
+        with pytest.raises(ValueError, match="custody changed"):
+            reader.observe(replace(lesson, original=replace(decision, query_input_sha256="bad")))
+        first, replay = reader.observe(lesson), reader.observe(lesson)
+        assert replay["adapter_before"] == first["adapter_after"]
+        assert replay["new_execution_credit"] is False
+        assert reader.core.offer_count == 2
+        assert reader.core.update_count == (0 if mode in ("frozen", "external") else 2)
+        if mode in ("frozen", "external"):
+            for key, value in before.items():
+                np.testing.assert_array_equal(reader.core.checkpoint_arrays()[key], value)
+        reader.inventory = SpanInventory(
+            (document, TokenDocument(b"new", b"test", tokens(b"extra")))
+        )
+        with pytest.raises(ValueError, match="sealed TRAIN inventory"):
+            reader.observe(lesson)
