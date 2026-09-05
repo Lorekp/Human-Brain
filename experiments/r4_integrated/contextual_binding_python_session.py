@@ -580,6 +580,12 @@ def _teach(
             row["feedback"].append(replay._feedback(update, frozen, previous, replay=True))
         if arm.get("comparison_protection_policy") == "orthogonal_certified":
             for event in row["feedback"]:
+                for mode in ("update", "frozen"):
+                    projection = event[mode]["protection"]
+                    # NumPy comparisons return scalar flags; keep report counts
+                    # and raw receipts JSON-native without changing their values.
+                    projection["projection_exhausted"] = bool(projection["projection_exhausted"])
+                    projection["projection_stalled"] = bool(projection["projection_stalled"])
                 _verify_protected_feedback(event)
         replay_count += count
         if older and (admitted or count):
