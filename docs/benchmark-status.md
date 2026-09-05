@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the completed, failed broader public-QA acquisition.
+Updated 2026-09-05 with actual-language acquisition and measured forgetting.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -10,7 +10,31 @@ with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. Hybrid permission does not relabel existing
 cell-only evidence or reopen protected evaluations.
 
-## Current public-QA acquisition and Python return
+## Current actual-language acquisition, retention and Python return
+
+The [actual-input qualification](../experiments/r4_integrated/real_input_qualification_result.md)
+demonstrates acquisition on 16 exposed public TRAIN questions with complete
+paragraphs. Cells fit A6/6 supported plus 2/2 STOP, then fit B6/6 plus 2/2 while
+falling to A2/6 plus 0/2: six previously correct decisions are forgotten.
+The conventional control retains all sixteen. Final reading decisions produce
+8/12 supported executions and 2/4 correct STOPs for cells; conventional gives
+12/12 and 4/4. Qualification fails; no architecture is adopted or gate opened.
+
+One run uses 12,288 teaching offers and 2,400 fixed probes. Numerical admission
+passes; saved lineage, checkpoint and scoring checks authenticate. All 96 actions
+and two demonstrations complete without collateral edits. A strict stdout audit
+fails on one already-wrong external Unicode answer; its literal is lossless,
+all claimed successes have lossless stdout, and scores are unchanged. The failure
+and scoped audit remain separate. Runtime is 97.496 seconds including artifacts,
+98.651 seconds for the outer process, with 315.234 MiB peak parent working set.
+
+The [next bounded work](../experiments/r4_integrated/real_input_qualification_result.md#next-decision)
+compares fixed rehearsal with B-only teaching at equal update budgets, restores
+the fitted-A parents, and returns final answers to execution. Rehearsal declares
+its external labeled lesson store. Fresh transfer, source-absent memory and
+official structured reading responses remain unestablished.
+
+## Earlier broader public-QA acquisition and Python return
 
 The [broader acquisition comparison](../experiments/r4_integrated/public_qa_acquisition_result.md)
 completes without adoption. After 1,024 human-written public TRAIN lessons and
@@ -26,9 +50,8 @@ One scored run takes 202.043 seconds including primary artifact output, with
 922.336 MiB peak parent working set. All 6,141 update histories and 642 executed
 workspaces pass saved audits. One failed native-bootstrap launch and its disclosed
 startup recovery remain separate; the conservative total wall clock is 1,066.752
-seconds. No new official or protected evaluation runs. The next bounded work is
-actual-input learning qualification with a conventional positive control and
-an immediate return of the same learned answers to real Python execution.
+seconds. No new official or protected evaluation runs. Its subsequent
+actual-input qualification is reported above.
 
 ## Earlier external-reader qualification
 

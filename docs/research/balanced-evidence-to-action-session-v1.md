@@ -74,10 +74,12 @@ competence does not. No routing mechanism is fitted or adopted.
 The [broader public-QA comparison](../../experiments/r4_integrated/public_qa_acquisition_result.md)
 completes without adoption: cells answer 0/192 supported public probes, 0/48 final
 TRAIN questions and 0/48 Python requests in both wordings. Conventional TRAIN fit
-is weak too. **Next integrated priority:** qualify learning on actual language
-inputs with a positive control and carry the same learned answers into execution,
-under the [bounded next decision](../../experiments/r4_integrated/public_qa_acquisition_result.md#next-decision).
-Fit, retention and action coupling must be demonstrated before another broad comparison.
+is weak too. The subsequent [actual-input qualification](../../experiments/r4_integrated/real_input_qualification_result.md)
+fits both eight-case blocks but forgets six A decisions after B; final cells
+execute 8/12 supported answers and preserve 2/4 STOPs. Conventional retains all 16.
+**Next integrated priority:** the [fixed-budget rehearsal comparison](../../experiments/r4_integrated/real_input_qualification_result.md#next-decision),
+using fitted-A checkpoints and final predictions in real execution. Retention
+and action coupling must pass before another broad comparison.
 No automatic optimizer, epoch, label,
 threshold or producer sweep, fresh comparison or protected evaluation follows.
 The [previous failure review](rate-cell-failure-review.md), original

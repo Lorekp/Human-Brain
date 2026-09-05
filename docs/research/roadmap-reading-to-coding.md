@@ -90,13 +90,14 @@ automatically. The [broader public-QA comparison](../../experiments/r4_integrate
 also closes without adoption: cells acquire 0/192 supported public answers,
 0/48 final TRAIN answers and 0/48 executed answers in both wordings. Conventional
 results are weak too; neither supplies a useful positive acquisition control.
-The active [actual-language qualification](real-input-qualification-plan.md)
-implements the [next decision](../../experiments/r4_integrated/public_qa_acquisition_result.md#next-decision)
-and returns the same learned checkpoints directly to execution before another
-broad comparison. It tests joint answer/STOP fit and retention with a positive
-conventional control, using one fixed exposure budget on 16 already exposed
-public TRAIN items. This engineering qualification does not establish generalization
-or adoption.
+The [actual-language qualification](../../experiments/r4_integrated/real_input_qualification_result.md)
+establishes acquisition of both eight-case blocks, but cells forget six fitted A
+cases while learning B. Final cells execute 8/12 supported answers and preserve
+2/4 STOPs; the conventional control retains and executes all 16. Qualification
+fails and no architecture is adopted. The active [next decision](../../experiments/r4_integrated/real_input_qualification_result.md#next-decision)
+is one fixed-budget rehearsal comparison from authenticated after-A checkpoints,
+with matched controls and the same answers returned to execution. Preserve the
+recorded stdout transport defect and repair it in the new execution path.
 Do not automatically extend attention, epochs, rates, labels, thresholds or solver
 budgets, or treat declining loss as useful acquisition. The
 [previous failure review](rate-cell-failure-review.md) remains historical.
