@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the completed compact-versus-varied teaching comparison.
+Updated 2026-09-05 with the completed covariance-aware learning comparison.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -12,47 +12,56 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current contextual evidence-to-Python result
 
-The [teaching-diversity comparison](../experiments/r4_integrated/contextual_curriculum_result.md)
-fails adoption: **compact teaching with RESERVED allocation remains the baseline**.
-Both arms use the same facts, 48 encounters and 150 pair offers; source and
-question presentation differ. The affine neuronal path gives:
+The [covariance comparison](../experiments/r4_integrated/contextual_covariance_result.md)
+**adopts COVARIANCE**: executed retention improves with no fresh total, stratum
+or unsupported regression. Keep compact teaching, RESERVED allocation, gain-16
+BINDING features and affine neuronal actions, using the declared AROW update.
+Both arms receive 48 encounters, 48 teacher executions and 150 pair offers.
 
-| Measure | COMPACT | VARIED |
+| Measure | FIXED | COVARIANCE |
 | --- | --- | --- |
 | Fresh executed edits | 2/8 | 2/8 |
-| Familiar / broader fresh edits | 1/4 / 1/4 | 0/4 / 2/4 |
-| Common retained edits | 4/16 | 4/16 |
+| Familiar / broader fresh edits | 1/4 / 1/4 | 1/4 / 1/4 |
+| Retained edits | 5/16 | 14/16 |
+| Complete retained entities | 1/8 | 6/8 |
 | Correct unsupported STOPs | 0/2 | 0/2 |
 
-VARIED gains one broader-form success and loses a familiar one. Neither policy
-meets the integrated targets. Actual taught-query raw correctness is 5/16 versus
-8/16, but common questions score 5/16 in both arms before fresh ingestion and
-4/16 afterward. Same-checkpoint query changes expose form sensitivity; these
-diagnostic probes are not additional executed successes.
+Retention gains nine tasks with no losses; fresh behavior trades one gain for
+one loss. Both have zero complete fresh entities. COVARIANCE ends with all 36
+admitted comparisons positively ordered, versus twelve erased comparisons in
+FIXED. Actual/common post-teaching selections agree at 5/16 versus 14/16 correct;
+those correct-selection counts remain unchanged after fresh ingestion. Two old
+errors involve unencountered exact-query competitors; fresh relation/span binding
+and abstention still fail.
 
-Each arm ends with twelve negative admitted TRAIN margins, all previously at
-least one: learned comparisons are later lost. Exact numerical reconstruction
-passes for all 600 updater/frozen offers, and COMPACT's saved arrays match the
-prior RESERVED checkpoint. All 52 updating raw/affine choices agree; all 572
-transfer/retention executions preserve decoys and materialize their selected
-actions. Frozen affine and external references solve no supported task. Internally
-retained raw sources and the controls' shared motor limit attribution claims.
+All 600 updater/frozen offers and final weight/covariance bytes reconstruct
+exactly. All 52 updating raw/affine choices agree; 572 executions preserve decoys
+and their selected edits. Frozen affine and external references solve no supported
+task; shared learned motors and internally retained sources limit attribution.
+Official repeated exam items remain pending human scoring. This adopts a narrow
+development baseline, without passing the integrated or protected gates.
 
-The single comparison completes without retry in 367.50 seconds and peaks at
-346.43 MiB parent working set, excluding child memory. Both official exam outputs
-remain pending human scoring. Full paired outcomes, costs and hashes are in the
-result report. No independent reading, protected evaluation or roadmap gate passes.
+The comparison completes without retry in 377.99 seconds; parent peak working
+set is 425.28 MiB, excluding child memory. AROW allocates a 20.05 MiB covariance
+plus 12,968-byte scratch per learner, including its frozen mate. Inference uses
+only the existing weights. Full costs, native/encoder identities and evidence
+hashes belong to the result report.
 
-The [acquisition review](research/contextual-acquisition-review.md) prioritizes
-one covariance-aware learning comparison with fixed representations and matched
-experience budgets. The completed
-[three-stream robustness result](../experiments/r4_integrated/contextual_robustness_result.md),
-[original protection result and reporting recovery](../experiments/r4_integrated/contextual_protected_contrast_result.md),
-[reservation improvement](../experiments/r4_integrated/contextual_reserved_feedback_result.md),
-[TRAIN-only host feasibility check](../experiments/r4_integrated/contextual_representation_feasibility_result.md),
-[capped-update rejection](../experiments/r4_integrated/contextual_capped_update_result.md)
-and [affine readout recovery](../experiments/r4_integrated/contextual_affine_readout_result.md)
-remain scoped to their original contracts. No host witness is deployed.
+The [transfer design review](research/contextual-transfer-design.md) selects one
+COMPACT-versus-VARIED comparison under this now more stable learning rule, with
+matched teaching budgets and a fresh common cohort. The prior
+[fixed-rule curriculum failure](../experiments/r4_integrated/contextual_curriculum_result.md)
+remains closed; this tests a newly motivated interaction, not a repair of that
+verdict. Full bilinear features would make dense covariance impractical before
+any frozen mate, motivating this cheaper discriminating step first.
+
+Earlier [robustness](../experiments/r4_integrated/contextual_robustness_result.md),
+[protection and reporting recovery](../experiments/r4_integrated/contextual_protected_contrast_result.md),
+[reservation](../experiments/r4_integrated/contextual_reserved_feedback_result.md),
+[TRAIN-only feasibility](../experiments/r4_integrated/contextual_representation_feasibility_result.md),
+[capping](../experiments/r4_integrated/contextual_capped_update_result.md) and
+[affine readout](../experiments/r4_integrated/contextual_affine_readout_result.md)
+retain their original contracts. No host witness is deployed.
 
 ## Earlier pairwise learning comparison
 

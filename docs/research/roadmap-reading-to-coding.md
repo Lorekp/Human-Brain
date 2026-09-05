@@ -73,24 +73,26 @@ the same-seed frozen control solves none. Type-annotation layout variation
 fails, and an original public-exam diagnostic scores 0/2 with no acquired frames.
 See [measured evidence](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 This is exact positional reading and a learned literal-edit pattern, not the
-general integrated gate. The [teaching-diversity comparison](../../experiments/r4_integrated/contextual_curriculum_result.md)
-ties at 2/8 fresh and 4/16 retained edits, with all unsupported requests handled
-wrongly. Varied teaching improves one language stratum but regresses another,
-failing adoption. Keep compact teaching, fixed updates, affine neuronal actions
-and RESERVED allocation as the baseline. Both arms lose twelve previously
-learned contrasts; varied teaching also loses correctness when equivalent
-questions change at the same checkpoint. Acquisition and transfer remain distinct
-problems, with reliable numerical and edit execution underneath them.
+general integrated gate. The [covariance-aware comparison](../../experiments/r4_integrated/contextual_covariance_result.md)
+now improves retained execution from 5/16 to 14/16, with fresh execution tied at
+2/8 and unsupported behavior still failing. Adopt its AROW update with compact
+teaching, RESERVED allocation, BINDING features and affine actions. All admitted
+comparisons end positively ordered; remaining old errors involve unencountered
+competitors, while fresh relation/span transfer remains weak. Numerical, custody
+and execution audits pass. Count the additional 20.05 MiB covariance per learner;
+this dense training state is not a scaling result.
 
-The [balanced session plan](balanced-evidence-to-action-session-v1.md) uses the
-[acquisition review](contextual-acquisition-review.md) to choose one bounded
-covariance-aware synaptic-learning comparison with fixed representations and
-matched experience budgets. Measure retained and fresh execution, query-form
-transfer, unsupported behavior and the cost of learned training state. This is
-a candidate stability mechanism, not a demonstrated solution to comprehension.
-The closed wording, capping, protection and robustness trials stay closed; the
-TRAIN-only host witness stays excluded. Improve this loop before provenance
-revision, multi-hop composition or the full challenge.
+The [balanced session plan](balanced-evidence-to-action-session-v1.md) follows the
+[transfer design review](contextual-transfer-design.md): test one openly reused
+COMPACT-versus-VARIED teaching comparison under the adopted, more stable AROW rule,
+with the same exposure budgets and a new common fresh cohort. Earlier varied
+teaching was tested while substantial comparison erasure persisted; its
+fixed-rule rejection remains closed. This tests whether stable acquisition makes teaching diversity useful,
+before an expensive representation change. The review records why this replaces
+the earlier immediate bilinear-map suggestion. Improve fresh useful behavior
+before extra old-task practice, provenance revision, composition or the full
+challenge. Existing capped/protected verdicts and the excluded TRAIN-only host
+witness remain unchanged.
 
 Alongside integration, apply two inexpensive sources of pressure:
 

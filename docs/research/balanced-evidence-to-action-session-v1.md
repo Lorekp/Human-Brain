@@ -33,45 +33,51 @@ passes its narrow recall, transfer, retention and no-action checks. Detailed
 scores and failures are in [benchmark status](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 The original eight-stage sequence below remains the integration contract.
 
-The [teaching-diversity comparison](../../experiments/r4_integrated/contextual_curriculum_result.md)
-fails adoption: both arms execute 2/8 fresh and 4/16 retained edits, with no
-correct unsupported STOPs. VARIED gains one broader-form task but loses a familiar
-one. Keep **compact teaching, RESERVED allocation**, fixed rate-one BINDING
-updates and affine actions as the baseline. The result owns paired outcomes,
-source competition, query-form sensitivity, numerical audits, hashes and costs.
+The [covariance-aware comparison](../../experiments/r4_integrated/contextual_covariance_result.md)
+**passes relative adoption**: retained execution improves from 5/16 to 14/16,
+with fresh execution tied at 2/8 and no stratum/unsupported regression. Adopt
+compact teaching, RESERVED allocation, the AROW pairwise update, fixed BINDING
+features and affine actions. Six retained entities have both properties correct;
+no fresh entity does. The result owns paired outcomes, exact numerical audits,
+source/feedback custody and the 20.05 MiB covariance allocation per learner.
 
-Two failures remain separately measured. Both arms end with twelve negative
-TRAIN contrasts that previously reached unit margin. VARIED answers 8/16 actual
-taught queries but 5/16 common original queries at the same checkpoint, then
-4/16 after fresh source competition. Those raw probes are not extra executed
-successes. Better taught-form performance did not yield better fresh action.
+All 36 admitted AROW comparisons remain positive at the final checkpoint, while
+FIXED loses twelve previously acquired comparisons. Two residual old failures
+involve unencountered exact-query competitors. Fresh relation/span binding,
+multiword values and unsupported abstention remain weak. The identical actual
+and common query probes add no independent question-form evidence.
 
-**Next integrated priority:** follow the [bounded acquisition review](contextual-acquisition-review.md)
-with one fixed covariance-aware synaptic-update comparison. Keep compact sources,
-the 48 primary encounters, 150-offer limit, frozen encoder/features, motor and
-fresh evaluation interface. A learned covariance can change update direction;
-this tests a different stability mechanism from scalar step capping or hard
-contrast protection. Disclose its conventional training arithmetic and state;
-native placement alone is not evidence that cells discovered the algorithm.
+**Next integrated priority:** follow the [transfer design review](contextual-transfer-design.md)
+with one COMPACT-versus-VARIED teaching comparison under AROW. Reuse the existing
+sixteen-fact teaching renditions openly, holding the 48 encounters, exactly 48
+teacher executions, 150-offer limit, encoder/features, motor and allocation fixed.
+Freeze a new common familiar/broader fresh roster, common original old queries,
+source exposure and scoring before outputs. Track actual taught-form acquisition
+separately from common-query transfer and exact-query competitor coverage.
 
-Freeze the exact update, covariance initialization/regularization, mutation
-rules, controls and a new common familiar/broader transfer roster before outputs.
-Use matched frozen learners, including explicit accounting for initial versus
-learned covariance state. Require improved retained execution without regression
-in fresh totals, either language stratum or unsupported STOPs. Record actual
-query acquisition, erased contrasts and query-form transfer separately; fitting
-the ledger alone is insufficient. Count dense training-state memory and total
-runtime alongside capability. Bound preparation to two hours and one comparison
-to thirty minutes of wall time; no regularization sweep or extra teacher dose.
+This changes the earlier conditional plan to proceed directly to a bilinear map.
+AROW has materially improved acquisition since the failed fixed-rule diversity
+trial, making learning-rule-by-curriculum interaction worth one bounded test.
+A full bilinear replacement would also require 164.73 GiB for just one dense
+covariance, so it is not a routine extension of the adopted learner. The old
+fixed-rule verdict stays closed and no old cohort becomes fresh evidence.
 
-If acquisition improves but transfer remains poor, return to the shared learned
-binding alternative in the review. If acquisition still fails, reassess the
-learning architecture using that evidence rather than extending the covariance
-trial. The [wording comparison](../../experiments/r4_integrated/contextual_curriculum_protocol.md),
-[robustness exercise](../../experiments/r4_integrated/contextual_robustness_result.md),
-[projection trial](../../experiments/r4_integrated/contextual_protected_contrast_result.md)
-and [capped trial](../../experiments/r4_integrated/contextual_capped_update_result.md)
-are closed. The [TRAIN-only feasibility witness](../../experiments/r4_integrated/contextual_representation_feasibility_result.md)
+Require strictly better fresh executed total with no common-retention, familiar,
+broader or correct unsupported STOP regression. Report paired gains/losses and
+complete entities as well as the small-cohort totals; relative adoption remains
+separate from the absolute targets and integrated gate. Count retained source,
+ledger, covariance and runtime costs. Bound preparation to two hours and one
+comparison to thirty minutes. No extra teacher dose, curriculum variants,
+regularization sweep or post-output cohort adjustment.
+
+If the new comparison does not produce useful transfer, close it and return to
+representation design with explicit training-state costs and a learning/custody
+contract. Do not add practice merely to remove the last two old errors or open
+another stability-parameter search. The [fixed-rule curriculum](../../experiments/r4_integrated/contextual_curriculum_result.md),
+[robustness](../../experiments/r4_integrated/contextual_robustness_result.md),
+[projection](../../experiments/r4_integrated/contextual_protected_contrast_result.md)
+and [capped](../../experiments/r4_integrated/contextual_capped_update_result.md)
+trials retain their original results. The [TRAIN-only witness](../../experiments/r4_integrated/contextual_representation_feasibility_result.md)
 stays outside the learner.
 
 Authentic official-exam development remains complementary pressure under the
