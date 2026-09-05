@@ -1,0 +1,109 @@
+{
+  "kind": "TRAIN-only external representation-capacity diagnostic; no learner training or transfer/exam labels",
+  "provenance": {
+    "source": "experiments/r4_integrated/contextual_binding_cases.json",
+    "source_commit": "d0b0c408a09068f9eb6fa9157412dcd22971d81a",
+    "source_sha256": "1cdd4a120dbeb6c23d881cd134411cedb334cf609fb21fb41e5cf36189db822c",
+    "projection": "only four training documents in first-ingestion order and sixteen existing teaching requests/values; extracted before diagnostic model outputs"
+  },
+  "documents": [
+    {
+      "document_id": "binding-pair-0",
+      "document": "The service abri uses azurite for transport and beryl as its audit label. The service cevu uses coral for transport and flint as its audit label."
+    },
+    {
+      "document_id": "binding-pair-1",
+      "document": "The audit label of enko is mica; enko uses lapis for transport. For dofi, transport is jasper and the audit label is kaolin."
+    },
+    {
+      "document_id": "binding-pair-2",
+      "document": "For falu, opal is the audit label and ochre is the transport setting. The service gemi uses pearl for transport; its audit label is ruby."
+    },
+    {
+      "document_id": "binding-pair-3",
+      "document": "The transport setting for itva is stibnite and its audit label is gesso. The service horo has audit label zinc and uses talc for transport."
+    }
+  ],
+  "queries": [
+    {
+      "name": "learn-abri-transport",
+      "request": "Configure abri using its documented transport setting.",
+      "value": "azurite"
+    },
+    {
+      "name": "learn-abri-audit",
+      "request": "Apply the documented audit label to abri.",
+      "value": "beryl"
+    },
+    {
+      "name": "learn-cevu-audit",
+      "request": "Set the audit label for cevu from the documentation.",
+      "value": "flint"
+    },
+    {
+      "name": "learn-cevu-transport",
+      "request": "Use the transport setting documented for cevu.",
+      "value": "coral"
+    },
+    {
+      "name": "learn-dofi-transport",
+      "request": "Which transport should dofi use according to the documentation? Apply it.",
+      "value": "jasper"
+    },
+    {
+      "name": "learn-dofi-audit",
+      "request": "Configure dofi with its audit label.",
+      "value": "kaolin"
+    },
+    {
+      "name": "learn-enko-audit",
+      "request": "Apply enko's documented audit label.",
+      "value": "mica"
+    },
+    {
+      "name": "learn-enko-transport",
+      "request": "Set enko to the transport specified in the notes.",
+      "value": "lapis"
+    },
+    {
+      "name": "learn-falu-transport",
+      "request": "Configure falu using its documented transport setting.",
+      "value": "ochre"
+    },
+    {
+      "name": "learn-falu-audit",
+      "request": "Apply the documented audit label to falu.",
+      "value": "opal"
+    },
+    {
+      "name": "learn-gemi-audit",
+      "request": "Set the audit label for gemi from the documentation.",
+      "value": "ruby"
+    },
+    {
+      "name": "learn-gemi-transport",
+      "request": "Use the transport setting documented for gemi.",
+      "value": "pearl"
+    },
+    {
+      "name": "learn-horo-transport",
+      "request": "Which transport should horo use according to the documentation? Apply it.",
+      "value": "talc"
+    },
+    {
+      "name": "learn-horo-audit",
+      "request": "Configure horo with its audit label.",
+      "value": "zinc"
+    },
+    {
+      "name": "learn-itva-audit",
+      "request": "Apply itva's documented audit label.",
+      "value": "gesso"
+    },
+    {
+      "name": "learn-itva-transport",
+      "request": "Set itva to the transport specified in the notes.",
+      "value": "stibnite"
+    }
+  ]
+}
