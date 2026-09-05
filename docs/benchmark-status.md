@@ -36,7 +36,9 @@ result report owns full costs and causal limits; shared-motor controls isolate
 evidence selection rather than the entire neuronal system.
 
 Keep fixed updates, affine actions and RESERVED allocation. The active plan owns
-a bounded review of interference control before one further integrated candidate.
+one next integrated candidate from the completed
+[interference review](research/contextual-interference-control-review.md):
+protect already learned contrasts without changing authentic feedback or actions.
 The completed [TRAIN-only host feasibility check](../experiments/r4_integrated/contextual_representation_feasibility_result.md)
 fits all 4,560 finite ranking/STOP constraints with unchanged features; no witness
 is deployed and this is not native learning or generalization. The

@@ -58,14 +58,27 @@ and all 285 training candidates. Its unrestricted host witness is not deployed
 and establishes neither native learnability nor generalization. Do not extend
 that completed diagnostic or treat its witness norm as a conditioning certificate.
 
-Next, budget at most **20 minutes for one primary-source/native-code review of
-interference control**, comparing at most three relevant approaches and
-recommending at most one minimal integrated candidate. Preserve BINDING features,
-the authentic feedback contract, RESERVED allocation, 150 offers and the existing
-motor. State added storage/compute and distinguish any conventional optimizer
-from simulated-neuron learning. Do not force a mechanism if the evidence or
-neuronal contribution does not justify it. Any resulting experiment needs a
-frozen protocol, fresh transfer instances and source committed before outputs.
+The bounded [interference review](contextual-interference-control-review.md)
+is complete. Its next candidate is one **OGD-inspired projection of plasticity
+updates away from already unit-margin-certified contrasts**. This is a disclosed
+conventional global training operator, not a claim that cells discovered its
+algorithm. Preserve original scoring eligibility, competitive gate and normalizer;
+seal the projected direction and learned basis separately. Frozen mates must
+retain zero learned basis growth as well as zero synaptic updates. The review
+owns the algebra, cost bound, native seam and limits: protection can obstruct
+new learning and does not cover unrecorded competitors or STOP clearance.
+
+Budget one implementation and one integrated two-arm comparison, with at most
+**two hours for implementation/diagnosis**. Compare RESERVED against RESERVED
+plus projection, preserving BINDING features, fixed rate one, 16 teaching queries,
+48 encounters, 150 offers and the current motor. First preregister numerical
+residual/no-op semantics and authenticate auxiliary-state custody. Use focused
+native/default-parity QA and the required native suite; then freeze fresh transfer
+instances and all source before any experiment outputs. Adopt only if retained
+execution improves without reducing fresh execution. If the budget expires or
+projection stalls without useful gain, record that evidence and return to the
+integrated decision; no eviction policy, rate sweep or host-solver fallback is
+part of this trial.
 
 Measure retained and fresh executed success, admitted-margin preservation,
 unexecuted competitors and retention before/after fresh ingestion separately.

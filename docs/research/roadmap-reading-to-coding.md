@@ -84,8 +84,10 @@ observed loss caused by fresh-source competition.
 
 Keep fixed updates, affine neuronal actions and reserved feedback. The completed
 TRAIN-only host witness establishes finite feature representability, not native
-learning or generalization; it remains excluded from the learner. Use a bounded
-review of interference control to choose at most one next integrated comparison.
+learning or generalization; it remains excluded from the learner. The completed
+[interference review](contextual-interference-control-review.md) selects one
+bounded comparison of updates that preserve already learned contrasts, with
+its global training operator explicitly disclosed.
 The [balanced session plan](balanced-evidence-to-action-session-v1.md) owns that
 work and the later 24-episode challenge. Improve this loop before provenance
 revision, multi-hop composition or the full challenge.
