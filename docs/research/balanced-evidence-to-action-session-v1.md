@@ -33,64 +33,55 @@ passes its narrow recall, transfer, retention and no-action checks. Detailed
 scores and failures are in [benchmark status](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 The original eight-stage sequence below remains the integration contract.
 
-The [feedback reservation comparison](../../experiments/r4_integrated/contextual_reserved_feedback_result.md)
-meets its adoption criterion: affine neuronal execution improves from 3/8 to 4/8
-fresh edits and from 2/16 to 4/16 retained edits, with 150 pair offers in each arm.
-Keep **RESERVED allocation**, fixed rate-one BINDING updates and affine actions
-as the current development baseline. The run admits 42 actual FAIL/teacher-PASS
-pairs and 108 cyclic replays, versus the previous 32/118 policy. Every executed
-training failure receives feedback; unsupported behavior remains wrong on 2/2.
-The result report owns the completed contract, counts, hashes and costs.
+The [protected-contrast comparison](../../experiments/r4_integrated/contextual_protected_contrast_result.md)
+raises retained executed edits from 5/16 to 9/16 but lowers fresh edits from
+6/8 to 5/8. It fails its frozen no-fresh-regression adoption rule. Keep
+**RESERVED allocation**, fixed rate-one BINDING updates and affine actions as
+the development baseline; retain PROTECTED only as a fixed research comparator.
+Both unsupported requests still cause wrong actions. The result report owns the
+completed contract, reporting-only recovery, paired outcomes, hashes and costs.
 
-Retention still fails substantially. Five final wrong leaders are admitted
-negatives whose corrections were erased; five are old occurrences never
-executed for that query, and two come from fresh sources. Twelve of 42 admitted
-contrasts finish negative, eleven after being positive on their last offer.
-With unchanged weights, fresh ingestion displaces one correct retained answer,
-reducing final TRAIN-store correctness from 5/16 to 4/16 executed retention.
-These are distinct interference and coverage problems, not another STOP/readout
-failure. The [capped-update trial](../../experiments/r4_integrated/contextual_capped_update_result.md)
-already rejected the tested unit-margin-capped policy on this workload.
+Protection preserves all nineteen certified contrasts with zero numerical
+violations and zero projection stalls. Seven retained failures remain: three
+uncertified admitted negatives, two unexecuted old competitors and two fresh-source
+leaders. The three admitted failures received real updates but remained wrong;
+they were not exhausted directions. Fresh ingestion displaces one correct answer
+at unchanged weights, reducing PROTECTED TRAIN-store correctness from 10/16 to
+9/16. These are incomplete acquisition and competitor-coverage problems alongside
+the demonstrated benefit of preservation; one small cohort does not establish a
+general tradeoff between retention and transfer.
 
-The [TRAIN-only feasibility diagnostic](../../experiments/r4_integrated/contextual_representation_feasibility_result.md)
-verified all 4,560 joint ranking/STOP constraints for sixteen taught questions
-and all 285 training candidates. Its unrestricted host witness is not deployed
-and establishes neither native learnability nor generalization. Do not extend
-that completed diagnostic or treat its witness norm as a conditioning certificate.
+The completed [TRAIN-only feasibility diagnostic](../../experiments/r4_integrated/contextual_representation_feasibility_result.md)
+provides a finite host witness, not learned weights or generalization. It stays
+excluded. The [capped trial](../../experiments/r4_integrated/contextual_capped_update_result.md)
+and [projection trial](../../experiments/r4_integrated/contextual_protected_contrast_protocol.md)
+retain their original outcomes; their budgets are closed. Do not add a rate sweep,
+basis eviction, extra teaching epochs or a host-solver fallback to those trials.
 
-The bounded [interference review](contextual-interference-control-review.md)
-is complete. Its next candidate is one **OGD-inspired projection of plasticity
-updates away from already unit-margin-certified contrasts**. This is a disclosed
-conventional global training operator, not a claim that cells discovered its
-algorithm. Preserve original scoring eligibility, competitive gate and normalizer;
-seal the projected direction and learned basis separately. Frozen mates must
-retain zero learned basis growth as well as zero synaptic updates. The review
-owns the algebra, cost bound, native seam and limits: protection can obstruct
-new learning and does not cover unrecorded competitors or STOP clearance.
+**Next integrated priority:** preregister one bounded robustness comparison of
+unchanged RESERVED and PROTECTED policies on untouched public-development streams.
+Use three predeclared streams that broaden sentence/question form, repeated-entity
+and source competition beyond renaming. Keep the current motor and matched frozen
+and external references. Fix the data, teaching exposure, feedback budgets,
+resource limit and decision rule before outputs; allow at most two hours for
+fixture/harness preparation and one run per stream. Do not alter learning rules,
+projection thresholds or replay priorities. This comparison is not yet frozen or
+run, and it does not erase the completed failed adoption verdict.
 
-The [protected-contrast protocol](../../experiments/r4_integrated/contextual_protected_contrast_protocol.md)
-owns this comparison. Budget one implementation and one integrated two-arm
-comparison, with at most **two hours for implementation/diagnosis**, starting
-03:21 UTC on 2026-09-05. Compare RESERVED against RESERVED
-plus projection, preserving BINDING features, fixed rate one, 16 teaching queries,
-48 encounters, 150 offers and the current motor. First preregister numerical
-residual/no-op semantics and authenticate auxiliary-state custody. Use focused
-native/default-parity QA and the required native suite; then freeze fresh transfer
-instances and all source before any experiment outputs. Adopt only if retained
-execution improves without reducing fresh execution. If the budget expires or
-projection stalls without useful gain, record that evidence and return to the
-integrated decision; no eviction policy, rate sweep or host-solver fallback is
-part of this trial.
+Report fresh, retained, unsupported and complete-entity outcomes separately per
+stream, with paired gains/losses, uncertified distinctions and unchanged-weight
+pre/post-ingestion retention. Establish which failure pattern persists before
+selecting another mechanism. Development-written cases remain development tools,
+not independent language evidence. Keep authentic public-exam questions and
+marking guidance as complementary pressure under the reading plan; do not tune
+against repeated exam answers or finalized/spent cohorts.
 
-Measure retained and fresh executed success, admitted-margin preservation,
-unexecuted competitors and retention before/after fresh ingestion separately.
 Targets remain at least 6/8 fresh and 12/16 retained edits, including both
-properties for three fresh entities; unsupported behavior remains separate.
-Keep original exam questions untuned. All references share the learned motor
-and isolate evidence selection rather than the whole neuronal system. No
-retrospective ablation selection, extra tuning on the spent cohort or protected
-evaluation is authorized by this small improvement. Annotation layouts and the
-broader challenge remain deferred.
+properties for three fresh entities in the present eight-query design; translate
+them explicitly if the new roster changes. No retrospective ablation selection
+or protected evaluation follows from a small improvement. Annotation layouts,
+provenance revision, composition and the broader challenge remain deferred until
+this integrated loop is more reliable.
 
 Use a small reusable TRAIN workload with the following eight stages. This is a
 capability sequence, not an already materialized or frozen eight-episode cohort;

@@ -73,24 +73,21 @@ the same-seed frozen control solves none. Type-annotation layout variation
 fails, and an original public-exam diagnostic scores 0/2 with no acquired frames.
 See [measured evidence](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 This is exact positional reading and a learned literal-edit pattern, not the
-general integrated gate. The [latest feedback comparison](../../experiments/r4_integrated/contextual_reserved_feedback_result.md)
-improves fresh executed edits from 3/8 to 4/8 and retention from 2/16 to 4/16
-under the same 150-offer budget. Reserving correction opportunities admits every
-executed teaching failure and is the new development baseline. Both unsupported
-requests still trigger wrong actions. Five final wrong leaders are previously
-learned negatives, five are unexecuted old occurrences and two come from newly
-ingested sources. Useful retention remains the blocker, with one directly
-observed loss caused by fresh-source competition.
+general integrated gate. The [latest contrast-protection comparison](../../experiments/r4_integrated/contextual_protected_contrast_result.md)
+improves retained executed edits from 5/16 to 9/16 but reduces fresh edits from
+6/8 to 5/8, failing its predeclared adoption rule. Keep fixed updates, affine
+neuronal actions and RESERVED feedback allocation as the development baseline.
+Both unsupported requests still provoke wrong actions. All nineteen protected
+contrasts survive, but incompletely learned comparisons, unseen competitors and
+fresh-source displacement remain. The result includes a separately preserved
+reporting failure and a verified equivalent recovery replay.
 
-Keep fixed updates, affine neuronal actions and reserved feedback. The completed
-TRAIN-only host witness establishes finite feature representability, not native
-learning or generalization; it remains excluded from the learner. The completed
-[interference review](contextual-interference-control-review.md) selects one
-bounded comparison of updates that preserve already learned contrasts, with
-its global training operator explicitly disclosed.
-The [balanced session plan](balanced-evidence-to-action-session-v1.md) owns that
-work and the later 24-episode challenge. Improve this loop before provenance
-revision, multi-hop composition or the full challenge.
+The [balanced session plan](balanced-evidence-to-action-session-v1.md) now owns
+one bounded comparison of the unchanged policies across broader, untouched
+public-development streams before another mechanism change. Preserve the failed
+adoption verdict; do not tune against the spent cohort. The completed TRAIN-only
+host witness remains excluded from the learner. Improve this loop before
+provenance revision, multi-hop composition or the full challenge.
 
 Alongside integration, apply two inexpensive sources of pressure:
 

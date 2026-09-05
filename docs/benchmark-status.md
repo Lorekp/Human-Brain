@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the verified feedback-reservation improvement.
+Updated 2026-09-05 with the verified protected-contrast tradeoff and reporting recovery.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -12,40 +12,46 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current contextual evidence-to-Python result
 
-The [feedback reservation comparison](../experiments/r4_integrated/contextual_reserved_feedback_result.md)
-improves affine neuronal execution from 3/8 to 4/8 fresh edits and from 2/16 to
-4/16 retained edits. RESERVED handles both properties for one fresh and one old
-entity; frozen mates solve none. Both updaters wrongly act on both unsupported
-requests. All 52 updating raw and affine selections/outcomes agree. Adopt the
-allocation for development; no roadmap or protected gate passes.
+The [protected-contrast comparison](../experiments/r4_integrated/contextual_protected_contrast_result.md)
+improves affine neuronal retention from 5/16 to 9/16 but reduces fresh edits from
+6/8 to 5/8. It fails the frozen adoption rule: **RESERVED remains the baseline**.
+Both updating arms wrongly act on both unsupported requests; frozen and external
+controls solve no supported tasks. All 52 updating raw/affine outcomes agree.
+This small generated cohort passes no roadmap or protected gate.
 
-Both arms use 150 pair offers. RESERVED admits 42 actual FAIL/teacher-PASS pairs
-and 108 replays, versus BASELINE's 32/118, with 81 versus 80 native updates.
-Every executed RESERVED training failure receives feedback. Its remaining wrong
-leaders include five erased admitted negatives, five unexecuted old occurrences
-and two fresh-source occurrences. One previously correct old answer is displaced
-by fresh ingestion at unchanged weights. Negative final pair margins rise from
-6 to 12, so feedback coverage improves without solving interference.
+Each arm uses 150 pair offers. PROTECTED admits 36 actual FAIL/teacher-PASS pairs
+and 114 replays, versus RESERVED's 42/108, with 69 versus 81 native updates.
+First-attempt teaching successes rise from 6/48 to 12/48. Nineteen certified
+contrasts survive, with 1,664 protected-margin checks, zero violations and zero
+projection stalls. Seven retained failures remain: three uncertified admitted
+negatives, two unexecuted old competitors and two fresh-source leaders. Fresh
+ingestion displaces one correct PROTECTED answer at unchanged weights (10→9).
+The paired fresh difference is two losses and one gain; it does not establish
+a general learning tradeoff or justify projection tuning on these instances.
 
-Synthetic allocation/custody checks and independent source review pass. All 33
-source identities, 600 updater/frozen receipts, 74 final margins and 572 executed
-transfer/retention actions verify. Frozen weights remain zero; evaluation preserves
-decoys and source absence. The run takes 308.06 seconds and peaks at 338.55 MiB
-parent working set. Official exam answers remain pending human scoring. The
-result report owns full costs and causal limits; shared-motor controls isolate
-evidence selection rather than the entire neuronal system.
+The original model execution completed but failed while serializing diagnostic
+NumPy scalars. Its checkpoint and raw log were preserved before a six-line
+reporting-only correction and one faithful recovery replay. All 142 logged events
+match excluding timing, and all 14 checkpoint arrays are bit-exact. The recovered
+300 PROTECTED updater/frozen offers are independently reconstructed exactly;
+RESERVED weights reproduce the previous baseline. Source/native/encoder identities,
+feedback allocation and all 572 executed transfer/retention actions verify.
 
-Keep fixed updates, affine actions and RESERVED allocation. The active plan owns
-one next integrated candidate from the completed
-[interference review](research/contextual-interference-control-review.md):
-protect already learned contrasts without changing authentic feedback or actions.
-The completed [TRAIN-only host feasibility check](../experiments/r4_integrated/contextual_representation_feasibility_result.md)
-fits all 4,560 finite ranking/STOP constraints with unchanged features; no witness
-is deployed and this is not native learning or generalization. The
-[capped-update trial](../experiments/r4_integrated/contextual_capped_update_result.md)
-rejects the tested unit-margin-capped policy on this workload, while the earlier
-[affine comparison](../experiments/r4_integrated/contextual_affine_readout_result.md)
-preserves the readout recovery. Those result reports link the preceding evidence.
+The recovery takes 347.30 seconds and peaks at 344.00 MiB parent working set;
+the earlier failed-report execution adds approximately 318.96 seconds of logged
+time. PROTECTED retains 502,892 learned auxiliary bytes plus scratch. Frozen
+learned auxiliary state stays zero. Official exam answers remain pending human
+scoring. The result report owns full costs, QA and limits, including retained raw
+sources and the shared-motor scope of evidence-selection controls.
+
+The active plan owns a bounded unchanged-policy robustness comparison on untouched
+public-development streams before a new mechanism. Keep the original failed
+adoption verdict separate. The earlier
+[reservation improvement](../experiments/r4_integrated/contextual_reserved_feedback_result.md),
+[TRAIN-only host feasibility check](../experiments/r4_integrated/contextual_representation_feasibility_result.md),
+[capped-update rejection](../experiments/r4_integrated/contextual_capped_update_result.md)
+and [affine readout recovery](../experiments/r4_integrated/contextual_affine_readout_result.md)
+remain scoped to their original contracts. No host witness is deployed.
 
 ## Earlier pairwise learning comparison
 
