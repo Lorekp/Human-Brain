@@ -33,37 +33,44 @@ passes its narrow recall, transfer, retention and no-action checks. Detailed
 scores and failures are in [benchmark status](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 The original eight-stage sequence below remains the integration contract.
 
-The [covariance-aware comparison](../../experiments/r4_integrated/contextual_covariance_result.md)
-adopted AROW with compact teaching, RESERVED allocation, BINDING features and
-affine actions. The [curriculum comparison](../../experiments/r4_integrated/contextual_covariance_curriculum_result.md)
-subsequently rejected VARIED. The [projected-bilinear comparison](../../experiments/r4_integrated/contextual_projected_binding_result.md)
-now rejects the fixed association block: BASELINE/PROJECTED execute 4/8 versus
-1/8 fresh and 8/16 versus 4/16 common retained edits under identical new teaching.
-Both fail unsupported STOPs and complete no fresh entity. All audits pass.
+The [full-choice acquisition attempt](../../experiments/r4_integrated/contextual_full_choice_result.md)
+selected by the [interface review](contextual-trainable-interface-review.md) is
+complete and fails. After 256 encounters/511 offers, actual supported execution
+is 2/48, alternate wording 5/48, and unsupported STOP 0/16. All final answers are
+single words. Source growth changes no choices. All audits pass; raw/affine
+choices and supported selection/execution agree. Each update improves its own
+lesson, but supported loss improves while STOP loss worsens across passes.
 
-Neither fully acquires actual taught forms (9/16 versus 7/16). All seven/nine
-wrong actual-form leaders are previously unexecuted exact competitors despite
-mostly positive admitted margins. This exposes a coverage/learning-objective
-alternative as well as question/span sensitivity; it does not prove a general
-representation limit. Fresh ingestion changes only already-wrong leaders here.
-Detailed diagnostics and controls belong in the immutable result report.
+**Next integrated priority:** determine whether the existing fixed features can
+jointly satisfy the 64 actual TRAIN rankings, including whole spans and STOP.
+A saved-increment attribution already shows supported lessons overwhelming STOP
+corrections, mainly through relative-token features; later updates erase the
+latest own correction for 15/16 unsupported queries. This is observed interference,
+not a feature-impossibility proof or a STOP-scalar explanation alone.
 
-**Next integrated priority:** implement the acquisition loop selected in the
-[completed interface review](contextual-trainable-interface-review.md). Use existing
-fixed features with a supervised distribution over every TRAIN candidate and
-STOP, explicit teacher answer labels and current-gradient replay. The review
-owns the new 64-request development package, bounded schedule, acquisition and
-retention thresholds. This is a new credit contract, not extra pair replay on
-spent cases. A learned token/role producer is conditional, with an identical
-frozen-producer control and output family if later selected. Establish useful
-TRAIN acquisition and executed edits before a separately frozen fresh comparison.
+Use a bounded host-only feasibility/conditioning diagnostic of the saved basis
+and authorized targets: declare solver/tolerance and ranking-margin contract,
+allow at most 30 minutes, and keep witness weights outside the learner. Margin
+infeasibility does not exclude every policy that could abstain through ties. A feasible fit favors investigating
+acquisition/credit; only a valid infeasibility certificate establishes conflicting
+fixed-feature requirements. Timeout or solver failure is inconclusive. Then
+select one justified design with a representative preflight and matched controls.
+No automatic optimizer, epoch, label or producer sweep or fresh comparison follows.
+The [result report](../../experiments/r4_integrated/contextual_full_choice_result.md)
+owns exact outcomes, attribution, costs and custody.
 
-The [earlier binding review](contextual-learned-binding-review.md) and all frozen
-experiments retain their evidence. Close the projected candidate without rank,
-projection, wording, length or extra-epoch search; no automatic AROMA successor.
-Do not add practice solely to repair spent cases. The TRAIN-only host witness
-stays outside the learner. A proposed new objective must distinguish surrogate
-competition gradients from actually executed failures.
+The diagnostic's exact-answer/STOP supervision is a declared stronger teaching
+contract. It does not pass the answer-free acquisition stages of the broader
+integration sequence below. Retained raw sources and external encoder features
+also prevent a claim of source-free internalization. Keep these distinctions
+visible when returning to the persistent executed loop.
+
+Earlier [AROW adoption](../../experiments/r4_integrated/contextual_covariance_result.md),
+[curriculum rejection](../../experiments/r4_integrated/contextual_covariance_curriculum_result.md)
+and [projected-candidate rejection](../../experiments/r4_integrated/contextual_projected_binding_result.md)
+remain unchanged. No historical score is a matched control for this new objective
+and package. Keep the TRAIN-only host witness outside the learner; surrogate
+competition gradients are not executed FAIL labels.
 
 Authentic official-exam development remains complementary pressure under the
 [reading plan](reading-comprehension-evaluation.md). The repeated KS2 Q6a/b items

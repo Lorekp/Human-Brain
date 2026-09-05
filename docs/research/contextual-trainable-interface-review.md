@@ -1,6 +1,10 @@
 # Learn over complete choices before adding a trainable representation
 
 Development decision, 2026-09-05, following a bounded three-agent review.
+The selected [full-choice attempt](../../experiments/r4_integrated/contextual_full_choice_result.md)
+is now implemented, audited and closed after failing acquisition. The design below
+records that decision; the [active plan](balanced-evidence-to-action-session-v1.md)
+owns the next work. The conditional producer is not automatically selected.
 The [projected comparison](../../experiments/r4_integrated/contextual_projected_binding_result.md)
 failed. Neither arm fully acquires taught forms; available but previously
 unexecuted competitors win despite mostly positive admitted pair margins.

@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the completed projected-bilinear comparison.
+Updated 2026-09-05 with the completed full-choice acquisition attempt.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -12,46 +12,49 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current contextual evidence-to-Python result
 
-The [projected-bilinear comparison](../experiments/r4_integrated/contextual_projected_binding_result.md)
-**rejects PROJECTED**. Keep the existing AROW/BINDING architecture, RESERVED
-allocation and affine actions. Both arms receive identical new mixed-length
-teaching: 48 encounters, 48 teacher executions and 150 offers.
+The [full-choice acquisition attempt](../experiments/r4_integrated/contextual_full_choice_result.md)
+**fails its acquisition gate**. A single four-pass stream supplies 256 teacher
+opportunities and 511 current-gradient offers per learner, with explicit exact
+answer/STOP supervision over all 1,458 TRAIN candidates plus STOP.
 
-| Measure | BASELINE | PROJECTED |
-| --- | ---: | ---: |
-| Fresh executed edits | 4/8 | 1/8 |
-| Familiar / broader fresh edits | 2/4 / 2/4 | 1/4 / 0/4 |
-| Common retained edits | 8/16 | 4/16 |
-| Complete fresh / retained entities | 0/4 / 2/8 | 0/4 / 1/8 |
-| Correct unsupported STOPs | 0/2 | 0/2 |
-| Actual taught-form selections | 9/16 | 7/16 |
+| Executed outcome, before and after growth | Updating | Frozen | External |
+| --- | ---: | ---: | ---: |
+| Actual taught wording, supported | 2/48 | 0/48 | 0/48 |
+| Alternate wording, supported | 5/48 | 0/48 | 0/48 |
+| Correct unsupported STOPs, every phase | 0/16 | 16/16 | 0/16 |
 
-PROJECTED gains no fresh task and loses three. Neither learner fully acquires
-its taught forms. All seven/nine wrong actual-form leaders were previously
-unexecuted and unadmitted exact competitors. PROJECTED preserves all 32 admitted
-pair orderings; BASELINE erases one of 38. Question-form changes reduce accuracy,
-but fresh ingestion displaces no correct answer in this run. This does not
-establish a general representation limit. New fixtures prevent causal comparison
-with historical scores; the [earlier curriculum rejection](../experiments/r4_integrated/contextual_covariance_curriculum_result.md)
-and [AROW adoption](../experiments/r4_integrated/contextual_covariance_result.md) stand.
+All final updater answers are one word; no dual-property entity completes.
+Supported first-attempt counts over four passes are 1, 3, 2, 2 out of 48.
+Alternate wording produces four gains and one loss; unrelated source growth
+changes no choice. Every recorded update lowers its immediate lesson loss, but
+new supported mean loss improves 7.09 to 6.10 while STOP loss worsens 7.55 to 8.95.
+This is failed acquisition despite complete competitor gradients, not evidence
+that fixed features are impossible or another representation is automatically next.
 
-All 600 updater/frozen offers, sixteen exported arrays and 64 projected original
-eligibilities reconstruct exactly. All 52 primary raw/affine choices agree;
-624 executions preserve selected edits and decoys. Frozen affine and external
-controls solve no supported task. Shared learned motors and retained raw sources
-limit attribution. Official exam judgments remain pending. No integrated or
-protected gate passes.
+Saved audits reconstruct both 511-offer chains and all six learned arrays
+exactly, with independent gradient error zero and loss error at most 1.78e-15.
+All 1,024 raw/affine observations agree. All 1,792 saved execution workspaces
+(excluding two motor demonstrations) match selected payloads or unchanged
+baselines. Native learning calls are zero: this rule uses supervised NumPy SGD
+and a GLIF action readout. Shared learned motors, retained raw documents and a
+frozen external encoder limit attribution to the declared hybrid evidence learner.
+No fresh, official-exam, integrated or protected gate passes.
 
-The one run completes in 537.15 seconds; parent peak working set is 668.65 MiB,
-excluding children. Covariance per updater or frozen mate grows from 20.05 to
-53.38 MiB, plus fixed projections and other retained state. The result report
-owns full costs, identities and artifacts. Close this candidate without a
-projection sweep or automatic AROMA successor. The [completed interface review](research/contextual-trainable-interface-review.md)
-selects a new supervised full-choice acquisition loop before any conditional
-trainable token/role comparison.
+The run takes 771.97 seconds. Retained array/byte payload per learner grows from
+4.63 to 5.96 MB; parent peak working set is 627.98 MiB, excluding children.
+The result report owns complete costs, artifact identities and the two explicit
+runtime CRLF/Git-LF source differences. The [active plan](research/balanced-evidence-to-action-session-v1.md)
+now checks joint feasibility/conditioning of the actual TRAIN rankings before
+another design. Saved-increment attribution shows supported lessons overwhelming
+STOP corrections through relative-token features; it does not prove feature
+incapacity. Host witness weights remain outside the learner.
 
-Earlier [robustness](../experiments/r4_integrated/contextual_robustness_result.md),
-[protection and reporting recovery](../experiments/r4_integrated/contextual_protected_contrast_result.md),
+The earlier [projected comparison](../experiments/r4_integrated/contextual_projected_binding_result.md)
+rejects PROJECTED (4/8 versus 1/8 fresh and 8/16 versus 4/16 common retained).
+The [curriculum rejection](../experiments/r4_integrated/contextual_covariance_curriculum_result.md)
+and [AROW adoption](../experiments/r4_integrated/contextual_covariance_result.md)
+stand. Earlier [robustness](../experiments/r4_integrated/contextual_robustness_result.md),
+[protection](../experiments/r4_integrated/contextual_protected_contrast_result.md),
 [reservation](../experiments/r4_integrated/contextual_reserved_feedback_result.md),
 [TRAIN-only feasibility](../experiments/r4_integrated/contextual_representation_feasibility_result.md),
 [capping](../experiments/r4_integrated/contextual_capped_update_result.md) and

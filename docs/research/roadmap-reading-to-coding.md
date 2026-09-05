@@ -67,34 +67,35 @@ Count executable behavior, not byte substitution in a text fixture, as software
 success. Teacher corrections may follow first attempts; they do not count as
 learner successes or autonomous recovery.
 
-The first narrow development slice now passes delayed recall, two fresh
-executed Python edits, and old-skill retention after two action demonstrations;
-the same-seed frozen control solves none. Type-annotation layout variation
-fails, and an original public-exam diagnostic scores 0/2 with no acquired frames.
-See [measured evidence](../benchmark-status.md#current-neutral-reading-to-python-development-result).
-This is exact positional reading and a learned literal-edit pattern, not the
-general integrated gate. Keep the adopted AROW update, RESERVED allocation,
-BINDING features and affine actions. The [projected-bilinear comparison](../../experiments/r4_integrated/contextual_projected_binding_result.md)
-fails: BASELINE/PROJECTED execute 4/8 versus 1/8 fresh tasks and 8/16 versus 4/16
-common retained tasks. Both fail unsupported STOPs. Actual taught-form selections
-are only 9/16 versus 7/16. All wrong leaders were available candidates but were
-not previously executed as failures or admitted as negatives for those exact
-queries. Positive admitted pair margins do not establish complete acquisition.
-Audits pass; learned state stays fixed during evaluation.
+The first [narrow executed slice](../../experiments/r4_integrated/neutral_document_python_session.md)
+remains limited positional-reading and literal-edit evidence. The adopted
+AROW/BINDING baseline and all earlier frozen results retain their contracts.
+The [full-choice acquisition attempt](../../experiments/r4_integrated/contextual_full_choice_result.md)
+now fails: after 256 encounters and 511 supervised offers, it executes 2/48
+supported taught requests and 5/48 alternate forms, with 0/16 unsupported STOPs.
+Every final selection is one word. Growth changes no choices. Audits pass;
+raw and neuronal choices agree. Supported lesson loss improves while STOP loss
+worsens, despite each update improving its own lesson. Complete competitor
+coverage alone did not establish acquisition.
 
-The [balanced session plan](balanced-evidence-to-action-session-v1.md) follows the
-[completed interface review](contextual-trainable-interface-review.md): implement
-one acquisition loop using existing fixed features and supervised learning over
-all TRAIN candidates plus STOP. Declare exact-answer labels, current-gradient
-replay and full state cost. Use a new 64-request development package with a
-bounded schedule; establish acquisition in the executed loop before freezing
-fresh evidence. A trainable token/role producer is conditional on what this shows.
-This failed projection candidate and earlier curriculum questions are closed;
-no rank, projection, wording, value-length or extra-epoch sweep follows. AROMA is
-not an automatic successor. The failure does not prove representational
-impossibility. Keep earlier evidence immutable and the TRAIN-only host witness
-outside the learner. Provenance revision, composition, full challenge and scaling
-remain deferred until useful fresh behavior improves.
+The [balanced session plan](balanced-evidence-to-action-session-v1.md) now
+prioritizes a bounded host-only feasibility/conditioning diagnostic of the 64
+actual TRAIN rankings, including whole spans and STOP. Saved increments already
+show supported lessons overwhelming STOP corrections through relative-token
+features. Determine whether a joint fit exists before choosing a credit/learning
+change or revisiting representation. A timeout proves neither feasibility nor
+infeasibility; host witness weights remain outside the learner.
+The [interface review](contextual-trainable-interface-review.md) supplies the
+implemented design and conditional producer sketch; neither this failed attempt
+nor its small synthetic fit establishes that a new representation is necessary.
+Require a representative numerical/acquisition preflight before another declared
+run. Do not automatically add epochs, tune rates/labels, or start a producer.
+
+This acquisition diagnostic uses explicit answer/STOP supervision over retained
+raw sources and a frozen external encoder. It is not answer-free internalization,
+fresh transfer, or a pass of the general integrated gate. Keep its controls and
+costs explicit. Provenance revision, composition, full challenge and scaling
+remain deferred until useful acquired and fresh behavior improves.
 
 Alongside integration, apply two inexpensive sources of pressure:
 
