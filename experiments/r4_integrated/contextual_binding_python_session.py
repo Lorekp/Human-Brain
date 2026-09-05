@@ -33,7 +33,6 @@ from humanbrain.native import loaded_build_info
 shared, prior, replay = conditioned.shared, conditioned.prior, conditioned.replay
 ROOT, HERE = conditioned.ROOT, conditioned.HERE
 _json = conditioned._json
-_training_summary = conditioned._training_summary
 _old_query_scores = conditioned._old_query_scores
 SOURCE_PATHS = (
     *conditioned.SOURCE_PATHS,
@@ -43,8 +42,40 @@ SOURCE_PATHS = (
 )
 
 
-def _hashes() -> dict[str, str]:
-    return {path: sha256((ROOT / path).read_bytes()).hexdigest() for path in SOURCE_PATHS}
+def _hashes(source_paths=SOURCE_PATHS) -> dict[str, str]:
+    return {path: sha256((ROOT / path).read_bytes()).hexdigest() for path in source_paths}
+
+
+def load_fixture(path: Path, source_paths=SOURCE_PATHS) -> dict:
+    if path.resolve().relative_to(ROOT).as_posix() not in source_paths:
+        raise ValueError("fixture is absent from the declared source inventory")
+    fixtures = json.loads(path.read_text("utf-8"))
+    if "training_source" in fixtures:
+        source = fixtures["training_source"]
+        if source not in source_paths:
+            raise ValueError("linked teaching fixture is absent from the source inventory")
+        teaching = json.loads((ROOT / source).read_text("utf-8"))
+        fixtures = {**fixtures, "training": teaching["training"], "schedule": teaching["schedule"]}
+    return fixtures
+
+
+def _training_summary(rows) -> dict:
+    result = conditioned._training_summary(rows)
+    if not any(row.get("exploration_policy") == "raw_candidate" for row in rows):
+        return result
+    source = "raw_candidate_exploration"
+    selected = [row for row in rows if row["negative_source"] == source]
+    admitted = [row for row in selected if row["correction_status"] == "applied"]
+    applied = sum(row["feedback"][0]["update"]["native_update_applied"] for row in admitted)
+    result["negative_sources"][source] = {
+        "candidate_attempts": sum(row["candidate_source"] == source for row in rows),
+        "executed_negatives": len(selected),
+        "admitted_pairs": len(admitted),
+        "new_native_updates": applied,
+        "new_noops": len(admitted) - applied,
+    }
+    result["below_stop_proposals_used"] = sum(row.get("proposal_below_stop", False) for row in rows)
+    return result
 
 
 def _snapshot(memory) -> dict:
@@ -185,7 +216,11 @@ def _evaluate(name, update, frozen, motor, fixtures, work, arm, record, *, bindi
     return policies
 
 
-def _teach(name, update, frozen, motor, fixtures, work, arm, record):
+def _teach(
+    name, update, frozen, motor, fixtures, work, arm, record, *, exploration_policy="thresholded"
+):
+    if exploration_policy not in ("thresholded", "raw_candidate"):
+        raise ValueError("unknown training exploration policy")
     cases = {item["name"]: item for item in fixtures["training"]}
     seen, encountered, ledger = {}, {}, []
     replay_cursor = replay_count = 0
@@ -223,13 +258,45 @@ def _teach(name, update, frozen, motor, fixtures, work, arm, record):
         row["first_raw_score_spike_disagreement"] = candidate.candidate_index != raw.candidate_index
         row["first_raw_mapped_disagreement"] = raw.candidate_index != conventional.candidate_index
         candidate_result = row["first"]
+        if exploration_policy == "raw_candidate":
+            row["exploration_policy"] = exploration_policy
         if candidate.stopped:
-            policy = "external_only" if raw.stopped else "raw_score_reference"
-            row["fallback_kind"] = "external_only" if raw.stopped else "raw_learned_score"
+            proposal = raw
+            if exploration_policy == "raw_candidate":
+                began = time.perf_counter()
+                proposal = update.raw_candidate_proposal(item["request"].encode())
+                row["candidate_proposal_seconds"] = time.perf_counter() - began
+                row["candidate_proposal"] = shared.decision_record(proposal)
+                row["proposal_below_stop"] = not proposal.stopped and raw.stopped
+                row["candidate_proposal_drive"] = (
+                    None
+                    if proposal.stopped
+                    else float(update._raw_drives(np.asarray([proposal.eligibility]))[0])
+                )
+                if update.checkpoint_sha256 != parent:
+                    raise RuntimeError("training proposal changed checkpoint")
+            policy = (
+                "external_only"
+                if proposal.stopped
+                else (
+                    "raw_candidate_proposal"
+                    if exploration_policy == "raw_candidate"
+                    else "raw_score_reference"
+                )
+            )
+            row["fallback_kind"] = (
+                "external_only"
+                if proposal.stopped
+                else (
+                    "raw_candidate_exploration"
+                    if exploration_policy == "raw_candidate"
+                    else "raw_learned_score"
+                )
+            )
             row["exploration"], candidate = shared.attempt(
                 update, policy, motor, item, folder / "exploration"
             )
-            if policy == "raw_score_reference" and candidate.candidate_index != raw.candidate_index:
+            if policy != "external_only" and candidate.candidate_index != proposal.candidate_index:
                 raise RuntimeError("executed raw fallback differs from recorded score winner")
             candidate_result = row["exploration"]
         row["candidate_source"] = (
@@ -264,6 +331,14 @@ def _teach(name, update, frozen, motor, fixtures, work, arm, record):
                     str(error),
                 )
             else:
+                if row["candidate_source"] == "raw_candidate_exploration":
+                    weights = update.checkpoint_arrays()["readout_synapses_pa"]
+                    delta = np.asarray(accepted.eligibility) - np.asarray(candidate.eligibility)
+                    row["actual_wrong_leader_gap_before"] = float((weights[0] - weights[1]) @ delta)
+                    if row["actual_wrong_leader_gap_before"] > 1e-10:
+                        raise RuntimeError(
+                            "executed wrong raw leader did not supply a violated margin"
+                        )
                 pair = replay._Pair(
                     f"{name}-{len(ledger) + 1:02d}",
                     step,
@@ -280,6 +355,15 @@ def _teach(name, update, frozen, motor, fixtures, work, arm, record):
                     }
                 )
                 row["feedback"].append(replay._feedback(update, frozen, pair, replay=False))
+                if row["candidate_source"] == "raw_candidate_exploration":
+                    receipt = row["feedback"][-1]["update"]
+                    if not receipt["native_update_applied"] or not np.isclose(
+                        receipt["gap_before"],
+                        row["actual_wrong_leader_gap_before"],
+                        rtol=1e-10,
+                        atol=1e-10,
+                    ):
+                        raise RuntimeError("wrong-leader correction was inert or its gap changed")
                 older = len(ledger)
                 ledger.append(pair)
                 arm["ledger"].append(pair.record())
@@ -350,7 +434,68 @@ def _teach(name, update, frozen, motor, fixtures, work, arm, record):
     return seen
 
 
-def run(output: Path, model_dir: Path) -> dict:
+def rank_diagnostics(memory, fixtures) -> dict:
+    """Evaluator-only ranking/STOP separation; never used to select feedback."""
+    parent, began = memory.checkpoint_sha256, time.perf_counter()
+    threshold = float(np.arctanh((600.1 - 600.0) / 200.0))
+    result = {
+        "checkpoint_sha256": parent,
+        "stop_raw_threshold": threshold,
+        "scope": "read-only evaluator ranks over all retained occurrences; no updates",
+    }
+    for phase, cases in (("retention", fixtures["training"]), ("transfer", fixtures["transfer"])):
+        records = []
+        for item in cases:
+            features, _ = memory._features(item["request"].encode())
+            drives = memory._raw_drives(features)
+            best = (
+                np.flatnonzero(drives == drives.max()) if len(drives) else np.array([], dtype=int)
+            )
+            index = int(best[0]) if len(best) == 1 else None
+            expected = None if item["value"] is None else item["value"].encode()
+            correct = np.array([c.emitted == expected for c in memory._candidates], dtype=bool)
+            gold = float(drives[correct].max()) if correct.any() else None
+            wrong = float(drives[~correct].max()) if (~correct).any() else None
+            records.append(
+                {
+                    "case": item["name"],
+                    "unique_top_candidate_index": index,
+                    "unique_top_emitted": None
+                    if index is None
+                    else memory._candidates[index].emitted.decode(),
+                    "top_tie_count": len(best),
+                    "top_drive": float(drives.max()) if len(drives) else None,
+                    "correct_occurrence_count": None if expected is None else int(correct.sum()),
+                    "best_correct_rank": None
+                    if gold is None
+                    else 1 + int(np.count_nonzero(drives > gold)),
+                    "best_correct_drive": gold,
+                    "best_correct_minus_best_wrong": None
+                    if gold is None or wrong is None
+                    else gold - wrong,
+                    "best_correct_minus_stop": None if gold is None else gold - threshold,
+                }
+            )
+        result[phase] = records
+    if memory.checkpoint_sha256 != parent:
+        raise RuntimeError("final ranking diagnostic changed checkpoint")
+    result["seconds"] = time.perf_counter() - began
+    return result
+
+
+def run(
+    output: Path,
+    model_dir: Path,
+    *,
+    fixture_path: Path | None = None,
+    exploration_policy="thresholded",
+    source_paths=SOURCE_PATHS,
+    report_labels: dict[str, str] | None = None,
+    include_rank_diagnostics=False,
+) -> dict:
+    if exploration_policy not in ("thresholded", "raw_candidate"):
+        raise ValueError("unknown training exploration policy")
+    fixture_path = HERE / "contextual_binding_cases.json" if fixture_path is None else fixture_path
     output = output.resolve()
     if output.exists() or output.with_suffix(".npz").exists():
         raise FileExistsError("choose a fresh output path; existing evidence is immutable")
@@ -383,6 +528,12 @@ def run(output: Path, model_dir: Path) -> dict:
         "controls": "same-gain frozen mate receives exact feedback; all references share "
         "learned motor; updating arms may collect different on-policy failures",
     }
+    if report_labels:
+        if set(report_labels) - {"kind", "teaching_exposure", "feedback_contract"}:
+            raise ValueError("only descriptive report labels can be overridden")
+        report.update(report_labels)
+    if exploration_policy != "thresholded":
+        report["exploration_policy"] = exploration_policy
 
     def record(event, **fields):
         row = {"event": event, **fields}
@@ -392,11 +543,11 @@ def run(output: Path, model_dir: Path) -> dict:
         print(_json(row), flush=True)
 
     try:
-        report["source_sha256"] = _hashes()
+        report["source_sha256"] = _hashes(source_paths)
         report["base_revision"] = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
         ).strip()
-        fixtures = json.loads((HERE / "contextual_binding_cases.json").read_text("utf-8"))
+        fixtures = load_fixture(fixture_path, source_paths)
         validate_fixture(fixtures)
         native = loaded_build_info()
         report["native"] = {
@@ -443,7 +594,17 @@ def run(output: Path, model_dir: Path) -> dict:
             }
             report["arms"][name] = arm
             began = time.perf_counter()
-            seen = _teach(name, update, frozen, motor, fixtures, work, arm, record)
+            seen = _teach(
+                name,
+                update,
+                frozen,
+                motor,
+                fixtures,
+                work,
+                arm,
+                record,
+                exploration_policy=exploration_policy,
+            )
             arm["phase_seconds"]["teaching"] = time.perf_counter() - began
             arm["trained"], arm["frozen_trained"] = _snapshot(update), _snapshot(frozen)
             began = time.perf_counter()
@@ -458,6 +619,8 @@ def run(output: Path, model_dir: Path) -> dict:
                 name, update, frozen, motor, fixtures, work, arm, record, binding=binding
             )
             arm["phase_seconds"]["transfer_and_retention"] = time.perf_counter() - began
+            if include_rank_diagnostics:
+                arm["rank_diagnostics"] = rank_diagnostics(update, fixtures)
             if (
                 frozen.synapse_sha256 != arm["seed"]["synapse_sha256"]
                 or update.synapse_sha256 != arm["trained"]["synapse_sha256"]
@@ -495,7 +658,7 @@ def run(output: Path, model_dir: Path) -> dict:
             "scope": "trained synapses; ordered fixtures and receipts reconstruct "
             "storage and lineage",
         }
-        report["sources_unchanged_during_run"] = _hashes() == report["source_sha256"]
+        report["sources_unchanged_during_run"] = _hashes(source_paths) == report["source_sha256"]
         if not report["sources_unchanged_during_run"]:
             raise RuntimeError("sources changed during comparison")
         report["terminal"] = "completed"

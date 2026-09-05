@@ -480,6 +480,77 @@ def test_raw_score_reference_requires_strict_win_over_tonic_stop(encoder) -> Non
     assert memory.raw_score_reference(b"Configure").emitted == b"ready"
 
 
+@pytest.mark.parametrize("candidate_interactions", (False, True))
+def test_below_stop_candidate_exploration_preserves_custody_and_corrective_feedback(
+    encoder, candidate_interactions
+) -> None:
+    update = ContextualEvidenceMemory(encoder, candidate_interactions=candidate_interactions)
+    frozen = ContextualEvidenceMemory(
+        encoder, candidate_interactions=candidate_interactions, learning_enabled=False
+    )
+    query = "How many messages does Café receive?".encode()
+    for memory in (update, frozen):
+        memory.ingest((document(),))
+        selected = memory.decision_for_span(query, b"23")
+        # A known, unique wrong leader at a negative raw drive: ordinary
+        # thresholded policies must still abstain. Both mates have the same seed.
+        memory._weights[0, 384:768] = 0.001 * memory._vectors[selected.candidate_index]
+        memory._bias[0] = -5.0
+    assert update.checkpoint_sha256 == frozen.checkpoint_sha256
+    before, storage = update.checkpoint_sha256, update.storage_summary
+    frozen_synapses = frozen.synapse_sha256
+    rows, _ = update._features(query)
+    assert np.max(update._raw_drives(rows)) < 0
+    for policy in (
+        update.raw_score_reference,
+        update.conventional,
+        update.respond,
+        update.respond_interpolated,
+    ):
+        assert policy(query).stopped
+    rejected = update.raw_candidate_proposal(query)
+    assert rejected.emitted == b"23" and rejected.candidate_index == selected.candidate_index
+    assert rejected.mode == "raw_candidate_exploration"
+    assert rejected.eligibility == tuple(rows[rejected.candidate_index])
+    assert rejected.checkpoint_sha256 == before
+    assert rejected.physical_cell_steps == 0 and rejected.spike_step is None
+    assert rejected.readout_policy is None and rejected.estimated_crossing_time_ms is None
+    assert update.checkpoint_sha256 == before and update.storage_summary == storage
+    # Execution authentication belongs to the runner. This unit test checks
+    # that the proposal supplies ordinary same-query occurrence custody for credit.
+    accepted = update.decision_for_span(query, b"17")
+    with pytest.raises(ValueError, match="custody changed"):
+        update.observe_comparison(replace(rejected, emitted=b"17"), accepted)
+    frozen_pair = tuple(frozen.replay_decision(d) for d in (rejected, accepted))
+    assert frozen_pair[0].mode == "yoked_raw_candidate_exploration"
+    first = update.observe_comparison(rejected, accepted)
+    second = frozen.observe_comparison(*frozen_pair)
+    assert first["gap_before"] < 0 and first["gap_after"] > first["gap_before"]
+    assert first["native_update_applied"] and first["synaptic_update"]
+    assert not second["native_update_applied"] and not second["synaptic_update"]
+    assert first["eligibility_delta_sha256"] == second["eligibility_delta_sha256"]
+    assert frozen.synapse_sha256 == frozen_synapses
+    assert update.feedback_count == frozen.feedback_count == 2
+    assert update.update_count == 1 and frozen.update_count == 0
+    with pytest.raises(ValueError, match="stale parent"):
+        update.observe_comparison(rejected, accepted)
+
+
+def test_candidate_exploration_rejects_empty_and_equal_leaders(encoder) -> None:
+    memory = ContextualEvidenceMemory(encoder)
+    query = b"Configure the setting"
+    for populated in (False, True):
+        if populated:
+            memory.ingest((document(),))
+            memory._bias[0] = -5  # Tonic exclusion must not break candidate ties.
+        before = memory.checkpoint_sha256
+        decision = memory.raw_candidate_proposal(query)
+        assert decision.stopped and decision.mode == "raw_candidate_exploration"
+        assert decision.stop_reason == "empty_or_tied_candidates"
+        assert decision.eligibility == () and decision.emitted is None
+        assert memory.checkpoint_sha256 == before
+
+
 def test_relative_word_geometry_has_declared_direction_scale_and_interval_mean() -> None:
     kernels = _position_kernels(np.asarray([-2, 0, 2]))
     np.testing.assert_allclose(kernels[:, 1], 1)

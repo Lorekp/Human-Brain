@@ -471,9 +471,11 @@ class ContextualEvidenceMemory:
         }
         return ContextualEvidenceDecision(**values, sha256=_digest(serial))
 
+    def _raw_drives(self, rows: np.ndarray) -> np.ndarray:
+        return rows @ (self._weights[0] - self._weights[1]) + self._bias[0] - self._bias[1]
+
     def _currents(self, rows: np.ndarray) -> np.ndarray:
-        drive = rows @ (self._weights[0] - self._weights[1]) + self._bias[0] - self._bias[1]
-        return np.append(600.0 + 200.0 * np.tanh(drive), 600.1)
+        return np.append(600.0 + 200.0 * np.tanh(self._raw_drives(rows)), 600.1)
 
     def respond(self, query: bytes) -> ContextualEvidenceDecision:
         rows, _ = self._features(query)
@@ -540,7 +542,7 @@ class ContextualEvidenceMemory:
     ) -> ContextualEvidenceDecision:
         """Disclosed linear reference before current saturation; no neuronal race."""
         rows, _ = self._features(query, interaction_ablation=interaction_ablation)
-        drive = rows @ (self._weights[0] - self._weights[1]) + self._bias[0] - self._bias[1]
+        drive = self._raw_drives(rows)
         # Invert the unchanged current map at the tonic STOP current. Require a
         # unique strict win, including against STOP, before float tanh saturation.
         scores = np.append(drive, np.arctanh((600.1 - 600.0) / 200.0))
@@ -551,6 +553,25 @@ class ContextualEvidenceMemory:
             mode += "_ablation_" + interaction_ablation
         return self._decision(
             query, rows, index, mode, "tonic_stop_or_tie" if index is None else None
+        )
+
+    def raw_candidate_proposal(self, query: bytes) -> ContextualEvidenceDecision:
+        """TRAIN exploration: unique raw candidate leader, without the tonic STOP.
+
+        This read-only proposal is not ordinary inference success. The caller
+        must execute it before authenticating corrective feedback, as for other
+        exploration decisions. All retained candidate occurrences participate.
+        """
+        rows, _ = self._features(query)
+        drive = self._raw_drives(rows)
+        best = np.flatnonzero(drive == drive.max()) if len(drive) else []
+        index = int(best[0]) if len(best) == 1 else None
+        return self._decision(
+            query,
+            rows,
+            index,
+            "raw_candidate_exploration",
+            "empty_or_tied_candidates" if index is None else None,
         )
 
     def external_only(self, query: bytes) -> ContextualEvidenceDecision:

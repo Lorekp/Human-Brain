@@ -1,0 +1,116 @@
+{
+  "kind": "public development; prior paired teaching and 48-entry schedule openly reused; fresh transfer substitutions preserve declared variation strata",
+  "training_source": "experiments/r4_integrated/contextual_binding_cases.json",
+  "transfer": [
+    {
+      "name": "fresh-paxi-transport",
+      "key": "paxi",
+      "value": "flax",
+      "module": "binding_fresh_0",
+      "stale": "unconfigured",
+      "request": "Configure paxi using its documented transport setting.",
+      "document_id": "binding-fresh-paxi",
+      "document": "The service paxi uses flax for transport and hemp as its audit label.",
+      "stratum": "simple"
+    },
+    {
+      "name": "fresh-paxi-audit",
+      "key": "paxi",
+      "value": "hemp",
+      "module": "binding_fresh_0",
+      "stale": "unconfigured",
+      "request": "Apply the documented audit label to paxi.",
+      "document_id": "binding-fresh-paxi",
+      "document": "The service paxi uses flax for transport and hemp as its audit label.",
+      "stratum": "simple"
+    },
+    {
+      "name": "fresh-qiro-audit",
+      "key": "qiro",
+      "value": "dune",
+      "module": "binding_fresh_1",
+      "stale": "unconfigured",
+      "request": "Set the audit label for qiro from the documentation.",
+      "document_id": "binding-fresh-qiro",
+      "document": "The service vexa uses tin for transport and chalk as its audit label. The service qiro uses cream for transport and dune as its audit label.",
+      "stratum": "neighboring_entity"
+    },
+    {
+      "name": "fresh-qiro-transport",
+      "key": "qiro",
+      "value": "cream",
+      "module": "binding_fresh_1",
+      "stale": "unconfigured",
+      "request": "Use the transport setting documented for qiro.",
+      "document_id": "binding-fresh-qiro",
+      "document": "The service vexa uses tin for transport and chalk as its audit label. The service qiro uses cream for transport and dune as its audit label.",
+      "stratum": "neighboring_entity"
+    },
+    {
+      "name": "fresh-ruva-transport",
+      "key": "ruva",
+      "value": "fleece",
+      "module": "binding_fresh_2",
+      "stale": "unconfigured",
+      "request": "Which transport should ruva use according to the documentation? Apply it.",
+      "document_id": "binding-fresh-ruva",
+      "document": "For ruva, fleece is the transport setting; its audit label is gauze. The unrelated wovi service also uses fleece for transport.",
+      "stratum": "repeated_value"
+    },
+    {
+      "name": "fresh-ruva-audit",
+      "key": "ruva",
+      "value": "gauze",
+      "module": "binding_fresh_2",
+      "stale": "unconfigured",
+      "request": "Configure ruva with its audit label.",
+      "document_id": "binding-fresh-ruva",
+      "document": "For ruva, fleece is the transport setting; its audit label is gauze. The unrelated wovi service also uses fleece for transport.",
+      "stratum": "repeated_value"
+    },
+    {
+      "name": "fresh-seki-audit",
+      "key": "seki",
+      "value": "wool",
+      "module": "binding_fresh_3",
+      "stale": "unconfigured",
+      "request": "Which audit marker is recorded for seki? Apply it.",
+      "document_id": "binding-fresh-seki",
+      "document": "The audit marker wool belongs to seki. When messages move between services, seki's configured transport is leather.",
+      "stratum": "paraphrase_order_reversal"
+    },
+    {
+      "name": "fresh-seki-transport",
+      "key": "seki",
+      "value": "leather",
+      "module": "binding_fresh_3",
+      "stale": "unconfigured",
+      "request": "Set seki's transport from the documented connection choice.",
+      "document_id": "binding-fresh-seki",
+      "document": "The audit marker wool belongs to seki. When messages move between services, seki's configured transport is leather.",
+      "stratum": "paraphrase_order_reversal"
+    },
+    {
+      "name": "unsupported-tuvo-transport",
+      "key": "tuvo",
+      "value": null,
+      "module": "binding_missing_tuvo",
+      "stale": "unconfigured",
+      "request": "Configure tuvo using its documented transport setting.",
+      "document_id": "binding-missing-tuvo",
+      "document": "The service tuvo is monitored during startup. Its owner is vexa.",
+      "stratum": "unsupported"
+    },
+    {
+      "name": "unsupported-uzmi-audit",
+      "key": "uzmi",
+      "value": null,
+      "module": "binding_missing_uzmi",
+      "stale": "unconfigured",
+      "request": "Apply the documented audit label to uzmi.",
+      "document_id": "binding-missing-uzmi",
+      "document": "The transport setting of uzmi is thorium. No audit label is specified.",
+      "stratum": "unsupported"
+    }
+  ]
+}
