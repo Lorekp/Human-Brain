@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the verified protected-contrast tradeoff and reporting recovery.
+Updated 2026-09-05 with the completed three-stream robustness comparison.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -12,41 +12,40 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current contextual evidence-to-Python result
 
-The [protected-contrast comparison](../experiments/r4_integrated/contextual_protected_contrast_result.md)
-improves affine neuronal retention from 5/16 to 9/16 but reduces fresh edits from
-6/8 to 5/8. It fails the frozen adoption rule: **RESERVED remains the baseline**.
-Both updating arms wrongly act on both unsupported requests; frozen and external
-controls solve no supported tasks. All 52 updating raw/affine outcomes agree.
-This small generated cohort passes no roadmap or protected gate.
+The [three-stream robustness comparison](../experiments/r4_integrated/contextual_robustness_result.md)
+fails adoption: **RESERVED remains the baseline**. The predeclared affine
+neuronal path gives the following RESERVED → PROTECTED results:
 
-Each arm uses 150 pair offers. PROTECTED admits 36 actual FAIL/teacher-PASS pairs
-and 114 replays, versus RESERVED's 42/108, with 69 versus 81 native updates.
-First-attempt teaching successes rise from 6/48 to 12/48. Nineteen certified
-contrasts survive, with 1,664 protected-margin checks, zero violations and zero
-projection stalls. Seven retained failures remain: three uncertified admitted
-negatives, two unexecuted old competitors and two fresh-source leaders. Fresh
-ingestion displaces one correct PROTECTED answer at unchanged weights (10→9).
-The paired fresh difference is two losses and one gain; it does not establish
-a general learning tradeoff or justify projection tuning on these instances.
+| Stream | Fresh executed edits | Retained executed edits | Correct unsupported STOPs |
+| --- | --- | --- | --- |
+| Wording | 5/8 → 1/8 | 4/16 → 9/16 | 0/2 → 0/2 |
+| Questions | 3/8 → 2/8 | 5/16 → 10/16 | 0/2 → 0/2 |
+| Competition | 0/8 → 1/8 | 4/16 → 10/16 | 0/2 → 0/2 |
 
-The original model execution completed but failed while serializing diagnostic
-NumPy scalars. Its checkpoint and raw log were preserved before a six-line
-reporting-only correction and one faithful recovery replay. All 142 logged events
-match excluding timing, and all 14 checkpoint arrays are bit-exact. The recovered
-300 PROTECTED updater/frozen offers are independently reconstructed exactly;
-RESERVED weights reproduce the previous baseline. Source/native/encoder identities,
-feedback allocation and all 572 executed transfer/retention actions verify.
+Protection improves retention in every stream but regresses fresh execution in
+two. Neither policy meets the absolute integrated targets. The same sixteen
+old queries and per-policy learning checkpoints recur across streams; these are
+new source contexts, not independent learning replications. Authored development
+cases establish no independent reading or protected-gate result.
 
-The recovery takes 347.30 seconds and peaks at 344.00 MiB parent working set;
-the earlier failed-report execution adds approximately 318.96 seconds of logged
-time. PROTECTED retains 502,892 learned auxiliary bytes plus scratch. Frozen
-learned auxiliary state stays zero. Official exam answers remain pending human
-scoring. The result report owns full costs, QA and limits, including retained raw
-sources and the shared-motor scope of evidence-selection controls.
+All nineteen protected contrasts survive; 4,992 repeated numerical checks show
+zero violations, and all fourteen checkpoint arrays match the preceding protection
+run exactly. All 156 updating raw/affine choices agree. Frozen affine and external
+references solve no supported tasks. The 1,716 transfer/retention executions
+verify selected edits, decoys and live source absence. Remaining errors involve
+incomplete acquisition, relation/span ranking and uncovered competitors. One
+correct `sand martin` edit demonstrates two-word motor support. Internally retained
+raw sources and the controls' shared learned motor limit attribution claims.
 
-The active plan owns a bounded unchanged-policy robustness comparison on untouched
-public-development streams before a new mechanism. Keep the original failed
-adoption verdict separate. The earlier
+All three executions complete without retry in 1,021.55 seconds total; per-run
+parent peak working set ranges from 346.43 to 364.23 MiB, excluding child memory.
+PROTECTED retains 502,892 learned auxiliary bytes plus scratch; frozen learned
+auxiliary state stays zero. Repeated official exam answers remain pending human
+scoring. The result report owns full paired outcomes, hashes, costs and audits.
+
+The active plan now selects a bounded compact-versus-varied teaching comparison
+using the existing RESERVED learner. The robustness exercise is closed. The
+[original protection result and reporting recovery](../experiments/r4_integrated/contextual_protected_contrast_result.md),
 [reservation improvement](../experiments/r4_integrated/contextual_reserved_feedback_result.md),
 [TRAIN-only host feasibility check](../experiments/r4_integrated/contextual_representation_feasibility_result.md),
 [capped-update rejection](../experiments/r4_integrated/contextual_capped_update_result.md)

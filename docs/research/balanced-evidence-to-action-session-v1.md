@@ -12,7 +12,7 @@ below follow that smallest integrated loop. Coding supplies exact feedback;
 language acquisition and retention must also succeed independently.
 
 Neutral frame induction and persistent facts now drive a narrow executed Python
-session; broader robustness remains unverified. Commits `955b32e` and `4f23658` establish
+session; broader robustness remains inadequate. Commits `955b32e` and `4f23658` establish
 tiny exact-token, positional, two-slot memory fixtures. They do not demonstrate
 broad reading, learned provenance revision, or integrated software competence.
 The older `b5ccc73` action bridge still uses answer-supervised upstream frames
@@ -33,56 +33,63 @@ passes its narrow recall, transfer, retention and no-action checks. Detailed
 scores and failures are in [benchmark status](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 The original eight-stage sequence below remains the integration contract.
 
-The [protected-contrast comparison](../../experiments/r4_integrated/contextual_protected_contrast_result.md)
-raises retained executed edits from 5/16 to 9/16 but lowers fresh edits from
-6/8 to 5/8. It fails its frozen no-fresh-regression adoption rule. Keep
-**RESERVED allocation**, fixed rate-one BINDING updates and affine actions as
-the development baseline; retain PROTECTED only as a fixed research comparator.
-Both unsupported requests still cause wrong actions. The result report owns the
-completed contract, reporting-only recovery, paired outcomes, hashes and costs.
+The completed [three-stream robustness comparison](../../experiments/r4_integrated/contextual_robustness_result.md)
+keeps **RESERVED allocation**, fixed rate-one BINDING updates and affine actions
+as the development baseline. PROTECTED improves retention in every stream but
+reduces fresh execution in wording and questions, failing adoption again. Both
+policies act wrongly on all unsupported requests. The result owns scores, paired
+outcomes, unchanged-weight source competition, numerical audits, hashes and costs.
+All nineteen protected contrasts survive; remaining failures concern acquisition,
+relation/span ranking and competitors absent from successful teaching contrasts.
+Raw-score/affine agreement and one correct two-word edit locate these failures
+upstream of action execution.
 
-Protection preserves all nineteen certified contrasts with zero numerical
-violations and zero projection stalls. Seven retained failures remain: three
-uncertified admitted negatives, two unexecuted old competitors and two fresh-source
-leaders. The three admitted failures received real updates but remained wrong;
-they were not exhausted directions. Fresh ingestion displaces one correct answer
-at unchanged weights, reducing PROTECTED TRAIN-store correctness from 10/16 to
-9/16. These are incomplete acquisition and competitor-coverage problems alongside
-the demonstrated benefit of preservation; one small cohort does not establish a
-general tradeoff between retention and transfer.
+**Next integrated priority: one bounded teaching-diversity comparison.** The
+fixed encoder already provides contextual features, but teaching repeatedly uses
+compact facts and a narrow question set. Test whether a more varied teaching
+presentation improves downstream use with the existing RESERVED learner. This
+is a hypothesis, not an established cause or a request for another projection
+variant. The comparison has not been implemented, frozen or run.
 
-The completed [TRAIN-only feasibility diagnostic](../../experiments/r4_integrated/contextual_representation_feasibility_result.md)
-provides a finite host witness, not learned weights or generalization. It stays
-excluded. The [capped trial](../../experiments/r4_integrated/contextual_capped_update_result.md)
-and [projection trial](../../experiments/r4_integrated/contextual_protected_contrast_protocol.md)
-retain their original outcomes; their budgets are closed. Do not add a rate sweep,
-basis eviction, extra teaching epochs or a host-solver fallback to those trials.
+- Match the fact/entity/property inventory, encounter order, fixed motor,
+  encoder/features, learning rule and maximum feedback budget across compact and
+  varied teaching. Start with sixteen taught fact queries, 48 encounters and 150
+  pair offers. Disclose changed source/candidate counts and on-policy negatives;
+  equal offer limits do not mean identical feedback exposure or compute.
+- Use one source rendition per arm, ingested once. Duplicate paraphrases can
+  violate the existing teacher's unique-span custody; do not silently choose an
+  occurrence or filter candidates. Freeze question forms and common retention
+  probes before outputs, including any variation across repeated encounters.
+- Evaluate both arms on the same untouched transfer roster with familiar and
+  broader language forms, plus old-skill retention and unsupported requests.
+  Preserve matched frozen learners and external references. Record immediate
+  acquisition, later transfer, complete-entity success and resource costs.
+- Allow at most two hours of preparation from the recorded start, then one
+  fixed comparison with at most thirty minutes total model runtime. Freeze the
+  concrete schedule, roster and per-lane decision rule first. Adoption requires
+  improved fresh execution without retained or unsupported regression; report
+  familiar/broader forms separately. Close the test at its budget boundary.
 
-**Next integrated priority:** the [robustness protocol](../../experiments/r4_integrated/contextual_robustness_protocol.md)
-specifies one bounded comparison of unchanged RESERVED and PROTECTED policies
-on untouched public-development streams; freeze its source and fixtures before outputs.
-Use three predeclared streams that broaden sentence/question form, repeated-entity
-and source competition beyond renaming. Keep the current motor and matched frozen
-and external references. Fix the data, teaching exposure, feedback budgets,
-resource limit and decision rule before outputs; allow at most two hours for
-fixture/harness preparation from 04:09 UTC and one run per stream. Do not alter learning rules,
-projection thresholds or replay priorities. This comparison is not yet frozen or
-run, and it does not erase the completed failed adoption verdict.
+If varied teaching gives no useful gain, record that result and compare
+acquisition/feedback coverage with representation limits in a bounded research
+review. Do not launch a rate sweep, extra-epoch search or fresh-label solver.
+The unchanged-policy robustness exercise, [projection trial](../../experiments/r4_integrated/contextual_protected_contrast_result.md)
+and [capped trial](../../experiments/r4_integrated/contextual_capped_update_result.md)
+are closed. The [TRAIN-only feasibility witness](../../experiments/r4_integrated/contextual_representation_feasibility_result.md)
+stays outside the learner.
 
-Report fresh, retained, unsupported and complete-entity outcomes separately per
-stream, with paired gains/losses, uncertified distinctions and unchanged-weight
-pre/post-ingestion retention. Establish which failure pattern persists before
-selecting another mechanism. Development-written cases remain development tools,
-not independent language evidence. Keep authentic public-exam questions and
-marking guidance as complementary pressure under the reading plan; do not tune
-against repeated exam answers or finalized/spent cohorts.
+Authentic official-exam development remains complementary pressure under the
+[reading plan](reading-comprehension-evaluation.md). The repeated KS2 Q6a/b items
+are regression observations with pending human marks, not fresh examination
+evidence. Select additional official passage groups through a separate frozen
+manifest; preserve paper/passage exposure boundaries and official marking guidance.
+Authored development cases do not replace independent reading evaluation.
 
 Targets remain at least 6/8 fresh and 12/16 retained edits, including both
-properties for three fresh entities in the present eight-query design; translate
-them explicitly if the new roster changes. No retrospective ablation selection
-or protected evaluation follows from a small improvement. Annotation layouts,
-provenance revision, composition and the broader challenge remain deferred until
-this integrated loop is more reliable.
+properties for three fresh entities; translate them explicitly if the next roster
+changes. Relative adoption is separate from these targets and the integrated
+gate. Annotation layouts, provenance revision, composition and the broader
+challenge remain deferred until this loop is more reliable.
 
 Use a small reusable TRAIN workload with the following eight stages. This is a
 capability sequence, not an already materialized or frozen eight-episode cohort;
