@@ -1,0 +1,1552 @@
+{
+  "status": "passed",
+  "started_unix": 1788605531.021355,
+  "synthetic_only": true,
+  "environment": {
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "HUMANBRAIN_DEVICE": "cpu",
+    "HUMANBRAIN_NATIVE_CACHE": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.native-cache"
+  },
+  "source_revision": "8e403ba0bb5a8f9f725039e54f301ff491da4c74",
+  "source_sha256": {
+    "src/humanbrain/query_aligned_rate_cell_reader.py": "f606cf4e78c8f1059f619cae1ee624c2a1cd4542250f1e8b1b06ebd0ff34a010",
+    "src/humanbrain/rate_cell_reader.py": "0209bc84c97c48e7eb326f9298fa83e0ee156471eac4309fda648a85cca77c7b",
+    "src/humanbrain/frozen_context_encoder.py": "b8694bf04537c2baf7aec1d898fc328829fee1249a370859b3dff61493e5b9b4",
+    "src/humanbrain/native.py": "3b2109f56778e591365592e7cfe39b802ccd4492060b5f1dd9606710c178eb5f",
+    "experiments/r4_integrated/query_aligned_rate_cell_preflight.py": "db8127debae2dc74e1b7cb61e788bb73e0c1ac88511e8dce59f077f399207580",
+    "experiments/r4_integrated/query_aligned_rate_cell_protocol.md": "44e52728714106819d0acd72cbb3e2e67cd206d3958b71a0f6445ac4a231de90",
+    "experiments/r4_integrated/query_aligned_rate_cell_python_session.py": "fdb803a6bd9196fd2396deda44b077799f381540b7da3eef2c8229a6c000de5d",
+    "experiments/r4_integrated/rate_cell_session_support.py": "c76da2434434bb396dbc1c5b5b37d90556ba2d3f07830f869df706fbd4665b07",
+    "experiments/r4_integrated/contextual_rate_cell_python_session.py": "7c2a711a2eb4913594ae813bfae2fc199825cd8d55f38ac1fe79983bcfde4da4",
+    "experiments/r4_integrated/contextual_full_choice_python_session.py": "d695d1cdfd7ad220bb61691bcb6c36f38862b510b1361f7992b71138273fae4c",
+    "experiments/r4_integrated/contextual_pairwise_python_session.py": "e07a6c9ce7095543dff7ef418d8fd9731a73940d53c476d48730ea0ba1a0674f",
+    "experiments/r4_integrated/contextual_evidence_python_session.py": "48018eb37b1b2f687512a75de5649aba622880dd1548692ac290009d592d04ab",
+    "experiments/r4_integrated/contextual_occurrence_motor.py": "60b5abea2ca7749ce81b65c6b3c34fbaa08efa36862317d2be16cfcf711aed90",
+    "experiments/r4_integrated/neutral_document_python_session.py": "b4aa50a80ef7accc15b51acb4009858cf0da42088e4898baa43c77c599cbab83",
+    "benchmarks/native_scaling.py": "c0814158b1231131ee15fd9f2f1ab232731df61c70b10b74ec59c4ec095ad5e7"
+  },
+  "source_git_attestation": {
+    "src/humanbrain/query_aligned_rate_cell_reader.py": {
+      "raw_sha256": "f606cf4e78c8f1059f619cae1ee624c2a1cd4542250f1e8b1b06ebd0ff34a010",
+      "git_sha256": "f606cf4e78c8f1059f619cae1ee624c2a1cd4542250f1e8b1b06ebd0ff34a010",
+      "normalization": "exact"
+    },
+    "src/humanbrain/rate_cell_reader.py": {
+      "raw_sha256": "0209bc84c97c48e7eb326f9298fa83e0ee156471eac4309fda648a85cca77c7b",
+      "git_sha256": "0209bc84c97c48e7eb326f9298fa83e0ee156471eac4309fda648a85cca77c7b",
+      "normalization": "exact"
+    },
+    "src/humanbrain/frozen_context_encoder.py": {
+      "raw_sha256": "b8694bf04537c2baf7aec1d898fc328829fee1249a370859b3dff61493e5b9b4",
+      "git_sha256": "b8694bf04537c2baf7aec1d898fc328829fee1249a370859b3dff61493e5b9b4",
+      "normalization": "exact"
+    },
+    "src/humanbrain/native.py": {
+      "raw_sha256": "3b2109f56778e591365592e7cfe39b802ccd4492060b5f1dd9606710c178eb5f",
+      "git_sha256": "3b2109f56778e591365592e7cfe39b802ccd4492060b5f1dd9606710c178eb5f",
+      "normalization": "exact"
+    },
+    "experiments/r4_integrated/query_aligned_rate_cell_preflight.py": {
+      "raw_sha256": "db8127debae2dc74e1b7cb61e788bb73e0c1ac88511e8dce59f077f399207580",
+      "git_sha256": "db8127debae2dc74e1b7cb61e788bb73e0c1ac88511e8dce59f077f399207580",
+      "normalization": "exact"
+    },
+    "experiments/r4_integrated/query_aligned_rate_cell_protocol.md": {
+      "raw_sha256": "44e52728714106819d0acd72cbb3e2e67cd206d3958b71a0f6445ac4a231de90",
+      "git_sha256": "44e52728714106819d0acd72cbb3e2e67cd206d3958b71a0f6445ac4a231de90",
+      "normalization": "exact"
+    },
+    "experiments/r4_integrated/query_aligned_rate_cell_python_session.py": {
+      "raw_sha256": "fdb803a6bd9196fd2396deda44b077799f381540b7da3eef2c8229a6c000de5d",
+      "git_sha256": "fdb803a6bd9196fd2396deda44b077799f381540b7da3eef2c8229a6c000de5d",
+      "normalization": "exact"
+    },
+    "experiments/r4_integrated/rate_cell_session_support.py": {
+      "raw_sha256": "c76da2434434bb396dbc1c5b5b37d90556ba2d3f07830f869df706fbd4665b07",
+      "git_sha256": "c76da2434434bb396dbc1c5b5b37d90556ba2d3f07830f869df706fbd4665b07",
+      "normalization": "exact"
+    },
+    "experiments/r4_integrated/contextual_rate_cell_python_session.py": {
+      "raw_sha256": "7c2a711a2eb4913594ae813bfae2fc199825cd8d55f38ac1fe79983bcfde4da4",
+      "git_sha256": "7c2a711a2eb4913594ae813bfae2fc199825cd8d55f38ac1fe79983bcfde4da4",
+      "normalization": "exact"
+    },
+    "experiments/r4_integrated/contextual_full_choice_python_session.py": {
+      "raw_sha256": "d695d1cdfd7ad220bb61691bcb6c36f38862b510b1361f7992b71138273fae4c",
+      "git_sha256": "356684e770bad5e332130c3b7849bf763c7e8f40f579b9b19b892ceb5cea61ca",
+      "normalization": "working_CRLF_to_git_LF"
+    },
+    "experiments/r4_integrated/contextual_pairwise_python_session.py": {
+      "raw_sha256": "e07a6c9ce7095543dff7ef418d8fd9731a73940d53c476d48730ea0ba1a0674f",
+      "git_sha256": "e07a6c9ce7095543dff7ef418d8fd9731a73940d53c476d48730ea0ba1a0674f",
+      "normalization": "exact"
+    },
+    "experiments/r4_integrated/contextual_evidence_python_session.py": {
+      "raw_sha256": "48018eb37b1b2f687512a75de5649aba622880dd1548692ac290009d592d04ab",
+      "git_sha256": "48018eb37b1b2f687512a75de5649aba622880dd1548692ac290009d592d04ab",
+      "normalization": "exact"
+    },
+    "experiments/r4_integrated/contextual_occurrence_motor.py": {
+      "raw_sha256": "60b5abea2ca7749ce81b65c6b3c34fbaa08efa36862317d2be16cfcf711aed90",
+      "git_sha256": "60b5abea2ca7749ce81b65c6b3c34fbaa08efa36862317d2be16cfcf711aed90",
+      "normalization": "exact"
+    },
+    "experiments/r4_integrated/neutral_document_python_session.py": {
+      "raw_sha256": "b4aa50a80ef7accc15b51acb4009858cf0da42088e4898baa43c77c599cbab83",
+      "git_sha256": "b4aa50a80ef7accc15b51acb4009858cf0da42088e4898baa43c77c599cbab83",
+      "normalization": "exact"
+    },
+    "benchmarks/native_scaling.py": {
+      "raw_sha256": "c0814158b1231131ee15fd9f2f1ab232731df61c70b10b74ec59c4ec095ad5e7",
+      "git_sha256": "c0814158b1231131ee15fd9f2f1ab232731df61c70b10b74ec59c4ec095ad5e7",
+      "normalization": "exact"
+    }
+  },
+  "numerical_receipt": {
+    "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\query-aligned-preparation-attestation.json",
+    "sha256": "93659150bc3acada8cf481241e5086f7d40ad5720440718bd11f28d6d2d101c1",
+    "receipt": {
+      "numerical_check": {
+        "A_V_identity_initialization": true,
+        "base_adam_reference_sha256": "1570772f4ad9145f0f511bc35a0b7048b46fd6be1eab6d53d1b0ff3b20b9ca7c",
+        "changed_state_replay": true,
+        "clipping": [
+          {
+            "active_norm": 3.5419345573295957,
+            "mode": "trainable",
+            "scale": 0.2823315856953437,
+            "warmed_inactive_moments_frozen": true
+          },
+          {
+            "active_norm": 3.541929589531022,
+            "mode": "frozen_producer",
+            "scale": 0.28233198168470863,
+            "warmed_inactive_moments_frozen": true
+          },
+          {
+            "active_norm": 3.0127830322675697,
+            "mode": "bypass",
+            "scale": 0.33191902280707897,
+            "warmed_inactive_moments_frozen": true
+          },
+          {
+            "active_norm": 0.0,
+            "mode": "frozen",
+            "scale": 1.0,
+            "warmed_inactive_moments_frozen": true
+          }
+        ],
+        "duplicate_gold_occurrences": 2,
+        "elapsed_seconds": 0.478103999979794,
+        "finite_difference_coordinates": 48,
+        "finite_difference_max_abs_error": 4.227224775733493e-10,
+        "four_to_eight_word_spans": true,
+        "full_coordinate_cases": [
+          {
+            "all_coordinates": 37313,
+            "mode": "trainable",
+            "query": "three-word",
+            "target": "duplicate-four-word"
+          },
+          {
+            "all_coordinates": 37313,
+            "mode": "trainable",
+            "query": "three-word",
+            "target": "STOP"
+          },
+          {
+            "all_coordinates": 37313,
+            "mode": "trainable",
+            "query": "empty",
+            "target": "duplicate-four-word"
+          },
+          {
+            "all_coordinates": 37313,
+            "mode": "trainable",
+            "query": "empty",
+            "target": "STOP"
+          },
+          {
+            "all_coordinates": 37313,
+            "mode": "frozen_producer",
+            "query": "three-word",
+            "target": "duplicate-four-word"
+          },
+          {
+            "all_coordinates": 37313,
+            "mode": "frozen_producer",
+            "query": "three-word",
+            "target": "STOP"
+          },
+          {
+            "all_coordinates": 37313,
+            "mode": "frozen_producer",
+            "query": "empty",
+            "target": "duplicate-four-word"
+          },
+          {
+            "all_coordinates": 37313,
+            "mode": "frozen_producer",
+            "query": "empty",
+            "target": "STOP"
+          },
+          {
+            "all_coordinates": 37313,
+            "mode": "bypass",
+            "query": "three-word",
+            "target": "duplicate-four-word"
+          },
+          {
+            "all_coordinates": 37313,
+            "mode": "bypass",
+            "query": "three-word",
+            "target": "STOP"
+          },
+          {
+            "all_coordinates": 37313,
+            "mode": "bypass",
+            "query": "empty",
+            "target": "duplicate-four-word"
+          },
+          {
+            "all_coordinates": 37313,
+            "mode": "bypass",
+            "query": "empty",
+            "target": "STOP"
+          },
+          {
+            "all_coordinates": 37313,
+            "mode": "frozen",
+            "query": "three-word",
+            "target": "duplicate-four-word"
+          },
+          {
+            "all_coordinates": 37313,
+            "mode": "frozen",
+            "query": "three-word",
+            "target": "STOP"
+          },
+          {
+            "all_coordinates": 37313,
+            "mode": "frozen",
+            "query": "empty",
+            "target": "duplicate-four-word"
+          },
+          {
+            "all_coordinates": 37313,
+            "mode": "frozen",
+            "query": "empty",
+            "target": "STOP"
+          }
+        ],
+        "implementation": {
+          "Adam_reference_utf8": "\"\"\"Independent synthetic rate-cell objective/BPTT reference; no learner imports.\"\"\"\nfrom __future__ import annotations\nimport json\nimport math\nfrom pathlib import Path\nfrom hashlib import sha256\nimport numpy as np\n\n\ndef all_spans(documents):\n    return [(window,left,right) for window,doc in enumerate(documents)\n            for left in range(len(doc)) for right in range(left+1,len(doc)+1)]\n\n\ndef lse(x):\n    maximum=float(np.max(x))\n    return maximum+math.log(math.fsum(math.exp(float(v)-maximum) for v in x))\n\n\ndef forward(parameters, query, documents, spans, *, bypass=False):\n    \"\"\"Independent loop forward; right endpoints exclusive, windows reset.\"\"\"\n    W,U,b=parameters['W'],parameters['U'],parameters['b']\n    states=[];trajectories=[];query_inputs=[np.append(x,[1.,0.]) for x in query]\n    for document in documents:\n        inputs=np.asarray(query_inputs+[np.append(x,[0.,1.]) for x in document])\n        if bypass:\n            query_mean=np.mean(query,axis=0) if len(query) else np.zeros(W.shape[1]-2)\n            projected_query=W@np.append(query_mean,[1.,0.])\n            document_states=np.asarray([np.tanh(W@np.append(x,[0.,1.])+projected_query+b) for x in document])\n            trajectories.append(None)\n        else:\n            previous=np.zeros(U.shape[0]);trace=[]\n            for x in inputs:\n                activation=np.tanh(W@x+U@previous+b)\n                current=.5*previous+.5*activation\n                trace.append((x,previous.copy(),activation,current.copy()))\n                previous=current\n            document_states=np.stack([row[3] for row in trace[len(query):]])\n            trajectories.append(trace)\n        states.append(document_states)\n    scores=[]\n    A,B,C=parameters['span']\n    for window,left,right in spans:\n        h=states[window]\n        scores.append(float(A@h[left]+B@h[right-1]+C@np.mean(h[left:right],axis=0)))\n    total_words=sum(len(h) for h in states)\n    pooled=sum((h.sum(axis=0) for h in states),np.zeros(U.shape[0]))/total_words\n    stop=float(parameters['stop']@pooled+parameters['stop_bias'][0])\n    return {'scores':np.array(scores),'stop_logit':stop,'states':states,'traces':trajectories,'pooled':pooled}\n\n\ndef objective_and_gradient(parameters, query, documents, spans, gold, *, bypass=False):\n    \"\"\"Scalar objective plus independent manual reverse accumulation.\"\"\"\n    result=forward(parameters,query,documents,spans,bypass=bypass)\n    z=result['stop_logit'];stop_target=gold is None\n    gate_loss=max(z,0)+math.log1p(math.exp(-abs(z)))-int(stop_target)*z\n    sigmoid=(1/(1+math.exp(-z))) if z>=0 else math.exp(z)/(1+math.exp(z))\n    dz=sigmoid-int(stop_target)\n    gradient={key:np.zeros_like(value) for key,value in parameters.items()}\n    gradient['stop']=dz*result['pooled'];gradient['stop_bias'][0]=dz\n    total_words=sum(len(h) for h in result['states'])\n    state_grad=[np.tile(dz*parameters['stop']/total_words,(len(h),1)) for h in result['states']]\n    span_loss=0.\n    if gold is not None:\n        assert len(gold)>0 and len(set(gold))==len(gold)\n        scores=result['scores'];normalizer=lse(scores);gold_normalizer=lse(scores[list(gold)])\n        span_loss=normalizer-gold_normalizer\n        coefficients=np.exp(scores-normalizer)\n        for index in gold:coefficients[index]-=math.exp(float(scores[index])-gold_normalizer)\n        for coefficient,(window,left,right) in zip(coefficients,spans,strict=True):\n            h=result['states'][window];gh=state_grad[window]\n            gradient['span'][0]+=coefficient*h[left]\n            gradient['span'][1]+=coefficient*h[right-1]\n            gradient['span'][2]+=coefficient*np.mean(h[left:right],axis=0)\n            gh[left]+=coefficient*parameters['span'][0]\n            gh[right-1]+=coefficient*parameters['span'][1]\n            gh[left:right]+=coefficient*parameters['span'][2]/(right-left)\n    if not bypass:\n        for trace,direct in zip(result['traces'],state_grad,strict=True):\n            carry=np.zeros(parameters['U'].shape[0])\n            for t in range(len(trace)-1,-1,-1):\n                x,previous,activation,_=trace[t]\n                adjoint=carry.copy()\n                if t>=len(query):adjoint+=direct[t-len(query)]\n                da=.5*adjoint*(1-activation*activation)\n                gradient['W']+=np.outer(da,x)\n                gradient['U']+=np.outer(da,previous)\n                gradient['b']+=da\n                carry=.5*adjoint+parameters['U'].T@da\n    return {'loss':gate_loss+span_loss,'gate_loss':gate_loss,'span_loss':span_loss,'gradient':gradient,**result}\n\n\ndef finite_difference(parameters,query,documents,spans,gold,coordinates, *, bypass=False,epsilon=1e-6):\n    records=[]\n    for key,index in coordinates:\n        original=float(parameters[key][index]);losses=[]\n        for sign in (-1,1):\n            parameters[key][index]=original+sign*epsilon\n            losses.append(objective_and_gradient(parameters,query,documents,spans,gold,bypass=bypass)['loss'])\n        parameters[key][index]=original\n        records.append((key,index,(losses[1]-losses[0])/(2*epsilon)))\n    return records\n\n\ndef independent_adam(parameters, moments, variances, counters, gradient, active, *, rate=.001,clip=1.):\n    \"\"\"Only listed parameters affect norm or advance moments/counters.\"\"\"\n    squared=math.fsum(float(x)*float(x) for key in active for x in gradient[key].flat)\n    norm=math.sqrt(squared);scale=min(1.,clip/norm) if norm else 1.\n    output={key:value.copy() for key,value in parameters.items()}\n    m={key:value.copy() for key,value in moments.items()};v={key:value.copy() for key,value in variances.items()};t=dict(counters)\n    for key in active:\n        g=gradient[key]*scale;t[key]+=1\n        m[key]=.9*m[key]+.1*g;v[key]=.999*v[key]+.001*g*g\n        output[key]-=rate*(m[key]/(1-.9**t[key]))/(np.sqrt(v[key]/(1-.999**t[key]))+1e-8)\n    return output,m,v,t,{'norm':norm,'scale':scale}\n\n\ndef selfcheck():\n    rng=np.random.default_rng(1703);hidden=3;inputs=4\n    p={'W':rng.normal(0,.15,(hidden,inputs+2)),'U':rng.normal(0,.12,(hidden,hidden)),\n       'b':rng.normal(0,.03,hidden),'span':rng.normal(0,.1,(3,hidden)),\n       'stop':rng.normal(0,.1,hidden),'stop_bias':np.array([.02])}\n    query=rng.normal(0,.3,(2,inputs));docs=[rng.normal(0,.3,(3,inputs)),rng.normal(0,.3,(8,inputs))]\n    spans=all_spans(docs);gold=[spans.index((0,0,3)),spans.index((1,2,6))]\n    coordinates=[(key,index) for key,value in p.items() for index in np.ndindex(value.shape)]\n    errors=[]\n    for targets in (gold,None):\n        expected=objective_and_gradient(p,query,docs,spans,targets)\n        for key,index,numerical in finite_difference(p,query,docs,spans,targets,coordinates):\n            error=abs(numerical-expected['gradient'][key][index]);errors.append(error)\n            assert error<2e-7,(targets,key,index,error)\n        if targets is None:assert expected['span_loss']==0 and not np.any(expected['gradient']['span'])\n    by=forward(p,query,docs,spans,bypass=True);other=forward(p,query+.2,docs,spans,bypass=True)\n    assert np.max(np.abs(by['scores']-other['scores']))>1e-6\n    moments={key:np.full_like(value,.01) for key,value in p.items()};variances={key:np.full_like(value,.02) for key,value in p.items()};counters={key:7 for key in p}\n    g=objective_and_gradient(p,query,docs,spans,None)['gradient']\n    post,m,v,t,_=independent_adam(p,moments,variances,counters,g,[key for key in p if key!='span'])\n    assert np.array_equal(post['span'],p['span']) and np.array_equal(m['span'],moments['span']) and np.array_equal(v['span'],variances['span']) and t['span']==7\n    return {'status':'passed','scope':'Synthetic independent reference selfcheck only, no core parity or acquisition claim.',\n            'finite_difference_coordinates_per_objective':len(coordinates),'objectives':['duplicate-supported','STOP'],\n            'max_abs_finite_difference_error':max(errors),'unequal_window_word_counts':[3,8],\n            'bypass_query_dependence':True,'STOP_inactive_nonzero_moments_frozen':True,\n            'script_sha256':sha256(Path(__file__).read_bytes()).hexdigest()}\n\n\nif __name__=='__main__':print(json.dumps(selfcheck(),indent=2))\n",
+          "checker_utf8": "\"\"\"Independent synthetic alignment gradient, optimizer and custody checks.\"\"\"\nimport importlib.util,json,sys,time\nfrom hashlib import sha256\nfrom pathlib import Path\nimport numpy as np\nROOT=Path.cwd();HERE=Path(__file__).resolve();CORE=ROOT/'src/humanbrain/query_aligned_rate_cell_reader.py';BASE=ROOT/'src/humanbrain/rate_cell_reader.py'\nsource_hashes={p.relative_to(ROOT).as_posix():sha256(p.read_bytes()).hexdigest() for p in (CORE,BASE)}\ndef load(path,name):\n    spec=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m\nrefpath=ROOT/'.pytest-tmp/query-aligned-independent-reference.py';ref=load(refpath,'alignment_independent_reference')\nbasepath=ROOT/'.pytest-tmp/rate-cell-independent-reference.py';base=load(basepath,'base_independent_adam')\nfrom humanbrain.query_aligned_rate_cell_reader import QueryAlignedRateCellReader\nfrom humanbrain.rate_cell_reader import RateCellReader,TokenInput,TokenDocument,SpanInventory,_word_spans\nMAP={'input_weights':'W','recurrent_weights':'U','cell_bias':'b','span_heads':'span','stop_head':'stop','stop_bias':'stop_bias','attention_weights':'A','query_context_weights':'V'}\nPRODUCER=('input_weights','recurrent_weights','cell_bias','attention_weights','query_context_weights')\nrng=np.random.default_rng(9137);began=time.perf_counter();errors=[];fd_errors=[];checks=[]\ndef close(a,b,label):\n    a=np.asarray(a);b=np.asarray(b);err=float(np.max(np.abs(a-b))) if a.size else 0.\n    assert np.isfinite(a).all() and np.isfinite(b).all() and np.all(np.abs(a-b)<=1e-10+1e-10*np.abs(b)),(label,err)\n    errors.append(err);return err\n\ndef tokens(text):\n    raw=text.encode();spans=_word_spans(raw);v=rng.normal(size=(len(spans),384));v/=np.maximum(np.linalg.norm(v,axis=1,keepdims=True),1e-12)\n    return TokenInput(raw,spans,v,'synthetic-no-encoder')\nquery=tokens('which vivid marker');empty=tokens('')\ndocs=(TokenDocument(b'one',b'synthetic',tokens('green red amber blue jade')),TokenDocument(b'two',b'synthetic',tokens('silver green red amber blue violet gold black')))\ninventory=SpanInventory(docs);vectors=[w.vectors for w in inventory.windows];spans=ref.all_spans(vectors);gold=inventory.gold_indices(b'green red amber blue');assert len(gold)==2\n\ndef parameters(reader):return {alias:reader.checkpoint_arrays()['weight_'+key].copy() for key,alias in MAP.items()}\ndef compare(reader,q,target):\n    checkpoint=reader.checkpoint_sha256\n    _,actual,audit=reader.loss_and_gradients(q,inventory,target)\n    wanted=ref.objective_and_gradient(parameters(reader),q.vectors,vectors,spans,target,bypass=reader.mode=='bypass')\n    for k in ('loss','gate_loss','span_loss','stop_logit','p_stop'):close(audit[k],wanted[k],k)\n    prediction=reader.predict(q,inventory);close(prediction.span_scores,wanted['scores'],'whole span scores');close(prediction.stop_logit,wanted['stop_logit'],'STOP')\n    for key,alias in MAP.items():close(actual[key],wanted['gradient'][alias],key)\n    assert checkpoint==reader.checkpoint_sha256\n    return wanted,actual\n\nfor mode in ('trainable','frozen_producer','bypass','frozen'):\n    reader=QueryAlignedRateCellReader(mode=mode);prefix=RateCellReader(mode=mode)\n    for k in tuple(MAP)[:6]:assert np.array_equal(reader.checkpoint_arrays()['weight_'+k],prefix.checkpoint_arrays()['weight_'+k])\n    assert np.array_equal(reader._weights['attention_weights'],np.eye(64)) and np.array_equal(reader._weights['query_context_weights'],np.eye(64))\n    for qname,q in (('three-word',query),('empty',empty)):\n        for target in (gold,None):\n            wanted,actual=compare(reader,q,target);checks.append({'mode':mode,'query':qname,'target':'STOP' if target is None else 'duplicate-four-word','all_coordinates':sum(g.size for g in actual.values())})\n            if not len(q.vectors):assert not actual['attention_weights'].any() and not actual['query_context_weights'].any()\n    # Non-diagonal nonsymmetric matrices expose transpose errors hidden by identity.\n    reader._weights['attention_weights']+=rng.normal(0,.15,(64,64))\n    reader._weights['query_context_weights']+=rng.normal(0,.15,(64,64))\n    reader._weights['cell_bias']+=rng.normal(0,.08,64)\n    for target in (gold,None):\n        wanted,actual=compare(reader,query,target)\n        if mode=='trainable':\n            coords=[]\n            for key,g in wanted['gradient'].items():\n                coords.extend([(key,np.unravel_index(np.argmax(np.abs(g)),g.shape)),(key,tuple(0 for _ in g.shape))])\n            coords.extend([('A',(3,19)),('A',(19,3)),('V',(3,19)),('V',(19,3)),('W',(7,384)),('W',(7,385)),('U',(3,19)),('U',(19,3))])\n            for key,index,numerical in ref.finite_difference(parameters(reader),query.vectors,vectors,spans,target,coords):\n                err=abs(numerical-wanted['gradient'][key][index]);fd_errors.append(err);assert err<2e-7,(key,index,err)\n    # Three recomputed offers: train, STOP after nonzero moments, then replay.\n    gradients=[]\n    for target in (gold,None,gold):\n        before=reader.checkpoint_arrays();p=parameters(reader);wanted,_=compare(reader,query,target)\n        active=[] if mode=='frozen' else [k for k in MAP if not ((mode in ('frozen_producer','bypass') and k in PRODUCER) or (target is None and k=='span_heads'))]\n        m={alias:before['adam_first_'+k] for k,alias in MAP.items()};v={alias:before['adam_second_'+k] for k,alias in MAP.items()};t=dict(zip(MAP.values(),before['adam_steps'].tolist()))\n        expected,em,ev,et,stats=base.independent_adam(p,m,v,t,wanted['gradient'],[MAP[k] for k in active])\n        receipt=reader.observe(query,inventory,target);after=reader.checkpoint_arrays();assert receipt['active_parameters']==active\n        close(receipt['gradient_norm'],stats['norm'],'active norm');close(receipt['clip_scale'],stats['scale'],'clip scale')\n        for key,alias in MAP.items():\n            close(after['weight_'+key],expected[alias],key+' Adam weights');close(after['adam_first_'+key],em[alias],key+' Adam first');close(after['adam_second_'+key],ev[alias],key+' Adam second')\n            assert receipt['adam_steps_after'][key]==et[alias]\n            if key not in active:\n                assert all(np.array_equal(before[prefix+key],after[prefix+key]) for prefix in ('weight_','adam_first_','adam_second_'))\n                assert receipt['adam_steps_before'][key]==receipt['adam_steps_after'][key]\n        if target is None and mode!='frozen':assert np.any(before['adam_first_span_heads'])\n        gradients.append(receipt['gradient_sha256'])\n    if mode!='frozen':assert gradients[0]!=gradients[2]\n    # A query permutation changes recurrent prefix state but not fixed bypass's\n    # symmetric query-set attention; a changed token must influence both.\n    changed=tokens('different marker tokens')\n    assert np.max(np.abs(reader.predict(changed,inventory).span_scores-reader.predict(query,inventory).span_scores))>1e-10\n\n# Actual active clipping and nonzero dormant optimizer state in all controls.\nclipping=[]\nfor mode in ('trainable','frozen_producer','bypass','frozen'):\n    reader=QueryAlignedRateCellReader(mode=mode);reader._weights['cell_bias'][:]=.5\n    for k in MAP:reader._first[k][:]=.01;reader._second[k][:]=.02;reader._steps[k]=7\n    before=reader.checkpoint_arrays();p=parameters(reader);wanted,_=compare(reader,query,None)\n    active=[] if mode=='frozen' else [k for k in MAP if k!='span_heads' and not(mode in ('frozen_producer','bypass') and k in PRODUCER)]\n    expected,em,ev,et,stats=base.independent_adam(p,{a:before['adam_first_'+k] for k,a in MAP.items()},{a:before['adam_second_'+k] for k,a in MAP.items()},dict(zip(MAP.values(),before['adam_steps'].tolist())),wanted['gradient'],[MAP[k] for k in active])\n    receipt=reader.observe(query,inventory,None);after=reader.checkpoint_arrays()\n    if mode!='frozen':assert 0<receipt['clip_scale']<1\n    for k,a in MAP.items():\n        close(after['weight_'+k],expected[a],'clipped '+k);close(after['adam_first_'+k],em[a],'first '+k);close(after['adam_second_'+k],ev[a],'second '+k);assert receipt['adam_steps_after'][k]==et[a]\n        if k not in active:assert all(np.array_equal(before[prefix+k],after[prefix+k]) for prefix in ('weight_','adam_first_','adam_second_'))\n    clipping.append({'mode':mode,'active_norm':receipt['gradient_norm'],'scale':receipt['clip_scale'],'warmed_inactive_moments_frozen':True})\n\n# Complete original-byte spans, repeated occurrences, independent window resets.\nsecond=docs[1].tokens\nfor length in range(4,9):\n    raw=second.raw[second.byte_spans[0][0]:second.byte_spans[length-1][1]];assert inventory.gold_indices(raw)\nassert all(c.emitted==docs[c.document_index].tokens.raw[c.byte_start:c.byte_end] for c in inventory.candidates)\nreader=QueryAlignedRateCellReader();solo=SpanInventory((docs[0],));assert np.array_equal(reader.predict(query,solo).span_scores,reader.predict(query,inventory).span_scores[:len(solo.candidates)])\ncurrent=reader.checkpoint_sha256;grown=SpanInventory(docs+(TokenDocument(b'growth',b'synthetic',tokens('new unrelated silver meadow')),));reader.predict(query,grown);assert reader.checkpoint_sha256==current\nassert source_hashes=={p.relative_to(ROOT).as_posix():sha256(p.read_bytes()).hexdigest() for p in (CORE,BASE)},'source changed during audit'\nreport={'status':'passed','scope':__doc__,'source_sha256':source_hashes,'reference_sha256':sha256(refpath.read_bytes()).hexdigest(),'base_adam_reference_sha256':sha256(basepath.read_bytes()).hexdigest(),'script_sha256':sha256(HERE.read_bytes()).hexdigest(),'tolerance':{'absolute':1e-10,'relative':1e-10,'finite_difference_absolute':2e-7},'full_coordinate_cases':checks,'max_absolute_parity_error':max(errors),'finite_difference_coordinates':len(fd_errors),'finite_difference_max_abs_error':max(fd_errors),'clipping':clipping,'four_to_eight_word_spans':True,'duplicate_gold_occurrences':2,'independent_window_reset':True,'changed_state_replay':True,'source_growth_read_only':True,'old6_initial_arrays_exact':True,'A_V_identity_initialization':True,'elapsed_seconds':time.perf_counter()-began,'no_actual_TRAIN_or_encoder_or_cost_calls':True,'implementation':{'checker_utf8':HERE.read_bytes().decode('utf-8'),'reference_utf8':refpath.read_bytes().decode('utf-8'),'Adam_reference_utf8':basepath.read_bytes().decode('utf-8')}}\nout=Path(sys.argv[1])\nwith out.open('x',encoding='utf-8',newline='\\n') as stream:json.dump(report,stream,indent=2,allow_nan=False);stream.write('\\n')\nprint(json.dumps({k:v for k,v in report.items() if k not in ('implementation','full_coordinate_cases')},indent=2))\r\n",
+          "reference_utf8": "\"\"\"Independent query-alignment recurrence and manual BPTT, synthetic audit only.\"\"\"\nfrom __future__ import annotations\nimport json,math\nfrom hashlib import sha256\nfrom pathlib import Path\nimport numpy as np\n\ndef all_spans(documents):\n    return [(window,left,right) for window,doc in enumerate(documents) for left in range(len(doc)) for right in range(left+1,len(doc)+1)]\n\ndef lse(values):\n    maximum=float(np.max(values))\n    return maximum+math.log(math.fsum(math.exp(float(v)-maximum) for v in values))\n\ndef forward(p,query,documents,spans,bypass=False):\n    hidden=len(p['b']);scale=math.sqrt(hidden);query_states=[];query_trace=[];prev=np.zeros(hidden)\n    for vector in query:\n        x=np.r_[vector,1.,0.];r=p['W']@x+p['b']\n        activation=np.tanh(r if bypass else r+p['U']@prev)\n        current=activation if bypass else .5*prev+.5*activation\n        query_trace.append((x,prev,activation));query_states.append(current);prev=current\n    u=np.asarray(query_states).reshape(-1,hidden)\n    aligned=(p['A']@u.T) if len(u) else np.zeros((hidden,0))\n    states=[];traces=[]\n    for document in documents:\n        prev=u[-1].copy() if len(u) and not bypass else np.zeros(hidden)\n        h=[];trace=[]\n        for vector in document:\n            x=np.r_[vector,0.,1.];r=p['W']@x+p['b']\n            if len(u):\n                logits=(r@aligned)/scale;exp=np.exp(logits-logits.max());alpha=exp/exp.sum();context=alpha@u\n            else:alpha=np.zeros(0);context=np.zeros(hidden)\n            activation=np.tanh(r+p['V']@context+(p['U']@prev if not bypass else 0))\n            current=activation if bypass else .5*prev+.5*activation\n            trace.append((x,r,prev,alpha,context,activation));h.append(current);prev=current\n        states.append(np.asarray(h).reshape(-1,hidden));traces.append(trace)\n    scores=np.array([p['span'][0]@states[w][a]+p['span'][1]@states[w][b-1]+p['span'][2]@states[w][a:b].mean(0) for w,a,b in spans])\n    count=sum(map(len,documents));pooled=sum((h.sum(0) for h in states),np.zeros(hidden))/max(1,count)\n    z=float(p['stop']@pooled+p['stop_bias'][0]);sigmoid=1/(1+math.exp(-z)) if z>=0 else math.exp(z)/(1+math.exp(z))\n    return dict(scores=scores,stop_logit=z,p_stop=sigmoid,pooled=pooled,states=states,traces=traces,query_states=u,query_trace=query_trace)\n\ndef objective_and_gradient(p,query,documents,spans,gold,bypass=False,fixed_bypass_gradient=True):\n    out=forward(p,query,documents,spans,bypass);z=out['stop_logit'];target=int(gold is None)\n    gate=max(z,0)+math.log1p(math.exp(-abs(z)))-target*z;span_loss=0.;g={k:np.zeros_like(v) for k,v in p.items()}\n    dz=out['p_stop']-target;g['stop']=dz*out['pooled'];g['stop_bias'][0]=dz\n    count=sum(map(len,documents));direct=[np.tile(dz*p['stop']/max(1,count),(len(doc),1)) for doc in documents]\n    if gold is not None:\n        normal=lse(out['scores']);selected=lse(out['scores'][list(gold)]);span_loss=normal-selected\n        coefficients=np.exp(out['scores']-normal);coefficients[list(gold)]-=np.exp(out['scores'][list(gold)]-selected)\n        for coefficient,(w,a,b) in zip(coefficients,spans,strict=True):\n            h=out['states'][w]\n            g['span'][0]+=coefficient*h[a];g['span'][1]+=coefficient*h[b-1];g['span'][2]+=coefficient*h[a:b].mean(0)\n            direct[w][a]+=coefficient*p['span'][0];direct[w][b-1]+=coefficient*p['span'][1];direct[w][a:b]+=coefficient*p['span'][2]/(b-a)\n    u=out['query_states'];du=np.zeros_like(u);hidden=len(p['b']);scale=math.sqrt(hidden)\n    for trace,dh in zip(out['traces'],direct,strict=True):\n        carry=np.zeros(hidden)\n        for t in range(len(trace)-1,-1,-1):\n            x,r,previous,alpha,context,activation=trace[t]\n            adjoint=dh[t]+(carry if not bypass else 0)\n            da=(1 if bypass else .5)*adjoint*(1-activation*activation)\n            g['V']+=np.outer(da,context);dc=p['V'].T@da;dr=da.copy()\n            if len(u):\n                dalpha=u@dc;ds=alpha*(dalpha-float(alpha@dalpha));weighted_query=ds@u\n                g['A']+=np.outer(r,weighted_query)/scale\n                dr+=(p['A']@weighted_query)/scale\n                du+=np.outer(alpha,dc)+np.outer(ds,p['A'].T@r)/scale\n            g['W']+=np.outer(dr,x);g['b']+=dr\n            if not bypass:\n                g['U']+=np.outer(da,previous);carry=.5*adjoint+p['U'].T@da\n        if len(u) and not bypass:du[-1]+=carry\n    carry=np.zeros(hidden)\n    for j in range(len(out['query_trace'])-1,-1,-1):\n        x,previous,activation=out['query_trace'][j];adjoint=du[j]+(carry if not bypass else 0)\n        da=(1 if bypass else .5)*adjoint*(1-activation*activation)\n        g['W']+=np.outer(da,x);g['b']+=da\n        if not bypass:g['U']+=np.outer(da,previous);carry=.5*adjoint+p['U'].T@da\n    if bypass and fixed_bypass_gradient:\n        for key in ('W','U','b','A','V'):g[key].fill(0)\n    return dict(loss=gate+span_loss,gate_loss=gate,span_loss=span_loss,gradient=g,**out)\n\ndef finite_difference(p,query,documents,spans,gold,coordinates,bypass=False,epsilon=1e-6):\n    result=[]\n    for key,index in coordinates:\n        old=float(p[key][index]);loss=[]\n        for sign in (-1,1):\n            p[key][index]=old+sign*epsilon\n            loss.append(objective_and_gradient(p,query,documents,spans,gold,bypass,fixed_bypass_gradient=False)['loss'])\n        p[key][index]=old;result.append((key,index,(loss[1]-loss[0])/(2*epsilon)))\n    return result\n\ndef selfcheck():\n    rng=np.random.default_rng(7641);h=4;d=6\n    p={'W':rng.normal(0,.2,(h,d+2)),'U':rng.normal(0,.15,(h,h)),'b':rng.normal(0,.1,h),'span':rng.normal(0,.2,(3,h)),'stop':rng.normal(0,.2,h),'stop_bias':np.array([.1]),'A':rng.normal(0,.2,(h,h)),'V':rng.normal(0,.2,(h,h))}\n    query=rng.normal(0,.4,(3,d));docs=[rng.normal(0,.4,(3,d)),rng.normal(0,.4,(8,d))];spans=all_spans(docs)\n    coordinates=[(key,index) for key,value in p.items() for index in np.ndindex(value.shape)];errors=[]\n    for bypass in (False,True):\n        for gold in (None,(0,7)):\n            want=objective_and_gradient(p,query,docs,spans,gold,bypass,fixed_bypass_gradient=False)\n            for key,index,fd in finite_difference(p,query,docs,spans,gold,coordinates,bypass):\n                error=abs(fd-want['gradient'][key][index]);errors.append(error);assert error<2e-7,(bypass,gold,key,index,error)\n    empty=objective_and_gradient(p,np.zeros((0,d)),docs,spans,None)\n    assert not empty['gradient']['A'].any() and not empty['gradient']['V'].any()\n    return dict(status='passed',coordinates_per_objective=len(coordinates),objectives=4,max_abs_finite_difference_error=max(errors),unequal_windows=[3,8],empty_query_alignment_gradient_zero=True,script_sha256=sha256(Path(__file__).read_bytes()).hexdigest())\n\nif __name__=='__main__':print(json.dumps(selfcheck(),indent=2))\r\n"
+        },
+        "independent_window_reset": true,
+        "max_absolute_parity_error": 1.9671764217576992e-15,
+        "no_actual_TRAIN_or_encoder_or_cost_calls": true,
+        "old6_initial_arrays_exact": true,
+        "reference_sha256": "2e6744a54f6f2599f4482763fd14d7e32c7f134a7f1251ec235adcd15e036a6d",
+        "scope": "Independent synthetic alignment gradient, optimizer and custody checks.",
+        "script_sha256": "aced9bfa1029660a6fcd990df1aa9c66a4b7d0741183fa2e65120126083d1aec",
+        "source_growth_read_only": true,
+        "source_sha256": {
+          "src/humanbrain/query_aligned_rate_cell_reader.py": "f606cf4e78c8f1059f619cae1ee624c2a1cd4542250f1e8b1b06ebd0ff34a010",
+          "src/humanbrain/rate_cell_reader.py": "0209bc84c97c48e7eb326f9298fa83e0ee156471eac4309fda648a85cca77c7b"
+        },
+        "status": "passed",
+        "tolerance": {
+          "absolute": 1e-10,
+          "finite_difference_absolute": 2e-07,
+          "relative": 1e-10
+        }
+      },
+      "other_checks": {
+        "query-aligned-adapter-roundtrip.json": {
+          "actual_executions": 9,
+          "arm_count": 6,
+          "guards": [
+            "cache snapshot and input custody",
+            "own-arm decision receipt",
+            "teacher answer mismatch",
+            "tampered decision",
+            "growth rejects replay",
+            "frozen/external all learned and optimizer arrays unchanged"
+          ],
+          "offers_per_arm": 2,
+          "scope": "six synthetic own-arm first Python executions, two authentic motor demonstrations, one independent teacher PASS, two supervised offers per arm; no encoder or actual TRAIN",
+          "source_sha256": {
+            "experiments/r4_integrated/contextual_rate_cell_python_session.py": "7c2a711a2eb4913594ae813bfae2fc199825cd8d55f38ac1fe79983bcfde4da4",
+            "experiments/r4_integrated/query_aligned_rate_cell_python_session.py": "fdb803a6bd9196fd2396deda44b077799f381540b7da3eef2c8229a6c000de5d",
+            "src/humanbrain/query_aligned_rate_cell_reader.py": "f606cf4e78c8f1059f619cae1ee624c2a1cd4542250f1e8b1b06ebd0ff34a010",
+            "src/humanbrain/rate_cell_reader.py": "0209bc84c97c48e7eb326f9298fa83e0ee156471eac4309fda648a85cca77c7b"
+          },
+          "status": "passed",
+          "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\query-aligned-roundtrip-n_izwlsb"
+        },
+        "query-aligned-core-handoff.json": {
+          "coverage": [
+            "supported/STOP finite differences through A,V,W,U,b,heads",
+            "V=0 exact old prefix scores and gradients",
+            "old parameter initialization bit parity",
+            "read-only predictions and source-wide attention",
+            "frozen/bypass producer masks and populated STOP Adam span freeze",
+            "current-state replay gradients",
+            "empty query, empty source, unequal window lengths and reset"
+          ],
+          "doctor": ".pytest-tmp/dev/doctor-cy993g06/receipt.json",
+          "junit": ".pytest-tmp/query-aligned-core-held.xml",
+          "kind": "held synthetic query-aligned core QA; no real TRAIN or encoder calls",
+          "lint": "New module clean; only pre-existing HEAD I001 in old test header under current Ruff. New test lines have no violations.",
+          "normalization": "New appended test tail normalized LF after held run; AST identical. Old prefix bytes preserved.",
+          "old_test_prefix_unchanged": true,
+          "passed": 4,
+          "source_sha256": {
+            "src/humanbrain/query_aligned_rate_cell_reader.py": "f606cf4e78c8f1059f619cae1ee624c2a1cd4542250f1e8b1b06ebd0ff34a010",
+            "src/humanbrain/rate_cell_reader.py": "0209bc84c97c48e7eb326f9298fa83e0ee156471eac4309fda648a85cca77c7b",
+            "tests\\test_contextual_evidence_memory.py": "10855ff76ea495a9464ba20bc242286229c4bcac1d490100dfc22bc228570493"
+          }
+        },
+        "query-aligned-harness-qa.json": {
+          "deterministic_replay": "exact previous lesson order verified on every arm",
+          "finalization_failure_preservation": true,
+          "gate_thresholds": "positive, alternate STOP negative and seven-point contribution negative tested",
+          "growth_order": "only after all3066 arm offers, no evaluation offers",
+          "input_guards": "real loader rejects task count, answer balance, identical alternate query and incomplete schedule",
+          "receipt_guards": "status/source hash/revision/budget and CPU/cache/thread guards reject before any fake input/model work",
+          "runs": [
+            {
+              "attempt_and_teacher_calls": 3328,
+              "fixture_scope": "synthetic 64 tasks,16 TRAIN+4 growth docs; inventories mocked at declared counts; no semantic/capability validation",
+              "json_preserved": true,
+              "label": "success",
+              "motor_demos": 2,
+              "npz_file_exists": true,
+              "npz_preserved": true,
+              "offers_by_arm": {
+                "bypass": 511,
+                "external": 511,
+                "frozen": 511,
+                "frozen_producer": 511,
+                "prefix": 511,
+                "trainable": 511
+              },
+              "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\rate-cell-inert-ixyjf99v\\success.json",
+              "propagated_error": null,
+              "source_sha256": "fdb803a6bd9196fd2396deda44b077799f381540b7da3eef2c8229a6c000de5d",
+              "terminal": "completed",
+              "updates_by_arm": {
+                "bypass": 511,
+                "external": 0,
+                "frozen": 0,
+                "frozen_producer": 511,
+                "prefix": 511,
+                "trainable": 511
+              }
+            },
+            {
+              "attempt_and_teacher_calls": 3328,
+              "fixture_scope": "synthetic 64 tasks,16 TRAIN+4 growth docs; inventories mocked at declared counts; no semantic/capability validation",
+              "json_preserved": true,
+              "label": "noops",
+              "motor_demos": 2,
+              "npz_file_exists": true,
+              "npz_preserved": true,
+              "offers_by_arm": {
+                "bypass": 511,
+                "external": 511,
+                "frozen": 511,
+                "frozen_producer": 511,
+                "prefix": 511,
+                "trainable": 511
+              },
+              "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\rate-cell-inert-2d4sh8hj\\noops.json",
+              "propagated_error": null,
+              "source_sha256": "fdb803a6bd9196fd2396deda44b077799f381540b7da3eef2c8229a6c000de5d",
+              "terminal": "completed",
+              "updates_by_arm": {
+                "bypass": 1,
+                "external": 0,
+                "frozen": 0,
+                "frozen_producer": 1,
+                "prefix": 1,
+                "trainable": 1
+              }
+            },
+            {
+              "attempt_and_teacher_calls": 15,
+              "fixture_scope": "synthetic 64 tasks,16 TRAIN+4 growth docs; inventories mocked at declared counts; no semantic/capability validation",
+              "json_preserved": true,
+              "label": "training",
+              "motor_demos": 2,
+              "npz_file_exists": true,
+              "npz_preserved": true,
+              "offers_by_arm": {
+                "bypass": 3,
+                "external": 3,
+                "frozen": 3,
+                "frozen_producer": 3,
+                "prefix": 3,
+                "trainable": 3
+              },
+              "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\rate-cell-inert-_l3mq7rg\\training.json",
+              "propagated_error": null,
+              "source_sha256": "fdb803a6bd9196fd2396deda44b077799f381540b7da3eef2c8229a6c000de5d",
+              "terminal": "error",
+              "updates_by_arm": {
+                "bypass": 3,
+                "external": 0,
+                "frozen": 0,
+                "frozen_producer": 3,
+                "prefix": 3,
+                "trainable": 3
+              }
+            },
+            {
+              "attempt_and_teacher_calls": 1797,
+              "fixture_scope": "synthetic 64 tasks,16 TRAIN+4 growth docs; inventories mocked at declared counts; no semantic/capability validation",
+              "json_preserved": true,
+              "label": "evaluation",
+              "motor_demos": 2,
+              "npz_file_exists": true,
+              "npz_preserved": true,
+              "offers_by_arm": {
+                "bypass": 511,
+                "external": 511,
+                "frozen": 511,
+                "frozen_producer": 511,
+                "prefix": 511,
+                "trainable": 511
+              },
+              "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\rate-cell-inert-7eo0au5v\\evaluation.json",
+              "propagated_error": null,
+              "source_sha256": "fdb803a6bd9196fd2396deda44b077799f381540b7da3eef2c8229a6c000de5d",
+              "terminal": "error",
+              "updates_by_arm": {
+                "bypass": 511,
+                "external": 0,
+                "frozen": 0,
+                "frozen_producer": 511,
+                "prefix": 511,
+                "trainable": 511
+              }
+            },
+            {
+              "attempt_and_teacher_calls": 15,
+              "fixture_scope": "synthetic 64 tasks,16 TRAIN+4 growth docs; inventories mocked at declared counts; no semantic/capability validation",
+              "json_preserved": true,
+              "label": "npz",
+              "motor_demos": 2,
+              "npz_file_exists": true,
+              "npz_preserved": false,
+              "offers_by_arm": {
+                "bypass": 3,
+                "external": 3,
+                "frozen": 3,
+                "frozen_producer": 3,
+                "prefix": 3,
+                "trainable": 3
+              },
+              "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\rate-cell-inert-hqo5eerv\\npz.json",
+              "propagated_error": null,
+              "source_sha256": "fdb803a6bd9196fd2396deda44b077799f381540b7da3eef2c8229a6c000de5d",
+              "terminal": "error",
+              "updates_by_arm": {
+                "bypass": 3,
+                "external": 0,
+                "frozen": 0,
+                "frozen_producer": 3,
+                "prefix": 3,
+                "trainable": 3
+              }
+            },
+            {
+              "attempt_and_teacher_calls": 1797,
+              "fixture_scope": "synthetic 64 tasks,16 TRAIN+4 growth docs; inventories mocked at declared counts; no semantic/capability validation",
+              "json_preserved": true,
+              "label": "serialization",
+              "motor_demos": 2,
+              "npz_file_exists": true,
+              "npz_preserved": true,
+              "offers_by_arm": {
+                "bypass": 511,
+                "external": 511,
+                "frozen": 511,
+                "frozen_producer": 511,
+                "prefix": 511,
+                "trainable": 511
+              },
+              "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\rate-cell-inert-jfuexdeg\\serialization.json",
+              "propagated_error": null,
+              "source_sha256": "fdb803a6bd9196fd2396deda44b077799f381540b7da3eef2c8229a6c000de5d",
+              "terminal": "error",
+              "updates_by_arm": {
+                "bypass": 511,
+                "external": 0,
+                "frozen": 0,
+                "frozen_producer": 511,
+                "prefix": 511,
+                "trainable": 511
+              }
+            }
+          ],
+          "scope": "inert synthetic runner mechanics only, no encoder/learner/native calls or acquisition claims",
+          "script_sha256": "1a2470b0ae7c364c71483326ea95748ff0b74aa9a1f7f8b0344aaf7ed8c5d298",
+          "source_sha256": {
+            "experiments/r4_integrated/query_aligned_rate_cell_python_session.py": "fdb803a6bd9196fd2396deda44b077799f381540b7da3eef2c8229a6c000de5d"
+          },
+          "status": "passed",
+          "variable_step_exports": "prefix6steps;aligned8steps verified in savedNPZ"
+        },
+        "query-aligned-payload-module-qa.json": {
+          "checks": [
+            "main_module",
+            "inherited_private_shadowed_slots",
+            "instance_dict",
+            "shared_roots",
+            "overlapping_array_views",
+            "bytes_array_owner",
+            "memoryview_owner",
+            "mapping_proxy_owner",
+            "object_array_references",
+            "container_subclass_slots",
+            "code_and_opaque_rejection",
+            "six_core_optimizer_shared_input_lower_bound"
+          ],
+          "counted_synthetic_payload_bytes": 5489467,
+          "instance_module": "__main__",
+          "probe_sha256": "de0f8760d9b416008584c96faec1ba89c76606355893dd6abc93460cf0955b9e",
+          "scope": "synthetic Python -m data accounting; no learner/encoder/native calls",
+          "shared_input_bytes": 307200,
+          "six_core_float_array_bytes": 5176464,
+          "status": "passed",
+          "support_sha256": "c76da2434434bb396dbc1c5b5b37d90556ba2d3f07830f869df706fbd4665b07"
+        }
+      },
+      "payload_check": {
+        "arms": [
+          "trainable",
+          "prefix",
+          "frozen_producer",
+          "bypass",
+          "frozen",
+          "external"
+        ],
+        "array_lower_bound_bytes": 5194896,
+        "counted_payload_bytes": 5236008,
+        "reader_module": "__main__",
+        "scope": "actual -m entry; initialized synthetic readers; no predictions or updates",
+        "shared_root_identity_deduplicated": true,
+        "source_sha256": {
+          "experiments/r4_integrated/query_aligned_rate_cell_python_session.py": "fdb803a6bd9196fd2396deda44b077799f381540b7da3eef2c8229a6c000de5d",
+          "experiments/r4_integrated/rate_cell_session_support.py": "c76da2434434bb396dbc1c5b5b37d90556ba2d3f07830f869df706fbd4665b07",
+          "src/humanbrain/query_aligned_rate_cell_reader.py": "f606cf4e78c8f1059f619cae1ee624c2a1cd4542250f1e8b1b06ebd0ff34a010",
+          "src/humanbrain/rate_cell_reader.py": "0209bc84c97c48e7eb326f9298fa83e0ee156471eac4309fda648a85cca77c7b"
+        },
+        "status": "passed",
+        "synthetic_only": true
+      },
+      "receipt_sha256": {
+        ".pytest-tmp/query-aligned-adapter-roundtrip.json": "14489bdc3ae23da07fa89e8b58a55f26730dbb7b1647a4cde9ca92fca76b7c57",
+        ".pytest-tmp/query-aligned-core-handoff.json": "d21d3a0c737cf76295582cc3e6ed9990c024f8ecdeb283dfb0cd010b3cad67c2",
+        ".pytest-tmp/query-aligned-core-held.xml": "e539530663dc573ac46136d6f00c239a9bb790391ef15f95da5cd9672ba6c312",
+        ".pytest-tmp/query-aligned-harness-qa.json": "e5bc3bd88394dc58465b48b1f32f94b143261733ba075167416d7e24ca79588d",
+        ".pytest-tmp/query-aligned-independent-qa-v1.json": "e7b795d5ab19e3c1731e2f99c7568246a1d1399294d97d1304c27000dd0b6000",
+        ".pytest-tmp/query-aligned-payload-actual-module-v1.json": "b7d491a5b8cfda178c70f80354a636d5c1690fcbef81ab07fe2303b1a767f2e7",
+        ".pytest-tmp/query-aligned-payload-module-qa.json": "dfe678f8cf92b22240cd02ec540d4599ad6574f4447e9b0b0776efb4ae31795a"
+      },
+      "scope": "Held-source independent synthetic numerical, six-arm execution harness, and actual -m payload admission. No TRAIN fit or scored cost preflight.",
+      "source_sha256": {
+        "experiments/r4_integrated/query_aligned_rate_cell_python_session.py": "fdb803a6bd9196fd2396deda44b077799f381540b7da3eef2c8229a6c000de5d",
+        "experiments/r4_integrated/rate_cell_session_support.py": "c76da2434434bb396dbc1c5b5b37d90556ba2d3f07830f869df706fbd4665b07",
+        "src/humanbrain/query_aligned_rate_cell_reader.py": "f606cf4e78c8f1059f619cae1ee624c2a1cd4542250f1e8b1b06ebd0ff34a010",
+        "src/humanbrain/rate_cell_reader.py": "0209bc84c97c48e7eb326f9298fa83e0ee156471eac4309fda648a85cca77c7b"
+      },
+      "status": "passed"
+    }
+  },
+  "timings": {
+    "construct_train": 0.02094839999335818,
+    "construct_grown": 0.017492699989816174,
+    "predict_train_trainable": 0.003936400025850162,
+    "predict_train_prefix": 0.0034691999899223447,
+    "predict_train_frozen_producer": 0.004241999995429069,
+    "predict_train_bypass": 0.003221599996322766,
+    "predict_train_frozen": 0.003580899996450171,
+    "predict_train_external": 0.02746460001799278,
+    "predict_grown_trainable": 0.005450399999972433,
+    "predict_grown_prefix": 0.003809799993177876,
+    "predict_grown_frozen_producer": 0.011240199994063005,
+    "predict_grown_bypass": 0.0038908999995328486,
+    "predict_grown_frozen": 0.004806099983397871,
+    "predict_grown_external": 0.039690100005827844,
+    "offer_trainable_supported": 0.010391599993454292,
+    "offer_trainable_stop": 0.009288400004152209,
+    "offer_prefix_supported": 0.008297299995319918,
+    "offer_prefix_stop": 0.00843929999973625,
+    "offer_frozen_producer_supported": 0.009199000021908432,
+    "offer_frozen_producer_stop": 0.009444399998756126,
+    "offer_bypass_supported": 0.0064187000098172575,
+    "offer_bypass_stop": 0.0066544000001158565,
+    "offer_frozen_supported": 0.009110799990594387,
+    "offer_frozen_stop": 0.009451799996895716,
+    "encoder_load": 0.4380459999956656,
+    "encoder_query": 0.00998750000144355,
+    "encoder_document": 0.008941700012655929,
+    "motor_setup": 0.1600959000061266,
+    "motor_and_execution": 0.07903049999731593
+  },
+  "memory_samples": {
+    "construct_train": {
+      "working_set_mib": 44.23828125,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 31.51171875
+    },
+    "construct_grown": {
+      "working_set_mib": 49.86328125,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 37.2421875
+    },
+    "predict_train_trainable": {
+      "working_set_mib": 55.3671875,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 74.48046875
+    },
+    "predict_train_prefix": {
+      "working_set_mib": 55.1875,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 74.30078125
+    },
+    "predict_train_frozen_producer": {
+      "working_set_mib": 55.95703125,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 75.859375
+    },
+    "predict_train_bypass": {
+      "working_set_mib": 55.96875,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 76.81640625
+    },
+    "predict_train_frozen": {
+      "working_set_mib": 55.53125,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 75.29296875
+    },
+    "predict_train_external": {
+      "working_set_mib": 56.5390625,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 75.6640625
+    },
+    "predict_grown_trainable": {
+      "working_set_mib": 55.546875,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 75.13671875
+    },
+    "predict_grown_prefix": {
+      "working_set_mib": 55.46484375,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 74.5703125
+    },
+    "predict_grown_frozen_producer": {
+      "working_set_mib": 55.33984375,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 74.41015625
+    },
+    "predict_grown_bypass": {
+      "working_set_mib": 55.453125,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 75.37890625
+    },
+    "predict_grown_frozen": {
+      "working_set_mib": 56.24609375,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 75.40234375
+    },
+    "predict_grown_external": {
+      "working_set_mib": 56.78515625,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 75.88671875
+    },
+    "offer_trainable_supported": {
+      "working_set_mib": 57.16796875,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 76.54296875
+    },
+    "offer_trainable_stop": {
+      "working_set_mib": 57.16796875,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 76.625
+    },
+    "offer_prefix_supported": {
+      "working_set_mib": 56.35546875,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 75.734375
+    },
+    "offer_prefix_stop": {
+      "working_set_mib": 56.35546875,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 75.4453125
+    },
+    "offer_frozen_producer_supported": {
+      "working_set_mib": 57.1953125,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 76.4609375
+    },
+    "offer_frozen_producer_stop": {
+      "working_set_mib": 56.890625,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 75.3359375
+    },
+    "offer_bypass_supported": {
+      "working_set_mib": 57.1953125,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 76.2890625
+    },
+    "offer_bypass_stop": {
+      "working_set_mib": 57.203125,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 75.72265625
+    },
+    "offer_frozen_supported": {
+      "working_set_mib": 56.93359375,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 75.56640625
+    },
+    "offer_frozen_stop": {
+      "working_set_mib": 57.02734375,
+      "peak_working_set_mib": 68.03515625,
+      "private_memory_mib": 76.2578125
+    },
+    "encoder_load": {
+      "working_set_mib": 177.04296875,
+      "peak_working_set_mib": 219.203125,
+      "private_memory_mib": 185.125
+    },
+    "encoder_query": {
+      "working_set_mib": 178.0703125,
+      "peak_working_set_mib": 219.203125,
+      "private_memory_mib": 186.16796875
+    },
+    "encoder_document": {
+      "working_set_mib": 178.64453125,
+      "peak_working_set_mib": 219.203125,
+      "private_memory_mib": 186.16796875
+    },
+    "motor_setup": {
+      "working_set_mib": 178.83203125,
+      "peak_working_set_mib": 219.203125,
+      "private_memory_mib": 186.16796875
+    },
+    "motor_and_execution": {
+      "working_set_mib": 178.86328125,
+      "peak_working_set_mib": 219.203125,
+      "private_memory_mib": 186.16796875
+    }
+  },
+  "inventory": {
+    "train": 9520,
+    "grown": 14060,
+    "query_words": 12,
+    "vector_seed": 1,
+    "train_sha256": "bcc089648b70bf40b514034bf0994f308e4756cee024ae501e5eae3303df4bec",
+    "grown_sha256": "5eb3ecb679803e3b2e9d02710953e1a2de4adf0f5e414aa08967d53c739c4d26",
+    "growth_scope": "separate larger cost envelope, not an append-only learning trial"
+  },
+  "synthetic_offer_receipts": [
+    {
+      "mode": "trainable",
+      "before": "1a72e16c46027dfa14028039df18c0b8b6cb564ba43f4c18d29bb4f2f0a1d1d6",
+      "after": "53df1add5ab081ff0ae0e15723be598ea40fca8ec8a1ee64813add715340294a",
+      "query_sha256": "c7aea061dd92730d2b29fd4e61a696208d94e523d70d2fb22a0e62f71a04c8ef",
+      "inventory_sha256": "bcc089648b70bf40b514034bf0994f308e4756cee024ae501e5eae3303df4bec",
+      "gold_indices": [
+        0
+      ],
+      "before_objective": {
+        "loss": 9.851178540902556,
+        "gate_loss": 0.6920216168633901,
+        "span_loss": 9.159156924039166,
+        "stop_logit": -0.0022523957144558937,
+        "p_stop": 0.4994369013094494,
+        "scores_sha256": "c413fa1288bd7d47eb3b6b7a768da73bcf026d1f4dcb26f3c1979659af81f42e",
+        "document_word_count": 544,
+        "recurrent_cell_steps": 47104,
+        "trajectory_array_bytes": 761856,
+        "input_array_bytes": 2272768,
+        "span_score_array_bytes": 76160,
+        "alignment_array_bytes": 805888,
+        "attention_entries": 6528,
+        "valid_attention_entries": 6528,
+        "attention_sha256": "41eaee7ad527215601d800bd89b9cdefbbe16692dae5e1b3fcf49c17da6c42bc"
+      },
+      "loss_after": 9.785716298167513,
+      "gate_loss_after": 0.6766996941211041,
+      "span_loss_after": 9.109016604046408,
+      "gradient_sha256": {
+        "input_weights": "5efaab73479f9693240f1b094fd2f90404f04f620e62b1513306af69e339af14",
+        "recurrent_weights": "b7953e8d8de7871cd472ce46233ddfbe770c12b04367029eaf74245bbfd743a6",
+        "cell_bias": "5dfdea1ff3d6e81f10ff7b29330709e15bbe8943136ed3aa279111b923a8d2f8",
+        "span_heads": "b8c7ebdbfc612c031e3dcd900cd4f896cb613b6d06b42e2fafea2a98ebba4e22",
+        "stop_head": "d18c760dc1495affbcebbd40581fff9ed5f82f37a2df6e01c0b57d5792c4acc6",
+        "stop_bias": "0de3269883982e73b585bb93ddef1948d977d908c0b0b5a4633325c3395ed4cd",
+        "attention_weights": "82f50c92101f57b434b2dedf7c8353ee9e96e0c5474be1dd2ffca68d21569111",
+        "query_context_weights": "ba5cbff0616a39980f2d81c0ed69668e724b70a575a8220ea267ee64faf0d70f"
+      },
+      "active_parameters": [
+        "input_weights",
+        "recurrent_weights",
+        "cell_bias",
+        "span_heads",
+        "stop_head",
+        "stop_bias",
+        "attention_weights",
+        "query_context_weights"
+      ],
+      "gradient_norm": 3.8614525440331193,
+      "clip_scale": 0.25896990539097586,
+      "adam_steps_before": {
+        "input_weights": 0,
+        "recurrent_weights": 0,
+        "cell_bias": 0,
+        "span_heads": 0,
+        "stop_head": 0,
+        "stop_bias": 0,
+        "attention_weights": 0,
+        "query_context_weights": 0
+      },
+      "adam_steps_after": {
+        "input_weights": 1,
+        "recurrent_weights": 1,
+        "cell_bias": 1,
+        "span_heads": 1,
+        "stop_head": 1,
+        "stop_bias": 1,
+        "attention_weights": 1,
+        "query_context_weights": 1
+      },
+      "parameter_update_applied": true,
+      "native_update_applied": false,
+      "offer_count": 1,
+      "update_count": 1
+    },
+    {
+      "mode": "trainable",
+      "before": "53df1add5ab081ff0ae0e15723be598ea40fca8ec8a1ee64813add715340294a",
+      "after": "52191497520367db9d37e340eb3361b19d56d61b0b6ee8ffc0309bce4cfefef1",
+      "query_sha256": "c7aea061dd92730d2b29fd4e61a696208d94e523d70d2fb22a0e62f71a04c8ef",
+      "inventory_sha256": "bcc089648b70bf40b514034bf0994f308e4756cee024ae501e5eae3303df4bec",
+      "gold_indices": null,
+      "before_objective": {
+        "loss": 0.709869716994155,
+        "gate_loss": 0.709869716994155,
+        "span_loss": 0.0,
+        "stop_logit": -0.033170022873050924,
+        "p_stop": 0.4917082545174989,
+        "scores_sha256": "d2b609cb8704be9791f552f211a15288b024219d5f0df2be5c3cec3ee55e8d26",
+        "document_word_count": 544,
+        "recurrent_cell_steps": 47104,
+        "trajectory_array_bytes": 761856,
+        "input_array_bytes": 2272768,
+        "span_score_array_bytes": 76160,
+        "alignment_array_bytes": 805888,
+        "attention_entries": 6528,
+        "valid_attention_entries": 6528,
+        "attention_sha256": "78724a778a1041ed0eff78349d93492a0b6597f2d9ebf89083dfa6ebf2c96f32"
+      },
+      "loss_after": 0.7003863306641365,
+      "gate_loss_after": 0.7003863306641365,
+      "span_loss_after": 0.0,
+      "gradient_sha256": {
+        "input_weights": "6fe56830bc059affdab7dc1610b71038634f780836a97d9b5d1c528245bba000",
+        "recurrent_weights": "48fdf2e716206073fb186d7c378785dbcfcb223b01bfc6b87a3a0444aef59f99",
+        "cell_bias": "109d599549472aeb3837d97e1f52166e3417e25e1581c7053d1a77dbcb5bdf34",
+        "span_heads": "80422bc3d307b4a25bdafcc84ac7fb01cb55a09810e8b0f37bb12e0edb5c48ca",
+        "stop_head": "1c5cc96f922972515ce4ae40a0be36bffc3df17e97ab6b151e9287587abb34f3",
+        "stop_bias": "151043590801f56d818b893f866c9d21408918d971d0f2d6987dab46c0c43b82",
+        "attention_weights": "c51d1a6f1540ff04d27ed5fc77320312493db364ebc6761a6b89aabb8904d77b",
+        "query_context_weights": "e45cd5d5d1436c18691ce085e00b2e8aa342459592f90ca6012cf46a9c59c807"
+      },
+      "active_parameters": [
+        "input_weights",
+        "recurrent_weights",
+        "cell_bias",
+        "stop_head",
+        "stop_bias",
+        "attention_weights",
+        "query_context_weights"
+      ],
+      "gradient_norm": 2.0487720976763053,
+      "clip_scale": 0.4880972369421611,
+      "adam_steps_before": {
+        "input_weights": 1,
+        "recurrent_weights": 1,
+        "cell_bias": 1,
+        "span_heads": 1,
+        "stop_head": 1,
+        "stop_bias": 1,
+        "attention_weights": 1,
+        "query_context_weights": 1
+      },
+      "adam_steps_after": {
+        "input_weights": 2,
+        "recurrent_weights": 2,
+        "cell_bias": 2,
+        "span_heads": 1,
+        "stop_head": 2,
+        "stop_bias": 2,
+        "attention_weights": 2,
+        "query_context_weights": 2
+      },
+      "parameter_update_applied": true,
+      "native_update_applied": false,
+      "offer_count": 2,
+      "update_count": 2
+    },
+    {
+      "mode": "trainable",
+      "before": "4c4b3cb5236b2de2d17e5385849be903591e61a4aa27c28a7850871db823aeac",
+      "after": "73459bb903d8d7a249815c115b508c22b6cf74f88007b4c6bebf8a7e87de77ef",
+      "query_sha256": "c7aea061dd92730d2b29fd4e61a696208d94e523d70d2fb22a0e62f71a04c8ef",
+      "inventory_sha256": "bcc089648b70bf40b514034bf0994f308e4756cee024ae501e5eae3303df4bec",
+      "gold_indices": [
+        0
+      ],
+      "before_objective": {
+        "loss": 9.86023736770404,
+        "gate_loss": 0.6943817342584012,
+        "span_loss": 9.165855633445638,
+        "stop_logit": 0.0024675851531761697,
+        "p_stop": 0.500616895975272,
+        "scores_sha256": "5c43ce5cd1bdf3f2e8d3151cbea3ffee43769a11404ca9846b8e283b7020782c",
+        "document_word_count": 544,
+        "recurrent_cell_steps": 47104,
+        "trajectory_array_bytes": 761856,
+        "input_array_bytes": 2272768,
+        "span_score_array_bytes": 76160
+      },
+      "loss_after": 9.805797137477358,
+      "gate_loss_after": 0.6871548119791736,
+      "span_loss_after": 9.118642325498184,
+      "gradient_sha256": {
+        "input_weights": "4df337044f5339f86c404669e5b3a4a31639d6468c2b31d8750f5c7938982e1f",
+        "recurrent_weights": "28c0ccd1b4e2ec1fe5fe443a39ea72bcc3dc2339b6ccd3747bc101fc89ff4084",
+        "cell_bias": "70a9dd750f32ab547421c751c6bfaeb44e262121ddaf6d8f5b292989eac9ea36",
+        "span_heads": "001d618dc871483f114cc28afb0aa39e615d7cb29d070b45d163b6f17531dcaa",
+        "stop_head": "06df1801275c0f7cd8b2e445fc7b121bb51feaa56b31fcec34a613aab95fac00",
+        "stop_bias": "3b7542d9ea9725b4606ae02384c46e1bb197b4b6f095fbbd9a8dfa2027dece2e"
+      },
+      "active_parameters": [
+        "input_weights",
+        "recurrent_weights",
+        "cell_bias",
+        "span_heads",
+        "stop_head",
+        "stop_bias"
+      ],
+      "gradient_norm": 3.7294468420835556,
+      "clip_scale": 0.2681362792776323,
+      "adam_steps_before": {
+        "input_weights": 0,
+        "recurrent_weights": 0,
+        "cell_bias": 0,
+        "span_heads": 0,
+        "stop_head": 0,
+        "stop_bias": 0
+      },
+      "adam_steps_after": {
+        "input_weights": 1,
+        "recurrent_weights": 1,
+        "cell_bias": 1,
+        "span_heads": 1,
+        "stop_head": 1,
+        "stop_bias": 1
+      },
+      "parameter_update_applied": true,
+      "native_update_applied": false,
+      "offer_count": 1,
+      "update_count": 1
+    },
+    {
+      "mode": "trainable",
+      "before": "73459bb903d8d7a249815c115b508c22b6cf74f88007b4c6bebf8a7e87de77ef",
+      "after": "cd8b257bb62e3fe8e529b8206e8b05654ce01896d916b07d715c573e068bb64b",
+      "query_sha256": "c7aea061dd92730d2b29fd4e61a696208d94e523d70d2fb22a0e62f71a04c8ef",
+      "inventory_sha256": "bcc089648b70bf40b514034bf0994f308e4756cee024ae501e5eae3303df4bec",
+      "gold_indices": null,
+      "before_objective": {
+        "loss": 0.6991756742053783,
+        "gate_loss": 0.6991756742053783,
+        "span_loss": 0.0,
+        "stop_logit": -0.01202086222620472,
+        "p_stop": 0.4969948206310126,
+        "scores_sha256": "608888fc99fb7648d8a85ec11f3579d9fc31ffd2935d60ce06ea3d1c14585aca",
+        "document_word_count": 544,
+        "recurrent_cell_steps": 47104,
+        "trajectory_array_bytes": 761856,
+        "input_array_bytes": 2272768,
+        "span_score_array_bytes": 76160
+      },
+      "loss_after": 0.6943527870992656,
+      "gate_loss_after": 0.6943527870992656,
+      "span_loss_after": 0.0,
+      "gradient_sha256": {
+        "input_weights": "7535a712dbc202a53ad7902169f6de110ad8faefc52c2c03e48bf3bdf912740a",
+        "recurrent_weights": "5aace93768af3c7af627c6d3afaf62b47f1de6d9045c526eed9bff4f9ab74670",
+        "cell_bias": "16ff9b3be88b3b21db4f5ae03a86385c3f3042aec0dd2229358c929bb065368c",
+        "span_heads": "80422bc3d307b4a25bdafcc84ac7fb01cb55a09810e8b0f37bb12e0edb5c48ca",
+        "stop_head": "94e94629a65fa18d87b879f6a5398b05d4a9fc99afe76b15a05e7a56c8603cf5",
+        "stop_bias": "a928b1bf7938f1e372eaf5972e42e0141ccfe8118004118668e5cfcc2bd10479"
+      },
+      "active_parameters": [
+        "input_weights",
+        "recurrent_weights",
+        "cell_bias",
+        "stop_head",
+        "stop_bias"
+      ],
+      "gradient_norm": 1.061703211099291,
+      "clip_scale": 0.9418828063678895,
+      "adam_steps_before": {
+        "input_weights": 1,
+        "recurrent_weights": 1,
+        "cell_bias": 1,
+        "span_heads": 1,
+        "stop_head": 1,
+        "stop_bias": 1
+      },
+      "adam_steps_after": {
+        "input_weights": 2,
+        "recurrent_weights": 2,
+        "cell_bias": 2,
+        "span_heads": 1,
+        "stop_head": 2,
+        "stop_bias": 2
+      },
+      "parameter_update_applied": true,
+      "native_update_applied": false,
+      "offer_count": 2,
+      "update_count": 2
+    },
+    {
+      "mode": "frozen_producer",
+      "before": "096e8f0a6e9f305f5c66a077c8203be033e710cb31cea04ee2433d9128eed369",
+      "after": "3bd6150377397671f70b7e4e1698bba900027e1a50ae41a074a12fdeaec6d9b6",
+      "query_sha256": "c7aea061dd92730d2b29fd4e61a696208d94e523d70d2fb22a0e62f71a04c8ef",
+      "inventory_sha256": "bcc089648b70bf40b514034bf0994f308e4756cee024ae501e5eae3303df4bec",
+      "gold_indices": [
+        0
+      ],
+      "before_objective": {
+        "loss": 9.851178540902556,
+        "gate_loss": 0.6920216168633901,
+        "span_loss": 9.159156924039166,
+        "stop_logit": -0.0022523957144558937,
+        "p_stop": 0.4994369013094494,
+        "scores_sha256": "c413fa1288bd7d47eb3b6b7a768da73bcf026d1f4dcb26f3c1979659af81f42e",
+        "document_word_count": 544,
+        "recurrent_cell_steps": 47104,
+        "trajectory_array_bytes": 761856,
+        "input_array_bytes": 2272768,
+        "span_score_array_bytes": 76160,
+        "alignment_array_bytes": 805888,
+        "attention_entries": 6528,
+        "valid_attention_entries": 6528,
+        "attention_sha256": "41eaee7ad527215601d800bd89b9cdefbbe16692dae5e1b3fcf49c17da6c42bc"
+      },
+      "loss_after": 9.793889974948177,
+      "gate_loss_after": 0.6778540953771365,
+      "span_loss_after": 9.11603587957104,
+      "gradient_sha256": {
+        "input_weights": "5efaab73479f9693240f1b094fd2f90404f04f620e62b1513306af69e339af14",
+        "recurrent_weights": "b7953e8d8de7871cd472ce46233ddfbe770c12b04367029eaf74245bbfd743a6",
+        "cell_bias": "5dfdea1ff3d6e81f10ff7b29330709e15bbe8943136ed3aa279111b923a8d2f8",
+        "span_heads": "b8c7ebdbfc612c031e3dcd900cd4f896cb613b6d06b42e2fafea2a98ebba4e22",
+        "stop_head": "d18c760dc1495affbcebbd40581fff9ed5f82f37a2df6e01c0b57d5792c4acc6",
+        "stop_bias": "0de3269883982e73b585bb93ddef1948d977d908c0b0b5a4633325c3395ed4cd",
+        "attention_weights": "82f50c92101f57b434b2dedf7c8353ee9e96e0c5474be1dd2ffca68d21569111",
+        "query_context_weights": "ba5cbff0616a39980f2d81c0ed69668e724b70a575a8220ea267ee64faf0d70f"
+      },
+      "active_parameters": [
+        "span_heads",
+        "stop_head",
+        "stop_bias"
+      ],
+      "gradient_norm": 3.8529608133412947,
+      "clip_scale": 0.2595406619598599,
+      "adam_steps_before": {
+        "input_weights": 0,
+        "recurrent_weights": 0,
+        "cell_bias": 0,
+        "span_heads": 0,
+        "stop_head": 0,
+        "stop_bias": 0,
+        "attention_weights": 0,
+        "query_context_weights": 0
+      },
+      "adam_steps_after": {
+        "input_weights": 0,
+        "recurrent_weights": 0,
+        "cell_bias": 0,
+        "span_heads": 1,
+        "stop_head": 1,
+        "stop_bias": 1,
+        "attention_weights": 0,
+        "query_context_weights": 0
+      },
+      "parameter_update_applied": true,
+      "native_update_applied": false,
+      "offer_count": 1,
+      "update_count": 1
+    },
+    {
+      "mode": "frozen_producer",
+      "before": "3bd6150377397671f70b7e4e1698bba900027e1a50ae41a074a12fdeaec6d9b6",
+      "after": "1a04c9c615267274219a96667f7cf4187e416eb25eb494148dbfe3b5b7e0b6d0",
+      "query_sha256": "c7aea061dd92730d2b29fd4e61a696208d94e523d70d2fb22a0e62f71a04c8ef",
+      "inventory_sha256": "bcc089648b70bf40b514034bf0994f308e4756cee024ae501e5eae3303df4bec",
+      "gold_indices": null,
+      "before_objective": {
+        "loss": 0.7086777812429248,
+        "gate_loss": 0.7086777812429248,
+        "span_loss": 0.0,
+        "stop_logit": -0.030823685865788316,
+        "p_stop": 0.49229468859167325,
+        "scores_sha256": "92025fe2b757580793661912eae0b5093d2d3ae4a6f9c947d885271d2d70e9a8",
+        "document_word_count": 544,
+        "recurrent_cell_steps": 47104,
+        "trajectory_array_bytes": 761856,
+        "input_array_bytes": 2272768,
+        "span_score_array_bytes": 76160,
+        "alignment_array_bytes": 805888,
+        "attention_entries": 6528,
+        "valid_attention_entries": 6528,
+        "attention_sha256": "41eaee7ad527215601d800bd89b9cdefbbe16692dae5e1b3fcf49c17da6c42bc"
+      },
+      "loss_after": 0.7034152243811412,
+      "gate_loss_after": 0.7034152243811412,
+      "span_loss_after": 0.0,
+      "gradient_sha256": {
+        "input_weights": "39713f568d77b29076f1379744fa2d1d163565b3ac04443b4716b648df724873",
+        "recurrent_weights": "9f23a0144db06ac1255a2d4e65ffaec64477a4aba8fe785616d2c5329d3b3bd9",
+        "cell_bias": "3cd08f1444024a8b9990c15cee3fe357b87093a8f274ccdde764fd70fe8a9adc",
+        "span_heads": "80422bc3d307b4a25bdafcc84ac7fb01cb55a09810e8b0f37bb12e0edb5c48ca",
+        "stop_head": "4ca90c07331d9e77e9178bfbb7bd97c4641ab43ff1fa3eb30c27c0a59ad6a5e2",
+        "stop_bias": "e86f45815be29aa5e51c837bd21f065337e7670b8609a1714bb7d582a64bddf6",
+        "attention_weights": "92c788eed1406b8c09f1b3e674aebcec3bd9278999fcdfb2319991745ebff88b",
+        "query_context_weights": "fc9de37fa9b2149852e4705d77be41fd37adcc8341d41035842d75d2ff5087a8"
+      },
+      "active_parameters": [
+        "stop_head",
+        "stop_bias"
+      ],
+      "gradient_norm": 1.9709064595702015,
+      "clip_scale": 0.5073807511991572,
+      "adam_steps_before": {
+        "input_weights": 0,
+        "recurrent_weights": 0,
+        "cell_bias": 0,
+        "span_heads": 1,
+        "stop_head": 1,
+        "stop_bias": 1,
+        "attention_weights": 0,
+        "query_context_weights": 0
+      },
+      "adam_steps_after": {
+        "input_weights": 0,
+        "recurrent_weights": 0,
+        "cell_bias": 0,
+        "span_heads": 1,
+        "stop_head": 2,
+        "stop_bias": 2,
+        "attention_weights": 0,
+        "query_context_weights": 0
+      },
+      "parameter_update_applied": true,
+      "native_update_applied": false,
+      "offer_count": 2,
+      "update_count": 2
+    },
+    {
+      "mode": "bypass",
+      "before": "2502b8d9da3cc4a97dca633497892becfb8c37476c7f54e8cbc1292d640681d1",
+      "after": "57823f1183696c128a9c0f0f8de77c9cb67c5e06bd4ed4428e887205839e9ff2",
+      "query_sha256": "c7aea061dd92730d2b29fd4e61a696208d94e523d70d2fb22a0e62f71a04c8ef",
+      "inventory_sha256": "bcc089648b70bf40b514034bf0994f308e4756cee024ae501e5eae3303df4bec",
+      "gold_indices": [
+        0
+      ],
+      "before_objective": {
+        "loss": 9.854672723289136,
+        "gate_loss": 0.6933918971763211,
+        "span_loss": 9.161280826112815,
+        "stop_logit": 0.0004893733611804673,
+        "p_stop": 0.5001223433378534,
+        "scores_sha256": "9199f8371ee726c4a8e8463852a049a2d1570e330d6035c4b0263500de5f02de",
+        "document_word_count": 544,
+        "recurrent_cell_steps": 0,
+        "trajectory_array_bytes": 761856,
+        "input_array_bytes": 2272768,
+        "span_score_array_bytes": 76160,
+        "alignment_array_bytes": 805888,
+        "attention_entries": 6528,
+        "valid_attention_entries": 6528,
+        "attention_sha256": "1d0f5d8a955961e72aa27432d65c9e7f54c623adeb720b7047af4431f3d7a794"
+      },
+      "loss_after": 9.845167580832777,
+      "gate_loss_after": 0.6910142354289308,
+      "span_loss_after": 9.154153345403847,
+      "gradient_sha256": {
+        "input_weights": "41aa1b0f869df16158a08da89255d765ac1452da55691c63dcfd10747ee4102d",
+        "recurrent_weights": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+        "cell_bias": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560",
+        "span_heads": "9c334a0b96c2c07cac0cf157fc3413f042a3fce01a9e03bf565a74474983ba2a",
+        "stop_head": "11c7b19793a515908cd7afa60fd45467f0cd0d3e9bf9c1dff2fb01a4a69ca402",
+        "stop_bias": "52590db595cf41e8ba9f4f6f7ae64529d502392d6425d07bf1bf4822a1f30255",
+        "attention_weights": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+        "query_context_weights": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479"
+      },
+      "active_parameters": [
+        "span_heads",
+        "stop_head",
+        "stop_bias"
+      ],
+      "gradient_norm": 0.8952392316803627,
+      "clip_scale": 1.0,
+      "adam_steps_before": {
+        "input_weights": 0,
+        "recurrent_weights": 0,
+        "cell_bias": 0,
+        "span_heads": 0,
+        "stop_head": 0,
+        "stop_bias": 0,
+        "attention_weights": 0,
+        "query_context_weights": 0
+      },
+      "adam_steps_after": {
+        "input_weights": 0,
+        "recurrent_weights": 0,
+        "cell_bias": 0,
+        "span_heads": 1,
+        "stop_head": 1,
+        "stop_bias": 1,
+        "attention_weights": 0,
+        "query_context_weights": 0
+      },
+      "parameter_update_applied": true,
+      "native_update_applied": false,
+      "offer_count": 1,
+      "update_count": 1
+    },
+    {
+      "mode": "bypass",
+      "before": "57823f1183696c128a9c0f0f8de77c9cb67c5e06bd4ed4428e887205839e9ff2",
+      "after": "78d9c7970181803868873a31aae02ee85e10eb9f3e4969aee67d8e785de07f0d",
+      "query_sha256": "c7aea061dd92730d2b29fd4e61a696208d94e523d70d2fb22a0e62f71a04c8ef",
+      "inventory_sha256": "bcc089648b70bf40b514034bf0994f308e4756cee024ae501e5eae3303df4bec",
+      "gold_indices": null,
+      "before_objective": {
+        "loss": 0.6952846848721074,
+        "gate_loss": 0.6952846848721074,
+        "span_loss": 0.0,
+        "stop_logit": -0.004270449443176522,
+        "p_stop": 0.49893238926168343,
+        "scores_sha256": "2de1a47429b60147432f992f6254bab9cfcdea088b16b133e91411926c348221",
+        "document_word_count": 544,
+        "recurrent_cell_steps": 0,
+        "trajectory_array_bytes": 761856,
+        "input_array_bytes": 2272768,
+        "span_score_array_bytes": 76160,
+        "alignment_array_bytes": 805888,
+        "attention_entries": 6528,
+        "valid_attention_entries": 6528,
+        "attention_sha256": "1d0f5d8a955961e72aa27432d65c9e7f54c623adeb720b7047af4431f3d7a794"
+      },
+      "loss_after": 0.6951569153920077,
+      "gate_loss_after": 0.6951569153920077,
+      "span_loss_after": 0.0,
+      "gradient_sha256": {
+        "input_weights": "41aa1b0f869df16158a08da89255d765ac1452da55691c63dcfd10747ee4102d",
+        "recurrent_weights": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+        "cell_bias": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560",
+        "span_heads": "80422bc3d307b4a25bdafcc84ac7fb01cb55a09810e8b0f37bb12e0edb5c48ca",
+        "stop_head": "bb6f8a9157f584924a3d863c9137f5bf489f8e61e581cfbb1f81cdf0996edeeb",
+        "stop_bias": "8e91591e466cb8db45e679cd0c4bdb98320301d61e8a0244f8181ea8f9d58e32",
+        "attention_weights": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479",
+        "query_context_weights": "c35020473aed1b4642cd726cad727b63fff2824ad68cedd7ffb73c7cbd890479"
+      },
+      "active_parameters": [
+        "stop_head",
+        "stop_bias"
+      ],
+      "gradient_norm": 0.578484158960027,
+      "clip_scale": 1.0,
+      "adam_steps_before": {
+        "input_weights": 0,
+        "recurrent_weights": 0,
+        "cell_bias": 0,
+        "span_heads": 1,
+        "stop_head": 1,
+        "stop_bias": 1,
+        "attention_weights": 0,
+        "query_context_weights": 0
+      },
+      "adam_steps_after": {
+        "input_weights": 0,
+        "recurrent_weights": 0,
+        "cell_bias": 0,
+        "span_heads": 1,
+        "stop_head": 2,
+        "stop_bias": 2,
+        "attention_weights": 0,
+        "query_context_weights": 0
+      },
+      "parameter_update_applied": true,
+      "native_update_applied": false,
+      "offer_count": 2,
+      "update_count": 2
+    },
+    {
+      "mode": "frozen",
+      "before": "30152a2bf87869c1f28601836138e0c6c39796bcd087ffb01b10430642207460",
+      "after": "8e4d32df260fd086763a6d450e740d96de73f5791276ed77cf9741d8fe666cd4",
+      "query_sha256": "c7aea061dd92730d2b29fd4e61a696208d94e523d70d2fb22a0e62f71a04c8ef",
+      "inventory_sha256": "bcc089648b70bf40b514034bf0994f308e4756cee024ae501e5eae3303df4bec",
+      "gold_indices": [
+        0
+      ],
+      "before_objective": {
+        "loss": 9.851178540902556,
+        "gate_loss": 0.6920216168633901,
+        "span_loss": 9.159156924039166,
+        "stop_logit": -0.0022523957144558937,
+        "p_stop": 0.4994369013094494,
+        "scores_sha256": "c413fa1288bd7d47eb3b6b7a768da73bcf026d1f4dcb26f3c1979659af81f42e",
+        "document_word_count": 544,
+        "recurrent_cell_steps": 47104,
+        "trajectory_array_bytes": 761856,
+        "input_array_bytes": 2272768,
+        "span_score_array_bytes": 76160,
+        "alignment_array_bytes": 805888,
+        "attention_entries": 6528,
+        "valid_attention_entries": 6528,
+        "attention_sha256": "41eaee7ad527215601d800bd89b9cdefbbe16692dae5e1b3fcf49c17da6c42bc"
+      },
+      "loss_after": 9.851178540902556,
+      "gate_loss_after": 0.6920216168633901,
+      "span_loss_after": 9.159156924039166,
+      "gradient_sha256": {
+        "input_weights": "5efaab73479f9693240f1b094fd2f90404f04f620e62b1513306af69e339af14",
+        "recurrent_weights": "b7953e8d8de7871cd472ce46233ddfbe770c12b04367029eaf74245bbfd743a6",
+        "cell_bias": "5dfdea1ff3d6e81f10ff7b29330709e15bbe8943136ed3aa279111b923a8d2f8",
+        "span_heads": "b8c7ebdbfc612c031e3dcd900cd4f896cb613b6d06b42e2fafea2a98ebba4e22",
+        "stop_head": "d18c760dc1495affbcebbd40581fff9ed5f82f37a2df6e01c0b57d5792c4acc6",
+        "stop_bias": "0de3269883982e73b585bb93ddef1948d977d908c0b0b5a4633325c3395ed4cd",
+        "attention_weights": "82f50c92101f57b434b2dedf7c8353ee9e96e0c5474be1dd2ffca68d21569111",
+        "query_context_weights": "ba5cbff0616a39980f2d81c0ed69668e724b70a575a8220ea267ee64faf0d70f"
+      },
+      "active_parameters": [],
+      "gradient_norm": 0.0,
+      "clip_scale": 1.0,
+      "adam_steps_before": {
+        "input_weights": 0,
+        "recurrent_weights": 0,
+        "cell_bias": 0,
+        "span_heads": 0,
+        "stop_head": 0,
+        "stop_bias": 0,
+        "attention_weights": 0,
+        "query_context_weights": 0
+      },
+      "adam_steps_after": {
+        "input_weights": 0,
+        "recurrent_weights": 0,
+        "cell_bias": 0,
+        "span_heads": 0,
+        "stop_head": 0,
+        "stop_bias": 0,
+        "attention_weights": 0,
+        "query_context_weights": 0
+      },
+      "parameter_update_applied": false,
+      "native_update_applied": false,
+      "offer_count": 1,
+      "update_count": 0
+    },
+    {
+      "mode": "frozen",
+      "before": "8e4d32df260fd086763a6d450e740d96de73f5791276ed77cf9741d8fe666cd4",
+      "after": "f0e630dc2d3bbc304fe88f4098551b47472fd6cb761a12e70d265647751ebbdd",
+      "query_sha256": "c7aea061dd92730d2b29fd4e61a696208d94e523d70d2fb22a0e62f71a04c8ef",
+      "inventory_sha256": "bcc089648b70bf40b514034bf0994f308e4756cee024ae501e5eae3303df4bec",
+      "gold_indices": null,
+      "before_objective": {
+        "loss": 0.694274012577846,
+        "gate_loss": 0.694274012577846,
+        "span_loss": 0.0,
+        "stop_logit": -0.0022523957144558937,
+        "p_stop": 0.4994369013094494,
+        "scores_sha256": "c413fa1288bd7d47eb3b6b7a768da73bcf026d1f4dcb26f3c1979659af81f42e",
+        "document_word_count": 544,
+        "recurrent_cell_steps": 47104,
+        "trajectory_array_bytes": 761856,
+        "input_array_bytes": 2272768,
+        "span_score_array_bytes": 76160,
+        "alignment_array_bytes": 805888,
+        "attention_entries": 6528,
+        "valid_attention_entries": 6528,
+        "attention_sha256": "41eaee7ad527215601d800bd89b9cdefbbe16692dae5e1b3fcf49c17da6c42bc"
+      },
+      "loss_after": 0.694274012577846,
+      "gate_loss_after": 0.694274012577846,
+      "span_loss_after": 0.0,
+      "gradient_sha256": {
+        "input_weights": "cf994a6cb53b8cb0a3aa07dc80179dfd20731ef0dd06dcfbe479b83c47381b4a",
+        "recurrent_weights": "94068343ce3553b70856a78b25c5fc56ddfcf09cb6bc621fd624d739c91a1bf2",
+        "cell_bias": "0b6797f6b9714f4abf06d55ce12aeef26df00dc7bc64ac9ec30ca8ebff67d850",
+        "span_heads": "80422bc3d307b4a25bdafcc84ac7fb01cb55a09810e8b0f37bb12e0edb5c48ca",
+        "stop_head": "c20065f7ace0d92181629255e79d552a837358df717cc429f39fe452e7eb3edf",
+        "stop_bias": "abd459b72a312e8e8fda86f94721f38f8f55f958491cdfd899943e214b58c316",
+        "attention_weights": "ec9d24067f184c3d98f9528e0322119f6251c7cae1423f9ad7e9bfcf4049bb31",
+        "query_context_weights": "95483f2c30930a69df0bd6edd3ee32b65e3fb7237685bacc4a81af11313cf233"
+      },
+      "active_parameters": [],
+      "gradient_norm": 0.0,
+      "clip_scale": 1.0,
+      "adam_steps_before": {
+        "input_weights": 0,
+        "recurrent_weights": 0,
+        "cell_bias": 0,
+        "span_heads": 0,
+        "stop_head": 0,
+        "stop_bias": 0,
+        "attention_weights": 0,
+        "query_context_weights": 0
+      },
+      "adam_steps_after": {
+        "input_weights": 0,
+        "recurrent_weights": 0,
+        "cell_bias": 0,
+        "span_heads": 0,
+        "stop_head": 0,
+        "stop_bias": 0,
+        "attention_weights": 0,
+        "query_context_weights": 0
+      },
+      "parameter_update_applied": false,
+      "native_update_applied": false,
+      "offer_count": 2,
+      "update_count": 0
+    }
+  ],
+  "encoder": {
+    "model_id": "sentence-transformers/all-MiniLM-L6-v2",
+    "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "license": "Apache-2.0",
+    "model_card": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/blob/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/README.md",
+    "files": {
+      "onnx/model.onnx": {
+        "sha256": "6fd5d72fe4589f189f8ebc006442dbb529bb7ce38f8082112682524616046452",
+        "bytes": 90405214
+      },
+      "tokenizer.json": {
+        "sha256": "be50c3628f2bf5bb5e3a7f17b1f74611b2561a3a27eeab05e5aa30f411572037",
+        "bytes": 466247
+      },
+      "config.json": {
+        "sha256": "953f9c0d463486b10a6871cc2fd59f223b2c70184f49815e7efbcab5d8908b41",
+        "bytes": 612
+      },
+      "tokenizer_config.json": {
+        "sha256": "acb92769e8195aabd29b7b2137a9e6d6e25c476a4f15aa4355c233426c61576b",
+        "bytes": 350
+      },
+      "sentence_bert_config.json": {
+        "sha256": "fc1993fde0a95c24ec6c022539d41cf6e2f7c9721e5415d6fb6897472a9cd4b7",
+        "bytes": 53
+      },
+      "README.md": {
+        "sha256": "dcd602d2fd35c203a247304a06fec6654a12f7941b739f9221a064fe8dc3b7f0",
+        "bytes": 10502
+      }
+    },
+    "runtime": {
+      "onnxruntime": "1.29.0",
+      "tokenizers": "0.23.1",
+      "numpy": "2.4.6"
+    },
+    "provider": "CPUExecutionProvider",
+    "threads": 1,
+    "max_tokens": 256,
+    "truncation": "reject; caller must declare any chunking",
+    "token_dimension": 384,
+    "sentence_pooling": "attention-mask mean including special tokens; L2 normalization",
+    "span_pooling": "mean overlapping complete non-special subtokens; no normalization",
+    "prior": "contrastive sentence training includes QA and code pairs; contamination unknown"
+  },
+  "synthetic_execution_workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\query-aligned-rate-cell-cost-1zi1b8g7",
+  "motor_demonstrations": [
+    {
+      "case": "motor-a",
+      "execution": {
+        "returncode": 0,
+        "stdout": "fresh\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": true,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\query-aligned-rate-cell-cost-1zi1b8g7\\motor-a",
+        "elapsed_seconds": 0.0799684000085108
+      }
+    },
+    {
+      "case": "motor-b",
+      "execution": {
+        "returncode": 0,
+        "stdout": "ready\r\n",
+        "stderr": "",
+        "decoys_unchanged": true,
+        "materialized_matches_action": true,
+        "passed": true,
+        "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\query-aligned-rate-cell-cost-1zi1b8g7\\motor-b",
+        "elapsed_seconds": 0.07671490000211634
+      }
+    }
+  ],
+  "motor": {
+    "checkpoint_sha256": "575aa2c6ebadce0fccf21b556ad1a5bf702985cbb77eb8e41b7c84dfb49301e1",
+    "demonstration_count": 2,
+    "retained_demonstration_event_bytes": 0
+  },
+  "motor_roundtrip": {
+    "returncode": 0,
+    "stdout": "one two three four five six\r\n",
+    "stderr": "",
+    "decoys_unchanged": true,
+    "materialized_matches_action": true,
+    "passed": true,
+    "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\query-aligned-rate-cell-cost-1zi1b8g7\\roundtrip",
+    "elapsed_seconds": 0.07625380001263693
+  },
+  "native": {
+    "source_digest": "7125922510b018089744714d6b99748a20ad6e768d5ab6480fc6b883f5285cf5",
+    "library_path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.native-cache\\7125922510b018089744714d6b99748a20ad6e768d5ab6480fc6b883f5285cf5\\x86_64-pc-windows-msvc\\release\\humanbrain_kernel.dll",
+    "library_sha256": "21fe924ade8b88662b21398547a1c2c79771d25f6565d522c322afd7ffb64917"
+  },
+  "retained_payload_bytes": 105598711,
+  "payload_scope": "synthetic objects and their arrays counted once, encoder file payload; parent RSS includes native/ONNX allocations; runtime independently counts growing lesson ledgers",
+  "projection_seconds_by_component": {
+    "initialization_and_encoding": 2.0762919002154376,
+    "real_executions": 263.0135039910674,
+    "teaching_predictions": 11.754163205623627,
+    "evaluation_predictions": 14.694681599736214,
+    "updater_diagnostics": 1.2015104033052921,
+    "offers": 27.50881629277137
+  },
+  "projected_acquisition_seconds": 320.24896739271935,
+  "projection_limitations": "Single synthetic timing per path, max supported/STOP offer; not a runtime guarantee. No source or candidate reduction; actual run enforces wall/RSS/payload caps. Child execution wall time included, child memory not measured here. Reporting/filesystem and growing JSON ledger overhead remain outside this estimate.",
+  "elapsed_seconds": 2.839972999994643
+}

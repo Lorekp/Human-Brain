@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the failed rate-cell acquisition preflight.
+Updated 2026-09-05 with the failed query-aligned rate-cell comparison.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -11,6 +11,25 @@ as complementary evaluation pressure. Hybrid permission does not relabel existin
 cell-only evidence or reopen protected evaluations.
 
 ## Current contextual evidence-to-Python result
+
+The [query-aligned rate-cell comparison](../experiments/r4_integrated/query_aligned_rate_cell_result.md)
+is **closed without adoption**. Trainable aligned cells solve 0/48 supported
+requests in every phase. Correct unsupported STOPs are 16/16 and 15/16 for actual
+wording before/after growth, and 8/16 and 6/16 for alternate wording. The matched
+prefix learner solves 0/48 and preserves 16/16 STOPs throughout. Frozen aligned
+cells with trained heads solve zero; the fixed bypass solves one by emitting
+the same word for every request.
+
+One conditional gold answer wins in each phase but is gate-blocked. Removing
+that rejection would leave 47/48 supported selections wrong. The result owns
+the independent numerical rollout's tolerance failure and saved-state diagnosis;
+the failed replay is not a passing audit. All 3,330 retained execution workspaces
+match recorded actions and outcomes. Runtime is 336.597 seconds, peak parent
+working set 297.313 MiB, and corrected counted payload 104,421,866 bytes including
+encoder files. A bounded acquisition-strategy review precedes another mechanism.
+No integrated, fresh, official-exam or protected gate passes.
+
+## Earlier rate-cell acquisition
 
 The [rate-cell acquisition preflight](../experiments/r4_integrated/contextual_rate_cell_result.md)
 is **closed without adoption**. After 256 encounters and 511 offers per arm,
@@ -28,9 +47,9 @@ checkpoint export, with 277.289 MiB peak parent working set. The original learne
 payload counter skips the runner's `__main__` objects and is invalid; the result
 owns the separate resource correction and precise audit limits.
 
-The [bounded failure review](research/rate-cell-failure-review.md) owns the next
-design question. This failed candidate opens no fresh, official-exam, integrated
-or protected gate. All earlier results below retain their original contracts.
+The [failure review](research/rate-cell-failure-review.md) selected the subsequent
+query-aligned comparison reported above. This failed candidate opens no fresh,
+official-exam, integrated or protected gate. Earlier contracts remain unchanged.
 
 ## Earlier full-choice acquisition and feasibility
 

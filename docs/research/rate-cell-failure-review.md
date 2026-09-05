@@ -1,8 +1,9 @@
 # Rate-cell acquisition failure: one next design question
 
-Reviewed decision, 2026-09-05: prepare one comparison of direct query access under
-the limits below. This note implements or scores nothing. The failed rate-cell
-candidate remains closed. The
+Historical decision, 2026-09-05: the selected direct-query-access comparison
+has [completed and failed](../../experiments/r4_integrated/query_aligned_rate_cell_result.md).
+The design rationale and limits below are preserved; they do not authorize a
+repeat or another alignment variant. The failed rate-cell candidate remains closed. The
 [roadmap](roadmap-reading-to-coding.md) owns adoption and broader priorities;
 retain the [prior plan](contextual-rate-cell-preflight-plan.md) as historical.
 

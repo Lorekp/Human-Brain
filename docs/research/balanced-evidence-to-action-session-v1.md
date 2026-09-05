@@ -58,15 +58,21 @@ Independent numerical replay passes. The original object-based learner-payload
 counter omitted the runner's `__main__` reader objects; its byte total is invalid.
 Preserve the original receipt and use the separate resource correction.
 
-**Next integrated priority:** prepare the comparison of direct query access selected
-by the [completed failure review](rate-cell-failure-review.md), testing useful
-query-conditioned answer selection in the executed loop. Direct query access
-during document processing is a candidate, not a demonstrated missing capability
-or an adopted implementation. Correct payload accounting before any successor.
-No automatic optimizer, epoch, label,
+The subsequent [query-aligned comparison](../../experiments/r4_integrated/query_aligned_rate_cell_result.md)
+also closes without adoption. All four phases remain at 0/48 supported
+executions; one correct conditional winner is gate-blocked. Correct unsupported
+STOPs are 16/16 and 15/16 for actual wording before/after growth, but 8/16 and
+6/16 for alternate wording. Its repaired live payload count passes; the result
+owns the numerical replay limitation and diagnosis.
+
+**Next integrated priority:** a bounded acquisition-strategy review, then one
+selected experiment on the persistent executed loop. Compare experience
+retention/reuse, learned computation and disclosed pretrained resources before
+committing to another reader variant. No automatic optimizer, epoch, label,
 threshold or producer sweep, fresh comparison or protected evaluation follows.
-The original [rate-cell plan](contextual-rate-cell-preflight-plan.md) and frozen
-protocol retain authority over the closed experiment's evidence.
+The [previous failure review](rate-cell-failure-review.md), original
+[rate-cell plan](contextual-rate-cell-preflight-plan.md) and frozen protocols
+retain their historical scope.
 
 The diagnostic's exact-answer/STOP supervision is a declared stronger teaching
 contract. It does not pass the answer-free acquisition stages of the broader

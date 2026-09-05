@@ -70,23 +70,25 @@ learner successes or autonomous recovery.
 The first [narrow executed slice](../../experiments/r4_integrated/neutral_document_python_session.md)
 remains limited positional-reading and literal-edit evidence. The adopted
 AROW/BINDING baseline and all earlier frozen results retain their contracts.
-The [rate-cell acquisition preflight](../../experiments/r4_integrated/contextual_rate_cell_result.md)
-is closed without adoption: it solves 0/48 supported requests in every phase,
-and no correct whole answer wins its conditional span ranking. Its 16/16 correct
-unsupported STOPs match the fully frozen learner. Numerical replay passes;
-the original learner-payload counter is invalid and must be corrected before
-a successor run. The [failed full-choice attempt](../../experiments/r4_integrated/contextual_full_choice_result.md)
-and [inconclusive joint-ranking diagnostic](../../experiments/r4_integrated/contextual_full_choice_feasibility_result.md)
-remain closed; neither establishes fixed-feature impossibility.
+The [query-aligned rate-cell comparison](../../experiments/r4_integrated/query_aligned_rate_cell_result.md)
+is closed without adoption: supported execution remains 0/48 in every phase.
+One correct conditional answer wins but is rejected by the gate; changing that
+gate cannot repair the other 47 selections. Alternate wording and source growth
+also reduce correct unsupported STOPs. Corrected live payload accounting passes;
+the result records the separate numerical replay limitation and diagnosis.
+The preceding [rate-cell](../../experiments/r4_integrated/contextual_rate_cell_result.md),
+[full-choice](../../experiments/r4_integrated/contextual_full_choice_result.md) and
+[inconclusive feasibility](../../experiments/r4_integrated/contextual_full_choice_feasibility_result.md)
+results remain closed. None establishes architectural impossibility.
 
-The [completed failure review](rate-cell-failure-review.md) selects one
-comparison of direct query access for preparation. Poor conditional ranking
-rules out adjusting the gate threshold as a sufficient repair of this checkpoint. Test
-direct query access during document processing against matched fixed computations;
-do not assume that prefix memory loss or shared-producer interference is proved.
-Return to executed behavior with matched learning controls after a reviewed
-design and representative correctness/cost checks. No automatic epoch, rate,
-label, threshold or solver extension follows a failed candidate.
+Repeated failed acquisition now calls for a bounded review of the learning
+strategy before selecting the next integrated experiment. Compare how experiences
+are retained and reused, how reusable computation is learned, and what a disclosed
+pretrained knowledge component could contribute. Select one falsifiable next
+step against the persistent executed loop. Do not automatically extend attention,
+epochs, rates, labels, thresholds or solver budgets, or treat declining loss as
+useful acquisition. The [previous failure review](rate-cell-failure-review.md)
+is the historical rationale for the completed alignment comparison.
 
 This acquisition diagnostic uses explicit answer/STOP supervision over retained
 raw sources and a frozen external encoder. It is not answer-free internalization,
