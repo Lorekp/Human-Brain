@@ -5,6 +5,9 @@ The selected [full-choice attempt](../../experiments/r4_integrated/contextual_fu
 is now implemented, audited and closed after failing acquisition. The design below
 records that decision; the [active plan](balanced-evidence-to-action-session-v1.md)
 owns the next work. The conditional producer is not automatically selected.
+The subsequent [bounded review](contextual-rate-cell-preflight-plan.md) now
+selects an explicit rate-cell/separate-answerability preflight under a new budget;
+this document preserves the earlier decision and its conditional sketch.
 The [projected comparison](../../experiments/r4_integrated/contextual_projected_binding_result.md)
 failed. Neither arm fully acquires taught forms; available but previously
 unexecuted competitors win despite mostly positive admitted pair margins.

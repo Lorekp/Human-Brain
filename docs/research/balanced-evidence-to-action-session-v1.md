@@ -41,23 +41,26 @@ single words. Source growth changes no choices. All audits pass; raw/affine
 choices and supported selection/execution agree. Each update improves its own
 lesson, but supported loss improves while STOP loss worsens across passes.
 
-**Next integrated priority:** determine whether the existing fixed features can
-jointly satisfy the 64 actual TRAIN rankings, including whole spans and STOP.
-A saved-increment attribution already shows supported lessons overwhelming STOP
-corrections, mainly through relative-token features; later updates erase the
-latest own correction for 15/16 unsupported queries. This is observed interference,
-not a feature-impossibility proof or a STOP-scalar explanation alone.
+The [joint-ranking feasibility diagnostic](../../experiments/r4_integrated/contextual_full_choice_feasibility_result.md)
+is also closed. Three LPs solve 192 active constraints; a fourth with 256 times
+out. The saved partial vector violates 28,151 of all 93,312 original unit-margin
+constraints. This is **inconclusive**, with no feasibility or infeasibility
+certificate. The entire preparation/solve/verification effort ended within its
+30-minute deadline; the run itself used 900.123 seconds against 900 configured.
+Do not extend this solver run or deploy its host weights.
 
-Use a bounded host-only feasibility/conditioning diagnostic of the saved basis
-and authorized targets: declare solver/tolerance and ranking-margin contract,
-allow at most 30 minutes, and keep witness weights outside the learner. Margin
-infeasibility does not exclude every policy that could abstain through ties. A feasible fit favors investigating
-acquisition/credit; only a valid infeasibility certificate establishes conflicting
-fixed-feature requirements. Timeout or solver failure is inconclusive. Then
-select one justified design with a representative preflight and matched controls.
+**Next integrated priority:** prepare the [rate-cell acquisition preflight](contextual-rate-cell-preflight-plan.md)
+selected by the completed bounded design review. It tests learned sequence/span
+computation with separate answerability credit against matched frozen-cell and
+cell-bypass learners with trainable heads. The motivation is whole-span failure
+and observed STOP interference: later updates erase the latest own correction
+for 15/16 unsupported queries. This does not establish fixed-feature incapacity.
+Allow two hours of preparation, then 15 minutes of numerical/cost checks and
+30 minutes of acquisition. Freeze the implementation and resource contract before
+target-scored preflight; the linked plan owns thresholds and contribution controls.
 No automatic optimizer, epoch, label or producer sweep or fresh comparison follows.
-The [result report](../../experiments/r4_integrated/contextual_full_choice_result.md)
-owns exact outcomes, attribution, costs and custody.
+The [acquisition result](../../experiments/r4_integrated/contextual_full_choice_result.md)
+and feasibility result own exact outcomes, attribution, costs and custody.
 
 The diagnostic's exact-answer/STOP supervision is a declared stronger teaching
 contract. It does not pass the answer-free acquisition stages of the broader
@@ -77,7 +80,10 @@ Authentic official-exam development remains complementary pressure under the
 are regression observations with pending human marks, not fresh examination
 evidence. Select additional official passage groups through a separate frozen
 manifest; preserve paper/passage exposure boundaries and official marking guidance.
-Authored development cases do not replace independent reading evaluation.
+The [selected 2026 candidate](official-reading-next-candidate.md) now has verified
+original PDF custody and visual key checks; its raw extraction still needs
+correction before becoming a learner fixture. The whole paper is developer-exposed,
+not reserve material. Authored cases do not replace independent reading evaluation.
 
 Targets remain at least 6/8 fresh and 12/16 retained edits, including both
 properties for three fresh entities; translate them explicitly if the next roster

@@ -1,0 +1,1787 @@
+{
+  "status": "rejected_witness",
+  "scope": "Host linear joint TRAIN feasibility only; no neuronal execution, learned reachability, alternate or fresh capability.",
+  "dimension": 1622,
+  "persistent_bias": 0,
+  "finite_witness": true,
+  "weight_l2": 6.480461949111291,
+  "weight_max_abs": 0.16317060479046458,
+  "violations": 28151,
+  "constraint_count": 93312,
+  "minimum_margin": -1.9425073256815084,
+  "near_LP_active_constraint_count": 64,
+  "rows": [
+    {
+      "case": "full-choice-avrek-transport",
+      "gold_index": 12,
+      "constraints": 1458,
+      "min_margin": -0.7124123331915164,
+      "violations": 539,
+      "rank": 35,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        0,
+        70
+      ],
+      "BLAS_fsum_max_abs_difference": 2.886579864025407e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 44.733708060682275,
+      "maximum_rounding_bound": 1.5892605653065415e-13,
+      "minimum_rounding_lower_bound": -0.7124123331916207,
+      "nonpositive_lower_bounds": 34,
+      "margin_sha256": "d6bfbb713672cc514e616747af67fa89f81e6443719824fcc0fe35c0711f6cdd"
+    },
+    {
+      "case": "full-choice-avrek-audit",
+      "gold_index": 28,
+      "constraints": 1458,
+      "min_margin": -1.16054845061825,
+      "violations": 582,
+      "rank": 143,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        0,
+        1425
+      ],
+      "BLAS_fsum_max_abs_difference": 2.886579864025407e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 52.49078012490943,
+      "maximum_rounding_bound": 1.864847125606752e-13,
+      "minimum_rounding_lower_bound": -1.160548450618371,
+      "nonpositive_lower_bounds": 142,
+      "margin_sha256": "f4992806becbc8c9b9aa2658028e4aa23d7efc1d5652c36e6ff4399645e298ea"
+    },
+    {
+      "case": "full-choice-besin-transport",
+      "gold_index": 47,
+      "constraints": 1458,
+      "min_margin": -0.6780621633709077,
+      "violations": 627,
+      "rank": 55,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        0,
+        1162
+      ],
+      "BLAS_fsum_max_abs_difference": 2.6645352591003757e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 56.518541443887194,
+      "maximum_rounding_bound": 2.0079419529355105e-13,
+      "minimum_rounding_lower_bound": -0.6780621633710592,
+      "nonpositive_lower_bounds": 54,
+      "margin_sha256": "fad6c87334e79078cdc936d634da132c1dd05159b89714700bbdd4edffe53eb7"
+    },
+    {
+      "case": "full-choice-besin-audit",
+      "gold_index": 1458,
+      "constraints": 1458,
+      "min_margin": -0.9029611972560477,
+      "violations": 328,
+      "rank": 48,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 2.6645352591003757e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 27.80824691209968,
+      "maximum_rounding_bound": 9.879473918807832e-14,
+      "minimum_rounding_lower_bound": -0.9029611972561056,
+      "nonpositive_lower_bounds": 47,
+      "margin_sha256": "7c64622a223cef3336f74f9ffde7abb1b443b86ae878a49d0e71968f33df78d2"
+    },
+    {
+      "case": "full-choice-calvo-transport",
+      "gold_index": 130,
+      "constraints": 1458,
+      "min_margin": -1.0803205088528935,
+      "violations": 353,
+      "rank": 28,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        119
+      ],
+      "BLAS_fsum_max_abs_difference": 2.220446049250313e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 45.16443964521858,
+      "maximum_rounding_bound": 1.604563225229277e-13,
+      "minimum_rounding_lower_bound": -1.0803205088529952,
+      "nonpositive_lower_bounds": 27,
+      "margin_sha256": "a359e67d989ec74cfca93843bc0f08dd6347f6736a9694e477c9ddf29c141628"
+    },
+    {
+      "case": "full-choice-calvo-audit",
+      "gold_index": 147,
+      "constraints": 1458,
+      "min_margin": -1.800556140376335,
+      "violations": 820,
+      "rank": 239,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        188,
+        512
+      ],
+      "BLAS_fsum_max_abs_difference": 3.3306690738754696e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 51.695284691456706,
+      "maximum_rounding_bound": 1.8365854505282437e-13,
+      "minimum_rounding_lower_bound": -1.800556140376457,
+      "nonpositive_lower_bounds": 238,
+      "margin_sha256": "af65b4f03aca4eec376bba9a84d69def7bbaf3934c0682ea66f62cd1144fa136"
+    },
+    {
+      "case": "full-choice-derum-transport",
+      "gold_index": 1458,
+      "constraints": 1458,
+      "min_margin": -0.7906557754642974,
+      "violations": 505,
+      "rank": 32,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        98
+      ],
+      "BLAS_fsum_max_abs_difference": 2.220446049250313e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 23.82463195332282,
+      "maximum_rounding_bound": 8.464209583295749e-14,
+      "minimum_rounding_lower_bound": -0.7906557754643362,
+      "nonpositive_lower_bounds": 31,
+      "margin_sha256": "d4ab9e8aea12c0b8eaf230a52373b0fbab51ec926fe6934126cda31d6a04edc2"
+    },
+    {
+      "case": "full-choice-derum-audit",
+      "gold_index": 104,
+      "constraints": 1458,
+      "min_margin": -0.6365419754085997,
+      "violations": 368,
+      "rank": 42,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        516
+      ],
+      "BLAS_fsum_max_abs_difference": 4.440892098500626e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 44.968152097607955,
+      "maximum_rounding_bound": 1.5975896906755322e-13,
+      "minimum_rounding_lower_bound": -0.6365419754087173,
+      "nonpositive_lower_bounds": 41,
+      "margin_sha256": "3a3460f1aa0aa287c4dbf7fc20c38d830464811221d4839576e4833f88d9c258"
+    },
+    {
+      "case": "full-choice-eskar-transport",
+      "gold_index": 217,
+      "constraints": 1458,
+      "min_margin": -1.7243618418710887,
+      "violations": 470,
+      "rank": 43,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 3.1086244689504383e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 38.72399896852633,
+      "maximum_rounding_bound": 1.3757528083333999e-13,
+      "minimum_rounding_lower_bound": -1.724361841871199,
+      "nonpositive_lower_bounds": 42,
+      "margin_sha256": "dc9614c79cf30b7ab44c9952e2606b759f7386c21994d5964623b4e97d72251b"
+    },
+    {
+      "case": "full-choice-eskar-audit",
+      "gold_index": 194,
+      "constraints": 1458,
+      "min_margin": -1.7990498822709862,
+      "violations": 560,
+      "rank": 109,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        143,
+        196
+      ],
+      "BLAS_fsum_max_abs_difference": 2.6645352591003757e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 54.0593963988735,
+      "maximum_rounding_bound": 1.9205755705397643e-13,
+      "minimum_rounding_lower_bound": -1.7990498822711225,
+      "nonpositive_lower_bounds": 108,
+      "margin_sha256": "de987e3083d044ad6a0b1626a9cb9c5ef39ff44b0b8220c717220a38afb5e5a4"
+    },
+    {
+      "case": "full-choice-fovin-transport",
+      "gold_index": 240,
+      "constraints": 1458,
+      "min_margin": -1.0576663444173382,
+      "violations": 638,
+      "rank": 57,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        116
+      ],
+      "BLAS_fsum_max_abs_difference": 2.4424906541753444e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 37.943485550251786,
+      "maximum_rounding_bound": 1.3480234013574867e-13,
+      "minimum_rounding_lower_bound": -1.0576663444174412,
+      "nonpositive_lower_bounds": 56,
+      "margin_sha256": "e99da9e365542075870d36f1d179e5dd9b04b01537d2ec1d3699411c95b7ad42"
+    },
+    {
+      "case": "full-choice-fovin-audit",
+      "gold_index": 1458,
+      "constraints": 1458,
+      "min_margin": -1.1757230833357197,
+      "violations": 351,
+      "rank": 34,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 2.220446049250313e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 25.3424277783253,
+      "maximum_rounding_bound": 9.003438982207008e-14,
+      "minimum_rounding_lower_bound": -1.1757230833357843,
+      "nonpositive_lower_bounds": 33,
+      "margin_sha256": "77f2a6153195a24dc61ad2acc016ceae39ca43636e8d95fa40b884f532075fe1"
+    },
+    {
+      "case": "full-choice-gelru-transport",
+      "gold_index": 293,
+      "constraints": 1458,
+      "min_margin": -0.8452868811929194,
+      "violations": 610,
+      "rank": 52,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 2.4424906541753444e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 45.07470240153998,
+      "maximum_rounding_bound": 1.6013751178981288e-13,
+      "minimum_rounding_lower_bound": -0.8452868811930232,
+      "nonpositive_lower_bounds": 51,
+      "margin_sha256": "f345a6169bb064e180d79ca28b53a4ac074d3deee3f596e05c7f38d5ac50e24e"
+    },
+    {
+      "case": "full-choice-gelru-audit",
+      "gold_index": 346,
+      "constraints": 1458,
+      "min_margin": -1.6471205445891604,
+      "violations": 576,
+      "rank": 130,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 3.1086244689504383e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 49.047432332574154,
+      "maximum_rounding_bound": 1.7425148375797816e-13,
+      "minimum_rounding_lower_bound": -1.6471205445892896,
+      "nonpositive_lower_bounds": 129,
+      "margin_sha256": "da401e3a54037049052a32b56f5670065323e9058e0029757dfef016070eb11d"
+    },
+    {
+      "case": "full-choice-havis-transport",
+      "gold_index": 1458,
+      "constraints": 1458,
+      "min_margin": -0.6301672429197507,
+      "violations": 367,
+      "rank": 31,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 2.220446049250313e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 25.279949636178646,
+      "maximum_rounding_bound": 8.981242287183962e-14,
+      "minimum_rounding_lower_bound": -0.6301672429197956,
+      "nonpositive_lower_bounds": 30,
+      "margin_sha256": "32341c0b94bee3d338d656da6c799a97c294b7344db4414b567b1cb4a2d615c9"
+    },
+    {
+      "case": "full-choice-havis-audit",
+      "gold_index": 321,
+      "constraints": 1458,
+      "min_margin": -0.7917613315584346,
+      "violations": 341,
+      "rank": 42,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        516
+      ],
+      "BLAS_fsum_max_abs_difference": 2.4424906541753444e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 42.55503487875323,
+      "maximum_rounding_bound": 1.5118585451557903e-13,
+      "minimum_rounding_lower_bound": -0.7917613315585412,
+      "nonpositive_lower_bounds": 41,
+      "margin_sha256": "3be3140f1ee88b0bdadffc72a690855345dc389d13a91c447bb191ef612a4e84"
+    },
+    {
+      "case": "full-choice-irven-transport",
+      "gold_index": 386,
+      "constraints": 1458,
+      "min_margin": -1.0056780906266969,
+      "violations": 516,
+      "rank": 35,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        423
+      ],
+      "BLAS_fsum_max_abs_difference": 2.6645352591003757e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 44.020363161267255,
+      "maximum_rounding_bound": 1.5639174634879984e-13,
+      "minimum_rounding_lower_bound": -1.0056780906268032,
+      "nonpositive_lower_bounds": 34,
+      "margin_sha256": "3153ee49e4a2baa9b51aeffe2acf7e1bc9ebd4ebc5bdc81bae44f66da7307914"
+    },
+    {
+      "case": "full-choice-irven-audit",
+      "gold_index": 414,
+      "constraints": 1458,
+      "min_margin": -1.4562743630237167,
+      "violations": 545,
+      "rank": 100,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 2.6645352591003757e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 46.98107524465258,
+      "maximum_rounding_bound": 1.669103086664328e-13,
+      "minimum_rounding_lower_bound": -1.4562743630238446,
+      "nonpositive_lower_bounds": 99,
+      "margin_sha256": "a7a17f69a85e78f2547b3c8e0b846af199d27c73a24b73fa6abaf5ebc55bbc65"
+    },
+    {
+      "case": "full-choice-joral-transport",
+      "gold_index": 436,
+      "constraints": 1458,
+      "min_margin": -0.80401753125897,
+      "violations": 672,
+      "rank": 95,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        0,
+        437
+      ],
+      "BLAS_fsum_max_abs_difference": 2.220446049250313e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 37.637742563766636,
+      "maximum_rounding_bound": 1.3371612284546556e-13,
+      "minimum_rounding_lower_bound": -0.8040175312590683,
+      "nonpositive_lower_bounds": 94,
+      "margin_sha256": "e43cc2d7870436fc687fa4f0c25857ad25444fb7bcc32136d254c0774768351d"
+    },
+    {
+      "case": "full-choice-joral-audit",
+      "gold_index": 1458,
+      "constraints": 1458,
+      "min_margin": -0.5209035572118761,
+      "violations": 197,
+      "rank": 10,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 3.9968028886505635e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 30.993334183916406,
+      "maximum_rounding_bound": 1.1011044230683498e-13,
+      "minimum_rounding_lower_bound": -0.5209035572119364,
+      "nonpositive_lower_bounds": 9,
+      "margin_sha256": "a9692efb1e48286b1b06a0b9b624b1126eed6981c8d7d90af43c6a1c0f1d43ea"
+    },
+    {
+      "case": "full-choice-kedru-transport",
+      "gold_index": 498,
+      "constraints": 1458,
+      "min_margin": -1.112499421576799,
+      "violations": 968,
+      "rank": 201,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        1425
+      ],
+      "BLAS_fsum_max_abs_difference": 2.55351295663786e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 35.6870276198621,
+      "maximum_rounding_bound": 1.2678579118081537e-13,
+      "minimum_rounding_lower_bound": -1.1124994215768818,
+      "nonpositive_lower_bounds": 200,
+      "margin_sha256": "faf7ed42e0f2cf4637ee905dc84b7fa055ac152058aa3c7778557188b2741784"
+    },
+    {
+      "case": "full-choice-kedru-audit",
+      "gold_index": 515,
+      "constraints": 1458,
+      "min_margin": -1.370275742618409,
+      "violations": 608,
+      "rank": 117,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        0,
+        513
+      ],
+      "BLAS_fsum_max_abs_difference": 2.220446049250313e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 39.6368496197255,
+      "maximum_rounding_bound": 1.4081837782855723e-13,
+      "minimum_rounding_lower_bound": -1.3702757426185141,
+      "nonpositive_lower_bounds": 116,
+      "margin_sha256": "67d1e882b4b2cfd0b143dc0330651a7aa73b7ebb487d416688617d288f0d6bbd"
+    },
+    {
+      "case": "full-choice-lesam-transport",
+      "gold_index": 1458,
+      "constraints": 1458,
+      "min_margin": -1.0528478772364944,
+      "violations": 507,
+      "rank": 27,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        0
+      ],
+      "BLAS_fsum_max_abs_difference": 2.220446049250313e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 28.228036809398223,
+      "maximum_rounding_bound": 1.0028613249843311e-13,
+      "minimum_rounding_lower_bound": -1.0528478772365382,
+      "nonpositive_lower_bounds": 26,
+      "margin_sha256": "54dbc77aaa3cdc191d76af1800fa808e6ee2be05874df691a3b32a9ab7ec9bc3"
+    },
+    {
+      "case": "full-choice-lesam-audit",
+      "gold_index": 463,
+      "constraints": 1458,
+      "min_margin": -0.7704223318045035,
+      "violations": 303,
+      "rank": 34,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        513
+      ],
+      "BLAS_fsum_max_abs_difference": 3.3306690738754696e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 57.17048148753345,
+      "maximum_rounding_bound": 2.031103516043709e-13,
+      "minimum_rounding_lower_bound": -0.7704223318046288,
+      "nonpositive_lower_bounds": 33,
+      "margin_sha256": "ca83789e0131a362576b3905e57df55db9c9bd09648467f236bd5654e1c2ea57"
+    },
+    {
+      "case": "full-choice-morvi-transport",
+      "gold_index": 555,
+      "constraints": 1458,
+      "min_margin": -0.4191716480895488,
+      "violations": 303,
+      "rank": 20,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        596
+      ],
+      "BLAS_fsum_max_abs_difference": 2.4424906541753444e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 38.42494274698494,
+      "maximum_rounding_bound": 1.365128197043395e-13,
+      "minimum_rounding_lower_bound": -0.41917164808964785,
+      "nonpositive_lower_bounds": 19,
+      "margin_sha256": "befafe3b8ffd60010f7eb65d9e34f03c4234acb0563a8c6c4ac2b4c7ec881b8f"
+    },
+    {
+      "case": "full-choice-morvi-audit",
+      "gold_index": 595,
+      "constraints": 1458,
+      "min_margin": -1.0252317857634725,
+      "violations": 444,
+      "rank": 72,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        514
+      ],
+      "BLAS_fsum_max_abs_difference": 2.3314683517128287e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 45.222229283982216,
+      "maximum_rounding_bound": 1.606616325630562e-13,
+      "minimum_rounding_lower_bound": -1.0252317857635898,
+      "nonpositive_lower_bounds": 71,
+      "margin_sha256": "4b2285f994152613aa9f325e8c04a5a0beadd899dda7d94d1533d6e6ea17b619"
+    },
+    {
+      "case": "full-choice-nelux-transport",
+      "gold_index": 569,
+      "constraints": 1458,
+      "min_margin": -1.0450426903976433,
+      "violations": 328,
+      "rank": 28,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        557,
+        1230
+      ],
+      "BLAS_fsum_max_abs_difference": 3.552713678800501e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 52.445737739072044,
+      "maximum_rounding_bound": 1.863246898603849e-13,
+      "minimum_rounding_lower_bound": -1.0450426903977668,
+      "nonpositive_lower_bounds": 27,
+      "margin_sha256": "0b1676fb2afeaa07377fd14cabd8558dfdcc1dd5907d4e326c66c7948adc0888"
+    },
+    {
+      "case": "full-choice-nelux-audit",
+      "gold_index": 1458,
+      "constraints": 1458,
+      "min_margin": -0.025312293319062512,
+      "violations": 60,
+      "rank": 2,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        588
+      ],
+      "BLAS_fsum_max_abs_difference": 3.9968028886505635e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 40.26483706657744,
+      "maximum_rounding_bound": 1.4304943742110312e-13,
+      "minimum_rounding_lower_bound": -0.025312293319126013,
+      "nonpositive_lower_bounds": 1,
+      "margin_sha256": "beebad4eb4899bc1c2acde259e132172f9f495bb085e523e75cec410c1bee2aa"
+    },
+    {
+      "case": "full-choice-orvek-transport",
+      "gold_index": 661,
+      "constraints": 1458,
+      "min_margin": -0.2623665860644044,
+      "violations": 61,
+      "rank": 2,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        642
+      ],
+      "BLAS_fsum_max_abs_difference": 3.1086244689504383e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 45.42073145992093,
+      "maximum_rounding_bound": 1.6136685395878533e-13,
+      "minimum_rounding_lower_bound": -0.26236658606453006,
+      "nonpositive_lower_bounds": 1,
+      "margin_sha256": "23e2399f7764cde103d439618b1033299e8f95ccfba9096928889b6d4bb280ee"
+    },
+    {
+      "case": "full-choice-orvek-audit",
+      "gold_index": 642,
+      "constraints": 1458,
+      "min_margin": -0.576429126632664,
+      "violations": 263,
+      "rank": 22,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        662,
+        690
+      ],
+      "BLAS_fsum_max_abs_difference": 3.9968028886505635e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 57.307538894920015,
+      "maximum_rounding_bound": 2.0359727733037408e-13,
+      "minimum_rounding_lower_bound": -0.5764291266328049,
+      "nonpositive_lower_bounds": 21,
+      "margin_sha256": "36fb208b14c00495ba618b4e507fe6dc810cd594c21884b24a1740dcea032a34"
+    },
+    {
+      "case": "full-choice-pasir-transport",
+      "gold_index": 1458,
+      "constraints": 1458,
+      "min_margin": -0.6531077536072332,
+      "violations": 268,
+      "rank": 14,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 2.220446049250313e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 21.86027209576044,
+      "maximum_rounding_bound": 7.766328769690901e-14,
+      "minimum_rounding_lower_bound": -0.6531077536072754,
+      "nonpositive_lower_bounds": 13,
+      "margin_sha256": "76962361c35cfc7f44ca63f854bdd5be9469e32516794565e2bcd6f7cecff401"
+    },
+    {
+      "case": "full-choice-pasir-audit",
+      "gold_index": 698,
+      "constraints": 1458,
+      "min_margin": -1.9140070321062117,
+      "violations": 649,
+      "rank": 150,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        0,
+        143,
+        1230
+      ],
+      "BLAS_fsum_max_abs_difference": 3.774758283725532e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 47.00354432207581,
+      "maximum_rounding_bound": 1.6699013486514435e-13,
+      "minimum_rounding_lower_bound": -1.914007032106328,
+      "nonpositive_lower_bounds": 149,
+      "margin_sha256": "7b8fedea6b5a3e9b8a9f16f225939f225a984ab0403419f8c38a78714c83b1db"
+    },
+    {
+      "case": "full-choice-qevan-transport",
+      "gold_index": 742,
+      "constraints": 1458,
+      "min_margin": -0.7500641863054048,
+      "violations": 795,
+      "rank": 75,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        789,
+        966
+      ],
+      "BLAS_fsum_max_abs_difference": 1.9984014443252818e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 44.02195786943708,
+      "maximum_rounding_bound": 1.5639741189032847e-13,
+      "minimum_rounding_lower_bound": -0.7500641863055172,
+      "nonpositive_lower_bounds": 74,
+      "margin_sha256": "80f91a86101393e1de42312c549a0e7a7046e73106f9af47f3d0037f9437c76c"
+    },
+    {
+      "case": "full-choice-qevan-audit",
+      "gold_index": 761,
+      "constraints": 1458,
+      "min_margin": -0.7531220937763289,
+      "violations": 328,
+      "rank": 56,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 1.7763568394002505e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 52.623312836659736,
+      "maximum_rounding_bound": 1.8695556333859903e-13,
+      "minimum_rounding_lower_bound": -0.7531220937764497,
+      "nonpositive_lower_bounds": 55,
+      "margin_sha256": "3067c63bc61d8107c258b4fe38408947ae315a21f8e56af080f40e6eeaaed694"
+    },
+    {
+      "case": "full-choice-rosil-transport",
+      "gold_index": 780,
+      "constraints": 1458,
+      "min_margin": -0.9299100961403167,
+      "violations": 445,
+      "rank": 23,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 1.9984014443252818e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 62.52332713311602,
+      "maximum_rounding_bound": 2.221274795499398e-13,
+      "minimum_rounding_lower_bound": -0.929910096140478,
+      "nonpositive_lower_bounds": 22,
+      "margin_sha256": "ed6612d6c22869e7de0fbb9225655a17f2216701809341deed15799780b07ea6"
+    },
+    {
+      "case": "full-choice-rosil-audit",
+      "gold_index": 1458,
+      "constraints": 1458,
+      "min_margin": -1.220933642606191,
+      "violations": 310,
+      "rank": 48,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 2.3314683517128287e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 29.875788191727686,
+      "maximum_rounding_bound": 1.0614012137369743e-13,
+      "minimum_rounding_lower_bound": -1.220933642606251,
+      "nonpositive_lower_bounds": 47,
+      "margin_sha256": "3c80b0b4262f8f35c56badcc4138cdd02c6123cfb901588491a20693cd6d162b"
+    },
+    {
+      "case": "full-choice-sevar-transport",
+      "gold_index": 854,
+      "constraints": 1458,
+      "min_margin": -0.7643703224431341,
+      "violations": 242,
+      "rank": 18,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        1109
+      ],
+      "BLAS_fsum_max_abs_difference": 3.552713678800501e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 46.65473709722155,
+      "maximum_rounding_bound": 1.6575092266614017e-13,
+      "minimum_rounding_lower_bound": -0.7643703224432393,
+      "nonpositive_lower_bounds": 17,
+      "margin_sha256": "b2d228619ab86d87c71e65e053865e56cf9831de4de83aedff978cdcd920de71"
+    },
+    {
+      "case": "full-choice-sevar-audit",
+      "gold_index": 874,
+      "constraints": 1458,
+      "min_margin": -1.5365699384152507,
+      "violations": 786,
+      "rank": 244,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        188,
+        512
+      ],
+      "BLAS_fsum_max_abs_difference": 4.440892098500626e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 52.94308106788352,
+      "maximum_rounding_bound": 1.880916083077136e-13,
+      "minimum_rounding_lower_bound": -1.5365699384153753,
+      "nonpositive_lower_bounds": 243,
+      "margin_sha256": "eba19e996f7fa5c7ffc1de0fc37ce178d7b6012915c6efbf44447f8c14611153"
+    },
+    {
+      "case": "full-choice-talun-transport",
+      "gold_index": 1458,
+      "constraints": 1458,
+      "min_margin": -1.0394523595898475,
+      "violations": 490,
+      "rank": 33,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        830
+      ],
+      "BLAS_fsum_max_abs_difference": 2.6645352591003757e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 22.497655379802758,
+      "maximum_rounding_bound": 7.992772800876494e-14,
+      "minimum_rounding_lower_bound": -1.0394523595898868,
+      "nonpositive_lower_bounds": 32,
+      "margin_sha256": "00ebcbad9708a04a4f1952fca2c42f080acb578171f6dbbeac4722fa77e952f0"
+    },
+    {
+      "case": "full-choice-talun-audit",
+      "gold_index": 831,
+      "constraints": 1458,
+      "min_margin": -0.78301643713848,
+      "violations": 434,
+      "rank": 59,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 2.220446049250313e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 44.68213399875442,
+      "maximum_rounding_bound": 1.5874282865537177e-13,
+      "minimum_rounding_lower_bound": -0.7830164371385927,
+      "nonpositive_lower_bounds": 58,
+      "margin_sha256": "45d14888c040babbb2fbe38d378a72dad82af7c260570bca7d5dfa8d09d2ce74"
+    },
+    {
+      "case": "full-choice-urevi-transport",
+      "gold_index": 941,
+      "constraints": 1458,
+      "min_margin": -0.595289523041951,
+      "violations": 205,
+      "rank": 12,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        966
+      ],
+      "BLAS_fsum_max_abs_difference": 2.6645352591003757e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 38.37364144112646,
+      "maximum_rounding_bound": 1.3633056085327574e-13,
+      "minimum_rounding_lower_bound": -0.5952895230420507,
+      "nonpositive_lower_bounds": 11,
+      "margin_sha256": "53ed9552f4b314f8f2d55562281c9f0547cc4294f91b0fa4ce3666361779784e"
+    },
+    {
+      "case": "full-choice-urevi-audit",
+      "gold_index": 921,
+      "constraints": 1458,
+      "min_margin": -1.0488978769152588,
+      "violations": 288,
+      "rank": 29,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        939
+      ],
+      "BLAS_fsum_max_abs_difference": 2.6645352591003757e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 57.23636635864537,
+      "maximum_rounding_bound": 2.0334442168719622e-13,
+      "minimum_rounding_lower_bound": -1.0488978769153978,
+      "nonpositive_lower_bounds": 28,
+      "margin_sha256": "88d4d37f5d32605ec6b7a5942499b5a86e15da2985daad011e7af4a13c46f5da"
+    },
+    {
+      "case": "full-choice-vesor-transport",
+      "gold_index": 967,
+      "constraints": 1458,
+      "min_margin": -1.1300806394668579,
+      "violations": 1086,
+      "rank": 207,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        1425
+      ],
+      "BLAS_fsum_max_abs_difference": 2.8033131371785203e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 39.407344650227934,
+      "maximum_rounding_bound": 1.4000301238407052e-13,
+      "minimum_rounding_lower_bound": -1.1300806394669172,
+      "nonpositive_lower_bounds": 206,
+      "margin_sha256": "cfeff2fa680c9e9aa5b4bf3bc7ddfb71a09e915487dfa35d5f8267423cf528c7"
+    },
+    {
+      "case": "full-choice-vesor-audit",
+      "gold_index": 1458,
+      "constraints": 1458,
+      "min_margin": -0.41992380299324183,
+      "violations": 217,
+      "rank": 9,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        345
+      ],
+      "BLAS_fsum_max_abs_difference": 2.6645352591003757e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 25.189858397359203,
+      "maximum_rounding_bound": 8.94923544953457e-14,
+      "minimum_rounding_lower_bound": -0.4199238029932902,
+      "nonpositive_lower_bounds": 8,
+      "margin_sha256": "f5db70dad8ec1b3051c596cc23b813a119fd26a7213bd3b8c0f8647d21ca2eb8"
+    },
+    {
+      "case": "full-choice-walim-transport",
+      "gold_index": 1020,
+      "constraints": 1458,
+      "min_margin": -0.6512647698432535,
+      "violations": 493,
+      "rank": 29,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        276
+      ],
+      "BLAS_fsum_max_abs_difference": 1.3322676295501878e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 46.66722931394757,
+      "maximum_rounding_bound": 1.6579530393538126e-13,
+      "minimum_rounding_lower_bound": -0.6512647698433602,
+      "nonpositive_lower_bounds": 28,
+      "margin_sha256": "f84cc7192c9f1cd5ee77294088333454d85bb66edfa3e25e56cb4176f2cfa2fd"
+    },
+    {
+      "case": "full-choice-walim-audit",
+      "gold_index": 1073,
+      "constraints": 1458,
+      "min_margin": -1.6230686539717298,
+      "violations": 744,
+      "rank": 211,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        514,
+        1025
+      ],
+      "BLAS_fsum_max_abs_difference": 1.9984014443252818e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 48.051445570968895,
+      "maximum_rounding_bound": 1.7071302796611894e-13,
+      "minimum_rounding_lower_bound": -1.6230686539718626,
+      "nonpositive_lower_bounds": 210,
+      "margin_sha256": "a45a2de145d2bb8e48973295eaea4bd91417085f55a15842bb4e5b56c5bb296b"
+    },
+    {
+      "case": "full-choice-xevur-transport",
+      "gold_index": 1458,
+      "constraints": 1458,
+      "min_margin": -0.28521296526379747,
+      "violations": 190,
+      "rank": 8,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 2.886579864025407e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 24.604343758111458,
+      "maximum_rounding_bound": 8.74121886273523e-14,
+      "minimum_rounding_lower_bound": -0.2852129652638413,
+      "nonpositive_lower_bounds": 7,
+      "margin_sha256": "d71072ee1a41a3565466ab7333a8c4294dd2323c602a33a0314a962edc7d44af"
+    },
+    {
+      "case": "full-choice-xevur-audit",
+      "gold_index": 1045,
+      "constraints": 1458,
+      "min_margin": -0.8946728448135437,
+      "violations": 324,
+      "rank": 38,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 2.6645352591003757e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 43.05240133017807,
+      "maximum_rounding_bound": 1.5295285511093252e-13,
+      "minimum_rounding_lower_bound": -0.8946728448136532,
+      "nonpositive_lower_bounds": 37,
+      "margin_sha256": "11042e4dcfadad07648caa99063aa16bdf2fa0c10888ee2205584bcf4b1648b3"
+    },
+    {
+      "case": "full-choice-yarvo-transport",
+      "gold_index": 1113,
+      "constraints": 1458,
+      "min_margin": -0.4512388347027844,
+      "violations": 269,
+      "rank": 8,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        1162
+      ],
+      "BLAS_fsum_max_abs_difference": 2.220446049250313e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 41.974911560365044,
+      "maximum_rounding_bound": 1.4912484246695017e-13,
+      "minimum_rounding_lower_bound": -0.4512388347028899,
+      "nonpositive_lower_bounds": 7,
+      "margin_sha256": "b82c98a7514582e8a5e9c26328848c1b7cc8fa7fe9edaed9d8b7bf31a2d0087c"
+    },
+    {
+      "case": "full-choice-yarvo-audit",
+      "gold_index": 1138,
+      "constraints": 1458,
+      "min_margin": -0.9436985839272074,
+      "violations": 368,
+      "rank": 53,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        1137
+      ],
+      "BLAS_fsum_max_abs_difference": 2.6645352591003757e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 46.248863388183786,
+      "maximum_rounding_bound": 1.6430896958817622e-13,
+      "minimum_rounding_lower_bound": -0.9436985839273412,
+      "nonpositive_lower_bounds": 52,
+      "margin_sha256": "f55603a7cdee3452f92f8c39ed3a6ea7fee307597359ace267d27f7d41fe82c3"
+    },
+    {
+      "case": "full-choice-zelin-transport",
+      "gold_index": 1163,
+      "constraints": 1458,
+      "min_margin": -0.9224274897664687,
+      "violations": 582,
+      "rank": 74,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        629,
+        1150
+      ],
+      "BLAS_fsum_max_abs_difference": 2.6645352591003757e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 37.24982277992703,
+      "maximum_rounding_bound": 1.3233795492314126e-13,
+      "minimum_rounding_lower_bound": -0.9224274897665753,
+      "nonpositive_lower_bounds": 73,
+      "margin_sha256": "c7ee949ce259c122d5c99efc966ddc11ef40c960eadb10441c56ae66a7186aef"
+    },
+    {
+      "case": "full-choice-zelin-audit",
+      "gold_index": 1458,
+      "constraints": 1458,
+      "min_margin": -0.4006590969065905,
+      "violations": 210,
+      "rank": 13,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 2.6645352591003757e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 31.218499242425924,
+      "maximum_rounding_bound": 1.1091038929018966e-13,
+      "minimum_rounding_lower_bound": -0.40065909690665286,
+      "nonpositive_lower_bounds": 12,
+      "margin_sha256": "d880da2f98eb44c4044e3ef2d2aa8c9d1ed9033e453e459caa38f1492438c518"
+    },
+    {
+      "case": "full-choice-adrix-transport",
+      "gold_index": 1231,
+      "constraints": 1458,
+      "min_margin": -1.3242613022534342,
+      "violations": 1030,
+      "rank": 222,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        839,
+        1425
+      ],
+      "BLAS_fsum_max_abs_difference": 2.220446049250313e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 36.21870657474154,
+      "maximum_rounding_bound": 1.286746942765459e-13,
+      "minimum_rounding_lower_bound": -1.324261302253526,
+      "nonpositive_lower_bounds": 221,
+      "margin_sha256": "37e13f16bd038a1f7074c4a19431810a181dd5729901674bd5d8f8404d84fdc6"
+    },
+    {
+      "case": "full-choice-adrix-audit",
+      "gold_index": 1248,
+      "constraints": 1458,
+      "min_margin": -1.9425073256815084,
+      "violations": 541,
+      "rank": 82,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        0,
+        1230
+      ],
+      "BLAS_fsum_max_abs_difference": 2.220446049250313e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 44.90251416525274,
+      "maximum_rounding_bound": 1.5952577628742666e-13,
+      "minimum_rounding_lower_bound": -1.9425073256816228,
+      "nonpositive_lower_bounds": 81,
+      "margin_sha256": "fa79004e4e5bdc860df44cdf767655f54feb7ab274639a547fa1f67b5010b18e"
+    },
+    {
+      "case": "full-choice-bovek-transport",
+      "gold_index": 1458,
+      "constraints": 1458,
+      "min_margin": -0.6840605515385891,
+      "violations": 401,
+      "rank": 21,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        1190
+      ],
+      "BLAS_fsum_max_abs_difference": 2.6645352591003757e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 28.35621534325176,
+      "maximum_rounding_bound": 1.0074151412898316e-13,
+      "minimum_rounding_lower_bound": -0.6840605515386332,
+      "nonpositive_lower_bounds": 20,
+      "margin_sha256": "67c77e7b2fa72b38a1edb0885da13ee71d092e23dc31c20dbb99fb6f5b3d4676"
+    },
+    {
+      "case": "full-choice-bovek-audit",
+      "gold_index": 1193,
+      "constraints": 1458,
+      "min_margin": -0.4700629687224945,
+      "violations": 112,
+      "rank": 4,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        1248
+      ],
+      "BLAS_fsum_max_abs_difference": 2.886579864025407e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 57.566077951145736,
+      "maximum_rounding_bound": 2.0451579257193137e-13,
+      "minimum_rounding_lower_bound": -0.4700629687226366,
+      "nonpositive_lower_bounds": 3,
+      "margin_sha256": "292a17f877de473a371062204d884698196165d3c5b913c6303b60be5282eb2f"
+    },
+    {
+      "case": "full-choice-cernu-transport",
+      "gold_index": 1285,
+      "constraints": 1458,
+      "min_margin": -0.6731673893140494,
+      "violations": 310,
+      "rank": 19,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        1316
+      ],
+      "BLAS_fsum_max_abs_difference": 3.1086244689504383e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 37.72006124368625,
+      "maximum_rounding_bound": 1.3400857754563679e-13,
+      "minimum_rounding_lower_bound": -0.6731673893141481,
+      "nonpositive_lower_bounds": 18,
+      "margin_sha256": "c1b1d7b26e734b91431bf1e492b2bb72ddff1138fb6609544e97b74776610e9f"
+    },
+    {
+      "case": "full-choice-cernu-audit",
+      "gold_index": 1322,
+      "constraints": 1458,
+      "min_margin": -0.7538801581243249,
+      "violations": 269,
+      "rank": 34,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 2.6645352591003757e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 44.57162832575875,
+      "maximum_rounding_bound": 1.58350233639335e-13,
+      "minimum_rounding_lower_bound": -0.7538801581244399,
+      "nonpositive_lower_bounds": 33,
+      "margin_sha256": "0e2e5b9c0f4ce2f39e6acc1a1e80a74affdd7b4532d6c8c087bf7af0ac3cfbde"
+    },
+    {
+      "case": "full-choice-delvi-transport",
+      "gold_index": 1299,
+      "constraints": 1458,
+      "min_margin": -1.2093084247040484,
+      "violations": 594,
+      "rank": 69,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        0,
+        380,
+        1230
+      ],
+      "BLAS_fsum_max_abs_difference": 2.4424906541753444e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 49.20018062797054,
+      "maximum_rounding_bound": 1.7479415471644635e-13,
+      "minimum_rounding_lower_bound": -1.2093084247041643,
+      "nonpositive_lower_bounds": 68,
+      "margin_sha256": "61de211da3519f4353e4a0087b4ed54011b4bb6805f53cc09116b4786c4e7db5"
+    },
+    {
+      "case": "full-choice-delvi-audit",
+      "gold_index": 1458,
+      "constraints": 1458,
+      "min_margin": -0.3663157894727274,
+      "violations": 134,
+      "rank": 9,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 2.6645352591003757e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 37.36143498199837,
+      "maximum_rounding_bound": 1.3273448112016116e-13,
+      "minimum_rounding_lower_bound": -0.36631578947279075,
+      "nonpositive_lower_bounds": 8,
+      "margin_sha256": "692b176a6338d71002987d8129e278ac49f6193d210cfe95e0057500a98efd58"
+    },
+    {
+      "case": "full-choice-erqon-transport",
+      "gold_index": 1394,
+      "constraints": 1458,
+      "min_margin": -0.4835813076080194,
+      "violations": 276,
+      "rank": 17,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [],
+      "BLAS_fsum_max_abs_difference": 3.1086244689504383e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 41.00128874178892,
+      "maximum_rounding_bound": 1.4566583936140247e-13,
+      "minimum_rounding_lower_bound": -0.48358130760812484,
+      "nonpositive_lower_bounds": 16,
+      "margin_sha256": "5c259ed65f945a1429665a3a14fc27f4bf58d67427a36e70aab1c4f031a2b30a"
+    },
+    {
+      "case": "full-choice-erqon-audit",
+      "gold_index": 1372,
+      "constraints": 1458,
+      "min_margin": -0.9186132458686453,
+      "violations": 356,
+      "rank": 50,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        1425
+      ],
+      "BLAS_fsum_max_abs_difference": 3.9968028886505635e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 51.51787106883366,
+      "maximum_rounding_bound": 1.8302824524892591e-13,
+      "minimum_rounding_lower_bound": -0.9186132458687742,
+      "nonpositive_lower_bounds": 49,
+      "margin_sha256": "159953658ceb78469f6a8c9181669275cf51907362c26b1b425402b6294c68a4"
+    },
+    {
+      "case": "full-choice-fesul-transport",
+      "gold_index": 1458,
+      "constraints": 1458,
+      "min_margin": -0.48307440791819667,
+      "violations": 150,
+      "rank": 8,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        1431
+      ],
+      "BLAS_fsum_max_abs_difference": 2.6645352591003757e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 23.538372148546927,
+      "maximum_rounding_bound": 8.36250967088394e-14,
+      "minimum_rounding_lower_bound": -0.48307440791824924,
+      "nonpositive_lower_bounds": 7,
+      "margin_sha256": "c7657f04e705d1ebd1f8fde5d0aac4a996181c00a4c61dbc96a5b42febfeb0f9"
+    },
+    {
+      "case": "full-choice-fesul-audit",
+      "gold_index": 1431,
+      "constraints": 1458,
+      "min_margin": -1.3634359678696601,
+      "violations": 445,
+      "rank": 70,
+      "unique_gold_leader": false,
+      "near_LP_active_constraints": [
+        143
+      ],
+      "BLAS_fsum_max_abs_difference": 3.552713678800501e-15,
+      "BLAS_fsum_tolerance_agreement": true,
+      "maximum_absolute_product_scale": 45.630353505401416,
+      "maximum_rounding_bound": 1.62111581067142e-13,
+      "minimum_rounding_lower_bound": -1.363435967869774,
+      "nonpositive_lower_bounds": 69,
+      "margin_sha256": "d8b6da291662cadde4732a227177c558f3529b8faff6ef8792d97110abe9a67c"
+    }
+  ],
+  "groups": {
+    "role:transport": {
+      "count": 32,
+      "margin_pass": 0,
+      "rank1": 0,
+      "min_margin": -1.7243618418710887
+    },
+    "form:form-0": {
+      "count": 8,
+      "margin_pass": 0,
+      "rank1": 0,
+      "min_margin": -1.16054845061825
+    },
+    "length:1": {
+      "count": 16,
+      "margin_pass": 0,
+      "rank1": 0,
+      "min_margin": -1.9425073256815084
+    },
+    "role:audit": {
+      "count": 32,
+      "margin_pass": 0,
+      "rank1": 0,
+      "min_margin": -1.9425073256815084
+    },
+    "length:2": {
+      "count": 16,
+      "margin_pass": 0,
+      "rank1": 0,
+      "min_margin": -1.7243618418710887
+    },
+    "form:form-3": {
+      "count": 8,
+      "margin_pass": 0,
+      "rank1": 0,
+      "min_margin": -1.6471205445891604
+    },
+    "length:3": {
+      "count": 16,
+      "margin_pass": 0,
+      "rank1": 0,
+      "min_margin": -1.9140070321062117
+    },
+    "answerability:STOP": {
+      "count": 16,
+      "margin_pass": 0,
+      "rank1": 0,
+      "min_margin": -1.220933642606191
+    },
+    "form:form-1": {
+      "count": 8,
+      "margin_pass": 0,
+      "rank1": 0,
+      "min_margin": -1.800556140376335
+    },
+    "form:form-4": {
+      "count": 8,
+      "margin_pass": 0,
+      "rank1": 0,
+      "min_margin": -1.4562743630237167
+    },
+    "form:form-2": {
+      "count": 8,
+      "margin_pass": 0,
+      "rank1": 0,
+      "min_margin": -1.9140070321062117
+    },
+    "form:form-5": {
+      "count": 8,
+      "margin_pass": 0,
+      "rank1": 0,
+      "min_margin": -1.9425073256815084
+    },
+    "form:form-6": {
+      "count": 8,
+      "margin_pass": 0,
+      "rank1": 0,
+      "min_margin": -1.0252317857634725
+    },
+    "form:form-7": {
+      "count": 8,
+      "margin_pass": 0,
+      "rank1": 0,
+      "min_margin": -0.9224274897664687
+    }
+  },
+  "BLAS_fsum_tolerance_agreement": true,
+  "declared_LP_active_directions_verified": 256,
+  "minimum_rounding_lower_bound": -1.9425073256816228,
+  "all_rounding_lower_bounds_positive": false,
+  "rounding_bound_scope": "Conservative 16*eps*sum((abs(gold)+abs(wrong))*abs(w)) +16*1622*tiny for finite float64 feature inputs; covers subtraction/product/fsum rounding, excludes feature reconstruction error. Not exact-rational certification.",
+  "acceptance": "All direct float64-product math.fsum margins >=1 with no relaxed acceptance; not interval/exact arithmetic certification.",
+  "LP_RHS": 1.000001,
+  "witness_sha256": "188d46216e0e09bb97f589337b0d286f68eb5205ff9becfd87296d587f1bbfa1",
+  "feature_source": "Per-query SHA256 equality to independently reconstructed original features",
+  "fit_report_sha256": "56e8f8cd1bee7feed785f20d9f1aa5b103bcca3e50c07a24627c2835dc6c34cf",
+  "inputs": {
+    "status": "passed",
+    "scope": "Saved original TRAIN only; alternate/growth labels do not enter feasibility constraints.",
+    "artifact_sha256": "c25cfd867a203cc8ce6ba5f5b2af11cf880fd18ccab055fd5243c452b4671c08",
+    "checkpoint_sha256": "ff7f61a8b6134a78d578316faf24df0863128aab90891f18205c10374de1983b",
+    "fixture_sha256": "9c1055c8c1fbfc3f5e92d997c5e335913619962c6aa47f0bdf9b984a005f4059",
+    "source_revision": "dd871c936893628f2deb37e79fa3c25da0f2be50",
+    "all_original_sources_byte_exact": true,
+    "prior_independent_feature_audit_sha256": "525995f80f27f204123cad5841f51c0242545ac7a179613debae6ecc42c98893",
+    "prior_exact_feature_hash_checks": 511,
+    "sealed_source_sha256": "bef5c1e6fd8ff04df18f88153f54fb6b7f50edf2e527a8a48d26e5da1d3b4382",
+    "actual_queries": 64,
+    "exported_query_map": 128,
+    "TRAIN_documents": 16,
+    "candidate_count": 1458,
+    "unique_supported_gold": 48,
+    "STOP_gold": 16,
+    "competitors_per_query": 1458,
+    "constraints": 93312,
+    "coordinates": "1621 candidate effective-weight coordinates plus one STOP scalar; persistent bias fixed0",
+    "lifted_dimension": 1622,
+    "queries": [
+      {
+        "case": "full-choice-avrek-transport",
+        "query_hex": "436f6e66696775726520617672656b207573696e672069747320646f63756d656e746564207472616e73706f72742073657474696e672e",
+        "query_sha256": "58cbe3b9b263667d221a31f2d98603675604555fca8b7b227bc1f73cad4c7f08",
+        "gold_index": 12,
+        "feature_matrix_sha256": "37ee67959ff38f78f81fef8ac900dcfc1922ed6d812060c51e9dafeb436364b5"
+      },
+      {
+        "case": "full-choice-avrek-audit",
+        "query_hex": "4170706c792074686520646f63756d656e746564206175646974206c6162656c20746f20617672656b2e",
+        "query_sha256": "e3c540fbe342d90f0b47b5a95cc318a41692047928c4869b0800fdf5d11c6f7d",
+        "gold_index": 28,
+        "feature_matrix_sha256": "97d46bede1e866886f619d222e8fada6edec77b786f972d2fa56af5ef03250c0"
+      },
+      {
+        "case": "full-choice-besin-transport",
+        "query_hex": "53657420746865207472616e73706f727420636f6e66696775726174696f6e2073706563696669656420666f7220626573696e2e",
+        "query_sha256": "1486b4f4fbfa569015f6f56df310445dfaff4007ec1e6dcfd7baa66160fcbf68",
+        "gold_index": 47,
+        "feature_matrix_sha256": "db92ef4dd51d459c16eed6bb4c4ccd2e8b605dda8044a98f988edc2d1328bd8c"
+      },
+      {
+        "case": "full-choice-besin-audit",
+        "query_hex": "557365207468652076616c75652073706563696669656420666f72206964656e74696679696e6720626573696e206175646974207265636f7264732e",
+        "query_sha256": "ea75930514c9310777652fec162627372360c9da3bed56cfd22df2cd8e4b0fb3",
+        "gold_index": 1458,
+        "feature_matrix_sha256": "269d69c28fda86f9fbb7b7f9380095d53433d8e47c682b4db76a319800088b23"
+      },
+      {
+        "case": "full-choice-calvo-transport",
+        "query_hex": "55736520746865207472616e73706f72742076616c75652061737369676e656420746f2063616c766f20696e20746865206e6f7465732e",
+        "query_sha256": "2a06bd6f66bfaabfb1f923eb903b6c2d8db5edb7e8634f43fa4b848e6b663125",
+        "gold_index": 130,
+        "feature_matrix_sha256": "3e2afb7797e89b22ebec1bf2429b0e5c84ef5e2254f7864c5583871b46c4f7cf"
+      },
+      {
+        "case": "full-choice-calvo-audit",
+        "query_hex": "53657420746865206175646974206c6162656c20666f722063616c766f2066726f6d20746865206e6f7465732e",
+        "query_sha256": "bec0b190b7675d692a65a94748e34f56c520ed0356c1585ab0b23a0438abe4fe",
+        "gold_index": 147,
+        "feature_matrix_sha256": "bc208103e106a4d68ac7a47a4508814d7b485ee0cf76ee53194f19d86344e57e"
+      },
+      {
+        "case": "full-choice-derum-transport",
+        "query_hex": "46696e64207768617420646572756d207573657320666f72207472616e73706f727420616e6420636f6e66696775726520746861742076616c75652e",
+        "query_sha256": "0025794a206ac41fe280a5fd3dc3a712dbe8ad441798cb0f381be31910329cef",
+        "gold_index": 1458,
+        "feature_matrix_sha256": "6fed218ea2e14f2a03c22d81d8d9e45c1d9660957026d30c2ef5eef7c0613b8e"
+      },
+      {
+        "case": "full-choice-derum-audit",
+        "query_hex": "46696e6420746865206175646974206c6162656c2061737369676e656420746f20646572756d20616e64206170706c792069742e",
+        "query_sha256": "0aa1eac0c20168c099c42b1db50e99586b58ed834a08789c5dbb5611edddf0ba",
+        "gold_index": 104,
+        "feature_matrix_sha256": "007a1b0dbd48606e97a029dec4f87de9bd36efc45a5d4b4f72d4c7bdbcda7fd0"
+      },
+      {
+        "case": "full-choice-eskar-transport",
+        "query_hex": "57686963682073657474696e672063617272696573206d65737361676573206265747765656e20736572766963657320666f722065736b61723f204170706c792069742e",
+        "query_sha256": "6aeb560a246dbc8dee3030f7aa5d0fb8ed010c32a5689bbb888dc725a78db645",
+        "gold_index": 217,
+        "feature_matrix_sha256": "13f7ebfb7a3cd746633800ae691bdfda29a881fde6c6deac13c57a8174e387a5"
+      },
+      {
+        "case": "full-choice-eskar-audit",
+        "query_hex": "57686963682076616c7565206c6162656c7320746865206175646974207265636f726473206f662065736b61723f20436f6e6669677572652069742e",
+        "query_sha256": "4e50f0bf87b61d495378f3b8728f81f2767357e726b660e526fdc8eb82352491",
+        "gold_index": 194,
+        "feature_matrix_sha256": "0cb087545a017b87678f9011cd60b968ef471783513b35e0eed58018ebbb9a2e"
+      },
+      {
+        "case": "full-choice-fovin-transport",
+        "query_hex": "4170706c792074686520646f63756d656e7465642073657474696e6720666f7220636f6d6d756e69636174696f6e206265747765656e20736572766963657320627920666f76696e2e",
+        "query_sha256": "492b576ad1d4f35d74966f74cbee641bea6114a725619ff38cced02b46e60d87",
+        "gold_index": 240,
+        "feature_matrix_sha256": "734ccabaf5ef856dba5de6fc0a485ccedad10e74a48932957cf322c17938d80f"
+      },
+      {
+        "case": "full-choice-fovin-audit",
+        "query_hex": "436f6e66696775726520666f76696e2077697468207468652076616c7565207573656420746f206d61726b20697473206175646974207265636f7264732e",
+        "query_sha256": "1a747cb78585131146bcc5d6b6caf1bd11869f08a90e58cb416e6e9d4c381237",
+        "gold_index": 1458,
+        "feature_matrix_sha256": "2ef321e5fb54050b8b4ae30833f2d1be48e51cba2642f13d34bbd27909d843b6"
+      },
+      {
+        "case": "full-choice-gelru-transport",
+        "query_hex": "53657420746865207472616e73706f727420636f6e66696775726174696f6e2073706563696669656420666f722067656c72752e",
+        "query_sha256": "8a2d77127cc2a1c129e7cd3e923f6269ac20cfc84153a49b7ca2d8eb4e925a72",
+        "gold_index": 293,
+        "feature_matrix_sha256": "b253e5247604252765468624f0a4d3f81103d022c21766cd07cc72f82b46d850"
+      },
+      {
+        "case": "full-choice-gelru-audit",
+        "query_hex": "557365207468652076616c75652073706563696669656420666f72206964656e74696679696e672067656c7275206175646974207265636f7264732e",
+        "query_sha256": "220c702f9db0dde1f5a8215a44ab129ab7315757eb65dfdb2206cc6b63a802ac",
+        "gold_index": 346,
+        "feature_matrix_sha256": "48407f289e086399801b3b5d56ff23edcfbc499f732b4c6be17c3f31ca44f7f1"
+      },
+      {
+        "case": "full-choice-havis-transport",
+        "query_hex": "57686174207472616e73706f72742076616c75652062656c6f6e677320746f2068617669733f2055736520746865206e6f74657320746f207365742069742e",
+        "query_sha256": "97e8208a95caa0fe0a35d072105df679ed629c8845d6ad9c55c0b9f222931945",
+        "gold_index": 1458,
+        "feature_matrix_sha256": "a032ac7ac3ed5ba8e21a41c5bbcccb844e86adc19a4a8535ad72ab18fde54f7e"
+      },
+      {
+        "case": "full-choice-havis-audit",
+        "query_hex": "57686174206c6162656c2062656c6f6e6773206f6e206861766973206175646974207265636f7264733f205365742069742066726f6d20746865206e6f7465732e",
+        "query_sha256": "bef19a645e9fa38a9bbd834059df526a95f9e8adaa4a4b7cb2de0387d354bcb6",
+        "gold_index": 321,
+        "feature_matrix_sha256": "0cf5e4e68c7e271648fab5c04bdeb28165d8dd247474950fa99e7c58315ed045"
+      },
+      {
+        "case": "full-choice-irven-transport",
+        "query_hex": "46696e64207768617420697276656e207573657320666f72207472616e73706f727420616e6420636f6e66696775726520746861742076616c75652e",
+        "query_sha256": "8eaa7301c0d6b2acba1b57a215b5f8fc6f691837063aa9c59c8dc9533bb88372",
+        "gold_index": 386,
+        "feature_matrix_sha256": "6e98458a0616097533ef965d6cd044b749535de28ce06c5b4236b6ec341b195c"
+      },
+      {
+        "case": "full-choice-irven-audit",
+        "query_hex": "46696e6420746865206175646974206c6162656c2061737369676e656420746f20697276656e20616e64206170706c792069742e",
+        "query_sha256": "28088c4746b6697560eafc0b79707e62802c55c286417a7422935bb038137eb4",
+        "gold_index": 414,
+        "feature_matrix_sha256": "5552037d7ed05f09a60649a92f401228609f6aaeaa2cb1dfa237b0b9da462ea8"
+      },
+      {
+        "case": "full-choice-joral-transport",
+        "query_hex": "436f6e666967757265206a6f72616c207769746820746865207472616e73706f72742076616c756520696e206974732073657276696365206465736372697074696f6e2e",
+        "query_sha256": "9b7da58904f6de4e5d05b76e761194dda898599771f67d85baa782045c0bb732",
+        "gold_index": 436,
+        "feature_matrix_sha256": "a587b2b546930c40ae74bd5c58c15634328279633424d4496a68009b00e33396"
+      },
+      {
+        "case": "full-choice-joral-audit",
+        "query_hex": "557365207468652061756469742076616c756520696e207468652073657276696365206465736372697074696f6e20666f72206a6f72616c2e",
+        "query_sha256": "b652852707f4457fe9452c1ff61043a9ef3eaf74fb6dfe69ba23d5b400b014ba",
+        "gold_index": 1458,
+        "feature_matrix_sha256": "dc60b8e92056b7263a0685ae35ff68e107af669540b95184ef8e90da98cd8a6e"
+      },
+      {
+        "case": "full-choice-kedru-transport",
+        "query_hex": "4170706c792074686520646f63756d656e7465642073657474696e6720666f7220636f6d6d756e69636174696f6e206265747765656e207365727669636573206279206b656472752e",
+        "query_sha256": "58d70e3a4352b55470cf10788cc1a75b25a612e682a1d67b80cd5090a255dbe9",
+        "gold_index": 498,
+        "feature_matrix_sha256": "da2c9e62c60074bc2090a96d424b97723fec4fe2e75cf5be1a02a94c145e0289"
+      },
+      {
+        "case": "full-choice-kedru-audit",
+        "query_hex": "436f6e666967757265206b656472752077697468207468652076616c7565207573656420746f206d61726b20697473206175646974207265636f7264732e",
+        "query_sha256": "ae19ada301ccb2dd3d9d34a81bcf1c048b4470d6f1f60d0bdef5fcad567f608c",
+        "gold_index": 515,
+        "feature_matrix_sha256": "c7cfe1545390f85b8bd50bf13b548cff0a4faa634f0c43ef1ec87037c9365743"
+      },
+      {
+        "case": "full-choice-lesam-transport",
+        "query_hex": "436f6e666967757265206c6573616d207573696e672069747320646f63756d656e746564207472616e73706f72742073657474696e672e",
+        "query_sha256": "50b6b67c07c6053c30aaea3c28c5a1acdffdba7420183a28ddc59184bfca8f41",
+        "gold_index": 1458,
+        "feature_matrix_sha256": "1bb609b0cfb526e5fc2ab2f8654b5b3a0ed3dfd431a47a3dc606ccbcd38a6ba7"
+      },
+      {
+        "case": "full-choice-lesam-audit",
+        "query_hex": "4170706c792074686520646f63756d656e746564206175646974206c6162656c20746f206c6573616d2e",
+        "query_sha256": "000d8627c01c260a6b1e13473c84e808bc140276869618871c0ad8a24429367e",
+        "gold_index": 463,
+        "feature_matrix_sha256": "7e84b54d5f197d6654b90a8751960556b57ed110b8111174fc6141c604b8b8f2"
+      },
+      {
+        "case": "full-choice-morvi-transport",
+        "query_hex": "57686174207472616e73706f72742076616c75652062656c6f6e677320746f206d6f7276693f2055736520746865206e6f74657320746f207365742069742e",
+        "query_sha256": "4b35a0eb82e21aca1343f7c361f7811bf8fc0d644dc7d18caa4b6b58f0880d7f",
+        "gold_index": 555,
+        "feature_matrix_sha256": "14078b3f3d9a1848db1867e9238825d013c95e6c05fd1ad4fe20ace8c2c95c95"
+      },
+      {
+        "case": "full-choice-morvi-audit",
+        "query_hex": "57686174206c6162656c2062656c6f6e6773206f6e206d6f727669206175646974207265636f7264733f205365742069742066726f6d20746865206e6f7465732e",
+        "query_sha256": "6002872014390db10aa14892c352b5dae3cea84c88bb1e4747c8b4fd8af57ed9",
+        "gold_index": 595,
+        "feature_matrix_sha256": "6ca28092d10cbc154ff69f12eaef1b18bae56a4e6033bde10d02328506914576"
+      },
+      {
+        "case": "full-choice-nelux-transport",
+        "query_hex": "55736520746865207472616e73706f72742076616c75652061737369676e656420746f206e656c757820696e20746865206e6f7465732e",
+        "query_sha256": "73677bfc89f69d9af6a38739aba27955b188b48096aa9bb4f93d19334dd4b316",
+        "gold_index": 569,
+        "feature_matrix_sha256": "8e0ad84e9c563ca3e663143daf3fef7a5f28623fe5456cc6389cb628bdfb0756"
+      },
+      {
+        "case": "full-choice-nelux-audit",
+        "query_hex": "53657420746865206175646974206c6162656c20666f72206e656c75782066726f6d20746865206e6f7465732e",
+        "query_sha256": "84c4c2148d0cab07a10bd3b726eb560e3843b2db3a22e9c1fd8a489f717ed7e6",
+        "gold_index": 1458,
+        "feature_matrix_sha256": "aed0d93578b80ecd7a62a11e59b3912041941cb65d86d67b90399fe1f7ad8f4e"
+      },
+      {
+        "case": "full-choice-orvek-transport",
+        "query_hex": "436f6e666967757265206f7276656b207769746820746865207472616e73706f72742076616c756520696e206974732073657276696365206465736372697074696f6e2e",
+        "query_sha256": "adbff17a40864492e62ffd00272f13afa6960c93d69c13e3ef70c4b29522a6e1",
+        "gold_index": 661,
+        "feature_matrix_sha256": "13197289f16c592a33f084f60fa7a92046eb54b2cbd9820a17353323ebff5d72"
+      },
+      {
+        "case": "full-choice-orvek-audit",
+        "query_hex": "557365207468652061756469742076616c756520696e207468652073657276696365206465736372697074696f6e20666f72206f7276656b2e",
+        "query_sha256": "c5df5cc8be2da3ffd9718762dab44d16a77e9d1d171b88f41427dae29563fde8",
+        "gold_index": 642,
+        "feature_matrix_sha256": "1f337fa673d4bcd39525045a5c742b387895fa489d5e77ab7ca2fcb69997efe4"
+      },
+      {
+        "case": "full-choice-pasir-transport",
+        "query_hex": "57686963682073657474696e672063617272696573206d65737361676573206265747765656e20736572766963657320666f722070617369723f204170706c792069742e",
+        "query_sha256": "375ae97d843758447044ddf09724b89150fa3c77f2d4ece4a1e0ac66bda3e702",
+        "gold_index": 1458,
+        "feature_matrix_sha256": "63bf9dce47396892a9cfaf67e45a67beaa3cba721dd7f75e4945699ac77c1e51"
+      },
+      {
+        "case": "full-choice-pasir-audit",
+        "query_hex": "57686963682076616c7565206c6162656c7320746865206175646974207265636f726473206f662070617369723f20436f6e6669677572652069742e",
+        "query_sha256": "2a0da440f02008ff6a9aab78860714d0af3eb0363f1dad2de1c71dce378a12f0",
+        "gold_index": 698,
+        "feature_matrix_sha256": "8c1805bd39bf12842f1c1928318029470968ea1a532f3321b5e99b3496189e60"
+      },
+      {
+        "case": "full-choice-qevan-transport",
+        "query_hex": "436f6e66696775726520716576616e207573696e672069747320646f63756d656e746564207472616e73706f72742073657474696e672e",
+        "query_sha256": "7c9b4c2eb6e31118ca46abc4d6ae33674e0714f9a8643e9dd691a8ed9fff36e8",
+        "gold_index": 742,
+        "feature_matrix_sha256": "f55cec94dca21075187d63ff6ba73924f236976d6bf86001c948648175c97099"
+      },
+      {
+        "case": "full-choice-qevan-audit",
+        "query_hex": "4170706c792074686520646f63756d656e746564206175646974206c6162656c20746f20716576616e2e",
+        "query_sha256": "581d9b06161a8d9a655ac4fe7b5a6d78de5c4670122d5c801c53502577b8e4c4",
+        "gold_index": 761,
+        "feature_matrix_sha256": "d56589ff237075665276db5b792d696457edf8a70a000ea71dd0cda02b8f93c5"
+      },
+      {
+        "case": "full-choice-rosil-transport",
+        "query_hex": "53657420746865207472616e73706f727420636f6e66696775726174696f6e2073706563696669656420666f7220726f73696c2e",
+        "query_sha256": "8d7ace324a4fc901b4677e1c61839e69963d742591a502f119f44a5b17a8bc81",
+        "gold_index": 780,
+        "feature_matrix_sha256": "e00189228e39fa9810940752f388fad0e5eb562cc1f68ce27dc67757e95b5743"
+      },
+      {
+        "case": "full-choice-rosil-audit",
+        "query_hex": "557365207468652076616c75652073706563696669656420666f72206964656e74696679696e6720726f73696c206175646974207265636f7264732e",
+        "query_sha256": "69fb3c25423ef5a75cd40603b1d3e3e9b51cc2c054a4d68d40c84380c8644aa8",
+        "gold_index": 1458,
+        "feature_matrix_sha256": "afbbac74340baa6381756f20aa3c3f0ff16afb5deab4eb8b626f1037e5f21b03"
+      },
+      {
+        "case": "full-choice-sevar-transport",
+        "query_hex": "55736520746865207472616e73706f72742076616c75652061737369676e656420746f20736576617220696e20746865206e6f7465732e",
+        "query_sha256": "233cdca3cbcf1540e645601f66445bdd1848512e196afc0a502ec65c4e268e64",
+        "gold_index": 854,
+        "feature_matrix_sha256": "230d80ff859a3cc60133a682af5e6048889e03e82f76b649962d84b1bfdfbc01"
+      },
+      {
+        "case": "full-choice-sevar-audit",
+        "query_hex": "53657420746865206175646974206c6162656c20666f722073657661722066726f6d20746865206e6f7465732e",
+        "query_sha256": "d40607aa73cbf9af82e6b3b4648b96c5e268f262ba015f541d73538de3c2138f",
+        "gold_index": 874,
+        "feature_matrix_sha256": "e9dd1f325a67a3b7bd10653b4fc87a203c9fa249e5891e0a3e19b436a21c42b8"
+      },
+      {
+        "case": "full-choice-talun-transport",
+        "query_hex": "46696e6420776861742074616c756e207573657320666f72207472616e73706f727420616e6420636f6e66696775726520746861742076616c75652e",
+        "query_sha256": "cc3ff954a03025f7eaa18f70f4948f09c379fd152792ffbc691b052cba9e0243",
+        "gold_index": 1458,
+        "feature_matrix_sha256": "715c9761b9fab437615e46a855b50f238fbd59a60b0a8cda9fe48c4895ea39c8"
+      },
+      {
+        "case": "full-choice-talun-audit",
+        "query_hex": "46696e6420746865206175646974206c6162656c2061737369676e656420746f2074616c756e20616e64206170706c792069742e",
+        "query_sha256": "1185a1bc90a7b7debd10637505feec55fe2ee872fa5e7f9d57e66b1a3ef05ff0",
+        "gold_index": 831,
+        "feature_matrix_sha256": "784559d55e92fa8a333a8d06c0f04622f61825f639bd84ebe794bc7e1a3921a4"
+      },
+      {
+        "case": "full-choice-urevi-transport",
+        "query_hex": "57686963682073657474696e672063617272696573206d65737361676573206265747765656e20736572766963657320666f722075726576693f204170706c792069742e",
+        "query_sha256": "8baef3b22612ad0f704fee0178a2a2829279a06fc9a5d9b84376d1d4fac84072",
+        "gold_index": 941,
+        "feature_matrix_sha256": "fffc5511d7723a3f3d61dbb18b28777e2681f58e518eb093cad5c89a2547a975"
+      },
+      {
+        "case": "full-choice-urevi-audit",
+        "query_hex": "57686963682076616c7565206c6162656c7320746865206175646974207265636f726473206f662075726576693f20436f6e6669677572652069742e",
+        "query_sha256": "407b9028cb22b0b10b7fcae89deec30a6873b23748894672851f8318160a4809",
+        "gold_index": 921,
+        "feature_matrix_sha256": "0b85d2613177d5e11ee6595e84ced4de4d93166572d94f2109b7160a78e6fe3f"
+      },
+      {
+        "case": "full-choice-vesor-transport",
+        "query_hex": "4170706c792074686520646f63756d656e7465642073657474696e6720666f7220636f6d6d756e69636174696f6e206265747765656e207365727669636573206279207665736f722e",
+        "query_sha256": "fec107f9ff2f279fca9435552c8c8f5ef09a5516b7e81d387ff93a61df71a69f",
+        "gold_index": 967,
+        "feature_matrix_sha256": "8984abd9b342521e3b7440a55c49777870b42ee5247b2e87d5bf022e12877f9f"
+      },
+      {
+        "case": "full-choice-vesor-audit",
+        "query_hex": "436f6e666967757265207665736f722077697468207468652076616c7565207573656420746f206d61726b20697473206175646974207265636f7264732e",
+        "query_sha256": "2cf970743f1156046bc0fafa1f73168b358c0dd5cbfb67d82d7c2e127911457f",
+        "gold_index": 1458,
+        "feature_matrix_sha256": "b80a9852a18a8e0996a90a3f363bbee43e7aaca6d84e81b85ad782622852d476"
+      },
+      {
+        "case": "full-choice-walim-transport",
+        "query_hex": "53657420746865207472616e73706f727420636f6e66696775726174696f6e2073706563696669656420666f722077616c696d2e",
+        "query_sha256": "dba45f96fe752645b229b0fa5be31f4c921af702a46ec8b49bdbc261013f37d7",
+        "gold_index": 1020,
+        "feature_matrix_sha256": "84b33d6c7d8d37bc6e21757bcd59609833347d61c73839de1d92693b4a328cfa"
+      },
+      {
+        "case": "full-choice-walim-audit",
+        "query_hex": "557365207468652076616c75652073706563696669656420666f72206964656e74696679696e672077616c696d206175646974207265636f7264732e",
+        "query_sha256": "52c40d689840f81e5930cc5c6f639cf384c294b1abb2b0de6e249dcecc1e241c",
+        "gold_index": 1073,
+        "feature_matrix_sha256": "28a6bb7a86585fcb316e9ebbff01ddf32c169ecec81282e88aed08160dda216b"
+      },
+      {
+        "case": "full-choice-xevur-transport",
+        "query_hex": "57686174207472616e73706f72742076616c75652062656c6f6e677320746f2078657675723f2055736520746865206e6f74657320746f207365742069742e",
+        "query_sha256": "854631622fd91fc693feda3df839015921fdcd5a99126335f6e96242c0ec5862",
+        "gold_index": 1458,
+        "feature_matrix_sha256": "00f8e4a5b9fe7064af7689590191729ae8c514fc28e099c895a51992e4ff4b74"
+      },
+      {
+        "case": "full-choice-xevur-audit",
+        "query_hex": "57686174206c6162656c2062656c6f6e6773206f6e207865767572206175646974207265636f7264733f205365742069742066726f6d20746865206e6f7465732e",
+        "query_sha256": "3bf29c2a5e00bca1dcfd4837c843a1aeef264e869eb75515d8da3cbb19a22390",
+        "gold_index": 1045,
+        "feature_matrix_sha256": "f6d16634d44fb62439e9678b82c1e0defbd71a4486e72bdfb77ff9ddfca1aeb9"
+      },
+      {
+        "case": "full-choice-yarvo-transport",
+        "query_hex": "46696e64207768617420796172766f207573657320666f72207472616e73706f727420616e6420636f6e66696775726520746861742076616c75652e",
+        "query_sha256": "581f714ba661659ae0b437ad7cc4e964695c0bc8c0b8645013588e66b6c93420",
+        "gold_index": 1113,
+        "feature_matrix_sha256": "34fb9045baa30e6efcc0016607d905fe77907c28c892d0868503416828978b25"
+      },
+      {
+        "case": "full-choice-yarvo-audit",
+        "query_hex": "46696e6420746865206175646974206c6162656c2061737369676e656420746f20796172766f20616e64206170706c792069742e",
+        "query_sha256": "6ae5975c318af4df8f03cc09001b3f42430a580cae315d10ae257dddddbebcd1",
+        "gold_index": 1138,
+        "feature_matrix_sha256": "b93eae4574886c7f8c44263257f70576fdafe20a2e08642c7007270687430906"
+      },
+      {
+        "case": "full-choice-zelin-transport",
+        "query_hex": "436f6e666967757265207a656c696e207769746820746865207472616e73706f72742076616c756520696e206974732073657276696365206465736372697074696f6e2e",
+        "query_sha256": "9a08f9a0c7dc53c8899031b0cd17d1de349147a0b497c12fc3d2a901e030c2a4",
+        "gold_index": 1163,
+        "feature_matrix_sha256": "a623de3cdc633abcc25567225f791c60f24d5d0b769963f48290b23e6d49ed65"
+      },
+      {
+        "case": "full-choice-zelin-audit",
+        "query_hex": "557365207468652061756469742076616c756520696e207468652073657276696365206465736372697074696f6e20666f72207a656c696e2e",
+        "query_sha256": "a3591d016b23085d0bc7ee7a79caa5ab0bafa3ba0d25f0a44f89502f2d18e95d",
+        "gold_index": 1458,
+        "feature_matrix_sha256": "5a9807f641a05bad372155d00db8864ad4ebaf66dae36ebd7eed2d4a8e824b8a"
+      },
+      {
+        "case": "full-choice-adrix-transport",
+        "query_hex": "4170706c792074686520646f63756d656e7465642073657474696e6720666f7220636f6d6d756e69636174696f6e206265747765656e2073657276696365732062792061647269782e",
+        "query_sha256": "088fcb2c1948a8a5d85e360b72042a3216a6deb326e2e2cfc4eb53cd6fce9e9a",
+        "gold_index": 1231,
+        "feature_matrix_sha256": "02802ee44c55b949b9a7fb8d038fe8fcb85cbf72c7db23de034628a12b683e22"
+      },
+      {
+        "case": "full-choice-adrix-audit",
+        "query_hex": "436f6e6669677572652061647269782077697468207468652076616c7565207573656420746f206d61726b20697473206175646974207265636f7264732e",
+        "query_sha256": "19593e9531d6a0e92e1be2aabf79251157f9be95dad6f0bcbcd515399c2262f9",
+        "gold_index": 1248,
+        "feature_matrix_sha256": "e6cdd87a28e407176c7e75b41575e6780b31e14157b3e1f0e8571d5f5432233b"
+      },
+      {
+        "case": "full-choice-bovek-transport",
+        "query_hex": "436f6e66696775726520626f76656b207573696e672069747320646f63756d656e746564207472616e73706f72742073657474696e672e",
+        "query_sha256": "59d1157113d559f6c2f9dc62e39535af3f6775431d6c4941eeaac246d4ed2d9c",
+        "gold_index": 1458,
+        "feature_matrix_sha256": "d6e91a92f673831011e29c825547f00917af16703ee68766d66094ea3126e110"
+      },
+      {
+        "case": "full-choice-bovek-audit",
+        "query_hex": "4170706c792074686520646f63756d656e746564206175646974206c6162656c20746f20626f76656b2e",
+        "query_sha256": "5c93fbfcbc1d397e0e41b5ad5296af322e31ca63f6e005fc507b351e27baf1ff",
+        "gold_index": 1193,
+        "feature_matrix_sha256": "4c1844c27deae78929d96102cc8da1c9dffd2b8d5ad790c5fcf470fc946fca9b"
+      },
+      {
+        "case": "full-choice-cernu-transport",
+        "query_hex": "57686174207472616e73706f72742076616c75652062656c6f6e677320746f206365726e753f2055736520746865206e6f74657320746f207365742069742e",
+        "query_sha256": "950a236b20726f12035a4ad7e157ac9967374283358713d5bce62243ef31a713",
+        "gold_index": 1285,
+        "feature_matrix_sha256": "ef01d3ac9b9186e99717235386309b197c524536d274723fa54ad4920391cc87"
+      },
+      {
+        "case": "full-choice-cernu-audit",
+        "query_hex": "57686174206c6162656c2062656c6f6e6773206f6e206365726e75206175646974207265636f7264733f205365742069742066726f6d20746865206e6f7465732e",
+        "query_sha256": "0ab82b5f247b8c7f5dabd5e97b42b022aef149ecf7128c583c72de1e4678695c",
+        "gold_index": 1322,
+        "feature_matrix_sha256": "94695c357e1ef3b919412d3187922439861f9fbac09912651d89ae011ef95c1e"
+      },
+      {
+        "case": "full-choice-delvi-transport",
+        "query_hex": "55736520746865207472616e73706f72742076616c75652061737369676e656420746f2064656c766920696e20746865206e6f7465732e",
+        "query_sha256": "e168e8e20b9b4703737fa74318f7997a8e91aa706f2c76ce4508b5ab1b9cc985",
+        "gold_index": 1299,
+        "feature_matrix_sha256": "ec85979ec233757c0d7d4fc88fe49023a9af38894b19da16ab5c15a5c15de4da"
+      },
+      {
+        "case": "full-choice-delvi-audit",
+        "query_hex": "53657420746865206175646974206c6162656c20666f722064656c76692066726f6d20746865206e6f7465732e",
+        "query_sha256": "8206dc40d077531d7a50e5f0ee25db2d3bcefd7155b1f25bd6eb56652777e2fa",
+        "gold_index": 1458,
+        "feature_matrix_sha256": "7d11634a9895cf9e895e3a5dc3dda27d0dc3d56e50b5be15df5fa9cbba1cbdf1"
+      },
+      {
+        "case": "full-choice-erqon-transport",
+        "query_hex": "436f6e666967757265206572716f6e207769746820746865207472616e73706f72742076616c756520696e206974732073657276696365206465736372697074696f6e2e",
+        "query_sha256": "d2739b70570b759da1b480d8636afe02bc07221f9b7ce06e051a70bf07e19d75",
+        "gold_index": 1394,
+        "feature_matrix_sha256": "0ade248e5ea14f62dbb26d93b855580237340f63f88971d58764927a724feab6"
+      },
+      {
+        "case": "full-choice-erqon-audit",
+        "query_hex": "557365207468652061756469742076616c756520696e207468652073657276696365206465736372697074696f6e20666f72206572716f6e2e",
+        "query_sha256": "d11026fcb70810dea14839100233ffd0571e60cf22a013c76e508b9566c73c8f",
+        "gold_index": 1372,
+        "feature_matrix_sha256": "b7d5a6f07fae080381b9201fb52d16bd6de26243723ae20097ec76047a5bea53"
+      },
+      {
+        "case": "full-choice-fesul-transport",
+        "query_hex": "57686963682073657474696e672063617272696573206d65737361676573206265747765656e20736572766963657320666f7220666573756c3f204170706c792069742e",
+        "query_sha256": "eea863895a2ea7ffb1a5636979bbde7ee36cc405d62d3d43693d8297252e952d",
+        "gold_index": 1458,
+        "feature_matrix_sha256": "c17c543c4130a4e9416a3bd27008e44f88c387da7fe9d8c84f4cd55f41e95281"
+      },
+      {
+        "case": "full-choice-fesul-audit",
+        "query_hex": "57686963682076616c7565206c6162656c7320746865206175646974207265636f726473206f6620666573756c3f20436f6e6669677572652069742e",
+        "query_sha256": "1151f601ae33055280b3797966064fcc526f3d26f0c30363fad674708be27929",
+        "gold_index": 1431,
+        "feature_matrix_sha256": "31b4e334b0a9bbaffcbfa176fc9f01673fc2b8c233090cf406808f7f3e76f9d4"
+      }
+    ],
+    "helpers_sha256": {
+      "audit_full_choice.py": "64b150a5bad8035cbe0829fccae1cef18fb65eedfe6aac567b1d9d2e68317f97",
+      "full_choice_reference.py": "289b5de76bf9a1f22178146027dd1afbf2fc984df2d6f8a0abbf1f224cd2040b"
+    }
+  },
+  "witness_archive_sha256": "a030bc7cf386ded8a58b95f8c71f6b1cb74ada93e35b164376a29b0f891d5ff1",
+  "script_sha256": "e1cb71b70febdafd8bbd855bb2ba019721750142e37c94694191c76a826871cf",
+  "seconds": 23.317500199977076
+}

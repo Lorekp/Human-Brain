@@ -78,18 +78,22 @@ raw and neuronal choices agree. Supported lesson loss improves while STOP loss
 worsens, despite each update improving its own lesson. Complete competitor
 coverage alone did not establish acquisition.
 
-The [balanced session plan](balanced-evidence-to-action-session-v1.md) now
-prioritizes a bounded host-only feasibility/conditioning diagnostic of the 64
-actual TRAIN rankings, including whole spans and STOP. Saved increments already
-show supported lessons overwhelming STOP corrections through relative-token
-features. Determine whether a joint fit exists before choosing a credit/learning
-change or revisiting representation. A timeout proves neither feasibility nor
-infeasibility; host witness weights remain outside the learner.
+The [joint-ranking feasibility diagnostic](../../experiments/r4_integrated/contextual_full_choice_feasibility_result.md)
+is closed as inconclusive: its fourth LP timed out and its partial solution fails
+the complete constraint set. Fixed-feature feasibility remains unresolved;
+host weights remain outside the learner. Saved learning increments do establish
+supported lessons overwhelming STOP corrections through relative-token features.
+The completed [design review and preflight plan](contextual-rate-cell-preflight-plan.md)
+selects a small trainable rate-cell sequence learner with separate span and
+answerability objectives. Test it against matched frozen-cell/trainable-readout
+and cell-bypass controls in the persistent executed loop. This is a candidate,
+not an adoption or a conclusion that the old features are impossible. Do not
+extend the exhausted solver budget.
 The [interface review](contextual-trainable-interface-review.md) supplies the
 implemented design and conditional producer sketch; neither this failed attempt
 nor its small synthetic fit establishes that a new representation is necessary.
-Require a representative numerical/acquisition preflight before another declared
-run. Do not automatically add epochs, tune rates/labels, or start a producer.
+Require the new plan's representative numerical/acquisition preflight before
+another comparison. Do not automatically add epochs or tune rates/labels.
 
 This acquisition diagnostic uses explicit answer/STOP supervision over retained
 raw sources and a frozen external encoder. It is not answer-free internalization,

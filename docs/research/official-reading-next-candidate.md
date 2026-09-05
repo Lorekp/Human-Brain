@@ -1,8 +1,8 @@
 # Official reading candidate: KS2 2026 Amelia Earhart
 
-Metadata preparation, 2026-09-05. No downloaded fixture, learner ingestion,
-evaluation or reserve designation. This is separate from the completed
-projected-binding experiment and follows the [reading plan](reading-comprehension-evaluation.md).
+Source custody and visual review completed, 2026-09-05. Original PDFs are stored
+locally; no learner fixture, ingestion, evaluation or reserve designation.
+This follows the [reading plan](reading-comprehension-evaluation.md).
 
 ## Source and reuse scope
 
@@ -44,10 +44,38 @@ formats; a declared structured-output contract is required before evaluation.
 
 ## Remaining preparation and exposure
 
-Download/hash original PDFs, render the relevant pages, verify extracted text
-and table layout against them, then register extraction hashes and corrections.
-Web extraction corrupts ligatures and ordering; visual extraction QA remains
-unfinished. No original PDF hashes are registered in this metadata note.
+The four exact official URLs above returned HTTP 200 (`application/pdf`) on
+2026-09-05 at 08:55 UTC, without URL redirection. Local originals, raw extraction,
+21 individual page renders and 11 contact sheets remain under ignored
+`.pytest-tmp/official-reading-2026-source-custody/`; none of the photographs or
+PDFs is published in the repository. `manifest.json` records final URLs, byte
+counts, PDF and raw-extraction hashes, and all render hashes.
+
+| Original PDF | Bytes | Pages | SHA256 |
+| --- | ---: | ---: | --- |
+| Reading booklet | 10,307,852 | 12 | `98fc6c64f67d08b0a17e333ba4a379f4acc281defd873a4576bdfdf2ae5c8871` |
+| Answer booklet | 428,093 | 20 | `6c179aa107f4d9fca1c87109c4da02813d152cb97b80dd39dbedd44f1a43576c` |
+| Mark scheme | 852,782 | 36 | `e309d94fa6e30c089ee4ba9462e0936b493993b4cf957dc0cd317aeb76c8cd8a` |
+| Copyright report | 161,477 | 3 | `70c9edcc8177cad38c4aee94bdec3c754f8a1bd665a8daaeb9f6331a7d899309` |
+
+Poppler 26.07.0 rendered at 110 DPI. Visual review covered reading pages 8-9,
+answer pages 14-19, mark pages 26-35 and all three copyright pages; PDF page
+indices (one-based) match the printed page numbers for the reading, answer and
+mark pages. The passage headings, paragraphs and final-route map are legible.
+The answer layouts and four proposed keys above agree with the visible scheme:
+Q25/Q27 on scheme pages 26/27, Q30 on page 28, and Q36 on page 32. Q36's supplied
+`1` is in its second printed row. Copyright pages 2-3 confirm commissioned Crown
+text/map and the two Getty photograph exceptions; the cover photograph and logos
+remain excluded as stated above.
+
+Raw pypdf layout extraction is hashed but **not corrected or approved as a
+fixture**. It contains replacement characters, excessive spacing and duplicated
+hidden question content: for example, extracted answer page 15 includes Q25
+content absent from its visible page. The completed visual source review does
+not certify a machine transcription. Remaining work is an explicitly scoped,
+rights-compliant passage/map and structured-question extraction, checked line by
+line against these renders, with correction and final extraction hashes. No new
+question, answer policy, score or learner exposure was introduced by this work.
 
 The developer inspected full 2026 reading/answer text and relevant marking
 sections. Treat the **whole KS2 2026 paper as developer-exposed**, including

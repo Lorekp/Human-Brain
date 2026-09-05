@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the completed full-choice acquisition attempt.
+Updated 2026-09-05 with the inconclusive joint TRAIN ranking diagnostic.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -43,11 +43,22 @@ No fresh, official-exam, integrated or protected gate passes.
 The run takes 771.97 seconds. Retained array/byte payload per learner grows from
 4.63 to 5.96 MB; parent peak working set is 627.98 MiB, excluding children.
 The result report owns complete costs, artifact identities and the two explicit
-runtime CRLF/Git-LF source differences. The [active plan](research/balanced-evidence-to-action-session-v1.md)
-now checks joint feasibility/conditioning of the actual TRAIN rankings before
-another design. Saved-increment attribution shows supported lessons overwhelming
-STOP corrections through relative-token features; it does not prove feature
-incapacity. Host witness weights remain outside the learner.
+runtime CRLF/Git-LF source differences. Saved-increment attribution shows supported
+lessons overwhelming STOP corrections through relative-token features; it does
+not prove feature incapacity.
+
+The [joint-ranking feasibility diagnostic](../experiments/r4_integrated/contextual_full_choice_feasibility_result.md)
+is **inconclusive**. Three LP calls solve 192 active constraints; a fourth with
+256 times out. Independent verification rejects the saved partial vector:
+28,151/93,312 unit-margin violations, minimum -1.94251, and 0/64 gold leaders.
+This is neither a feasibility nor an infeasibility certificate. Runtime is
+900.123 seconds against 900 configured; peak parent working set is 1,476.54 MiB
+with a 1.21 GB disk-backed feature payload. Verification finished within the
+overall 30-minute deadline. No host weights are deployed and no learner changes.
+The completed [design review](research/contextual-rate-cell-preflight-plan.md)
+selects a trainable rate-cell reader with separated answerability/span credit
+for a bounded preflight against learned-head controls. It is not implemented
+or adopted. The solver diagnostic remains closed.
 
 The earlier [projected comparison](../experiments/r4_integrated/contextual_projected_binding_result.md)
 rejects PROJECTED (4/8 versus 1/8 fresh and 8/16 versus 4/16 common retained).
