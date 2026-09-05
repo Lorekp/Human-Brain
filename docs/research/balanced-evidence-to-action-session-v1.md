@@ -33,58 +33,49 @@ passes its narrow recall, transfer, retention and no-action checks. Detailed
 scores and failures are in [benchmark status](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 The original eight-stage sequence below remains the integration contract.
 
-The [capped-update comparison](../../experiments/r4_integrated/contextual_capped_update_result.md)
-fails: FIXED executes 3/8 fresh and 2/16 retained edits; CAPPED gives 0/8 and
-1/16. Both wrongly act on unsupported requests. Keep the fixed rule and affine
-neuronal action path. Neither step-size tuning nor readout adjustment is the next
-priority. The result report owns the completed contract, costs and full counts.
+The [feedback reservation comparison](../../experiments/r4_integrated/contextual_reserved_feedback_result.md)
+meets its adoption criterion: affine neuronal execution improves from 3/8 to 4/8
+fresh edits and from 2/16 to 4/16 retained edits, with 150 pair offers in each arm.
+Keep **RESERVED allocation**, fixed rate-one BINDING updates and affine actions
+as the current development baseline. The run admits 42 actual FAIL/teacher-PASS
+pairs and 108 cyclic replays, versus the previous 32/118 policy. Every executed
+training failure receives feedback; unsupported behavior remains wrong on 2/2.
+The result report owns the completed contract, counts, hashes and costs.
 
-Feedback coverage is now a concrete integration issue. Nine FIXED retained
-failures satisfy every admitted contrast. Seven of their final wrong leaders
-were executed again only after the 32-pair budget was exhausted and received no
-learning update. Five other failures have erased pair margins. Capping steps
-increased erased/weak constraints and did not improve retention.
+Retention still fails substantially. Five final wrong leaders are admitted
+negatives whose corrections were erased; five are old occurrences never
+executed for that query, and two come from fresh sources. Twelve of 42 admitted
+contrasts finish negative, eleven after being positive on their last offer.
+With unchanged weights, fresh ingestion displaces one correct retained answer,
+reducing final TRAIN-store correctness from 5/16 to 4/16 executed retention.
+These are distinct interference and coverage problems, not another STOP/readout
+failure. The [capped-update trial](../../experiments/r4_integrated/contextual_capped_update_result.md)
+already rejected the tested unit-margin-capped policy on this workload.
 
 The [TRAIN-only feasibility diagnostic](../../experiments/r4_integrated/contextual_representation_feasibility_result.md)
-now verifies all 4,560 joint ranking/STOP constraints for the sixteen taught
-questions and all 285 training candidates. An unrestricted host witness fits the
-unchanged features with pure-query weights and bias zero. No learner weights
-changed. This rules out that finite representational impossibility, not native
-learnability, resource-bounded execution or generalization. The diagnostic is
-complete; do not deploy its witness or extend it into another mechanism study.
+verified all 4,560 joint ranking/STOP constraints for sixteen taught questions
+and all 285 training candidates. Its unrestricted host witness is not deployed
+and establishes neither native learnability nor generalization. Do not extend
+that completed diagnostic or treat its witness norm as a conditioning certificate.
 
-Return to the integrated loop with a **feedback reservation comparison**. Keep
-fixed updates, BINDING features, affine neuronal actions, sixteen teaching requests,
-48 encounters and the original motor/teacher executions. Compare the existing
-32-new/118-replay baseline with at most 150 total pair offers that reserve one
-possible new correction for each remaining encounter. After encounter `t` and
-any actual FAIL/teacher-PASS correction, replay at most
-`min(4, distinct eligible old pairs, 150-used-(48-t))` using the existing cyclic
-order, excluding a newly admitted pair. Rehearsal may also run after correct
-encounters when unreserved offers and old pairs are available.
+Next, budget at most **20 minutes for one primary-source/native-code review of
+interference control**, comparing at most three relevant approaches and
+recommending at most one minimal integrated candidate. Preserve BINDING features,
+the authentic feedback contract, RESERVED allocation, 150 offers and the existing
+motor. State added storage/compute and distinguish any conventional optimizer
+from simulated-neuron learning. Do not force a mechanism if the evidence or
+neuronal contribution does not justify it. Any resulting experiment needs a
+frozen protocol, fresh transfer instances and source committed before outputs.
 
-The reservation arm admits at most one new pair per encounter, hence at most
-48. With all 150 offers used, replays equal `150-new_pairs`; report underspend
-instead of inventing feedback or adding epochs. This changes realized negative
-coverage, replay timing and ledger size, not just the total number of updates.
-Keep same-seed frozen mates with each updater's exact certified exposure. Do not
-use label-aware rank diagnostics to choose replay priorities.
-
-Freeze new transfer instances, allocation semantics and the source before one
-comparison, with at most two hours for implementation/diagnosis. Report actual
-offers versus native updates, late errors admitted, first-attempt/fallback/teacher
-outcomes, fresh and retained executed performance, erased margins, coverage and
-cost. A useful change must improve retention without reducing fresh success;
-unsupported behavior remains separate. The host feasibility witness is excluded
-from this run. If reservation fails, use the resulting coverage/interference
-evidence to choose the next bounded action; do not tune on the spent cohort.
-
-Targets remain at least 6/8 fresh and 12/16 retained neuronal executed edits,
-including both properties for three fresh entities; report unsupported behavior
-separately. Keep original exam questions untuned. All references still share the
-learned motor and isolate evidence selection rather than the whole neuronal
-system. Annotation layouts, the broader challenge and protected gates remain
-deferred; completed evidence is unchanged.
+Measure retained and fresh executed success, admitted-margin preservation,
+unexecuted competitors and retention before/after fresh ingestion separately.
+Targets remain at least 6/8 fresh and 12/16 retained edits, including both
+properties for three fresh entities; unsupported behavior remains separate.
+Keep original exam questions untuned. All references share the learned motor
+and isolate evidence selection rather than the whole neuronal system. No
+retrospective ablation selection, extra tuning on the spent cohort or protected
+evaluation is authorized by this small improvement. Annotation layouts and the
+broader challenge remain deferred.
 
 Use a small reusable TRAIN workload with the following eight stages. This is a
 capability sequence, not an already materialized or frozen eight-episode cohort;

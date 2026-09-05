@@ -73,17 +73,22 @@ the same-seed frozen control solves none. Type-annotation layout variation
 fails, and an original public-exam diagnostic scores 0/2 with no acquired frames.
 See [measured evidence](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 This is exact positional reading and a learned literal-edit pattern, not the
-general integrated gate. The [latest contextual comparison](../../experiments/r4_integrated/contextual_capped_update_result.md)
-rejects capped corrections: fixed updates execute 3/8 fresh and 2/16 retained
-edits, versus 0/8 and 1/16 when capped. Affine neuronal readout works, but useful
-ranking and retention remain weak. Nine fixed-arm failures satisfy all admitted
-contrasts; seven later executed errors arrived after the correction budget was
-spent. Other failures involve erased margins. A TRAIN-only host-linear witness
-now satisfies all taught-answer and STOP constraints with the existing features;
-it is not deployed and establishes no learning or generalization. Keep fixed
-updates and compare reserving feedback opportunities for later actual errors. The [balanced session plan](balanced-evidence-to-action-session-v1.md)
-owns that bounded work and the later 24-episode challenge. Improve this loop
-before provenance revision, multi-hop composition or the full challenge.
+general integrated gate. The [latest feedback comparison](../../experiments/r4_integrated/contextual_reserved_feedback_result.md)
+improves fresh executed edits from 3/8 to 4/8 and retention from 2/16 to 4/16
+under the same 150-offer budget. Reserving correction opportunities admits every
+executed teaching failure and is the new development baseline. Both unsupported
+requests still trigger wrong actions. Five final wrong leaders are previously
+learned negatives, five are unexecuted old occurrences and two come from newly
+ingested sources. Useful retention remains the blocker, with one directly
+observed loss caused by fresh-source competition.
+
+Keep fixed updates, affine neuronal actions and reserved feedback. The completed
+TRAIN-only host witness establishes finite feature representability, not native
+learning or generalization; it remains excluded from the learner. Use a bounded
+review of interference control to choose at most one next integrated comparison.
+The [balanced session plan](balanced-evidence-to-action-session-v1.md) owns that
+work and the later 24-episode challenge. Improve this loop before provenance
+revision, multi-hop composition or the full challenge.
 
 Alongside integration, apply two inexpensive sources of pressure:
 
