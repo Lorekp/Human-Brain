@@ -1655,3 +1655,38 @@ def test_full_choice_empty_stop_noop_and_nonfinite_rejection() -> None:
         full_choice_loss_gradient(np.array([[np.nan]]), np.zeros(1), 0., (0,))
     with pytest.raises(ValueError, match="nonempty unique subset"):
         full_choice_loss_gradient(np.ones((1, 1)), np.zeros(1), 0., ())
+def test_full_choice_feasibility_joint_supported_and_stop():
+    from experiments.r4_integrated.contextual_full_choice_feasibility import (
+        solve_cutting_plane,
+        verify_witness,
+    )
+
+    features = np.array([[[2.0, 0.0], [0.0, 2.0]],
+                         [[-2.0, 0.0], [0.0, -2.0]]])
+    result, arrays = solve_cutting_plane(features.__getitem__, [0, 2], 3, seconds=10)
+    assert result["status"] == "feasible_verified"
+    verification = verify_witness(features.__getitem__, [0, 2], arrays["witness"])
+    assert verification["constraint_count"] == 4
+    assert verification["minimum_margin"] >= 1.0
+
+
+def test_full_choice_feasibility_contradiction_is_inconclusive():
+    from experiments.r4_integrated.contextual_full_choice_feasibility import solve_cutting_plane
+
+    features = np.array([[[1.0], [-1.0]], [[1.0], [-1.0]]])
+    result, _ = solve_cutting_plane(features.__getitem__, [0, 1], 2, seconds=10)
+    assert result["status"] == "inconclusive"
+    assert result["reason"] == "solver_status_without_verified_certificate"
+
+
+def test_full_choice_feasibility_verifies_unselected_competitors_and_stop():
+    from experiments.r4_integrated.contextual_full_choice_feasibility import verify_witness
+
+    features = np.array([[[2.0], [0.0], [3.0]]])
+    result = verify_witness(features.__getitem__, [0], np.array([1.0, 0.0]))
+    assert result["constraint_count"] == 3
+    assert result["violations"] == 1
+    assert result["verified"] is False
+    # A high STOP is another actual competitor, not a fixed zero bias.
+    result = verify_witness(features.__getitem__, [0], np.array([1.0, 4.0]))
+    assert result["violations"] == 2
