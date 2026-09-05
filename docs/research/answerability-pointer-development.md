@@ -1,8 +1,9 @@
 # Separate answerability: one public-development comparison
 
 Selected 2026-09-05 after the [bounded primary-source review](token-pointer-followup-review.md).
-Preparation starts 21:20 UTC, with a two-hour budget ending 23:20 UTC. No full
-fit is admitted until the checks and measured resource plan below pass.
+Preparation started 21:20 UTC, with a two-hour budget ending 23:20 UTC, and
+completed within that budget. The [full-run admission](../../benchmarks/answerability_pointer_acquisition_v1.admission.json)
+freezes the reviewed implementation, readiness and measured cost receipts.
 The [previous comparison](../../experiments/r4_integrated/token_pointer_result.md)
 and its original contracts remain closed and unchanged at source `9d73bba`.
 
@@ -97,3 +98,15 @@ Return to the [persistent source-absent seam](balanced-evidence-to-action-sessio
 stored answer bytes are episodic payload, not demonstrated internalization.
 The authentic exam scorer remains ready; a structured learner binding is still
 missing and official response formats must remain intact.
+
+## Completed preparation
+
+The [disposable fit](../../benchmarks/answerability_pointer_small_fit_v1.json)
+from `0639e498` passes: both cells and BiLSTM finish with 12/12 supported and
+4/4 STOP, in 151.047 seconds at 381.152 MiB peak parent memory. Its saved-only
+audit verifies annotations, 512 updates/8,192 presentations, 64 predictions,
+checkpoint/optimizer metadata and receipt hashes; it does not replay logits or
+gradients. All 35 focused numerical/state tests pass, including exact synthetic
+compatibility with the old objective. The synthetic cost measurement projects
+9,978.134 seconds and 3,127,239,168 bytes, below the full-run caps. These checks
+admit the development comparison; no broader reading or integration pass follows.
