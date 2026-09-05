@@ -41,8 +41,10 @@ old values or a neighboring entity's value. Both-property retention exists for
 three old entities, but reusable entity/property binding has not emerged.
 
 Next test **candidate-relative token interactions** in the same executed loop,
-as motivated by the [research review](contextual-learning-review.md). Specify
-the representation before outputs: distinguish a candidate's relationship to
+as motivated by the [research review](contextual-learning-review.md). The
+[binding protocol](../../experiments/r4_integrated/contextual_binding_protocol.md)
+now fixes one representation and a separate readout comparison before outputs.
+Distinguish a candidate's relationship to
 query-matching entity/property tokens even when answers share one window.
 Keep generic, unfiltered candidate enumeration and native feedback learning;
 do not substitute an answer-key filter or a hand-written relation solver.

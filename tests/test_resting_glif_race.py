@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import json
 import re
+from dataclasses import replace
+from time import perf_counter
 
 import numpy as np
 import pytest
-from humanbrain.cells import AdaptiveGlifPopulation
+from humanbrain.cells import AdaptiveGlifPopulation, AllenGlif5Parameters
 from humanbrain.resting_glif_race import (
     CompiledRestingGlifRace,
+    InterpolatedRestingGlifRaceResult,
     RestingGlifRaceFailure,
     RestingGlifRaceResult,
 )
@@ -246,3 +250,168 @@ def test_compiled_accumulated_mask_rejects_invalid_current_vectors() -> None:
     ):
         with pytest.raises(ValueError, match="currents_pa"):
             compiled.accumulated_spike_mask(invalid)
+
+
+@pytest.mark.parametrize("repeats", (1, 32))
+def test_interpolated_race_resolves_unequal_coarse_collisions_without_index_bias(
+    repeats: int,
+) -> None:
+    compiled = CompiledRestingGlifRace.compile(step_count=RACE_STEPS)
+    currents = np.tile(((1799.0, 1800.0, 600.1), (1800.0, 600.1, 1799.0)), (repeats, 1))
+    before = currents.copy()
+    voltage_before = compiled._unit_voltage.copy()
+    threshold_before = compiled._unit_voltage_threshold.copy()
+    with pytest.raises(RestingGlifRaceFailure, match="simultaneous first spikes"):
+        compiled.race_many(currents)
+
+    results = compiled.race_many_interpolated(currents)
+
+    assert tuple(result.winner_cell for result in results) == (1, 0) * repeats
+    assert all(result.coarse_spike_candidates == 2 for result in results)
+    assert all(result.simultaneous_spike_candidates == 1 for result in results)
+    assert results[0].estimated_crossing_time_ms == results[1].estimated_crossing_time_ms
+    assert all(
+        result.spike_step * compiled.parameters.dt_ms
+        < result.estimated_crossing_time_ms
+        < (result.spike_step + 1) * compiled.parameters.dt_ms
+        for result in results
+    )
+    assert compiled.race_many_interpolated(currents) == results
+    np.testing.assert_array_equal(currents, before)
+    np.testing.assert_array_equal(compiled._unit_voltage, voltage_before)
+    np.testing.assert_array_equal(compiled._unit_voltage_threshold, threshold_before)
+    assert not compiled._unit_voltage.flags.writeable
+    assert not compiled._unit_voltage_threshold.flags.writeable
+
+
+def test_interpolated_stop_current_competes_with_identical_physics() -> None:
+    compiled = CompiledRestingGlifRace.compile(step_count=RACE_STEPS)
+    currents = ((600.0, 600.1), (600.2, 600.1))
+    results = compiled.race_many_interpolated(currents)
+    assert tuple(result.winner_cell for result in results) == (1, 0)
+    discrete = compiled.race_many(currents, require_unique=False)
+    assert tuple(result.coarse_spike_candidates for result in results) == tuple(
+        result.simultaneous_spike_candidates for result in discrete
+    )
+    for tied in (((600.1, 600.1),), ((1800.0, 1800.0, 600.1),)):
+        with pytest.raises(RestingGlifRaceFailure, match="2 indistinguishable"):
+            compiled.race_many_interpolated(tied)
+
+
+def test_interpolated_first_interval_and_exact_endpoint_boundary() -> None:
+    parameters = AllenGlif5Parameters()
+    threshold = parameters.threshold_inf_relative_mv
+    compiled = CompiledRestingGlifRace(
+        parameters=parameters,
+        unit_voltage=np.asarray((1.0, 2.0)),
+        unit_voltage_threshold=np.zeros(2),
+    )
+    first, endpoint = compiled.race_many_interpolated(
+        ((2.0 * threshold, 0.0), (threshold, 0.0))
+    )
+    assert first == InterpolatedRestingGlifRaceResult(
+        0, 0, parameters.dt_ms / 2.0, 1, 1
+    )
+    # Strict discrete crossing occurs after equality; its interpolated root is
+    # exactly the preceding endpoint rather than an extra dt later.
+    assert endpoint == InterpolatedRestingGlifRaceResult(
+        0, 1, parameters.dt_ms, 1, 1
+    )
+    final_endpoint = CompiledRestingGlifRace(
+        parameters=parameters,
+        unit_voltage=np.asarray((1.0,)),
+        unit_voltage_threshold=np.zeros(1),
+    )
+    with pytest.raises(RestingGlifRaceFailure, match="no spike"):
+        final_endpoint.race_many_interpolated(((threshold,),))
+
+
+def test_interpolated_race_rejects_indistinguishable_times_and_invalid_bracket() -> None:
+    parameters = AllenGlif5Parameters()
+    compiled = CompiledRestingGlifRace(
+        parameters=parameters,
+        unit_voltage=np.asarray((1.0, 2.0)),
+        unit_voltage_threshold=np.zeros(2),
+    )
+    current = 2.0 * parameters.threshold_inf_relative_mv
+    with pytest.raises(RestingGlifRaceFailure, match="indistinguishable"):
+        compiled.race_many_interpolated(((current, np.nextafter(current, np.inf)),))
+    # A corrupted preceding response cannot certify a crossing bracket even if
+    # the endpoint comparison produces a spiking candidate.
+    invalid = CompiledRestingGlifRace(
+        parameters=parameters,
+        unit_voltage=np.asarray((np.nan, 2.0)),
+        unit_voltage_threshold=np.zeros(2),
+    )
+    with pytest.raises(RestingGlifRaceFailure, match="invalid interpolation bracket"):
+        invalid.race_many_interpolated(((parameters.threshold_inf_relative_mv,),))
+
+
+def test_interpolated_race_rejects_no_crossing_and_invalid_currents() -> None:
+    compiled = CompiledRestingGlifRace.compile(step_count=RACE_STEPS)
+    with pytest.raises(RestingGlifRaceFailure, match="race row 1 produced no spike"):
+        compiled.race_many_interpolated(((1800.0, 0.0), (0.0, -100.0)))
+    for invalid in ([], [1.0], [[]], [[np.nan]], [[np.inf]]):
+        with pytest.raises(ValueError, match="currents_pa"):
+            compiled.race_many_interpolated(invalid)
+
+
+def test_interpolated_crossing_times_against_fixed_finer_native_integrations() -> None:
+    parameters = AllenGlif5Parameters()
+    currents = np.asarray((600.0, 600.1, 800.0, 1800.0))
+    started = perf_counter()
+    compiled = CompiledRestingGlifRace.compile(
+        step_count=RACE_STEPS, parameters=parameters
+    )
+    interpolated = np.asarray(
+        [
+            result.estimated_crossing_time_ms
+            for result in compiled.race_many_interpolated(currents[:, None])
+        ]
+    )
+    compiled_seconds = perf_counter() - started
+    fine_times = {}
+    fine_seconds = {}
+    for refinement in (16, 64):
+        fine_parameters = replace(
+            parameters,
+            dt_ms=parameters.dt_ms / refinement,
+            spike_cut_steps=parameters.spike_cut_steps * refinement,
+        )
+        started = perf_counter()
+        population = AdaptiveGlifPopulation(len(currents), fine_parameters)
+        first_times = np.full(len(currents), np.nan)
+        # Same 30 ms horizon at both resolutions; first spikes are recorded once.
+        for step in range(RACE_STEPS * refinement):
+            fired = population.step(currents)
+            first_times[fired & np.isnan(first_times)] = (step + 1) * fine_parameters.dt_ms
+        fine_seconds[refinement] = perf_counter() - started
+        assert np.all(np.isfinite(first_times))
+        assert np.all(np.diff(first_times) <= 0.0)
+        fine_times[refinement] = first_times
+    assert np.all(np.diff(interpolated) < 0.0)
+    # Fixed numerical bounds, not claims of exact continuous-time dynamics:
+    # interpolation is within one original step; the two direct integrations
+    # agree within two dt/16 steps, including their endpoint quantization.
+    for direct in fine_times.values():
+        assert np.max(np.abs(interpolated - direct)) < parameters.dt_ms
+    assert np.max(np.abs(fine_times[16] - fine_times[64])) <= 2 * parameters.dt_ms / 16
+    print(
+        "fixed_interpolation_diagnostic="
+        + json.dumps(
+            {
+                "currents_pa": currents.tolist(),
+                "horizon_ms": RACE_STEPS * parameters.dt_ms,
+                "interpolated_ms": interpolated.tolist(),
+                "direct_dt16_ms": fine_times[16].tolist(),
+                "direct_dt64_ms": fine_times[64].tolist(),
+                "max_error_vs_dt64_ms": float(np.max(np.abs(interpolated - fine_times[64]))),
+                "compiled_including_setup_seconds": compiled_seconds,
+                "direct_including_setup_seconds": fine_seconds,
+                "direct_cell_steps": {
+                    factor: RACE_STEPS * factor * len(currents) for factor in (16, 64)
+                },
+            },
+            sort_keys=True,
+        )
+    )

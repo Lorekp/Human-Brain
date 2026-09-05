@@ -21,6 +21,17 @@ class RestingGlifRaceResult:
     simultaneous_spike_candidates: int
 
 
+@dataclass(frozen=True, slots=True)
+class InterpolatedRestingGlifRaceResult:
+    """Estimated first crossing between two discrete resting GLIF5 samples."""
+
+    winner_cell: int
+    spike_step: int
+    estimated_crossing_time_ms: float
+    coarse_spike_candidates: int
+    simultaneous_spike_candidates: int
+
+
 class RestingGlifRaceFailure(RuntimeError):
     """A compiled race row had no spike or no unique first spiker."""
 
@@ -193,9 +204,94 @@ class CompiledRestingGlifRace:
             )
         return tuple(results)
 
+    def race_many_interpolated(
+        self,
+        currents_pa: Sequence[Sequence[float]] | np.ndarray,
+    ) -> tuple[InterpolatedRestingGlifRaceResult, ...]:
+        """Rank linear crossing estimates within the earliest discrete interval.
+
+        Voltage minus threshold is interpolated from its sampled endpoints;
+        this is a numerical approximation, not a finer GLIF integration. Every
+        column (including an externally designated STOP cell) follows the same
+        physics. Earliest times equal or adjacent in float64 are indistinguishable
+        and fail the race. No candidate index resolves a tie.
+        """
+
+        currents = np.asarray(currents_pa, dtype=np.float64)
+        if currents.ndim != 2 or currents.shape[0] < 1 or currents.shape[1] < 1:
+            raise ValueError("currents_pa must be a nonempty rows-by-candidates matrix")
+        if not np.all(np.isfinite(currents)):
+            raise ValueError("currents_pa must contain only finite values")
+        currents = np.ascontiguousarray(currents)
+        step_count = int(self._unit_voltage.size)
+        threshold = self.parameters.threshold_inf_relative_mv
+        with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+            first_steps = self._first_crossing_steps(np.max(currents, axis=1))
+            results: list[InterpolatedRestingGlifRaceResult] = []
+            for row, first_step in enumerate(first_steps):
+                step = int(first_step)
+                if step == step_count:
+                    raise RestingGlifRaceFailure(
+                        f"race row {row} produced no spike within its fixed bound"
+                    )
+                voltage = self._unit_voltage[step] * currents[row]
+                total_threshold = (
+                    threshold + self._unit_voltage_threshold[step] * currents[row]
+                )
+                fired = np.flatnonzero(voltage > total_threshold)
+                coarse_count = int(fired.size)
+                after = voltage[fired] - total_threshold[fired]
+                before = np.full(coarse_count, -threshold, dtype=np.float64)
+                if step > 0:
+                    before = self._unit_voltage[step - 1] * currents[row, fired] - (
+                        threshold
+                        + self._unit_voltage_threshold[step - 1] * currents[row, fired]
+                    )
+                width = after - before
+                if coarse_count == 0 or not np.all(
+                    np.isfinite(before)
+                    & np.isfinite(after)
+                    & np.isfinite(width)
+                    & (before <= 0.0)
+                    & (after > 0.0)
+                    & (width > 0.0)
+                ):
+                    raise RestingGlifRaceFailure(
+                        f"race row {row} has an invalid interpolation bracket"
+                    )
+                fractions = -before / width
+                times = (step + fractions) * self.parameters.dt_ms
+                if not np.all(
+                    np.isfinite(times)
+                    & (fractions >= 0.0)
+                    & (fractions <= 1.0)
+                ):
+                    raise RestingGlifRaceFailure(
+                        f"race row {row} has an invalid interpolated crossing time"
+                    )
+                earliest = float(np.min(times))
+                earliest_cells = fired[times <= np.nextafter(earliest, np.inf)]
+                refined_count = int(earliest_cells.size)
+                if refined_count != 1:
+                    raise RestingGlifRaceFailure(
+                        f"race row {row} produced {refined_count} indistinguishable "
+                        f"interpolated first crossings among {coarse_count} coarse spikes"
+                    )
+                results.append(
+                    InterpolatedRestingGlifRaceResult(
+                        winner_cell=int(earliest_cells[0]),
+                        spike_step=step,
+                        estimated_crossing_time_ms=earliest,
+                        coarse_spike_candidates=coarse_count,
+                        simultaneous_spike_candidates=refined_count,
+                    )
+                )
+        return tuple(results)
+
 
 __all__ = [
     "CompiledRestingGlifRace",
+    "InterpolatedRestingGlifRaceResult",
     "RestingGlifRaceFailure",
     "RestingGlifRaceResult",
 ]

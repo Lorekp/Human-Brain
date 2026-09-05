@@ -7,7 +7,11 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from humanbrain.contextual_evidence_memory import ContextualEvidenceMemory
+from humanbrain.contextual_evidence_memory import (
+    ContextualEvidenceMemory,
+    _candidate_match_features,
+    _position_kernels,
+)
 from humanbrain.frozen_context_encoder import FrozenContextEncoder
 from humanbrain.opaque_document_event_tape import OpaqueDocument
 
@@ -229,12 +233,18 @@ def test_pairwise_rejects_mismatched_query_same_occurrence_and_stop_atomically(e
 
 
 @pytest.mark.parametrize("interaction_gain", (1.0, 16.0))
+@pytest.mark.parametrize("candidate_interactions", (False, True))
 def test_revisit_preserves_occurrences_after_updates_and_appended_duplicates(
-    encoder, interaction_gain
+    encoder, interaction_gain, candidate_interactions
 ) -> None:
-    update = ContextualEvidenceMemory(encoder, interaction_gain=interaction_gain)
+    update = ContextualEvidenceMemory(
+        encoder, interaction_gain=interaction_gain, candidate_interactions=candidate_interactions
+    )
     frozen = ContextualEvidenceMemory(
-        encoder, learning_enabled=False, interaction_gain=interaction_gain
+        encoder,
+        learning_enabled=False,
+        interaction_gain=interaction_gain,
+        candidate_interactions=candidate_interactions,
     )
     for memory in (update, frozen):
         memory.ingest((document(),))
@@ -247,6 +257,8 @@ def test_revisit_preserves_occurrences_after_updates_and_appended_duplicates(
     first = update.observe_comparison(rejected, accepted)
     frozen.observe_comparison(*frozen_pair)
     assert first["synaptic_update"]
+    if candidate_interactions:
+        assert np.any(update.checkpoint_arrays()["readout_synapses_pa"][:, 1537:] != 0)
 
     appended = OpaqueDocument(
         b"new-source", b"public-test", b"Birch receives 23 messages and sends 31."
@@ -288,10 +300,12 @@ def test_revisit_preserves_occurrences_after_updates_and_appended_duplicates(
     frozen_receipt = frozen.observe_comparison(*revisited[1])
     assert updated_receipt["eligibility_delta_sha256"] == first["eligibility_delta_sha256"]
     assert frozen_receipt["eligibility_delta_sha256"] == first["eligibility_delta_sha256"]
-    assert updated_receipt["synaptic_update"] and not frozen_receipt["synaptic_update"]
+    assert updated_receipt["native_update_applied"] == (updated_receipt["gap_before"] < 1)
+    assert not frozen_receipt["synaptic_update"]
     assert frozen.synapse_sha256 == initial_frozen_synapses
     assert update.feedback_count == frozen.feedback_count == 5
-    assert update.update_count == 3 and frozen.update_count == 0
+    assert update.update_count == 2 + int(updated_receipt["native_update_applied"])
+    assert frozen.update_count == 0
 
 
 def test_revisit_rejects_forged_stop_and_unrelated_source_identity(encoder) -> None:
@@ -464,3 +478,192 @@ def test_raw_score_reference_requires_strict_win_over_tonic_stop(encoder) -> Non
         assert memory.raw_score_reference(b"Configure").stopped
     memory._bias[0] = np.nextafter(threshold, np.inf)
     assert memory.raw_score_reference(b"Configure").emitted == b"ready"
+
+
+def test_relative_word_geometry_has_declared_direction_scale_and_interval_mean() -> None:
+    kernels = _position_kernels(np.asarray([-2, 0, 2]))
+    np.testing.assert_allclose(kernels[:, 1], 1)
+    np.testing.assert_allclose(kernels[:3, 0], np.exp(-2 / np.asarray([2, 8, 32])))
+    np.testing.assert_array_equal(kernels[:3, 2], 0)
+    np.testing.assert_array_equal(kernels[3:, 0], 0)
+    np.testing.assert_allclose(kernels[3:, 2], kernels[:3, 0])
+
+    # Two distinct query anchors at adjacent source positions. Exact and
+    # semantic channels coincide here, making every hand-computed value explicit.
+    spans = np.asarray([[0, 0], [1, 1], [0, 1]])
+    features = _candidate_match_features(np.eye(2), np.eye(2), spans)
+    joint = features[:, :72].reshape(3, 6, 6, 2)
+    direct = features[:, 72:].reshape(3, 6, 2)
+    decay = np.exp(-0.5)
+    np.testing.assert_allclose(joint[0, 0, 0], 0)
+    np.testing.assert_allclose(joint[1, 0, 0], decay / 2)
+    np.testing.assert_allclose(joint[0, 3, 3], decay / 2)
+    np.testing.assert_allclose(direct[1, 0], (1 + decay) / 2)
+    np.testing.assert_allclose(direct[0, 0], 0.5)
+    np.testing.assert_allclose(direct[2], 1)  # Both words are inside the interval.
+    np.testing.assert_allclose(
+        _candidate_match_features(np.eye(2), np.eye(2), spans, collapsed=True), 1
+    )
+    single = _candidate_match_features(np.asarray([[1.0, 0]]), np.asarray([[0.8, 0.2]]), spans)
+    np.testing.assert_array_equal(single[:, :72], 0)  # No other query occurrence.
+    np.testing.assert_array_equal(
+        _candidate_match_features(np.empty((0, 2)), np.empty((0, 2)), spans), 0
+    )
+
+
+def test_candidate_interactions_preserve_default_features_and_account_retained_state(
+    encoder,
+) -> None:
+    default = ContextualEvidenceMemory(encoder, interaction_gain=16)
+    disabled = ContextualEvidenceMemory(encoder, interaction_gain=16, candidate_interactions=False)
+    enabled = ContextualEvidenceMemory(encoder, interaction_gain=16, candidate_interactions=True)
+    assert default.checkpoint_sha256 == disabled.checkpoint_sha256
+    assert "candidate_interactions" not in default.representation_policy
+    assert enabled.checkpoint_sha256 != default.checkpoint_sha256
+    for memory in (default, disabled, enabled):
+        memory.ingest((document(),))
+    query = "How many messages does Café receive?".encode()
+    original, similarity = default._features(query)
+    explicit, _ = disabled._features(query)
+    expanded, expanded_similarity = enabled._features(query)
+    assert original.shape[1] == 1537 and expanded.shape[1] == 1621
+    np.testing.assert_array_equal(explicit, original)
+    np.testing.assert_array_equal(expanded[:, :1537], original)
+    np.testing.assert_array_equal(expanded_similarity, similarity)
+    assert np.any(expanded[:, 1537:] > 0)
+    assert [c.emitted for c in enabled._candidates] == [c.emitted for c in default._candidates]
+    assert (
+        enabled.storage_summary["context_vector_bytes"]
+        == default.storage_summary["context_vector_bytes"]
+    )
+    windows = enabled._interaction_windows
+    assert len(windows) == 1
+    for window in windows:
+        assert not window.word_candidate_indices.flags.writeable
+        assert not window.candidate_word_spans.flags.writeable
+        for index, word in zip(window.word_candidate_indices, window.words, strict=True):
+            assert enabled._candidates[index].emitted.decode().casefold() == word
+    summary = enabled.storage_summary
+    new_payload = sum(w.payload_bytes for w in windows)
+    assert summary["candidate_interaction_payload_bytes"] == new_payload
+    assert summary["candidate_interaction_array_bytes"] == sum(
+        w.word_candidate_indices.nbytes + w.candidate_word_spans.nbytes for w in windows
+    )
+    # New retained state is the explicit window payload and three arrays whose
+    # feature width grows: GO/NO_GO weights and one eligibility vector.
+    assert (
+        summary["retained_array_and_byte_payload_bytes"]
+        - default.storage_summary["retained_array_and_byte_payload_bytes"]
+        == new_payload + 3 * 84 * 8
+    )
+    np.testing.assert_array_equal(enabled._features(b"?!")[0][:, 1537:], 0)
+    with pytest.raises(AttributeError):
+        enabled.candidate_interactions = False
+
+
+def test_exact_interactions_bind_occurrences_under_consistent_renaming(encoder) -> None:
+    original = ContextualEvidenceMemory(encoder, candidate_interactions=True)
+    renamed = ContextualEvidenceMemory(encoder, candidate_interactions=True)
+    original.ingest((document(),))
+    renamed.ingest(
+        (
+            OpaqueDocument(
+                b"renamed", b"public", b"Birch receives 17 messages. Juniper receives 23 messages."
+            ),
+        )
+    )
+    before = original._features("Café messages".encode())[0][:, 1537:]
+    after = renamed._features(b"Birch messages")[0][:, 1537:]
+    # Only exact channels are rename invariant; pretrained semantic vectors need
+    # not be. Identical occurrence geometry preserves all 42 exact features.
+    np.testing.assert_array_equal(before[:, ::2], after[:, ::2])
+    other = renamed._features(b"Juniper messages")[0][:, 1537:]
+    indices = [
+        next(i for i, c in enumerate(renamed._candidates) if c.emitted == value)
+        for value in (b"17", b"23")
+    ]
+    assert not np.array_equal(after[indices[0], ::2], other[indices[0], ::2])
+    assert not np.array_equal(after[indices[0], ::2], after[indices[1], ::2])
+
+
+def test_candidate_interaction_ablations_are_read_only_and_never_receive_feedback(encoder) -> None:
+    memory = ContextualEvidenceMemory(encoder, candidate_interactions=True)
+    frozen = ContextualEvidenceMemory(encoder, candidate_interactions=True, learning_enabled=False)
+    for model in (memory, frozen):
+        model.ingest((document(),))
+    query = "Café messages".encode()
+    selected = memory.decision_for_span(query, b"17")
+    memory._weights[0, 384:768] = 1_000 * memory._vectors[selected.candidate_index]
+    before = memory.checkpoint_sha256
+    ordinary, _ = memory._features(query)
+    for ablation in ("disabled", "position_collapsed"):
+        rows, _ = memory._features(query, interaction_ablation=ablation)
+        np.testing.assert_array_equal(rows[:, :1537], ordinary[:, :1537])
+        if ablation == "disabled":
+            np.testing.assert_array_equal(rows[:, 1537:], 0)
+        else:
+            np.testing.assert_array_equal(rows[:, 1537:], np.tile(rows[0, 1537:], (len(rows), 1)))
+        decision = memory.raw_score_reference(query, interaction_ablation=ablation)
+        assert decision.emitted == b"17"
+        assert decision.mode == "raw_learned_score_ablation_" + ablation
+        assert decision.eligibility == tuple(rows[decision.candidate_index])
+        assert decision.physical_cell_steps == 0
+        with pytest.raises(ValueError, match="read-only"):
+            memory.observe_feedback(decision, 1)
+        with pytest.raises(ValueError, match="read-only"):
+            memory.revisit_decision(decision)
+        with pytest.raises(ValueError, match="read-only"):
+            frozen.replay_decision(decision)
+    assert memory.checkpoint_sha256 == before
+    assert memory.feedback_count == frozen.feedback_count == 0
+    with pytest.raises(ValueError, match="unknown interaction ablation"):
+        memory.raw_score_reference(query, interaction_ablation="arbitrary")
+    baseline = ContextualEvidenceMemory(encoder)
+    with pytest.raises(ValueError, match="requires candidate_interactions"):
+        baseline.raw_score_reference(query, interaction_ablation="disabled")
+
+
+@pytest.mark.parametrize("binding", (False, True))
+def test_interpolated_readout_recovers_same_checkpoint_choice_and_preserves_ties(
+    encoder, binding
+) -> None:
+    memory = ContextualEvidenceMemory(
+        encoder, interaction_gain=16.0, candidate_interactions=binding
+    )
+    memory.ingest(
+        (
+            OpaqueDocument(b"timing-alpha", b"public", b"alpha"),
+            OpaqueDocument(b"timing-beta", b"public", b"beta"),
+        )
+    )
+    query = b"Select beta"
+    rows, _ = memory._features(query)
+    alpha = memory.decision_for_span(query, b"alpha").candidate_index
+    beta = memory.decision_for_span(query, b"beta").candidate_index
+    # Set a controlled synaptic state, not a learning result: two distinct
+    # candidate currents cross in one coarse interval, with beta strictly first.
+    drives = np.zeros(len(rows))
+    drives[[alpha, beta]] = np.arctanh((np.asarray((799.0, 799.1)) - 600.0) / 200.0)
+    memory._weights[0] = np.linalg.lstsq(rows, drives, rcond=None)[0]
+    np.testing.assert_allclose(rows @ memory._weights[0], drives, atol=1e-12)
+    before = memory.checkpoint_sha256
+    discrete = memory.respond(query)
+    refined = memory.respond_interpolated(query)
+    assert discrete.stopped and "simultaneous first spikes" in discrete.stop_reason
+    assert refined.candidate_index == memory.conventional(query).candidate_index == beta
+    assert refined.emitted == b"beta" and refined.eligibility == tuple(rows[beta])
+    assert refined.checkpoint_sha256 == discrete.checkpoint_sha256 == before
+    assert memory.checkpoint_sha256 == before
+    assert refined.readout_policy == memory.readout_policy["comparison"]
+    assert discrete.readout_policy == memory.readout_policy["default"]
+    assert refined.coarse_spike_candidates == 2 and refined.simultaneous_spike_candidates == 1
+    assert refined.spike_step * 0.05 < refined.estimated_crossing_time_ms < (
+        refined.spike_step + 1
+    ) * 0.05
+    with pytest.raises(ValueError, match="custody changed"):
+        memory.observe_feedback(replace(refined, estimated_crossing_time_ms=0.0), 1)
+    assert memory.feedback_count == memory.update_count == 0
+    memory._weights.fill(0)
+    memory._bias[0] = 3.0
+    tied = memory.respond_interpolated(query)
+    assert tied.stopped and "indistinguishable" in tied.stop_reason

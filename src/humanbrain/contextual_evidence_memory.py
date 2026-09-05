@@ -24,6 +24,9 @@ from humanbrain.resting_glif_race import CompiledRestingGlifRace, RestingGlifRac
 _DIMENSION = 384
 _FEATURES = 4 * _DIMENSION + 1
 _RACE_STEPS = 600
+_CANDIDATE_FEATURES = 84
+_CANDIDATE_GAIN = 16.0
+_POSITION_SCALES = (2.0, 8.0, 32.0)
 
 
 def _digest(value: object) -> str:
@@ -41,6 +44,68 @@ def _words(raw: bytes) -> tuple[tuple[int, int], ...]:
     for character in text:
         offsets.append(offsets[-1] + len(character.encode("utf-8")))
     return tuple((offsets[m.start()], offsets[m.end()]) for m in re.finditer(r"\w+", text))
+
+
+def _position_kernels(distance: np.ndarray, *, collapsed: bool = False) -> np.ndarray:
+    if collapsed:
+        return np.ones((6, *distance.shape), dtype=np.float64)
+    return np.asarray(
+        [
+            (distance * side >= 0) * np.exp(-np.abs(distance) / scale)
+            for side in (-1, 1)
+            for scale in _POSITION_SCALES
+        ]
+    )
+
+
+def _candidate_match_features(
+    exact: np.ndarray, semantic: np.ndarray, word_spans: np.ndarray, *, collapsed: bool = False
+) -> np.ndarray:
+    """Unscaled 72 F[a,b,Y] then 12 H[b,Y], Y ordered exact, semantic.
+
+    A_i^a(l)=max_j E_ij K_a(j-l); R_i,Y(l)=sum_{k!=i}Y_kl/max(1,Q-1).
+    F=mean_i max_l A_i^a(l) R_i,Y(l) K_b(l-c); H=mean_i max_j Y_ij K_b(j-c).
+    All query anchors, source words and candidate intervals participate.
+    """
+    count, query_count = len(word_spans), len(exact)
+    if query_count == 0:
+        return np.zeros((count, _CANDIDATE_FEATURES))
+    positions = np.arange(exact.shape[1])
+    pair_kernels = _position_kernels(positions[:, None] - positions, collapsed=collapsed)
+    left, right = word_spans[:, 0, None], word_spans[:, 1, None]
+    distance = np.where(
+        positions < left, positions - left, np.where(positions > right, positions - right, 0)
+    )
+    candidate_kernels = _position_kernels(distance, collapsed=collapsed)
+    anchors = (exact[None, :, :, None] * pair_kernels[:, None, :, :]).max(axis=2)
+    matches = np.stack((exact, semantic))
+    other = (matches.sum(axis=1, keepdims=True) - matches) / max(1, query_count - 1)
+    joint = np.empty((count, 6, 6, 2))
+    direct = np.empty((count, 6, 2))
+    # Vectorize over query words and every candidate; only six fixed kernels loop.
+    for b, kernel in enumerate(candidate_kernels):
+        direct[:, b, :] = (matches[:, :, None, :] * kernel).max(axis=-1).mean(axis=1).T
+        for a, anchor in enumerate(anchors):
+            supported = other * anchor[None, :, :]
+            joint[:, a, b, :] = (supported[:, :, None, :] * kernel).max(axis=-1).mean(axis=1).T
+    return np.concatenate((joint.reshape(count, 72), direct.reshape(count, 12)), axis=1)
+
+
+@dataclass(frozen=True, slots=True)
+class _InteractionWindow:
+    candidate_start: int
+    word_candidate_indices: np.ndarray
+    candidate_word_spans: np.ndarray
+    words: tuple[str, ...]
+
+    @property
+    def payload_bytes(self) -> int:
+        return (
+            8
+            + self.word_candidate_indices.nbytes
+            + self.candidate_word_spans.nbytes
+            + sum(len(word.encode("utf-8")) for word in self.words)
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,6 +129,10 @@ class ContextualEvidenceDecision:
     stop_reason: str | None
     physical_cell_steps: int
     spike_step: int | None
+    readout_policy: str | None
+    estimated_crossing_time_ms: float | None
+    coarse_spike_candidates: int | None
+    simultaneous_spike_candidates: int | None
     sha256: str
 
     @property
@@ -81,25 +150,31 @@ class ContextualEvidenceMemory:
         learning_rate: float = 1.0,
         learning_enabled: bool = True,
         interaction_gain: float = 1.0,
+        candidate_interactions: bool = False,
     ) -> None:
         if not np.isfinite(learning_rate) or learning_rate <= 0:
             raise ValueError("learning_rate must be finite and positive")
         if not np.isfinite(interaction_gain) or interaction_gain <= 0:
             raise ValueError("interaction_gain must be finite and positive")
+        if type(candidate_interactions) is not bool:
+            raise ValueError("candidate_interactions must be a bool")
         self.encoder = encoder
         self.learning_rate = float(learning_rate)
         self.learning_enabled = learning_enabled
         self._interaction_gain = float(interaction_gain)
+        self._candidate_interactions = candidate_interactions
+        self._interaction_windows: list[_InteractionWindow] = []
         self._documents: list[OpaqueDocument] = []
         self._candidates: list[_Candidate] = []
         self._vectors = np.empty((0, _DIMENSION), dtype=np.float64)
         self._contexts: list[np.ndarray] = []
         self._storage_root = _digest({"representation": self.representation_policy})
         self._storage_ancestry = {self._storage_root: 0}
-        self._weights = np.zeros((2, _FEATURES), dtype=np.float64)
+        feature_count = _FEATURES + _CANDIDATE_FEATURES * candidate_interactions
+        self._weights = np.zeros((2, feature_count), dtype=np.float64)
         self._bias = np.zeros(2, dtype=np.float64)
         self._heterogeneity = np.zeros(2, dtype=np.float64)
-        self._eligibility = np.zeros(_FEATURES, dtype=np.float64)
+        self._eligibility = np.zeros(feature_count, dtype=np.float64)
         self._native = NativeThreeFactorLearner(
             eligibility=self._eligibility,
             output_heterogeneity_pa=self._heterogeneity,
@@ -116,10 +191,36 @@ class ContextualEvidenceMemory:
         return self._interaction_gain
 
     @property
+    def candidate_interactions(self) -> bool:
+        return self._candidate_interactions
+
+    @property
     def representation_policy(self) -> dict:
-        return {
+        policy = {
             "kind": "unit_query_span_window_with_scaled_hadamard_products_v1",
             "interaction_gain": self.interaction_gain,
+        }
+        if self.candidate_interactions:
+            policy["candidate_interactions"] = {
+                "kind": "relative_word_anchor_other_query_match_v1",
+                "scales_words": _POSITION_SCALES,
+                "gain": _CANDIDATE_GAIN,
+                "direction_order": "left_then_right; zero_in_both",
+                "layout": "72_F[a,b,Y]_then_12_H[b,Y]; Y=exact,semantic",
+                "matching": "casefold_exact_and_nonnegative_unit_word_cosine",
+                "query_pooling": "mean_over_all_word_occurrences; other_excludes_same_index",
+                "source_scope": "existing_48_word_window",
+            }
+        return policy
+
+    @property
+    def readout_policy(self) -> dict:
+        return {
+            "default": "discrete_glif_steps_v1",
+            "comparison": "linear_glif_endpoint_interpolation_v1",
+            "interpolated_ties": "equal_or_adjacent_float64_times_stop",
+            "dt_ms": self._race.parameters.dt_ms,
+            "step_count": _RACE_STEPS,
         }
 
     @property
@@ -128,6 +229,7 @@ class ContextualEvidenceMemory:
             {
                 "encoder": self.encoder.sha256,
                 "representation": self.representation_policy,
+                "readouts": self.readout_policy,
                 "storage": self._storage_root,
                 "synapses": self.synapse_sha256,
                 "feedback": self._feedback_root,
@@ -164,8 +266,15 @@ class ContextualEvidenceMemory:
             )
         )
         compiled_race = self._race._unit_voltage.nbytes + self._race._unit_voltage_threshold.nbytes
+        interactions = sum(window.payload_bytes for window in self._interaction_windows)
         return {
             "interaction_gain": self.interaction_gain,
+            "candidate_interactions": self.candidate_interactions,
+            "candidate_interaction_payload_bytes": interactions,
+            "candidate_interaction_array_bytes": sum(
+                window.word_candidate_indices.nbytes + window.candidate_word_spans.nbytes
+                for window in self._interaction_windows
+            ),
             "raw_source_bytes": raw,
             "candidate_lexical_bytes": lexical,
             "context_vector_bytes": vectors,
@@ -173,10 +282,17 @@ class ContextualEvidenceMemory:
             "storage_ancestry_payload_bytes": ancestry,
             "storage_ancestry_root_count": len(self._storage_ancestry),
             "synapse_array_bytes": self._weights.nbytes + self._bias.nbytes,
-            "payload_bytes": raw + lexical + vectors + metadata + ancestry,
+            "payload_bytes": raw + lexical + vectors + metadata + ancestry + interactions,
             "compiled_race_array_bytes": compiled_race,
             "retained_array_and_byte_payload_bytes": (
-                raw + lexical + vectors + metadata + ancestry + neural + compiled_race
+                raw
+                + lexical
+                + vectors
+                + metadata
+                + ancestry
+                + interactions
+                + neural
+                + compiled_race
             ),
             "plastic_synapse_count": self._weights.size,
             "nonzero_plastic_synapses": int(np.count_nonzero(self._weights)),
@@ -190,7 +306,7 @@ class ContextualEvidenceMemory:
 
     def ingest(self, documents: tuple[OpaqueDocument, ...]) -> None:
         """Retain every word candidate; fail explicitly instead of truncating encoding."""
-        candidates, vectors, contexts = [], [], []
+        candidates, vectors, contexts, interaction_windows = [], [], [], []
         for offset, document in enumerate(documents):
             words = _words(document.content)
             for begin in range(0, len(words), 48):
@@ -203,6 +319,31 @@ class ContextualEvidenceMemory:
                     for j in range(i, min(i + 3, len(group)))
                 )
                 pooled = encoded.pool_spans(spans)
+                if self.candidate_interactions:
+                    intervals = np.asarray(
+                        [
+                            (i, j)
+                            for i in range(len(group))
+                            for j in range(i, min(i + 3, len(group)))
+                        ],
+                        dtype=np.int64,
+                    )
+                    candidate_start = len(self._candidates) + len(candidates)
+                    word_indices = candidate_start + np.flatnonzero(
+                        intervals[:, 0] == intervals[:, 1]
+                    )
+                    intervals.setflags(write=False)
+                    word_indices.setflags(write=False)
+                    interaction_windows.append(
+                        _InteractionWindow(
+                            candidate_start,
+                            word_indices,
+                            intervals,
+                            tuple(
+                                document.content[a:b].decode("utf-8").casefold() for a, b in group
+                            ),
+                        )
+                    )
                 context_index = len(self._contexts) + len(contexts)
                 contexts.append(_unit(encoded.sentence_vector))
                 for (start, end), vector in zip(spans, pooled, strict=True):
@@ -220,23 +361,40 @@ class ContextualEvidenceMemory:
         self._documents.extend(documents)
         self._candidates.extend(candidates)
         self._contexts.extend(contexts)
+        self._interaction_windows.extend(interaction_windows)
         if vectors:
             self._vectors = np.vstack((self._vectors, vectors))
-        self._storage_root = _digest(
-            {
-                "parent": self._storage_root,
-                "documents": [
-                    (d.document_id.hex(), d.provenance_id.hex(), sha256(d.content).hexdigest())
-                    for d in documents
-                ],
-                "vectors": sha256(self._vectors.tobytes()).hexdigest(),
-                "contexts": sha256(b"".join(v.tobytes() for v in contexts)).hexdigest(),
-            }
-        )
+        storage = {
+            "parent": self._storage_root,
+            "documents": [
+                (d.document_id.hex(), d.provenance_id.hex(), sha256(d.content).hexdigest())
+                for d in documents
+            ],
+            "vectors": sha256(self._vectors.tobytes()).hexdigest(),
+            "contexts": sha256(b"".join(v.tobytes() for v in contexts)).hexdigest(),
+        }
+        if self.candidate_interactions:
+            storage["interaction_windows"] = [
+                (
+                    window.candidate_start,
+                    window.words,
+                    sha256(window.word_candidate_indices.tobytes()).hexdigest(),
+                    sha256(window.candidate_word_spans.tobytes()).hexdigest(),
+                )
+                for window in interaction_windows
+            ]
+        self._storage_root = _digest(storage)
         self._storage_ancestry[self._storage_root] = len(self._candidates)
 
-    def _features(self, query: bytes) -> tuple[np.ndarray, np.ndarray]:
-        q = _unit(self.encoder.encode(query).sentence_vector)
+    def _features(
+        self, query: bytes, *, interaction_ablation: str | None = None
+    ) -> tuple[np.ndarray, np.ndarray]:
+        if interaction_ablation not in (None, "disabled", "position_collapsed"):
+            raise ValueError("unknown interaction ablation")
+        if interaction_ablation is not None and not self.candidate_interactions:
+            raise ValueError("interaction ablation requires candidate_interactions")
+        encoded = self.encoder.encode(query)
+        q = _unit(encoded.sentence_vector)
         rows = []
         query_words = set(re.findall(r"\w+", query.decode("utf-8").casefold()))
         for candidate, vector in zip(self._candidates, self._vectors, strict=True):
@@ -252,7 +410,28 @@ class ContextualEvidenceMemory:
                     )
                 )
             )
-        return np.asarray(rows, dtype=np.float64).reshape(-1, _FEATURES), self._vectors @ q
+        result = np.asarray(rows, dtype=np.float64).reshape(-1, _FEATURES)
+        if self.candidate_interactions:
+            extra = np.zeros((len(rows), _CANDIDATE_FEATURES))
+            if interaction_ablation != "disabled":
+                spans = _words(query)
+                words = tuple(query[a:b].decode("utf-8").casefold() for a, b in spans)
+                vectors = np.asarray([_unit(v) for v in encoded.pool_spans(spans)]).reshape(-1, 384)
+                for window in self._interaction_windows:
+                    exact = np.asarray(words)[:, None] == np.asarray(window.words)[None, :]
+                    semantic = np.maximum(
+                        0, vectors @ self._vectors[window.word_candidate_indices].T
+                    )
+                    start = window.candidate_start
+                    stop = start + len(window.candidate_word_spans)
+                    extra[start:stop] = _candidate_match_features(
+                        exact.astype(np.float64),
+                        semantic,
+                        window.candidate_word_spans,
+                        collapsed=interaction_ablation == "position_collapsed",
+                    )
+            result = np.concatenate((result, _CANDIDATE_GAIN * extra), axis=1)
+        return result, self._vectors @ q
 
     def _decision(
         self,
@@ -263,6 +442,11 @@ class ContextualEvidenceMemory:
         reason: str | None = None,
         steps: int = 0,
         spike_step: int | None = None,
+        *,
+        readout_policy: str | None = None,
+        estimated_crossing_time_ms: float | None = None,
+        coarse_spike_candidates: int | None = None,
+        simultaneous_spike_candidates: int | None = None,
     ) -> ContextualEvidenceDecision:
         values = dict(
             candidate_index=index,
@@ -275,6 +459,10 @@ class ContextualEvidenceMemory:
             stop_reason=reason,
             physical_cell_steps=steps,
             spike_step=spike_step,
+            readout_policy=readout_policy,
+            estimated_crossing_time_ms=estimated_crossing_time_ms,
+            coarse_spike_candidates=coarse_spike_candidates,
+            simultaneous_spike_candidates=simultaneous_spike_candidates,
         )
         serial = {
             **values,
@@ -294,7 +482,8 @@ class ContextualEvidenceMemory:
             result = self._race.race_many(currents[None, :], require_unique=True)[0]
         except RestingGlifRaceFailure as error:
             return self._decision(
-                query, rows, None, "neuronal", str(error), _RACE_STEPS * len(currents)
+                query, rows, None, "neuronal", str(error), _RACE_STEPS * len(currents),
+                readout_policy=self.readout_policy["default"],
             )
         index = result.winner_cell if result.winner_cell < len(self._candidates) else None
         return self._decision(
@@ -305,6 +494,31 @@ class ContextualEvidenceMemory:
             "tonic_stop" if index is None else None,
             (result.spike_step + 1) * len(currents),
             result.spike_step,
+            readout_policy=self.readout_policy["default"],
+            coarse_spike_candidates=result.simultaneous_spike_candidates,
+            simultaneous_spike_candidates=result.simultaneous_spike_candidates,
+        )
+
+    def respond_interpolated(self, query: bytes) -> ContextualEvidenceDecision:
+        """Separate neuronal timing approximation at the same learned checkpoint."""
+        rows, _ = self._features(query)
+        currents = self._currents(rows)
+        try:
+            result = self._race.race_many_interpolated(currents[None, :])[0]
+        except RestingGlifRaceFailure as error:
+            return self._decision(
+                query, rows, None, "neuronal_interpolated", str(error),
+                _RACE_STEPS * len(currents), readout_policy=self.readout_policy["comparison"],
+            )
+        index = result.winner_cell if result.winner_cell < len(self._candidates) else None
+        return self._decision(
+            query, rows, index, "neuronal_interpolated",
+            "tonic_stop" if index is None else None,
+            (result.spike_step + 1) * len(currents), result.spike_step,
+            readout_policy=self.readout_policy["comparison"],
+            estimated_crossing_time_ms=result.estimated_crossing_time_ms,
+            coarse_spike_candidates=result.coarse_spike_candidates,
+            simultaneous_spike_candidates=result.simultaneous_spike_candidates,
         )
 
     def conventional(self, query: bytes) -> ContextualEvidenceDecision:
@@ -321,17 +535,22 @@ class ContextualEvidenceMemory:
             "tonic_stop_or_tie" if index is None else None,
         )
 
-    def raw_score_reference(self, query: bytes) -> ContextualEvidenceDecision:
+    def raw_score_reference(
+        self, query: bytes, *, interaction_ablation: str | None = None
+    ) -> ContextualEvidenceDecision:
         """Disclosed linear reference before current saturation; no neuronal race."""
-        rows, _ = self._features(query)
+        rows, _ = self._features(query, interaction_ablation=interaction_ablation)
         drive = rows @ (self._weights[0] - self._weights[1]) + self._bias[0] - self._bias[1]
         # Invert the unchanged current map at the tonic STOP current. Require a
         # unique strict win, including against STOP, before float tanh saturation.
         scores = np.append(drive, np.arctanh((600.1 - 600.0) / 200.0))
         best = np.flatnonzero(scores == scores.max())
         index = int(best[0]) if len(best) == 1 and best[0] < len(self._candidates) else None
+        mode = "raw_learned_score"
+        if interaction_ablation is not None:
+            mode += "_ablation_" + interaction_ablation
         return self._decision(
-            query, rows, index, "raw_learned_score", "tonic_stop_or_tie" if index is None else None
+            query, rows, index, mode, "tonic_stop_or_tie" if index is None else None
         )
 
     def external_only(self, query: bytes) -> ContextualEvidenceDecision:
@@ -356,6 +575,10 @@ class ContextualEvidenceMemory:
     def _validated_rows(
         self, decision: ContextualEvidenceDecision, *, allow_ancestor: bool = False
     ) -> np.ndarray:
+        if "_ablation_" in decision.mode:
+            raise ValueError(
+                "ablation decisions are read-only and cannot receive feedback or replay"
+            )
         record = asdict(decision)
         expected = record.pop("sha256")
         record["query"] = decision.query.hex()
