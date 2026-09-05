@@ -7,6 +7,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+
 from humanbrain.contextual_evidence_memory import (
     ContextualEvidenceMemory,
     _affine_currents,
@@ -15,6 +16,281 @@ from humanbrain.contextual_evidence_memory import (
 )
 from humanbrain.frozen_context_encoder import FrozenContextEncoder
 from humanbrain.opaque_document_event_tape import OpaqueDocument
+
+
+def _synthetic_extractive_reader(score=None):
+    """Real tiny pair tokenizer, fake graph logits; no pretrained inference."""
+    from tokenizers import Tokenizer, models, pre_tokenizers, processors
+
+    from humanbrain.frozen_extractive_reader import FrozenExtractiveReader
+
+    words = [
+        "<s>",
+        "<pad>",
+        "</s>",
+        "<unk>",
+        "ask",
+        "Café",
+        "naïve",
+        "blue-green,",
+        "O'Brien",
+    ]
+    words += [f"w{i}" for i in range(700)]
+    vocab = {word: i for i, word in enumerate(words)}
+    tokenizer = Tokenizer(models.WordLevel(vocab, unk_token="<unk>"))
+    tokenizer.pre_tokenizer = pre_tokenizers.WhitespaceSplit()
+    tokenizer.post_processor = processors.RobertaProcessing(
+        ("</s>", 2), ("<s>", 0), trim_offsets=False, add_prefix_space=False
+    )
+
+    class Session:
+        def __init__(self):
+            self.calls = []
+
+        def run(self, names, inputs):
+            assert names == ["start_logits", "end_logits"]
+            assert set(inputs) == {"input_ids", "attention_mask"}
+            assert all(x.dtype == np.int64 for x in inputs.values())
+            ids = inputs["input_ids"][0]
+            self.calls.append(ids.copy())
+            logits = np.full((2, 1, len(ids)), -10.0, dtype=np.float32)
+            logits[:, 0, 0] = 0
+            if score:
+                score(ids, logits, vocab)
+            return list(logits)
+
+    reader = FrozenExtractiveReader.__new__(FrozenExtractiveReader)
+    reader._pair_processor = tokenizer.post_processor
+    tokenizer.post_processor = None
+    reader._tokenizer = tokenizer
+    reader._session = Session()
+    reader.sha256 = "synthetic-reader"
+    return reader
+
+
+def test_extractive_reader_preserves_full_utf8_span_and_masks_question():
+    def score(ids, logits, vocab):
+        logits[:, 0, ids == vocab["ask"]] = 1000  # Never a context answer.
+        logits[0, 0, ids == vocab["Café"]] = 7
+        logits[1, 0, ids == vocab["w3"]] = 9
+
+    reader = _synthetic_extractive_reader(score)
+    raw = "Café naïve blue-green, O'Brien w0 w1 w2 w3".encode()
+    result = reader.read(b"ask", (OpaqueDocument(b"d", b"p", raw),))
+    assert not result.stopped and result.emitted == raw
+    assert result.best_margin == 16
+    assert result.selected.byte_start == 0 and result.selected.byte_end == len(raw)
+    assert result.windows[0].legal_span_count == 8 * 9 // 2
+    assert result.query_content_tokens == 1 and result.paired_tokens == 13
+    assert result.source_bytes == len(raw)
+    assert reader.sha256 == "synthetic-reader"
+    assert reader.read(b"ask", (OpaqueDocument(b"d", b"p", raw),)).emitted == raw
+
+
+def test_extractive_reader_byte_level_offsets_include_combining_characters():
+    from tokenizers import Tokenizer, models, pre_tokenizers, processors
+
+    symbols = ["<s>", "<pad>", "</s>", "<unk>", *sorted(pre_tokenizers.ByteLevel.alphabet())]
+    tokenizer = Tokenizer(models.BPE({s: i for i, s in enumerate(symbols)}, [], unk_token="<unk>"))
+    tokenizer.pre_tokenizer = pre_tokenizers.ByteLevel(add_prefix_space=False)
+    tokenizer.post_processor = processors.RobertaProcessing(
+        ("</s>", 2), ("<s>", 0), trim_offsets=True, add_prefix_space=False
+    )
+    reader = _synthetic_extractive_reader()
+    raw = "prefix Café Cafe\u0301 suffix".encode()
+    text = raw.decode()
+    pair = tokenizer.encode("ask", text)
+    reader._pair_processor = tokenizer.post_processor
+    tokenizer.post_processor = None
+    reader._tokenizer = tokenizer
+    left, right = text.index("Café"), text.index(" suffix")
+    starts = [
+        i
+        for i, (a, b) in enumerate(pair.offsets)
+        if pair.sequence_ids[i] == 1 and a == left and b > a
+    ]
+    ends = [
+        i
+        for i, (a, b) in enumerate(pair.offsets)
+        if pair.sequence_ids[i] == 1 and b == right and b > a
+    ]
+
+    def run(names, inputs):
+        logits = np.full((2, 1, len(pair.ids)), -10, dtype=np.float32)
+        logits[:, 0, 0] = 0
+        logits[0, 0, starts] = 10
+        logits[1, 0, ends] = 10
+        return list(logits)
+
+    reader._session.run = run
+    before = tokenizer.to_str()
+    result = reader.read(b"ask", (OpaqueDocument(b"d", b"p", raw),))
+    assert result.emitted == "Café Cafe\u0301".encode()
+    assert tokenizer.to_str() == before
+    reader._session.run = lambda names, inputs: [np.zeros((1, 1))] * 2
+    with pytest.raises(ValueError, match="malformed"):
+        reader.read(b"ask", (OpaqueDocument(b"d", b"p", raw),))
+    assert tokenizer.to_str() == before
+
+
+@pytest.mark.parametrize("words, counts", [(600, [381, 347]), (700, [381, 381, 194])])
+def test_extractive_reader_context_overlap_and_30_token_boundary(words, counts):
+    def score(ids, logits, vocab):
+        logits[0, 0, ids == vocab["w375"]] = 10
+        logits[1, 0, ids == vocab["w382"]] = 10
+
+    reader = _synthetic_extractive_reader(score)
+    raw = " ".join(f"w{i}" for i in range(words)).encode()
+    result = reader.read(b"ask", (OpaqueDocument(b"d", b"p", raw),))
+    assert result.emitted == b"w375 w376 w377 w378 w379 w380 w381 w382"
+    assert result.window_count == len(counts)
+    assert [w.context_tokens for w in result.windows] == counts
+    assert result.windows[-1].context_byte_end == len(raw)
+    assert result.windows[0].context_byte_end > result.windows[1].context_byte_start
+    assert result.selected.window_index == 1
+    assert raw[result.selected.byte_start : result.selected.byte_end] == result.emitted
+    assert result.windows[0].legal_span_count == sum(min(30, 381 - i) for i in range(381))
+    assert all(len(ids) <= 386 for ids in reader._session.calls)
+
+
+def test_extractive_reader_exact_ties_null_and_identical_provenance():
+    def score(ids, logits, vocab):
+        logits[0, 0, (ids == vocab["w0"]) | (ids == vocab["w1"])] = 10
+        logits[1, 0, (ids == vocab["w0"]) | (ids == vocab["w1"])] = 10
+
+    reader = _synthetic_extractive_reader(score)
+    first = OpaqueDocument(b"first", b"p", b"w0")
+    second = OpaqueDocument(b"second", b"p", b"w1")
+    tied = reader.read(b"ask", (first, second))
+    assert tied.stopped and tied.stop_reason == "different_answer_tie"
+    assert reader.read(b"ask", (second, first)).stopped
+    same = reader.read(b"ask", (first, OpaqueDocument(b"copy", b"p", b"w0")))
+    assert same.emitted == b"w0" and same.selected.document_id_hex == b"first".hex()
+    within = reader.read(b"ask", (OpaqueDocument(b"d", b"p", b"w0 w1"),))
+    assert within.stopped and within.windows[0].different_answer_tie
+    neutral = _synthetic_extractive_reader(lambda ids, logits, vocab: logits.fill(0))
+    assert neutral.read(b"ask", (first,)).stop_reason == "null_margin"
+    assert neutral.read(b"ask", ()).stop_reason == "empty_evidence"
+    assert neutral.read(b"ask", (OpaqueDocument(b"empty", b"p", b""),)).stopped
+
+
+def test_extractive_reader_global_margin_uses_each_windows_own_null():
+    def score(ids, logits, vocab):
+        if vocab["w0"] in ids:
+            logits[:, 0, 0] = 100
+            logits[:, 0, ids == vocab["w0"]] = 101  # Margin 2, raw score 202.
+        else:
+            logits[:, 0, ids == vocab["w1"]] = 2  # Margin 4 wins.
+
+    reader = _synthetic_extractive_reader(score)
+    result = reader.read(
+        b"ask", (OpaqueDocument(b"a", b"p", b"w0"), OpaqueDocument(b"b", b"p", b"w1"))
+    )
+    assert result.emitted == b"w1" and result.best_margin == 4
+    assert [w.null_score for w in result.windows] == [200, 0]
+
+
+def test_extractive_reader_promotes_logits_before_exact_arithmetic():
+    def score(ids, logits, vocab):
+        logits[0, 0, 0] = 2**24
+        logits[0, 0, ids == vocab["w0"]] = 2**24
+        logits[1, 0, ids == vocab["w0"]] = 1
+
+    result = _synthetic_extractive_reader(score).read(b"ask", (OpaqueDocument(b"d", b"p", b"w0"),))
+    assert result.emitted == b"w0" and result.best_margin == 1
+
+
+@pytest.mark.parametrize("last, stopped", [(29, False), (30, True)])
+def test_extractive_reader_token_limit_is_not_endpoint_top_k(last, stopped):
+    def score(ids, logits, vocab):
+        logits[0, 0, ids == vocab["w0"]] = 10
+        logits[1, 0, ids == vocab[f"w{last}"]] = 10
+
+    raw = " ".join(f"w{i}" for i in range(31)).encode()
+    result = _synthetic_extractive_reader(score).read(b"ask", (OpaqueDocument(b"d", b"p", raw),))
+    assert result.stopped == stopped
+    if not stopped:
+        assert result.emitted == " ".join(f"w{i}" for i in range(30)).encode()
+
+
+def test_extractive_reader_errors_are_not_abstentions_and_query_never_truncates():
+    reader = _synthetic_extractive_reader()
+    docs = (OpaqueDocument(b"d", b"p", b"w0"),)
+    with pytest.raises(ValueError, match="64 content tokens"):
+        reader.read(b"ask " * 65, docs)
+    assert not reader._session.calls
+    assert reader.read(b"ask " * 64, docs).query_content_tokens == 64
+    with pytest.raises(UnicodeDecodeError):
+        reader.read(b"\xff", docs)
+    for bad in ([np.zeros((1, 2)), np.zeros((1, 2))], [np.full((1, 6), np.nan)] * 2):
+        reader._session.run = lambda names, inputs, bad=bad: bad
+        with pytest.raises(ValueError, match="malformed or nonfinite"):
+            reader.read(b"ask", docs)
+
+
+def test_extractive_reader_manifest_rejects_tampering_before_graph_load(tmp_path):
+    from humanbrain.frozen_extractive_reader import (
+        FILE_HASHES,
+        MODEL_ID,
+        MODEL_REVISION,
+        FrozenExtractiveReader,
+    )
+
+    manifest = {
+        "model_id": MODEL_ID,
+        "revision": MODEL_REVISION,
+        "files": {name: {} for name in FILE_HASHES},
+    }
+    (tmp_path / "manifest.json").write_text(json.dumps(manifest))
+    (tmp_path / "model.onnx").write_bytes(b"synthetic invalid graph")
+    with pytest.raises(ValueError, match="file hash/size mismatch"):
+        FrozenExtractiveReader(tmp_path)
+
+
+def test_extractive_reader_pinned_tokenizer_custody_without_model_inference():
+    from tokenizers import Tokenizer
+
+    from humanbrain.frozen_extractive_reader import FILE_HASHES
+
+    path = (
+        Path(__file__).resolve().parents[1]
+        / ".models/roberta-base-squad2-optimum-db07770/tokenizer.json"
+    )
+    if not path.exists():
+        pytest.skip("pinned QA tokenizer unavailable; tests never download")
+    assert sha256(path.read_bytes()).hexdigest() == FILE_HASHES["tokenizer.json"]
+    tokenizer = Tokenizer.from_file(str(path))
+    tokenizer.no_truncation()
+    tokenizer.no_padding()
+    reader = _synthetic_extractive_reader()
+    reader._pair_processor = tokenizer.post_processor
+    tokenizer.post_processor = None
+    reader._tokenizer = tokenizer
+    raw = " ".join(f"word{i}" for i in range(600)).encode()
+    result = reader.read(b"ask", (OpaqueDocument(b"d", b"p", raw),))
+    assert result.stopped
+    assert result.windows[0].context_byte_start == 0
+    assert result.windows[-1].context_byte_end == len(raw)
+    assert result.window_count > 2
+    assert all(w.paired_tokens <= 386 for w in result.windows)
+    assert all(
+        a.context_byte_end > b.context_byte_start
+        for a, b in zip(result.windows, result.windows[1:], strict=False)
+    )
+
+    def run(names, inputs):
+        count = inputs["input_ids"].shape[1]
+        logits = np.full((2, 1, count), -10, dtype=np.float32)
+        logits[:, 0, 0] = 0
+        logits[0, 0, 4] = 10  # <s> ask </s></s> context </s>
+        logits[1, 0, count - 2] = 10
+        return list(logits)
+
+    reader._session.run = run
+    raw = "Café naïve blue-green O'Brien Cafe\u0301".encode()
+    result = reader.read(b"ask", (OpaqueDocument(b"unicode", b"p", raw),))
+    assert result.emitted == raw
+    assert result.windows[0].context_tokens <= 30
 
 
 @pytest.fixture(scope="module")
