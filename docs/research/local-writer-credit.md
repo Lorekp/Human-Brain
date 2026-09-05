@@ -1,5 +1,5 @@
 # Delayed local writer credit: candidate contract
-2026-09-06; independent derivation only. No implementation, fit or numerical experiment.
+2026-09-06; implemented candidate with focused arithmetic/state checks. No admitted fit or capability result.
 Sources: plastic_memory.py local_step/apply_learning_signal; byte_sequence_decoder.py teach_local/context_signal.
 [Bellec et al., Results/Methods](https://doi.org/10.1038/s41467-020-17236-y) motivates eligibility × learning signals;
 this memory extension is our approximation, not an e-prop theorem or biological-fidelity claim.
@@ -11,9 +11,10 @@ At an authorized teacher step δ=p−onehot(byte); existing decoder broadcasts g
 g is NOT ∂loss/∂context. Module signals L^m=C_m g use fixed declared matrices, never per-synapse external errors.
 ## Compare the two economical trace choices
 Aggregate local E_ji with Δθ_ji=−η L_j E_ji costs O(P), and may heuristically learn representations.
-Its feedback depends on current query/prediction/value, but it loses explicit attribution to particular earlier writes.
-Counterexample: eligibilities +1 and−1 at orthogonal keys aggregate to0; the two queries require +1 versus−1.
-This proves information loss, not impossibility of aggregate-feedback learning. Keep it as a matched credit control.
+Fix its recurrence to E←(1−β)E+βe: the tagged overwrite rule with one constant unit key/query.
+This controls for scalar overwrite and avoids unbounded accumulation with document length.
+It loses explicit attribution to particular writes: opposite contributions can cancel despite distinct neural keys.
+That is information loss, not impossibility of aggregate-feedback learning. Keep it as a matched credit control.
 SELECT one K-vector T_ji per writer/map synapse, tagged by actual write-key neuronal activity.
 Hebbian accumulation T←λT+β e_ji k would ignore overwrite. Instead use T←T−β(T·k)k+β e_ji k, λ=1.
 All right-hand terms use old T. At feedback form E_ji(q)=Σ_k q_k T_ji,k; apply Δθ_ji=−η L_j E_ji(q).

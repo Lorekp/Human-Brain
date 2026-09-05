@@ -14,6 +14,159 @@ from humanbrain.plastic_memory import (  # noqa: E402
 )
 
 
+@pytest.mark.parametrize("credit_mode", ["tagged", "aggregate"])
+def test_local_memory_overwrite_and_query_retrieval_scalar_oracle(credit_mode):
+    model = PlasticMemory(2, 2, 2, 2, kind="bypass", seed=31).double()
+    with torch.no_grad():
+        model.controller.weight.copy_(torch.eye(2))
+        model.key_weight.copy_(torch.eye(2))
+        model.query_weight.copy_(torch.eye(2))
+        model.value_weight.copy_(torch.eye(2))
+        model.strength_weight.zero_()
+    state = model.initial_local_state(1, credit_mode=credit_mode)
+    xs = np.array([[0.8, 0.0], [0.0, -0.6], [0.4, 0.0]])
+    memory = np.zeros((2, 2))
+    tags = np.zeros((2, 2)) if credit_mode == "tagged" else np.zeros(2)
+    for x in xs:
+        h = np.tanh(x)
+        key = h / np.linalg.norm(h)
+        value = np.tanh(h)
+        e = 1 - h * h
+        old_memory, old_tags = memory.copy(), tags.copy()
+        for i in range(2):
+            predicted = sum(old_memory[i, k] * key[k] for k in range(2))
+            for k in range(2):
+                memory[i, k] = old_memory[i, k] + 0.5 * (value[i] - predicted) * key[k]
+            if credit_mode == "tagged":
+                tagged_prediction = sum(old_tags[i, k] * key[k] for k in range(2))
+                for k in range(2):
+                    tags[i, k] = old_tags[i, k] + 0.5 * (e[i] - tagged_prediction) * key[k]
+            else:
+                tags[i] = old_tags[i] + 0.5 * (e[i] - old_tags[i])
+        state = model.write_local(
+            torch.from_numpy(x[None, None]), torch.ones(1, 1, dtype=torch.bool), state
+        )
+        np.testing.assert_allclose(state.synapses[0], memory, atol=1e-14)
+        np.testing.assert_allclose(state.credit["controller.bias"][0], tags, atol=1e-14)
+    # Each query reads the same M; credit is never a decoder/read input.
+    event = model.read_local(torch.tensor([[1.0, 0.0]], dtype=torch.float64), state)
+    np.testing.assert_allclose(event.value[0], memory[:, 0], atol=1e-14)
+    before = model.controller.bias.detach().clone()
+    signals = {
+        "controller": torch.ones(1, 2, dtype=torch.float64),
+        "key": torch.zeros(1, 2, dtype=torch.float64),
+        "value": torch.zeros(1, 2, dtype=torch.float64),
+        "strength": torch.zeros(1, 1, dtype=torch.float64),
+        "query": torch.zeros(1, 2, dtype=torch.float64),
+    }
+    assert model.apply_local_feedback(state, event, signals, 0.03)
+    expected_e = tags[:, 0] if credit_mode == "tagged" else tags
+    np.testing.assert_allclose(
+        model.controller.bias.detach(), before.numpy() - 0.03 * expected_e, atol=1e-14
+    )
+    np.testing.assert_allclose(state.synapses[0], memory, atol=1e-14)
+
+
+@pytest.mark.parametrize("credit_mode", ["tagged", "aggregate"])
+def test_local_memory_all_groups_feedback_controls_and_retirement(credit_mode):
+    model = PlasticMemory(2, 3, 2, 2, seed=9).double()
+    values = torch.tensor(
+        [[[0.4, -0.2], [0.8, 0.3]], [[-0.3, 0.7], [0.1, -0.9]]],
+        dtype=torch.float64,
+        requires_grad=True,
+    )
+    initial = model.initial_local_state(2, credit_mode=credit_mode)
+    before = copy.deepcopy(model.state_dict())
+    state = model.write_local(values, torch.ones(2, 2, dtype=torch.bool), initial)
+    query = torch.tensor(
+        [[0.6, -0.4], [float("nan"), float("nan")]], dtype=torch.float64, requires_grad=True
+    )
+    event = model.read_local(query, state, mask=torch.tensor([True, False]))
+    signals = {
+        name: torch.tensor([[0.3] * size, [float("nan")] * size], dtype=torch.float64)
+        for name, size in {"controller": 3, "key": 2, "value": 2, "strength": 1, "query": 2}.items()
+    }
+    for name, value in model.state_dict().items():
+        assert torch.equal(value, before[name])
+    assert not model.apply_local_feedback(state, event, signals, 0.01, learning_enabled=False)
+    model.requires_grad_(False)
+    assert not model.apply_local_feedback(state, event, signals, 0.01)
+    model.requires_grad_(True)
+    assert model.apply_local_feedback(state, event, signals, 0.01)
+    for name, value in model.state_dict().items():
+        assert torch.isfinite(value).all()
+        assert not torch.equal(value, before[name]), name
+    assert all(p.grad is None for p in model.parameters())
+    assert values.grad is None and query.grad is None
+    restored = model.restore_local_state(state.snapshot())
+    restored_event = model.restore_local_read(event.snapshot())
+    assert torch.equal(restored.synapses, state.synapses)
+    assert restored.synapses.data_ptr() != state.synapses.data_ptr()
+    for name, tensor in restored.credit.items():
+        assert torch.equal(tensor, state.credit[name])
+        assert tensor.data_ptr() != state.credit[name].data_ptr()
+        assert tensor.grad_fn is None and not tensor.requires_grad
+    assert torch.equal(restored_event.value, event.value)
+    purged = model.purge_local_writer(restored)
+    assert not torch.count_nonzero(purged.cell.activity)
+    assert not torch.count_nonzero(purged.cell.input_eligibility)
+    assert torch.equal(purged.synapses, state.synapses)
+    for name, value in purged.credit.items():
+        assert torch.equal(value, state.credit[name])
+    retired = model.retire_local_traces(purged)
+    assert all(not torch.count_nonzero(tensor) for tensor in retired.credit.values())
+    assert torch.equal(retired.synapses, state.synapses)
+    assert torch.equal(
+        model.read_local(torch.nan_to_num(query), retired).value,
+        model.read_local(torch.nan_to_num(query), purged).value,
+    )
+
+
+def test_local_memory_padding_disabled_writes_and_reference_parity():
+    model = PlasticMemory(2, 3, 2, 2, seed=6).double()
+    values = torch.tensor(
+        [[[0.2, -0.4], [float("nan"), float("nan")], [0.9, 0.1]]], dtype=torch.float64
+    )
+    mask = torch.tensor([[True, False, True]])
+    state = model.write_local(values, mask)
+    reference = model.write(values, mask)
+    torch.testing.assert_close(state.synapses, reference.synapses, atol=0, rtol=0)
+    torch.testing.assert_close(state.cell.activity, reference.writer, atol=0, rtol=0)
+    compact = model.write_local(values[:, mask[0]], torch.ones(1, 2, dtype=torch.bool))
+    for name in state.credit:
+        assert torch.equal(state.credit[name], compact.credit[name])
+    blocked = model.write_local(values, mask, writes_enabled=False)
+    assert not torch.count_nonzero(blocked.synapses)
+    assert all(not torch.count_nonzero(t) for t in blocked.credit.values())
+    assert torch.equal(blocked.cell.activity, state.cell.activity)
+    assert torch.equal(
+        model.read_local(torch.ones(1, 2, dtype=torch.float64), blocked).value,
+        torch.zeros(1, 2, dtype=torch.float64),
+    )
+    unchanged = model.write_local(values, torch.zeros_like(mask), state)
+    assert torch.equal(unchanged.synapses, state.synapses)
+    for name, tensor in unchanged.credit.items():
+        assert torch.equal(tensor, state.credit[name])
+    with pytest.raises(ValueError, match="five neuron"):
+        model.apply_local_feedback(
+            state, model.read_local(torch.ones(1, 2, dtype=torch.float64), state), {}, 0.1
+        )
+
+
+def test_local_normalization_diagonal_approximation():
+    drive = torch.tensor([[0.3, -0.4], [0.0, 0.0]], dtype=torch.float64)
+    key, gain = PlasticMemory._normalized_local_map(drive)
+    torch.testing.assert_close(key[0], torch.tensor([0.6, -0.8], dtype=torch.float64))
+    torch.testing.assert_close(gain[0], torch.tensor([1.28, 0.72], dtype=torch.float64))
+    assert torch.equal(gain[1], torch.full((2,), 1e8, dtype=torch.float64))
+    for j in range(2):
+        plus, minus = drive[0].clone(), drive[0].clone()
+        plus[j] += 1e-6
+        minus[j] -= 1e-6
+        fd = ((plus / plus.norm())[j] - (minus / minus.norm())[j]) / 2e-6
+        assert float(gain[0, j]) == pytest.approx(float(fd), abs=1e-9)
+
+
 @pytest.mark.parametrize("kind", ["cell", "bypass"])
 def test_local_rule_independent_scalar_oracle_and_delayed_feedback(kind):
     cell = StreamingRateCell(2, 2, kind, seed=41).double()

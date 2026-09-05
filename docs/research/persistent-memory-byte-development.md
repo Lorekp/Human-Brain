@@ -66,19 +66,23 @@ The existing native three-factor readout provides a local-update precedent, but
 training only an output head over fixed cells is insufficient for the intended
 learned contextual representation.
 
-Delayed feedback to document writing remains unresolved: the fast matrix's
-local delta write does not teach its controller or addressing maps. The next
-candidate associates each synapse's eligibility with actual neural write keys,
-then uses the neural query key to select credit at feedback; the
-[local writer-credit proposal](local-writer-credit.md) fixes the equations,
-signal dependencies and event clocks. A single aggregate
-trace can cancel opposite eligibilities from separately addressed facts.
-Transport tags through the same fixed-key overwrite operation as fast memory;
-this remains an approximation that omits changing-key and other indirect paths.
-At current dimensions, writer/controller-map tags cost about 3.74 MB per stream,
-before other state. Declare and count them after source removal. Require useful
-new-value performance over a frozen-writer control, not just parameter movement.
-Teacher feedback is permitted; a teacher performing inference is not learner success.
+The [local writer-credit candidate](local-writer-credit.md) now implements
+address-tagged eligibility for the controller and write maps, local query-map
+updates, detached state transport and explicit credit retirement. Its joined
+learner separates read-only first generation from teacher byte/EOS correction,
+then applies upstream neuronal feedback once per lesson. Forty-two focused
+checks pass across memory, decoder and composition, including all five controls.
+Tags use the fast memory's fixed-key overwrite operation; changing-key and other
+indirect derivatives remain omitted. Useful learned writing is still unproved.
+
+The [local memory/byte-action recipe](../../experiments/r4_integrated/local_memory_byte_v1.md)
+prepares one sequential supervised acquisition followed by real Python actions.
+This scope does not yet learn from execution feedback or demonstrate recovery.
+The tagged learner retains 4,264,840 tensor bytes for its weights, fixed feedback
+and one memory stream, versus 587,404 for aggregate credit; transient query/decoder
+traces and snapshot copies are additional. Tags alone cost 3,735,808 bytes and
+remain counted after source removal. Require useful new-value performance over
+a frozen writer, not just parameter movement. No local fit is admitted yet.
 
 Before the next learning experiment, fix its roster, local rule, feedback,
 update budget, stopping criteria and measured cost ceiling. Return to new-value,

@@ -335,3 +335,161 @@ def test_local_initial_identity_private_rng_and_invalid_feedback_atomicity():
     with pytest.raises(ValueError):
         local.restore_local_step(bad)
     _assert_decoder_state_equal(before, local.state_dict())
+
+
+def _assert_nested_equal(first, second):
+    if isinstance(first, dict):
+        assert first.keys() == second.keys()
+        for key in first:
+            _assert_nested_equal(first[key], second[key])
+    elif torch.is_tensor(first):
+        assert torch.equal(first, second)
+        assert not second.requires_grad and second.grad_fn is None
+    else:
+        assert first == second
+
+
+@pytest.mark.parametrize(
+    "mode", ["tagged", "aggregate", "writer_maps_frozen", "frozen", "writes_disabled"]
+)
+def test_local_composition_one_lesson_control_groups_and_retired_credit(mode):
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    learner = LocalMemoryLearner(
+        mode=mode, embedding_size=2, hidden_size=3, key_size=2, value_size=3, seed=19
+    ).double()
+    before = copy.deepcopy(learner.state_dict())
+    state = learner.ingest([b"x=a", b"y=b"])
+    _assert_nested_equal(before, learner.state_dict())  # Ingestion updates fast state only.
+    assert torch.count_nonzero(state.cell.activity) == 0
+    assert torch.count_nonzero(state.cell.input_eligibility) == 0
+    if mode == "writes_disabled":
+        assert torch.count_nonzero(state.synapses) == 0
+        assert all(torch.count_nonzero(credit) == 0 for credit in state.credit.values())
+    else:
+        assert torch.count_nonzero(state.synapses) > 0
+        assert any(torch.count_nonzero(credit) > 0 for credit in state.credit.values())
+    persistent = state.snapshot()
+    first = learner.predict(b"x?", state, max_bytes=3)
+    assert isinstance(first, ByteGeneration)
+    _assert_nested_equal(before, learner.state_dict())
+    _assert_nested_equal(persistent, state.snapshot())
+    with patch.object(torch.autograd, "backward", side_effect=AssertionError("no backward")):
+        receipt = learner.teach(b"x?", b"a", state, 0.001)
+    assert receipt.teacher_count == 2 and math.isfinite(receipt.mean_loss)
+    assert receipt.decoder_updated == (mode != "frozen")
+    assert receipt.query_updated == (mode != "frozen")
+    assert receipt.memory_updated == (mode != "frozen")
+    _assert_nested_equal(persistent, state.snapshot())  # Caller explicitly adopts returned state.
+    assert torch.equal(receipt.state.synapses, state.synapses)
+    assert all(torch.count_nonzero(credit) == 0 for credit in receipt.state.credit.values())
+    assert torch.count_nonzero(receipt.state.cell.activity) == 0
+    after = learner.state_dict()
+    for name, value in before.items():
+        if not torch.is_tensor(value):
+            continue
+        if name.endswith("feedback") or name == "decoder.embedding.weight":
+            assert torch.equal(value, after[name]), name
+    for name in (
+        "memory.controller.weight",
+        "memory.key_weight",
+        "memory.value_weight",
+        "memory.strength_weight",
+    ):
+        changed = not torch.equal(before[name], after[name])
+        assert changed == (mode in {"tagged", "aggregate"}), name
+    assert (
+        not torch.equal(before["memory.query_weight"], after["memory.query_weight"])
+        if mode != "frozen"
+        else torch.equal(before["memory.query_weight"], after["memory.query_weight"])
+    )
+    assert all(parameter.grad is None for parameter in learner.parameters())
+    if mode == "frozen":
+        _assert_nested_equal(before, after)
+
+
+def test_local_composition_before_update_signals_mean_once_and_upstream_last():
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    learner = LocalMemoryLearner(embedding_size=2, hidden_size=3, key_size=2, value_size=3)
+    state = learner.ingest([b"one", b"two"])
+    writer_before = copy.deepcopy(learner.memory.state_dict())
+    query_before = copy.deepcopy(learner.query_cell.state_dict())
+    signals, events = [], []
+    original_teach = learner.decoder.teach_local
+    original_memory = learner.memory.apply_local_feedback
+    original_query = learner.query_cell.apply_learning_signal
+
+    def teach(*args, **kwargs):
+        _assert_nested_equal(writer_before, learner.memory.state_dict())
+        _assert_nested_equal(query_before, learner.query_cell.state_dict())
+        feedback = original_teach(*args, **kwargs)
+        signals.append(feedback.context_signal.clone())
+        events.append("decoder")
+        return feedback
+
+    def apply_memory(current, read, incoming, rate, **kwargs):
+        assert len(signals) == 3
+        mean = sum(signals) / 3
+        for name in incoming:
+            torch.testing.assert_close(
+                incoming[name], mean @ getattr(learner, name + "_feedback").T
+            )
+        events.append("memory")
+        return original_memory(current, read, incoming, rate, **kwargs)
+
+    def apply_query(current, incoming, rate, **kwargs):
+        torch.testing.assert_close(incoming, (sum(signals) / 3)[:, :2])
+        events.append("query")
+        return original_query(current, incoming, rate, **kwargs)
+
+    with (
+        patch.object(learner.decoder, "teach_local", side_effect=teach),
+        patch.object(learner.memory, "apply_local_feedback", side_effect=apply_memory),
+        patch.object(learner.query_cell, "apply_learning_signal", side_effect=apply_query),
+    ):
+        receipt = learner.teach(b"q", b"a!", state, 0.001)
+    assert events == ["decoder", "decoder", "decoder", "memory", "query"]
+    assert receipt.teacher_count == 3
+    torch.testing.assert_close(receipt.mean_context_signal, sum(signals) / 3)
+
+
+def test_local_composition_source_free_transport_and_disabled_empty_teacher():
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    learner = LocalMemoryLearner(embedding_size=2, hidden_size=3, key_size=2, value_size=3)
+    rng = torch.random.get_rng_state().clone()
+    state = learner.ingest([b"private-source-ONE", b"private-source-TWO"])
+    snapshot = learner.snapshot(state)
+
+    def check_transport(value):
+        if isinstance(value, dict):
+            for item in value.values():
+                check_transport(item)
+        elif torch.is_tensor(value):
+            assert not value.requires_grad and value.grad_fn is None
+        else:
+            assert isinstance(value, (str, int, type(None)))
+            assert "private-source" not in str(value)
+
+    check_transport(snapshot)
+    buffer = io.BytesIO()
+    torch.save(snapshot, buffer)
+    buffer.seek(0)
+    restored = LocalMemoryLearner(
+        embedding_size=2, hidden_size=3, key_size=2, value_size=3, seed=91
+    )
+    transported = restored.restore_snapshot(torch.load(buffer, weights_only=True))
+    assert learner.predict(b"q", state, 5) == restored.predict(b"q", transported, 5)
+    before = restored.snapshot(transported)
+    feedback = restored.teach(b"q", b"", transported, 0.01, learning_enabled=False)
+    assert feedback.teacher_count == 1
+    assert not any((feedback.decoder_updated, feedback.query_updated, feedback.memory_updated))
+    _assert_nested_equal(before, restored.snapshot(transported))
+    assert torch.equal(rng, torch.random.get_rng_state())
+    assert not hasattr(restored, "documents") and not hasattr(restored, "query")
+    wrong_mode = LocalMemoryLearner(
+        mode="aggregate", embedding_size=2, hidden_size=3, key_size=2, value_size=3
+    )
+    with pytest.raises(ValueError, match="control mode"):
+        wrong_mode.restore_snapshot(snapshot)

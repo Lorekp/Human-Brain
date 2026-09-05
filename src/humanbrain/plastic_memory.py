@@ -3,23 +3,25 @@
 A learned controller writes M += beta * (v - M k) k^T with unit-L2 keys,
 bounded values and beta in (0, 1). The differentiable reference can train its
 controller/maps with offline gradients; a write needs no future query or answer.
-StreamingRateCell also provides graph-free local eligibility/signal updates.
-Local credit through the complete memory writer/maps remains a separate task.
-This is a small
-delta-rule mechanism, not established semantic compression or lossless storage.
+The local path uses cell self-path eligibility and query-addressed writer/map
+tags, with explicitly supplied neuron-level feedback. It omits indirect paths
+and is not the full memory derivative. This is a small delta-rule mechanism,
+not established semantic compression or lossless storage.
 Interference remains possible between nonorthogonal keys.
 Unit-L2 normalization is our adaptation, not the component-sum normalization
 used by the cited fast-weight programmer recipe.
 
 Live differentiable states retain a temporary autograd graph during training.
-Use state.snapshot() and restore_state() before discarding source inputs: only
-detached synapses and writer activations cross that boundary. Clear the latter
-with purge_writer() for source-absent reads. This module cannot emit bytes or
-authenticate provenance; those require separately accounted interfaces.
+Use the matching snapshot/restore methods before discarding source inputs.
+Purge writer activity for source-absent reads. Local snapshots also retain
+source-derived eligibility, which is used only for authorized feedback and must
+be counted. This module cannot emit bytes or authenticate source provenance.
 
-Per stream, persistent tensors contain V*K + H scalars (16,640 bytes with the
-default float32 dimensions). Writes cost O(H*D + H*H + H*(K+V) + V*K) for cells;
-reads cost O(K*D + V*K). Offline autograd storage grows with sequence length.
+Reference state contains V*K + H scalars (16,640 bytes at default float32
+dimensions). Tagged local state adds O(P*K) credit for P writer/map parameters
+and the live cell traces: 3,777,280 bytes per stream at D32/H64/K64/V64, excluding
+slow weights, read events and scratch copies. Aggregate credit costs O(P).
+Offline reference autograd storage grows with sequence length.
 """
 
 import math
@@ -301,6 +303,42 @@ class PlasticMemoryState:
         }
 
 
+@dataclass(frozen=True)
+class LocalMemoryState:
+    """Fast synapses plus fixed-size source-derived local credit, never inputs.
+
+    Tagged tensors have [batch, *parameter_shape, key_size]; aggregate tensors
+    omit the final axis. They are teaching state, never inputs to read/decoding.
+    """
+
+    synapses: Tensor
+    cell: RateCellLearningState
+    credit: dict[str, Tensor]
+    credit_mode: str
+
+    def snapshot(self) -> dict:
+        return {
+            "synapses": self.synapses.detach().clone(),
+            "cell": self.cell.snapshot(),
+            "credit": {name: value.detach().clone() for name, value in self.credit.items()},
+            "credit_mode": self.credit_mode,
+        }
+
+
+@dataclass(frozen=True)
+class LocalMemoryRead:
+    """One query's value/key and local query-map traces; caller owns retirement."""
+
+    value: Tensor
+    key: Tensor
+    query_weight_eligibility: Tensor
+    query_bias_eligibility: Tensor
+    mask: Tensor
+
+    def snapshot(self) -> dict[str, Tensor]:
+        return {name: value.detach().clone() for name, value in vars(self).items()}
+
+
 class PlasticMemory(nn.Module):
     """Learned streaming writer and query map around explicit fast synapses.
 
@@ -433,3 +471,314 @@ class PlasticMemory(nn.Module):
         self._check_state(state, query.shape[0])
         key = F.normalize(F.linear(query, self.query_weight, self.query_bias), dim=-1, eps=1e-8)
         return torch.bmm(state.synapses, key.unsqueeze(-1)).squeeze(-1)
+
+    def _writer_parameters(self) -> dict[str, Tensor]:
+        return {name: p for name, p in self.named_parameters() if not name.startswith("query_")}
+
+    def initial_local_state(
+        self, batch_size: int, *, credit_mode: str = "tagged"
+    ) -> LocalMemoryState:
+        if credit_mode not in {"tagged", "aggregate"}:
+            raise ValueError("credit_mode must be tagged or aggregate")
+        cell = self.controller.initial_learning_state(batch_size)
+        extra = (self.key_size,) if credit_mode == "tagged" else ()
+        return LocalMemoryState(
+            cell.activity.new_zeros(batch_size, self.value_size, self.key_size),
+            cell,
+            {
+                name: p.new_zeros((batch_size, *p.shape, *extra))
+                for name, p in self._writer_parameters().items()
+            },
+            credit_mode,
+        )
+
+    def _check_local_state(self, state: LocalMemoryState) -> int:
+        if not isinstance(state, LocalMemoryState) or state.credit_mode not in {
+            "tagged",
+            "aggregate",
+        }:
+            raise ValueError("invalid local memory state")
+        batch = self.controller._check_learning_state(state.cell)
+        self._check_state(PlasticMemoryState(state.synapses, state.cell.activity), batch)
+        parameters = self._writer_parameters()
+        if set(state.credit) != set(parameters):
+            raise ValueError("credit must match writer/map parameter names")
+        extra = (self.key_size,) if state.credit_mode == "tagged" else ()
+        for name, p in parameters.items():
+            tensor = state.credit[name]
+            if tensor.shape != (batch, *p.shape, *extra):
+                raise ValueError("credit shape mismatch")
+            self._check_local_tensor(tensor)
+        self._check_local_tensor(state.synapses)
+        return batch
+
+    def _check_local_tensor(self, value: Tensor) -> None:
+        if (
+            value.dtype != self.key_weight.dtype
+            or value.device != self.key_weight.device
+            or value.requires_grad
+            or value.grad_fn is not None
+            or not bool(torch.isfinite(value).all())
+        ):
+            raise ValueError("local tensors must be finite, detached and match parameters")
+
+    def restore_local_state(self, snapshot: dict) -> LocalMemoryState:
+        if set(snapshot) != {"synapses", "cell", "credit", "credit_mode"}:
+            raise ValueError("invalid local memory snapshot fields")
+        state = LocalMemoryState(
+            snapshot["synapses"],
+            self.controller.restore_learning_state(snapshot["cell"]),
+            snapshot["credit"],
+            snapshot["credit_mode"],
+        )
+        self._check_local_state(state)
+        return LocalMemoryState(
+            state.synapses.detach().clone(),
+            state.cell,
+            {name: value.detach().clone() for name, value in state.credit.items()},
+            state.credit_mode,
+        )
+
+    def purge_local_writer(self, state: LocalMemoryState) -> LocalMemoryState:
+        """Remove activity and untagged cell carry; retain M and delayed credit."""
+        self._check_local_state(state)
+        return LocalMemoryState(
+            state.synapses.detach().clone(),
+            self.controller.reset_eligibility(state.cell, preserve_activity=False),
+            {name: value.detach().clone() for name, value in state.credit.items()},
+            state.credit_mode,
+        )
+
+    def retire_local_traces(self, state: LocalMemoryState) -> LocalMemoryState:
+        """End lesson credit without rebuilding M after slow-parameter updates."""
+        self._check_local_state(state)
+        return LocalMemoryState(
+            state.synapses.detach().clone(),
+            self.controller.reset_eligibility(state.cell),
+            {name: torch.zeros_like(value) for name, value in state.credit.items()},
+            state.credit_mode,
+        )
+
+    @staticmethod
+    def _normalized_local_map(drive: Tensor) -> tuple[Tensor, Tensor]:
+        norm = drive.norm(dim=-1, keepdim=True)
+        key = drive / norm.clamp_min(1e-8)
+        # Only the normalization Jacobian's diagonal is retained; no cross-unit credit.
+        gain = torch.where(
+            norm > 1e-8, (1 - key.square()) / norm.clamp_min(1e-8), torch.full_like(key, 1e8)
+        )
+        return key, gain
+
+    @torch.no_grad()
+    def write_local(
+        self,
+        values: Tensor,
+        mask: Tensor,
+        state: LocalMemoryState | None = None,
+        *,
+        writes_enabled: bool = True,
+    ) -> LocalMemoryState:
+        """Answer-free byte steps, fast writes and local credit; no slow updates.
+
+        Tagged: T' = T + beta*(e - T dot k)*k, all RHS from old T.
+        Aggregate control: E' = (1-beta)*E + beta*e, without key/query addressing.
+        Map e uses local diagonal derivatives; controller e uses self-path traces.
+        Keys/strength derivatives of memory overwrite and cross-neuron paths are
+        omitted. This is a declared heuristic, not the full memory derivative.
+        Caller holds slow parameters fixed through the lesson. Disabled writes
+        advance cell state but neither synapses nor credit. Padding changes none.
+        """
+        if values.ndim != 3 or values.shape[-1] != self.input_size:
+            raise ValueError("values must be [batch, tokens, input_size]")
+        if (
+            mask.dtype != torch.bool
+            or mask.shape != values.shape[:2]
+            or mask.device != values.device
+        ):
+            raise ValueError("mask must be boolean with matching batch/token dimensions/device")
+        if type(writes_enabled) is not bool:
+            raise ValueError("writes_enabled must be boolean")
+        clean = torch.where(mask[:, :, None], values, 0)
+        if (
+            clean.dtype != self.key_weight.dtype
+            or clean.device != self.key_weight.device
+            or not bool(torch.isfinite(clean).all())
+        ):
+            raise ValueError("active inputs must be finite and match parameters")
+        if state is None:
+            state = self.initial_local_state(values.shape[0])
+        if self._check_local_state(state) != values.shape[0]:
+            raise ValueError("state batch mismatch")
+        synapses = state.synapses.clone()
+        credit = {name: value.clone() for name, value in state.credit.items()}
+        cell = self.controller.restore_learning_state(state.cell.snapshot())
+        batch = values.shape[0]
+        for position in range(values.shape[1]):
+            active = mask[:, position]
+            cell = self.controller.local_step(clean[:, position], cell, mask=active)
+            if not writes_enabled:
+                continue
+            h = cell.activity
+            key, key_gain = self._normalized_local_map(F.linear(h, self.key_weight, self.key_bias))
+            value = torch.tanh(F.linear(h, self.value_weight, self.value_bias))
+            strength = torch.sigmoid(F.linear(h, self.strength_weight, self.strength_bias))
+            beta = strength * active[:, None]
+            predicted = torch.bmm(synapses, key[:, :, None]).squeeze(-1)
+            synapses = synapses + (beta * (value - predicted))[:, :, None] * key[:, None, :]
+            traces = {
+                "controller.weight": cell.input_eligibility,
+                "controller.bias": cell.bias_eligibility,
+            }
+            if self.kind == "cell":
+                traces["controller.recurrent"] = cell.recurrent_eligibility
+            for name, gain in (
+                ("key", key_gain),
+                ("value", 1 - value.square()),
+                ("strength", strength * (1 - strength)),
+            ):
+                traces[name + "_weight"] = gain[:, :, None] * h[:, None, :]
+                traces[name + "_bias"] = gain
+            for name, trace in traces.items():
+                old = credit[name]
+                flat = (
+                    old.reshape(batch, -1, self.key_size)
+                    if state.credit_mode == "tagged"
+                    else old.reshape(batch, -1)
+                )
+                e = trace.reshape(batch, -1)
+                if state.credit_mode == "tagged":
+                    prediction = (flat * key[:, None, :]).sum(-1)
+                    updated = flat + (beta * (e - prediction))[:, :, None] * key[:, None, :]
+                else:
+                    updated = flat + beta * (e - flat)
+                credit[name] = updated.reshape_as(old)
+        result = LocalMemoryState(synapses, cell, credit, state.credit_mode)
+        self._check_local_state(result)
+        return result
+
+    @torch.no_grad()
+    def read_local(
+        self, query: Tensor, state: LocalMemoryState, *, mask: Tensor | None = None
+    ) -> LocalMemoryRead:
+        batch = self._check_local_state(state)
+        if query.shape != (batch, self.input_size):
+            raise ValueError("query must be [batch, input_size]")
+        active = self.controller._active_mask(mask, batch)
+        safe = torch.where(active[:, None], query, 0)
+        if (
+            safe.dtype != self.query_weight.dtype
+            or safe.device != self.query_weight.device
+            or not bool(torch.isfinite(safe).all())
+        ):
+            raise ValueError("active query must be finite and match parameters")
+        key, gain = self._normalized_local_map(F.linear(safe, self.query_weight, self.query_bias))
+        key = torch.where(active[:, None], key, 0)
+        gain = torch.where(active[:, None], gain, 0)
+        return LocalMemoryRead(
+            torch.bmm(state.synapses, key[:, :, None]).squeeze(-1),
+            key,
+            gain[:, :, None] * safe[:, None, :],
+            gain,
+            active.detach().clone(),
+        )
+
+    def _check_local_read(self, event: LocalMemoryRead, batch: int) -> None:
+        shapes = {
+            "value": (batch, self.value_size),
+            "key": (batch, self.key_size),
+            "query_weight_eligibility": (batch, self.key_size, self.input_size),
+            "query_bias_eligibility": (batch, self.key_size),
+        }
+        for name, shape in shapes.items():
+            value = getattr(event, name)
+            if value.shape != shape:
+                raise ValueError("local read shape mismatch")
+            self._check_local_tensor(value)
+        self.controller._active_mask(event.mask, batch)
+
+    def restore_local_read(self, snapshot: dict) -> LocalMemoryRead:
+        if set(snapshot) != {
+            "value",
+            "key",
+            "query_weight_eligibility",
+            "query_bias_eligibility",
+            "mask",
+        }:
+            raise ValueError("invalid local read snapshot fields")
+        event = LocalMemoryRead(**snapshot)
+        self._check_local_read(event, event.value.shape[0])
+        return LocalMemoryRead(**event.snapshot())
+
+    @torch.no_grad()
+    def apply_local_feedback(
+        self,
+        state: LocalMemoryState,
+        event: LocalMemoryRead,
+        signals: dict[str, Tensor],
+        learning_rate: float,
+        *,
+        learning_enabled: bool = True,
+    ) -> bool:
+        """Apply -eta*mean_active(L_j*retrieved_e_ji) once; never rebuild memory.
+
+        Caller supplies five neuron-level broadcasts, not per-synapse updates.
+        Query-map credit is current local e, writer/map credit is T dot query key
+        (or aggregate E). Frozen parameters and disabled learning remain unchanged.
+        Events are not consumed automatically; caller owns lesson authority and
+        retires traces after its one upstream update. No graph or optimizer is used.
+        """
+        batch = self._check_local_state(state)
+        self._check_local_read(event, batch)
+        if (
+            not math.isfinite(learning_rate)
+            or learning_rate < 0
+            or type(learning_enabled) is not bool
+        ):
+            raise ValueError("invalid learning rate/enabled flag")
+        sizes = {
+            "controller": self.hidden_size,
+            "key": self.key_size,
+            "value": self.value_size,
+            "strength": 1,
+            "query": self.key_size,
+        }
+        if set(signals) != set(sizes):
+            raise ValueError("provide exactly the five neuron learning signals")
+        clean = {}
+        for name, size in sizes.items():
+            signal = signals[name]
+            if signal.shape != (batch, size):
+                raise ValueError("signal must be per-neuron [batch, group_size]")
+            clean[name] = torch.where(event.mask[:, None], signal, 0)
+            self._check_local_tensor(clean[name])
+        count = int(event.mask.sum())
+        if not learning_enabled or learning_rate == 0 or count == 0:
+            return False
+        traces = {}
+        for name, credit in state.credit.items():
+            if state.credit_mode == "tagged":
+                traces[name] = (
+                    (credit.reshape(batch, -1, self.key_size) * event.key[:, None, :])
+                    .sum(-1)
+                    .reshape(credit.shape[:-1])
+                )
+            else:
+                traces[name] = credit
+        traces.update(
+            query_weight=event.query_weight_eligibility, query_bias=event.query_bias_eligibility
+        )
+        proposals = []
+        for name, parameter in self.named_parameters():
+            if not parameter.requires_grad:
+                continue
+            group = "controller" if name.startswith("controller.") else name.split("_")[0]
+            trace = traces[name]
+            signal = clean[group] if parameter.ndim == 1 else clean[group][:, :, None]
+            candidate = parameter - (learning_rate / count) * (signal * trace).sum(0)
+            if not bool(torch.isfinite(candidate).all()):
+                raise ValueError("nonfinite proposed local memory update")
+            proposals.append((parameter, candidate))
+        changed = any(not torch.equal(p, candidate) for p, candidate in proposals)
+        for parameter, candidate in proposals:
+            parameter.copy_(candidate)
+        return changed
