@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the failed capped-update comparison and feedback-coverage diagnosis.
+Updated 2026-09-05 with capped-update failure and verified TRAIN representation feasibility.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -32,9 +32,13 @@ working set. Exam answers remain pending human scoring. The result report owns
 full costs, hashes and causal limits; shared-motor controls isolate evidence
 selection rather than the entire neuronal system.
 
-Keep fixed updates and the affine action path. Next perform one bounded TRAIN-only
-representation feasibility check, then return to integrated feedback allocation;
-the active plan owns the details. The [previous affine comparison](../experiments/r4_integrated/contextual_affine_readout_result.md)
+The [TRAIN-only host feasibility check](../experiments/r4_integrated/contextual_representation_feasibility_result.md)
+now verifies all 4,560 ranking/STOP constraints for sixteen taught questions and
+285 candidates. No learner weight changed and no witness is deployed. It takes
+28.95 seconds and peaks at 1,124.15 MiB parent working set; this is an external
+capacity reference, not learning or generalization. Keep fixed updates and the
+affine action path, and compare reserving feedback for later actual errors; the
+active plan owns the details. The [previous affine comparison](../experiments/r4_integrated/contextual_affine_readout_result.md)
 preserves the earlier readout recovery. Protected gates remain closed.
 The preceding [exploration result](../experiments/r4_integrated/contextual_exploration_result.md)
 records the 80 BINDING native updates that acquired the recovered selections.

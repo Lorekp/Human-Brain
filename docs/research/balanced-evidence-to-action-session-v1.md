@@ -45,30 +45,39 @@ were executed again only after the 32-pair budget was exhausted and received no
 learning update. Five other failures have erased pair margins. Capping steps
 increased erased/weak constraints and did not improve retention.
 
-Next answer one bounded diagnostic question: **can the existing BINDING features
-jointly rank the sixteen taught answers above all wrong candidates in the four
-TRAIN documents?** Use the unchanged feature construction, the complete 285
-training candidates and existing teacher labels. Use no transfer or exam labels
-in this diagnostic; do not load them into it. Keep pure-query weights
-and persistent bias at zero, respecting the comparison learner's invariants.
-Declare exact constraints, numerical tolerances and verification before solving.
-A conventional solver is an external capacity reference: never install its
-weights in the learner or report its fit as neuronal learning.
+The [TRAIN-only feasibility diagnostic](../../experiments/r4_integrated/contextual_representation_feasibility_result.md)
+now verifies all 4,560 joint ranking/STOP constraints for the sixteen taught
+questions and all 285 training candidates. An unrestricted host witness fits the
+unchanged features with pure-query weights and bias zero. No learner weights
+changed. This rules out that finite representational impossibility, not native
+learnability, resource-bounded execution or generalization. The diagnostic is
+complete; do not deploy its witness or extend it into another mechanism study.
 
-Budget one fixed TRAIN-only feasibility check and at most 45 minutes for setup
-and diagnosis. Independently verify any feasible witness against every declared
-constraint. Feasibility rules out impossibility on that finite roster, not
-learning-rule convergence or generalization. A solver failure or unsupported
-infeasibility claim is inconclusive. Do not add representations or tune margins
-until the diagnostic contract is complete.
+Return to the integrated loop with a **feedback reservation comparison**. Keep
+fixed updates, BINDING features, affine neuronal actions, sixteen teaching requests,
+48 encounters and the original motor/teacher executions. Compare the existing
+32-new/118-replay baseline with at most 150 total pair offers that reserve one
+possible new correction for each remaining encounter. After encounter `t` and
+any actual FAIL/teacher-PASS correction, replay at most
+`min(4, distinct eligible old pairs, 150-used-(48-t))` using the existing cyclic
+order, excluding a newly admitted pair. Rehearsal may also run after correct
+encounters when unreserved offers and old pairs are available.
 
-Return directly to the integrated loop afterward. If the representation admits
-the required ranking, compare feedback allocation so that later actual wrong
-actions can receive correction instead of exhausting the budget on earlier
-contrasts and rehearsal. Preregister the allocation and total update-offer budget,
-retain same-seed frozen mates, and use new transfer instances. If a concrete
-representation conflict is verified, design the smallest change addressing it.
-Do not begin another chain of isolated mechanisms or reuse spent transfer labels.
+The reservation arm admits at most one new pair per encounter, hence at most
+48. With all 150 offers used, replays equal `150-new_pairs`; report underspend
+instead of inventing feedback or adding epochs. This changes realized negative
+coverage, replay timing and ledger size, not just the total number of updates.
+Keep same-seed frozen mates with each updater's exact certified exposure. Do not
+use label-aware rank diagnostics to choose replay priorities.
+
+Freeze new transfer instances, allocation semantics and the source before one
+comparison, with at most two hours for implementation/diagnosis. Report actual
+offers versus native updates, late errors admitted, first-attempt/fallback/teacher
+outcomes, fresh and retained executed performance, erased margins, coverage and
+cost. A useful change must improve retention without reducing fresh success;
+unsupported behavior remains separate. The host feasibility witness is excluded
+from this run. If reservation fails, use the resulting coverage/interference
+evidence to choose the next bounded action; do not tune on the spent cohort.
 
 Targets remain at least 6/8 fresh and 12/16 retained neuronal executed edits,
 including both properties for three fresh entities; report unsupported behavior

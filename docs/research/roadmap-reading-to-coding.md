@@ -78,9 +78,10 @@ rejects capped corrections: fixed updates execute 3/8 fresh and 2/16 retained
 edits, versus 0/8 and 1/16 when capped. Affine neuronal readout works, but useful
 ranking and retention remain weak. Nine fixed-arm failures satisfy all admitted
 contrasts; seven later executed errors arrived after the correction budget was
-spent. Other failures involve erased margins. Keep the fixed rule, perform one
-short TRAIN-only representation feasibility check, then return to an integrated
-feedback-allocation comparison. The [balanced session plan](balanced-evidence-to-action-session-v1.md)
+spent. Other failures involve erased margins. A TRAIN-only host-linear witness
+now satisfies all taught-answer and STOP constraints with the existing features;
+it is not deployed and establishes no learning or generalization. Keep fixed
+updates and compare reserving feedback opportunities for later actual errors. The [balanced session plan](balanced-evidence-to-action-session-v1.md)
 owns that bounded work and the later 24-episode challenge. Improve this loop
 before provenance revision, multi-hop composition or the full challenge.
 
