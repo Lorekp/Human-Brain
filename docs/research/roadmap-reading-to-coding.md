@@ -87,8 +87,9 @@ The completed [decision review](pooled-reading-failure-review.md) selects
 [token-pointer acquisition](token-pointer-acquisition.md), now the active
 preparation contract: generic language features, bidirectional rate-cell reading,
 endpoint/NULL supervision and varied training with strong conventional and causal
-controls, then a return to executed actions. Its new budget requires measured
-admission; no fit has run. Source routing alone cannot repair fresh comprehension.
+controls, then a return to executed actions. Both implemented readers passed its
+fixed sixteen-question preflight; broad acquisition still requires measured
+admission. Source routing alone cannot repair fresh comprehension.
 Do not treat declining loss or fitted old answers as reusable acquisition.
 
 The closed acquisition diagnostics use explicit answer/STOP supervision over retained

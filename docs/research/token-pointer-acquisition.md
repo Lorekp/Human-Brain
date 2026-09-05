@@ -4,8 +4,8 @@ Selected 2026-09-05 after the [pooled-source failure](../../experiments/r4_integ
 Research window: **18:41–19:26 UTC**, at most 45 minutes. This review selects one
 implementation and comparison; no experimental model was downloaded or run.
 Research and decision review completed at **19:09 UTC**, before publication.
-Preparation is active. Freeze its completed code, data and receipts before the one
-comparison below. Earlier experiments and their failures remain unchanged.
+Preparation completed at **19:56 UTC**. The full-run admission freezes its code,
+data and receipts. Earlier experiments and their failures remain unchanged.
 Preparation started **2026-09-05 19:12 UTC**, with deadline **23:12 UTC**.
 
 ## Decision and evidence
@@ -277,6 +277,36 @@ remains disclosed. These 8,192 presentations and 64 read-only probes verify
 small-set acquisition and estimate cost; their states never seed the comparison.
 Freeze this fixture/criterion before its scored preflight. Preserve failures;
 do not sweep designs.
+
+The [small-fit report](../../benchmarks/token_pointer_small_fit_v1.json) and
+[completion receipt](../../benchmarks/token_pointer_small_fit_v1.completion.json)
+pass at source commit `709d7cc1b7a3e4f45964e8d656e400368fdb7666`: both readers move
+from 0/12 supported and 0/4 STOP to 12/12 and 4/4 after exactly 256 batch-16 steps
+each. All 8,192 presentations and 64 probes complete in 157.997 seconds, peaking
+at 383.988 MiB. This qualifies small-set learning only. The old sixteen remain
+exposed, and these states are disposable. Twenty-three numerical/state tests
+and eight actual neutral action children also pass; no broad task has run.
+
+Shape-scaled timing estimates exceed the four-hour budget when every operation
+is charged at the query/context attention growth ratio. Resolve that uncertainty
+with one declared resource-only probe: fixed seed-732 synthetic unit inputs,
+batch 32 at 33 query/220 context words, 24 singleton targets and eight STOPs,
+four fresh policies, two warm-up plus eight timed updates each and one read-only
+batch per policy. This is 40 updates, 1,280 synthetic presentations and 128
+synthetic predictions, at most 180 seconds/4 GiB; no real question bytes or
+retained fit states. Use maximum measured step cost with a twofold safety factor,
+plus encoding/probes/actions/artifacts, to decide admission. Do not change the
+reader or the prescribed full-run workload to fit an estimate.
+
+The resource probe passes in 20.238 seconds with a 718.836 MiB peak. The corrected
+whole-work estimate is **11,446.944 seconds (3h 10m 47s)** and **2.702 GiB** parent
+memory, including a separate exhaustive-cosine allowance, encoding, every probe,
+continuation, child and artifact cost. It leaves 49 minutes within the four-hour
+run limit. This is admission evidence, not a hardware worst-case guarantee.
+The [full-run admission](../../benchmarks/token_pointer_acquisition_v1.admission.json)
+freezes the exact source, data, checks and cost receipts. Preparation is complete;
+execute this one comparison from fresh prescribed seeds. No broad result is yet
+available, and the hard limits remain mandatory.
 
 Admit one run only if measured batch/encoding/probe/action costs conservatively
 project its full prescribed work within **four hours**, including artifacts,

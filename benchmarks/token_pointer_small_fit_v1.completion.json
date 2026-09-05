@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "qualified": true,
+  "elapsed_seconds": 157.99715579999975,
+  "final_memory": {
+    "working_set_mib": 357.54296875,
+    "peak_working_set_mib": 383.98828125,
+    "private_memory_mib": 335.80078125
+  },
+  "free_disk_bytes": 45059088384,
+  "report_sha256": "46ba96374282210f624657153e93cac5aab06b00c9c20aeeea062e090bfd9b7b"
+}

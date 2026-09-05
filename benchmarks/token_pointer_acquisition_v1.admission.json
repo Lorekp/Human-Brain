@@ -1,0 +1,151 @@
+{
+  "status": "admitted",
+  "source_files": {
+    "benchmarks/native_scaling.py": "c0814158b1231131ee15fd9f2f1ab232731df61c70b10b74ec59c4ec095ad5e7",
+    "benchmarks/token_pointer_small_fit_v1.admission.json": "4dc8c877335121799c511bda2fcd37853bd90cd3925dd673b0ba7cd994bf1565",
+    "benchmarks/token_pointer_small_fit_v1.completion.json": "25f603c9f6749269d3f4c3f23937ce05792a4bd380e4276d50e604d5d5b0c77a",
+    "benchmarks/token_pointer_small_fit_v1.json": "46ba96374282210f624657153e93cac5aab06b00c9c20aeeea062e090bfd9b7b",
+    "docs/benchmark-status.md": "6bc6a55150f6735c522cdd77ad6261c2f753ef7bc33406babca9a5f554fb825c",
+    "docs/development.md": "0139e4c030f3343f8f7acb9a44b5dc08eea2cdbb3eab0c74aa1acb0181c90310",
+    "docs/research/roadmap-reading-to-coding.md": "09ef590aabbe7cfeb71ba0f33d7583979b3faa8ad53567a79c73714467588d2f",
+    "docs/research/token-pointer-acquisition.md": "198095dcf647978b83b804578ab6ad66acb357724b83a324e7a59e87b7831a36",
+    "experiments/r4_integrated/__init__.py": "7456726a8fbf66eed6ea1000d14fd05ae0081a893954a489af4188ab6de8daec",
+    "experiments/r4_integrated/contextual_occurrence_motor.py": "60b5abea2ca7749ce81b65c6b3c34fbaa08efa36862317d2be16cfcf711aed90",
+    "experiments/r4_integrated/fresh_source_actions.py": "463da5f64bf48f5c8b50281eaf0afc232251315b4380660c59216b3527844f4e",
+    "experiments/r4_integrated/fresh_source_cases_v1.json": "6b78781c78c1d7b6d2474cbd8185123f9349e682e2ecde900ed2a852fbf17faf",
+    "experiments/r4_integrated/neutral_document_python_session.py": "b4aa50a80ef7accc15b51acb4009858cf0da42088e4898baa43c77c599cbab83",
+    "experiments/r4_integrated/public_qa_data.py": "36403b86f462201d529f4ec6a24fc297e75ba3641c10f1168586f157005e0bd6",
+    "experiments/r4_integrated/real_input_action_bridge.py": "d429cb8280ad6cd7615652222e5f120d14b458e84e1861e77081b4f33491bc2f",
+    "experiments/r4_integrated/real_input_qualification_cases_v1.json": "aa988986d8f04d7e796e485ccea33f24c96cadad09f03779de844905ee5ad41b",
+    "experiments/r4_integrated/token_pointer_acquisition.py": "6c99e71695d8038fb2d73f75522fad0fcea5356f8f818464ef76a04916b38f6f",
+    "experiments/r4_integrated/token_pointer_actions.py": "c98195b153fbf38e8a699090125b85c567c6cd2e639bcc123b2b540457e5b4b3",
+    "experiments/r4_integrated/token_pointer_data.py": "9a50d8c31adfb3f1976039251b229778b9ae2d28b17a33bbbaf74000c0028350",
+    "experiments/r4_integrated/token_pointer_preflight.py": "7055a7a2888cdcfd6f95811ff215c6f69bb7875ddb07d1611e123e56761b53a6",
+    "experiments/r4_integrated/token_pointer_runtime.py": "9fc8b70f5e9e9857799bad041c22dd55d726e426abc1c40a138c0bbe3f529db5",
+    "experiments/r4_integrated/token_pointer_selection_v1.json": "ab5e51c8a6ee6854f77a2fd03bdc22b7cbd94416c83331170308d1b8d2bc5a80",
+    "experiments/r4_integrated/token_pointer_session.py": "6dd1d96e39032781f53233e08f00aff8bf10fa34a7fd334473a5779a8b162b93",
+    "experiments/r4_integrated/utf8_action_bridge.py": "d9de0280c561b57a797da7f15f6f6bab5b7b6d2cd3994ff9a18d97384aaa23aa",
+    "pyproject.toml": "eee26164fcd37e95e8edbf14096a9693904bbebc1e8325af50f5bc406dbbf12c",
+    "src/humanbrain/__init__.py": "b327d4b0b4c8784f3e2f92a87afb763a77f11a9dd34524d2700d3b191f14b9a4",
+    "src/humanbrain/cells.py": "5ca05a64a89f930db3ea351e3e236e3242bf21652fff127747a36d9ca488d2e6",
+    "src/humanbrain/frozen_context_encoder.py": "b8694bf04537c2baf7aec1d898fc328829fee1249a370859b3dff61493e5b9b4",
+    "src/humanbrain/human_cell_identity.py": "0050670ce4976c6163bc652eb33846d7118d6e2ca047eeeda1cf334efb8cc6f9",
+    "src/humanbrain/knowledge_conditioned_occurrence_substitution.py": "d804e7f8e57b655f2083d90b6ef59e7109cc2a6fc58a87f60cc9413932c6173e",
+    "src/humanbrain/multiscale_opaque_event_tape.py": "0e608ea64133dc783bb715f6dcedd471da134897a540b440f35283e08dd8899a",
+    "src/humanbrain/native.py": "3b2109f56778e591365592e7cfe39b802ccd4492060b5f1dd9606710c178eb5f",
+    "src/humanbrain/neuronal_relational_reader.py": "c4b099a32c1405947823329a79c96d79f2de1785ff89452f5100218b10702392",
+    "src/humanbrain/neutral_document_action.py": "d1d8389b25c52478f2e00a2ae1ec8a8ece5ae4a1f081dc0a4f34d593c82404c5",
+    "src/humanbrain/neutral_neuronal_document_learner.py": "2f6d16219eb24679e0a09086e9807af5582a4bebb4c9bbc53ff3de9da2564284",
+    "src/humanbrain/opaque_document_event_tape.py": "18ba1020c81ad9f9f4d0ad76560c1f9aecf8817d8ccaa2a59a8a8244c2c55cf6",
+    "src/humanbrain/persistent_neuronal_document_learner.py": "c1458c7bd591db74b6b9a96a361bd33170e1ec43ff7cbb375fbab681fad450e2",
+    "src/humanbrain/readout.py": "60ac7eb5df255295d18eb80ee61c3529201f70a939ddc507deb513deeddf66b2",
+    "src/humanbrain/recurrent.py": "53fd326505044e8c30880d377543a2ab4428340845609cc2a6c127533959609b",
+    "src/humanbrain/recurrent_state.py": "eca7a0db39eba1baa07fbeed0d65c80b5ac6af1293092971e14b17d18efe8bb6",
+    "src/humanbrain/resting_glif_race.py": "f65f4e50d196eca24fdcf9eb181ea0470b813f6594dd25c51debee9c518cbc82",
+    "src/humanbrain/sparse_neuronal_role_filler.py": "426d411b4af5dcb7e66a4cc52541923d962f1fcdb2055c5da08d0aac8bba04a8",
+    "src/humanbrain/token_pointer_reader.py": "7e1b473f90c5696f607ed7e081e503af40f66761d2d059a76650ec54f72d9efe",
+    "src/humanbrain/topology.py": "974769ea308f600fdd43bb6f0c01565813cc3b3d20a408673bfb3c3b21671e12",
+    "src/humanbrain/unified_opaque_observation_tape.py": "e1a3c172e7d84cb878561fcda89af8e6df18b51ed5ea43e8268f34b296461ce5",
+    "src/humanbrain/variability_aware_segment_binder.py": "03788ed36e7f2c95c5de4dae4f4bb13d610d898b206f86cc397d62a8a48f09e5",
+    "tests/test_token_pointer_reader.py": "bf7b45260aaefedab8240f2e28045cece89c1d934a608a84786c3a7399972e2e"
+  },
+  "selection_sha256": "ab5e51c8a6ee6854f77a2fd03bdc22b7cbd94416c83331170308d1b8d2bc5a80",
+  "small_fit": {
+    "report": {
+      "path": "benchmarks/token_pointer_small_fit_v1.json",
+      "sha256": "46ba96374282210f624657153e93cac5aab06b00c9c20aeeea062e090bfd9b7b"
+    },
+    "completion": {
+      "path": "benchmarks/token_pointer_small_fit_v1.completion.json",
+      "sha256": "25f603c9f6749269d3f4c3f23937ce05792a4bd380e4276d50e604d5d5b0c77a"
+    }
+  },
+  "environment": {
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]",
+    "executable": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Scripts\\python.exe",
+    "packages": {
+      "torch": "2.14.0+cpu",
+      "numpy": "2.4.6",
+      "sympy": "1.14.0",
+      "networkx": "3.6.1",
+      "mpmath": "1.3.0",
+      "onnxruntime": "1.29.0",
+      "tokenizers": "0.23.1"
+    },
+    "variables": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "HUMANBRAIN_DEVICE": "cpu",
+      "HUMANBRAIN_NATIVE_CACHE": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.native-cache"
+    },
+    "torch_threads": 1,
+    "device": "cpu"
+  },
+  "cache_byte_budget": 1079773324,
+  "seconds": 14400,
+  "peak_parent_mib": 4096,
+  "reserve_bytes": 1073741824,
+  "artifact_allowance_bytes": 100663296,
+  "resource_projection": {
+    "path": ".pytest-tmp/token-pointer-full-cost-admission-v2.json",
+    "sha256": "ffac6e410e75b4505f10604bda952553b9e234b266c328752ee8999b0b246282",
+    "projected_seconds": 11446.94413109262,
+    "projected_parent_bytes": 2901453824,
+    "runtime_components_seconds": {
+      "cache_IO_lookup_hashing_checkpoints_reports_fixed_reserve": 600.0,
+      "children_498": 760.4086002001332,
+      "external_cosine_52_pooled_and_52_oracle_complete_span_allowance": 344.2209538996124,
+      "local_3584_predictions_112_batches": 37.67267279996304,
+      "new_12872_encodings": 506.3503469892899,
+      "oracle_468_forward_calls": 210.92086080033914,
+      "pooled_92_updates": 97.46902280003269,
+      "primary_468_forward_calls": 210.92086080033914,
+      "training_8192_steps": 8678.98081280291
+    },
+    "memory_components": {
+      "allocator_and_unmeasured_host_margin_bytes": 268435456,
+      "extra_policy_clones_checkpoint_journal_allowance_bytes": 100663296,
+      "frozen_encoder_session_allowance_bytes": 268435456,
+      "fully_resident_float32_features_bytes": 1241730048,
+      "measured_four_arm_max_shape_peak_bytes": 753754112,
+      "selection_and_expanded_index_allowance_bytes": 268435456
+    },
+    "runtime_safety_factor": 2.0,
+    "free_disk_bytes_at_admission": 44569321472,
+    "limitations": [
+      "Eight timed samples per policy are not a hardware worst-case guarantee.",
+      "The2x margin plus600s fixed host/IO reserve is prospective; runtime guards must still enforce full wall/RSS/disk limits.",
+      "Memory allowances include fully resident features; Python/ONNX allocator sizes remain estimates.",
+      "The measured synthetic states are discarded; no actual QA was encoded or scored by this calculation."
+    ]
+  },
+  "qa_receipts": {
+    ".pytest-tmp/token-pointer-core-handoff.json": "85cdf601832d17dc54e27aeee5a3ceb2fb6b0353742808ccb550eba766580928",
+    ".pytest-tmp/token-pointer-runtime-handoff.json": "10fabb2fc91457ca6f300bc32d9ad0eef61b4355c02e6079c52050e3dc722b43",
+    ".pytest-tmp/token-pointer-optional-dependency.json": "7ab7018907f3f01e95bbf7dabfa57fd7489e01063c476414dd803fce619acd29",
+    ".pytest-tmp/token-pointer-data-finalization.json": "0a4d8592e242aaf62fe86d1cd471c0186318399025d22d50cd957b4384577c16",
+    ".pytest-tmp/token-pointer-data-qa.json": "b4efce44d37d3895fc024a14b5bf83edd4ea80c8aacb1167b5268269944bee52",
+    ".pytest-tmp/token-pointer-data-independent-review.json": "eb32a334c33f376d99a41d7a4f5d41080e54cc8e4c150b4b07b1f674d7626afb",
+    ".pytest-tmp/token-pointer-cache-independent-review.json": "7782cab0be39eff37dd19d65b15a53a7d91c1205483eaaa8b82bafafb8a7c891",
+    ".pytest-tmp/token-pointer-session-qa.json": "0f9bb8f0e86166b6e550894e820f9a1c452bc10d02e98023b0b6e607302eeee1",
+    ".pytest-tmp/token-pointer-action-import-qa-v2.json": "a282c9e6f666e044766976fb643542d93dcfcc1dbc5caf02834932bdb203eea6",
+    ".pytest-tmp/token-pointer-small-fit-saved-audit.json": "16ce2b0667c134696c5eacdf47fc0e2dba93cfc597c44a51565ce2d965641a67",
+    ".pytest-tmp/token-pointer-driver-qa.json": "c5d0f2d74ef3a6a42b9f75b6d86e1a3f0e21eeb1403314c0e7a4c3319ab817f6",
+    ".pytest-tmp/token-pointer-driver-metadata-qa.json": "c188208e47cd0b86f61f41eea3c1ea2d747bd70984366437984cc33c77fcace3",
+    ".pytest-tmp/token-pointer-neutral-resource-admission.json": "4c6aa3914a7b494d2ee000eaf3735c3cb6d506a71985a47e7699442ab15fbdb1",
+    ".pytest-tmp/token-pointer-neutral-resource-result.json": "69e1dded9c2353bfe9cfedca3abed957abe9e1dbf0136b8c711b16fc837cb172",
+    ".pytest-tmp/token-pointer-dependency-bytes.json": "3d85f6be921cac387393f182b19d345feeb5db3aa0dd01438307ca589f59a793"
+  },
+  "declared_work": {
+    "acquisition_optimizer_steps": 8192,
+    "acquisition_presentations": 262144,
+    "local_readonly_predictions": 3584,
+    "integration_primary_actions": 468,
+    "integration_oracle_predictions": 468,
+    "continuation_offers": 92,
+    "maximum_integration_child_executions": 498,
+    "new_encoder_calls": 12872
+  },
+  "state_initialization": "Fresh prescribed seeds only; small-fit and synthetic timed states prohibited"
+}

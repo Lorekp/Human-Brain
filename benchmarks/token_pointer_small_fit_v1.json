@@ -1,0 +1,895 @@
+{
+  "status": "completed",
+  "started_unix": 1788637018.1610541,
+  "source": {
+    "revision": "709d7cc1b7a3e4f45964e8d656e400368fdb7666",
+    "files": {
+      "src/humanbrain/token_pointer_reader.py": "7e1b473f90c5696f607ed7e081e503af40f66761d2d059a76650ec54f72d9efe",
+      "experiments/r4_integrated/token_pointer_runtime.py": "9fc8b70f5e9e9857799bad041c22dd55d726e426abc1c40a138c0bbe3f529db5",
+      "experiments/r4_integrated/token_pointer_data.py": "9a50d8c31adfb3f1976039251b229778b9ae2d28b17a33bbbaf74000c0028350",
+      "experiments/r4_integrated/token_pointer_preflight.py": "7055a7a2888cdcfd6f95811ff215c6f69bb7875ddb07d1611e123e56761b53a6",
+      "experiments/r4_integrated/public_qa_data.py": "36403b86f462201d529f4ec6a24fc297e75ba3641c10f1168586f157005e0bd6",
+      "experiments/r4_integrated/real_input_qualification_cases_v1.json": "aa988986d8f04d7e796e485ccea33f24c96cadad09f03779de844905ee5ad41b",
+      "tests/test_token_pointer_reader.py": "bf7b45260aaefedab8240f2e28045cece89c1d934a608a84786c3a7399972e2e",
+      "benchmarks/native_scaling.py": "c0814158b1231131ee15fd9f2f1ab232731df61c70b10b74ec59c4ec095ad5e7",
+      "docs/research/token-pointer-acquisition.md": "114ca98e677742106579318ff4c8de1cf56ee5eff30afb964d66b4ebe8fac91c",
+      "pyproject.toml": "eee26164fcd37e95e8edbf14096a9693904bbebc1e8325af50f5bc406dbbf12c",
+      "benchmarks/token_pointer_small_fit_v1.admission.json": "4dc8c877335121799c511bda2fcd37853bd90cd3925dd673b0ba7cd994bf1565"
+    }
+  },
+  "admission_sha256": "4dc8c877335121799c511bda2fcd37853bd90cd3925dd673b0ba7cd994bf1565",
+  "environment": {
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]",
+    "executable": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Scripts\\python.exe",
+    "packages": {
+      "torch": "2.14.0+cpu",
+      "numpy": "2.4.6",
+      "sympy": "1.14.0",
+      "networkx": "3.6.1",
+      "mpmath": "1.3.0",
+      "onnxruntime": "1.29.0",
+      "tokenizers": "0.23.1"
+    },
+    "variables": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "HUMANBRAIN_DEVICE": "cpu",
+      "HUMANBRAIN_NATIVE_CACHE": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.native-cache"
+    },
+    "torch_threads": 1,
+    "device": "cpu"
+  },
+  "branches": {
+    "cell": {
+      "initial_state_sha256": "f07117dfc7b19d3c0a37fc69d21ad15a74635b49ee82195af7235e06f5cbee2c",
+      "parameter_count": 131971,
+      "initial": [
+        {
+          "id": "56cff817234ae51400d9c1a4",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a1-p73",
+            "word_start": 6,
+            "word_end_inclusive": 134,
+            "byte_start": 44,
+            "byte_end": 876,
+            "emitted_hex": "706572666f726d616e6365207374796c65e2809473657420696e207468652022636f6e7365727661746f72792220747261646974696f6e206f66206c61746520313974682d20616e6420323074682d63656e74757279206d75736963207363686f6f6c732c20616e64207375697461626c6520666f72206c617267652061756469746f726961206f72207265636f7264696e6773e280946d696c69746174657320616761696e73742077686174206973206b6e6f776e206f662043686f70696e2773206d6f726520696e74696d61746520706572666f726d616e636520746563686e697175652e2054686520636f6d706f7365722068696d73656c66207361696420746f206120707570696c20746861742022636f6e636572747320617265206e65766572207265616c206d757369632c20796f75206861766520746f2067697665207570207468652069646561206f662068656172696e6720696e207468656d20616c6c20746865206d6f73742062656175746966756c207468696e6773206f66206172742e2220436f6e74656d706f72617279206163636f756e747320696e646963617465207468617420696e20706572666f726d616e63652c2043686f70696e2061766f696465642072696769642070726f6365647572657320736f6d6574696d657320696e636f72726563746c79206174747269627574656420746f2068696d2c20737563682061732022616c77617973206372657363656e646f20746f20612068696768206e6f7465222c2062757420746861742068652077617320636f6e6365726e656420776974682065787072657373697665207068726173696e672c2072687974686d696320636f6e73697374656e637920616e642073656e73697469766520636f6c6f7572696e672e204265726c696f7a2077726f746520696e203138353320746861742043686f70696e202268617320637265617465642061206b696e64206f66206368726f6d6174696320656d62726f6964657279202e2e2e2077686f73652065666665637420697320736f20737472616e676520616e642070697175616e7420617320746f20626520696d706f737369626c6520746f206465736372696265202e2e2e207669727475616c6c79206e6f626f6479"
+          }
+        },
+        {
+          "id": "57275d775951b619008f88ce",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a252-p4",
+            "word_start": 73,
+            "word_end_inclusive": 73,
+            "byte_start": 468,
+            "byte_end": 471,
+            "emitted_hex": "746865"
+          }
+        },
+        {
+          "id": "570d2598fed7b91900d45c52",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a148-p2",
+            "word_start": 11,
+            "word_end_inclusive": 66,
+            "byte_start": 58,
+            "byte_end": 378,
+            "emitted_hex": "73657276696365732c206974206973206172677561626c7920612066696e616e6369616c20636f6d70616e7920776974682061206d616e75666163747572696e672061726d2e20497420697320616c736f206f6e65206f6620746865206c617267657374206c656e6465727320696e20636f756e7472696573206f74686572207468616e2074686520556e69746564205374617465732c2073756368206173204a6170616e2e204576656e2074686f756768207468652066697273742077617665206f6620636f6e676c6f6d6572617465732028737563682061732049545420436f72706f726174696f6e2c204c696e672d54656d636f2d566f756768742c2054656e6e65636f2c206574632e292066656c6c20627920746865207761797369646520627920746865206d69642d31393830732c20696e20746865206c617465"
+          }
+        },
+        {
+          "id": "5a82fb2ee60761001a2eb2b4",
+          "supported": false,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a437-p7",
+            "word_start": 10,
+            "word_end_inclusive": 34,
+            "byte_start": 64,
+            "byte_end": 251,
+            "emitted_hex": "746865206f7267616e69736d2061667465722074686520696e697469616c20696e66656374696f6e2e2050657273697374656e7420696e66656374696f6e732061726520636861726163746572697a65642062792074686520636f6e74696e75616c2070726573656e6365206f662074686520696e66656374696f7573206f7267616e69736d2c206f6674656e206173206c6174656e7420696e66656374696f6e2077697468206f63636173696f6e616c20726563757272656e74"
+          }
+        },
+        {
+          "id": "56f8c74d9b226e1400dd0fb6",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a84-p17",
+            "word_start": 98,
+            "word_end_inclusive": 108,
+            "byte_start": 599,
+            "byte_end": 675,
+            "emitted_hex": "64727567732c20746865726562792070726573656e74696e67207370656369616c206368616c6c656e67657320696e2074726561746d656e74206f66206469736561736573206f6620746865"
+          }
+        },
+        {
+          "id": "5733f58f4776f419006615b7",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a380-p29",
+            "word_start": 32,
+            "word_end_inclusive": 60,
+            "byte_start": 198,
+            "byte_end": 382,
+            "emitted_hex": "7468656d73656c7665732066726f6d20746865697220636f756e746572706172747320696e206c6f776572206c6561677565732e204f77696e6720696e206c61726765207061727420746f207468652064697370617269747920696e20726576656e75652066726f6d2074656c65766973696f6e20726967687473206265747765656e20746865206c6561677565732c206d616e79206e65776c792070726f6d6f746564207465616d73206861766520666f756e64206974"
+          }
+        },
+        {
+          "id": "57261f2f38643c19005ad045",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a186-p5",
+            "word_start": 77,
+            "word_end_inclusive": 94,
+            "byte_start": 490,
+            "byte_end": 606,
+            "emitted_hex": "6561726c7920666f726d206f6620477265656b2e20546865204d7963656e6165616e73206772616475616c6c79206162736f7262656420746865204d696e6f616e732c2062757420636f6c6c61707365642076696f6c656e746c792061726f756e6420313230302042432c20647572696e672061"
+          }
+        },
+        {
+          "id": "59fb3401ee36d60018400d5b",
+          "supported": false,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a106-p11",
+            "word_start": 29,
+            "word_end_inclusive": 70,
+            "byte_start": 147,
+            "byte_end": 371,
+            "emitted_hex": "616c6f6e6773696465204672616e636520616e6420537061696e2e20546865206e6174696f6e616c207465616d206973206f6e65206f66206569676874206e6174696f6e616c207465616d7320746f206861766520776f6e206174206c65617374206f6e65204649464120576f726c6420437570207469746c652e2054686520456e676c616e64207465616d20776f6e20746865697220666972737420616e64206f6e6c7920576f726c6420437570207469746c6520696e20313936362e2054686520746f75726e616d656e742077617320706c61796564206f6e20686f6d65"
+          }
+        },
+        {
+          "id": "572eb3abdfa6aa1500f8d2d7",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a352-p15",
+            "word_start": 21,
+            "word_end_inclusive": 27,
+            "byte_start": 120,
+            "byte_end": 153,
+            "emitted_hex": "63616220776f756c642073746f702e20536f6d65206f6620746865206f6c646572"
+          }
+        },
+        {
+          "id": "56e1399dcd28a01900c676cf",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a56-p21",
+            "word_start": 59,
+            "word_end_inclusive": 143,
+            "byte_start": 339,
+            "byte_end": 803,
+            "emitted_hex": "617761792066726f6d2074686520636974792028657370656369616c6c79206e6f72746820616e642077657374206f6620746865206369747929e28094617761792066726f6d20746865206d6f6465726174696e6720696e666c75656e6365206f6620746865206f6365616e2e204d6f737420736e6f7766616c6c206f63637572732066726f6d20446563656d626572207468726f756768204d617263682c206173206d6f737420796561727320736565206e6f206d656173757261626c6520736e6f7720696e20417072696c20616e64204e6f76656d6265722c20616e6420736e6f77206973207261726520696e204d617920616e64204f63746f6265722e20546865726520697320616c736f206869676820796561722d746f2d7965617220766172696162696c69747920696e20736e6f7766616c6c3b20666f7220696e7374616e63652c207468652077696e746572206f662032303131e28093313220736177206f6e6c7920392e3320696e202832332e3620636d29206f6620616363756d756c6174696e6720736e6f772c20627574207468652070726576696f75732077696e7465722c2074686520636f72726573706f6e64696e6720666967757265207761732038312e3020696e202832"
+          }
+        },
+        {
+          "id": "56de42a5cffd8e1900b4b734",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a27-p17",
+            "word_start": 52,
+            "word_end_inclusive": 52,
+            "byte_start": 316,
+            "byte_end": 318,
+            "emitted_hex": "496e"
+          }
+        },
+        {
+          "id": "5acffa5077cf76001a6866c6",
+          "supported": false,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a396-p4",
+            "word_start": 167,
+            "word_end_inclusive": 167,
+            "byte_start": 930,
+            "byte_end": 933,
+            "emitted_hex": "616e64"
+          }
+        },
+        {
+          "id": "56d9a294dc89441400fdb662",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a13-p19",
+            "word_start": 0,
+            "word_end_inclusive": 1,
+            "byte_start": 0,
+            "byte_end": 9,
+            "emitted_hex": "546865206272656564"
+          }
+        },
+        {
+          "id": "572f876aa23a5019007fc6f3",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a377-p0",
+            "word_start": 88,
+            "word_end_inclusive": 88,
+            "byte_start": 568,
+            "byte_end": 578,
+            "emitted_hex": "73706163656372616674"
+          }
+        },
+        {
+          "id": "572913111d0469140077901c",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a315-p4",
+            "word_start": 23,
+            "word_end_inclusive": 60,
+            "byte_start": 131,
+            "byte_end": 360,
+            "emitted_hex": "4765726d616e20456d7069726520776572652063616c6c6564205374616174656e2028537461746573292e20546f6461792c206974206973207665727920636f6d6d6f6e20746f2075736520746865207465726d2042756e6465736c616e6420284665646572616c204c616e64292e20486f77657665722c2074686973207465726d206973206e6f742075736564206f6666696369616c6c792c206e6569746865722062792074686520636f6e737469747574696f6e206f662031393139206e6f7220627920746865204261736963204c61772028436f6e737469747574696f6e29206f66"
+          }
+        },
+        {
+          "id": "5a8c6b60fd22b3001a8d875b",
+          "supported": false,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a259-p0",
+            "word_start": 84,
+            "word_end_inclusive": 97,
+            "byte_start": 484,
+            "byte_end": 565,
+            "emitted_hex": "63726f73732073746174696e6720224a65737573206f66204e617a61726574682c204b696e67206f6620746865204a6577732220696e207468726565206c616e6775616765732e2054686579207468656e"
+          }
+        }
+      ],
+      "steps": 256,
+      "presentations": 4096,
+      "final": [
+        {
+          "id": "56cff817234ae51400d9c1a4",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a1-p73",
+            "word_start": 79,
+            "word_end_inclusive": 80,
+            "byte_start": 504,
+            "byte_end": 520,
+            "emitted_hex": "72696769642070726f63656475726573"
+          }
+        },
+        {
+          "id": "57275d775951b619008f88ce",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a252-p4",
+            "word_start": 43,
+            "word_end_inclusive": 43,
+            "byte_start": 287,
+            "byte_end": 292,
+            "emitted_hex": "77616c6c73"
+          }
+        },
+        {
+          "id": "570d2598fed7b91900d45c52",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a148-p2",
+            "word_start": 39,
+            "word_end_inclusive": 39,
+            "byte_start": 218,
+            "byte_end": 223,
+            "emitted_hex": "4a6170616e"
+          }
+        },
+        {
+          "id": "5a82fb2ee60761001a2eb2b4",
+          "supported": false,
+          "correct": true,
+          "occurrence": null
+        },
+        {
+          "id": "56f8c74d9b226e1400dd0fb6",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a84-p17",
+            "word_start": 44,
+            "word_end_inclusive": 45,
+            "byte_start": 273,
+            "byte_end": 282,
+            "emitted_hex": "74686520736b756c6c"
+          }
+        },
+        {
+          "id": "5733f58f4776f419006615b7",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a380-p29",
+            "word_start": 100,
+            "word_end_inclusive": 100,
+            "byte_start": 608,
+            "byte_end": 613,
+            "emitted_hex": "7468726565"
+          }
+        },
+        {
+          "id": "57261f2f38643c19005ad045",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a186-p5",
+            "word_start": 113,
+            "word_end_inclusive": 115,
+            "byte_start": 705,
+            "byte_end": 720,
+            "emitted_hex": "477265656b204461726b2041676573"
+          }
+        },
+        {
+          "id": "59fb3401ee36d60018400d5b",
+          "supported": false,
+          "correct": true,
+          "occurrence": null
+        },
+        {
+          "id": "572eb3abdfa6aa1500f8d2d7",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a352-p15",
+            "word_start": 80,
+            "word_end_inclusive": 86,
+            "byte_start": 491,
+            "byte_end": 526,
+            "emitted_hex": "75707269676874206f72207369646577617973206f6e20746865206361622077616c6c"
+          }
+        },
+        {
+          "id": "56e1399dcd28a01900c676cf",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a56-p21",
+            "word_start": 5,
+            "word_end_inclusive": 7,
+            "byte_start": 29,
+            "byte_end": 47,
+            "emitted_hex": "746865204e6f7274682041746c616e746963"
+          }
+        },
+        {
+          "id": "56de42a5cffd8e1900b4b734",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a27-p17",
+            "word_start": 16,
+            "word_end_inclusive": 17,
+            "byte_start": 112,
+            "byte_end": 125,
+            "emitted_hex": "4a616d6573204d616469736f6e"
+          }
+        },
+        {
+          "id": "5acffa5077cf76001a6866c6",
+          "supported": false,
+          "correct": true,
+          "occurrence": null
+        },
+        {
+          "id": "56d9a294dc89441400fdb662",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a13-p19",
+            "word_start": 22,
+            "word_end_inclusive": 24,
+            "byte_start": 131,
+            "byte_end": 148,
+            "emitted_hex": "446f67756520646520426f726465617578"
+          }
+        },
+        {
+          "id": "572f876aa23a5019007fc6f3",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a377-p0",
+            "word_start": 71,
+            "word_end_inclusive": 74,
+            "byte_start": 456,
+            "byte_end": 493,
+            "emitted_hex": "73796d62696f74696320616e64207061726173697469632072656c6174696f6e7368697073"
+          }
+        },
+        {
+          "id": "572913111d0469140077901c",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a315-p4",
+            "word_start": 27,
+            "word_end_inclusive": 27,
+            "byte_start": 157,
+            "byte_end": 164,
+            "emitted_hex": "5374616174656e"
+          }
+        },
+        {
+          "id": "5a8c6b60fd22b3001a8d875b",
+          "supported": false,
+          "correct": true,
+          "occurrence": null
+        }
+      ],
+      "initial_counts": {
+        "supported": 0,
+        "STOP": 0,
+        "supported_total": 12,
+        "STOP_total": 4
+      },
+      "final_counts": {
+        "supported": 12,
+        "STOP": 4,
+        "supported_total": 12,
+        "STOP_total": 4
+      },
+      "update_seconds": {
+        "sum": 71.88700550001158,
+        "median": 0.27068790000157605,
+        "p95": 0.35441057499792805,
+        "max": 0.4440589000005275
+      },
+      "final_state_sha256": "c6297814d8ad19a2375a68569024dbea532e0df82359b3f5020befd763665f09"
+    },
+    "lstm": {
+      "initial_state_sha256": "fa11e1d0668723a9acaf46e17733fe7753843ebd684410b4525c6815e47b1fce",
+      "parameter_count": 526979,
+      "initial": [
+        {
+          "id": "56cff817234ae51400d9c1a4",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a1-p73",
+            "word_start": 83,
+            "word_end_inclusive": 122,
+            "byte_start": 543,
+            "byte_end": 800,
+            "emitted_hex": "6174747269627574656420746f2068696d2c20737563682061732022616c77617973206372657363656e646f20746f20612068696768206e6f7465222c2062757420746861742068652077617320636f6e6365726e656420776974682065787072657373697665207068726173696e672c2072687974686d696320636f6e73697374656e637920616e642073656e73697469766520636f6c6f7572696e672e204265726c696f7a2077726f746520696e203138353320746861742043686f70696e202268617320637265617465642061206b696e64206f66206368726f6d6174696320656d62726f6964657279202e2e2e2077686f736520656666656374206973"
+          }
+        },
+        {
+          "id": "57275d775951b619008f88ce",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a252-p4",
+            "word_start": 60,
+            "word_end_inclusive": 89,
+            "byte_start": 380,
+            "byte_end": 561,
+            "emitted_hex": "7665737469732065742c20736920637265646572652076656c69732c206e756d656e20697073756d207365637265746f206c6163752061626c756974757220e2809320224166746572776172647320746865206361722c2074686520766573746d656e74732c20616e642c20696620796f75206c696b6520746f2062656c696576652069742c2074686520646976696e6974792068657273656c662c2061726520707572696669656420696e206120736563726574"
+          }
+        },
+        {
+          "id": "570d2598fed7b91900d45c52",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a148-p2",
+            "word_start": 0,
+            "word_end_inclusive": 62,
+            "byte_start": 0,
+            "byte_end": 359,
+            "emitted_hex": "53696e6365206f7665722068616c66206f66204745277320726576656e756520697320646572697665642066726f6d2066696e616e6369616c2073657276696365732c206974206973206172677561626c7920612066696e616e6369616c20636f6d70616e7920776974682061206d616e75666163747572696e672061726d2e20497420697320616c736f206f6e65206f6620746865206c617267657374206c656e6465727320696e20636f756e7472696573206f74686572207468616e2074686520556e69746564205374617465732c2073756368206173204a6170616e2e204576656e2074686f756768207468652066697273742077617665206f6620636f6e676c6f6d6572617465732028737563682061732049545420436f72706f726174696f6e2c204c696e672d54656d636f2d566f756768742c2054656e6e65636f2c206574632e292066656c6c20627920746865207761797369646520627920746865206d6964"
+          }
+        },
+        {
+          "id": "5a82fb2ee60761001a2eb2b4",
+          "supported": false,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a437-p7",
+            "word_start": 27,
+            "word_end_inclusive": 29,
+            "byte_start": 190,
+            "byte_end": 208,
+            "emitted_hex": "6f7267616e69736d2c206f6674656e206173"
+          }
+        },
+        {
+          "id": "56f8c74d9b226e1400dd0fb6",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a84-p17",
+            "word_start": 26,
+            "word_end_inclusive": 29,
+            "byte_start": 146,
+            "byte_end": 177,
+            "emitted_hex": "766172696174696f6e7320696e20636f6c6f722e2056657274656272617465"
+          }
+        },
+        {
+          "id": "5733f58f4776f419006615b7",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a380-p29",
+            "word_start": 69,
+            "word_end_inclusive": 72,
+            "byte_start": 435,
+            "byte_end": 456,
+            "emitted_hex": "696e20746865205072656d696572204c6561677565"
+          }
+        },
+        {
+          "id": "57261f2f38643c19005ad045",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a186-p5",
+            "word_start": 23,
+            "word_end_inclusive": 85,
+            "byte_start": 156,
+            "byte_end": 548,
+            "emitted_hex": "4379636c6164696320636976696c697a6174696f6e206f6e207468652069736c616e6473206f66207468652041656765616e205365612061742061726f756e6420333230302042432c20746865204d696e6f616e20636976696c697a6174696f6e20696e204372657465202832373030e2809331353030204243292c20616e64207468656e20746865204d7963656e6165616e20636976696c697a6174696f6e206f6e20746865206d61696e6c616e64202831393030e2809331313030204243292e20546865736520636976696c697a6174696f6e7320706f737365737365642077726974696e672c20746865204d696e6f616e732077726974696e6720696e20616e20756e6465636970686572656420736372697074206b6e6f776e206173204c696e65617220412c20616e6420746865204d7963656e6165616e7320696e204c696e65617220422c20616e206561726c7920666f726d206f6620477265656b2e20546865204d7963656e6165616e73206772616475616c6c79206162736f7262656420746865"
+          }
+        },
+        {
+          "id": "59fb3401ee36d60018400d5b",
+          "supported": false,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a106-p11",
+            "word_start": 0,
+            "word_end_inclusive": 45,
+            "byte_start": 0,
+            "byte_end": 238,
+            "emitted_hex": "456e676c616e64206669727374206170706561726564206174207468652031393530204649464120576f726c642043757020616e64206861766520617070656172656420696e203134204649464120576f726c6420437570732c207468657920617265207469656420666f722073697874682d6265737420696e207465726d73206f66206e756d626572206f662077696e7320616c6f6e6773696465204672616e636520616e6420537061696e2e20546865206e6174696f6e616c207465616d206973206f6e65206f66206569676874206e6174696f6e616c207465616d7320746f206861766520776f6e206174"
+          }
+        },
+        {
+          "id": "572eb3abdfa6aa1500f8d2d7",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a352-p15",
+            "word_start": 84,
+            "word_end_inclusive": 85,
+            "byte_start": 514,
+            "byte_end": 521,
+            "emitted_hex": "74686520636162"
+          }
+        },
+        {
+          "id": "56e1399dcd28a01900c676cf",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a56-p21",
+            "word_start": 119,
+            "word_end_inclusive": 127,
+            "byte_start": 681,
+            "byte_end": 712,
+            "emitted_hex": "32303131e28093313220736177206f6e6c7920392e3320696e202832332e36"
+          }
+        },
+        {
+          "id": "56de42a5cffd8e1900b4b734",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a27-p17",
+            "word_start": 43,
+            "word_end_inclusive": 43,
+            "byte_start": 265,
+            "byte_end": 267,
+            "emitted_hex": "746f"
+          }
+        },
+        {
+          "id": "5acffa5077cf76001a6866c6",
+          "supported": false,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a396-p4",
+            "word_start": 153,
+            "word_end_inclusive": 168,
+            "byte_start": 853,
+            "byte_end": 941,
+            "emitted_hex": "746f2074686520527573272061732022536379746869616e732220616e64206e6f746573207468617420746865792074656e64656420746f2061646f707420477265656b2072697475616c7320616e6420637573746f6d73"
+          }
+        },
+        {
+          "id": "56d9a294dc89441400fdb662",
+          "supported": true,
+          "correct": false,
+          "occurrence": null
+        },
+        {
+          "id": "572f876aa23a5019007fc6f3",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a377-p0",
+            "word_start": 16,
+            "word_end_inclusive": 55,
+            "byte_start": 136,
+            "byte_end": 365,
+            "emitted_hex": "696e206c656e6774682c20626163746572696120686176652061206e756d626572206f66207368617065732c2072616e67696e672066726f6d207370686572657320746f20726f647320616e642073706972616c732e204261637465726961207765726520616d6f6e6720746865206669727374206c69666520666f726d7320746f20617070656172206f6e2045617274682c20616e64206172652070726573656e7420696e206d6f7374206f66206974732068616269746174732e20426163746572696120696e686162697420736f696c2c2077617465722c2061636964696320686f74"
+          }
+        },
+        {
+          "id": "572913111d0469140077901c",
+          "supported": true,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a315-p4",
+            "word_start": 84,
+            "word_end_inclusive": 86,
+            "byte_start": 530,
+            "byte_end": 544,
+            "emitted_hex": "3139313920616e6420616761696e"
+          }
+        },
+        {
+          "id": "5a8c6b60fd22b3001a8d875b",
+          "supported": false,
+          "correct": false,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a259-p0",
+            "word_start": 74,
+            "word_end_inclusive": 105,
+            "byte_start": 438,
+            "byte_end": 612,
+            "emitted_hex": "74686520736f6c646965727320616666697865642061207369676e20746f2074686520746f70206f66207468652063726f73732073746174696e6720224a65737573206f66204e617a61726574682c204b696e67206f6620746865204a6577732220696e207468726565206c616e6775616765732e2054686579207468656e206469766964656420686973206761726d656e747320616d6f6e67207468656d2c206275742063617374206c6f7473"
+          }
+        }
+      ],
+      "steps": 256,
+      "presentations": 4096,
+      "final": [
+        {
+          "id": "56cff817234ae51400d9c1a4",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a1-p73",
+            "word_start": 79,
+            "word_end_inclusive": 80,
+            "byte_start": 504,
+            "byte_end": 520,
+            "emitted_hex": "72696769642070726f63656475726573"
+          }
+        },
+        {
+          "id": "57275d775951b619008f88ce",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a252-p4",
+            "word_start": 43,
+            "word_end_inclusive": 43,
+            "byte_start": 287,
+            "byte_end": 292,
+            "emitted_hex": "77616c6c73"
+          }
+        },
+        {
+          "id": "570d2598fed7b91900d45c52",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a148-p2",
+            "word_start": 39,
+            "word_end_inclusive": 39,
+            "byte_start": 218,
+            "byte_end": 223,
+            "emitted_hex": "4a6170616e"
+          }
+        },
+        {
+          "id": "5a82fb2ee60761001a2eb2b4",
+          "supported": false,
+          "correct": true,
+          "occurrence": null
+        },
+        {
+          "id": "56f8c74d9b226e1400dd0fb6",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a84-p17",
+            "word_start": 44,
+            "word_end_inclusive": 45,
+            "byte_start": 273,
+            "byte_end": 282,
+            "emitted_hex": "74686520736b756c6c"
+          }
+        },
+        {
+          "id": "5733f58f4776f419006615b7",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a380-p29",
+            "word_start": 100,
+            "word_end_inclusive": 100,
+            "byte_start": 608,
+            "byte_end": 613,
+            "emitted_hex": "7468726565"
+          }
+        },
+        {
+          "id": "57261f2f38643c19005ad045",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a186-p5",
+            "word_start": 113,
+            "word_end_inclusive": 115,
+            "byte_start": 705,
+            "byte_end": 720,
+            "emitted_hex": "477265656b204461726b2041676573"
+          }
+        },
+        {
+          "id": "59fb3401ee36d60018400d5b",
+          "supported": false,
+          "correct": true,
+          "occurrence": null
+        },
+        {
+          "id": "572eb3abdfa6aa1500f8d2d7",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a352-p15",
+            "word_start": 80,
+            "word_end_inclusive": 86,
+            "byte_start": 491,
+            "byte_end": 526,
+            "emitted_hex": "75707269676874206f72207369646577617973206f6e20746865206361622077616c6c"
+          }
+        },
+        {
+          "id": "56e1399dcd28a01900c676cf",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a56-p21",
+            "word_start": 5,
+            "word_end_inclusive": 7,
+            "byte_start": 29,
+            "byte_end": 47,
+            "emitted_hex": "746865204e6f7274682041746c616e746963"
+          }
+        },
+        {
+          "id": "56de42a5cffd8e1900b4b734",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a27-p17",
+            "word_start": 16,
+            "word_end_inclusive": 17,
+            "byte_start": 112,
+            "byte_end": 125,
+            "emitted_hex": "4a616d6573204d616469736f6e"
+          }
+        },
+        {
+          "id": "5acffa5077cf76001a6866c6",
+          "supported": false,
+          "correct": true,
+          "occurrence": null
+        },
+        {
+          "id": "56d9a294dc89441400fdb662",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a13-p19",
+            "word_start": 22,
+            "word_end_inclusive": 24,
+            "byte_start": 131,
+            "byte_end": 148,
+            "emitted_hex": "446f67756520646520426f726465617578"
+          }
+        },
+        {
+          "id": "572f876aa23a5019007fc6f3",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a377-p0",
+            "word_start": 71,
+            "word_end_inclusive": 74,
+            "byte_start": 456,
+            "byte_end": 493,
+            "emitted_hex": "73796d62696f74696320616e64207061726173697469632072656c6174696f6e7368697073"
+          }
+        },
+        {
+          "id": "572913111d0469140077901c",
+          "supported": true,
+          "correct": true,
+          "occurrence": {
+            "paragraph_id": "squad2-train-a315-p4",
+            "word_start": 27,
+            "word_end_inclusive": 27,
+            "byte_start": 157,
+            "byte_end": 164,
+            "emitted_hex": "5374616174656e"
+          }
+        },
+        {
+          "id": "5a8c6b60fd22b3001a8d875b",
+          "supported": false,
+          "correct": true,
+          "occurrence": null
+        }
+      ],
+      "initial_counts": {
+        "supported": 0,
+        "STOP": 0,
+        "supported_total": 12,
+        "STOP_total": 4
+      },
+      "final_counts": {
+        "supported": 12,
+        "STOP": 4,
+        "supported_total": 12,
+        "STOP_total": 4
+      },
+      "update_seconds": {
+        "sum": 83.72498779999296,
+        "median": 0.3196107000003394,
+        "p95": 0.39156794999962585,
+        "max": 0.44374279999829014
+      },
+      "final_state_sha256": "ce57d3598732c1e70ef38bbe66d8e85d5c466f72ba48ef6eb745aba508e2373b"
+    }
+  },
+  "last_memory": {
+    "label": "archive_written_and_restored",
+    "working_set_mib": 357.515625,
+    "peak_working_set_mib": 383.98828125,
+    "private_memory_mib": 335.80078125
+  },
+  "qualified": true,
+  "checkpoint_archive": {
+    "path": ".runtime/token-pointer-small-fit-v1/checkpoints.pt",
+    "bytes": 10617395,
+    "sha256": "2fa13baed0e69b01ba3037e333798aec09dd0874e1e02177d3c7083b09721729"
+  },
+  "journal_files": {
+    ".runtime/token-pointer-small-fit-v1/cell-updates.jsonl": "73c43d2ce56cbdb06c29b4d3b06e65978292193d64971bf3f6c8611392269f13",
+    ".runtime/token-pointer-small-fit-v1/lstm-updates.jsonl": "e96dcd762d1e7bb0476390ccec5db0b391addf653551a41416c67f7dbf21aac4"
+  },
+  "elapsed_seconds": 157.99433329999738,
+  "final_memory": {
+    "working_set_mib": 357.515625,
+    "peak_working_set_mib": 383.98828125,
+    "private_memory_mib": 335.80078125
+  },
+  "finalization": "Requires matching passed completion receipt; scores alone insufficient"
+}

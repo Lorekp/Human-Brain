@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with fresh-source acquisition and retention failures.
+Updated 2026-09-05 with token-pointer small-fit preparation; broad evidence pending.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -36,8 +36,12 @@ Runner time is 63.792 seconds, outer time 64.029 seconds, peak parent working se
 
 The completed [acquisition review](research/token-pointer-acquisition.md) selects
 one token-pointer rate-cell recipe with broader fixed training, a BiLSTM positive
-reference and causal controls. Implementation and measured admission are next;
-no new fit has run. Source routing alone cannot solve the fresh correct-paragraph
+reference and causal controls. Its implemented cell and BiLSTM readers each
+passed the fixed original-sixteen preflight at 12/12 supported and 4/4 STOP after
+256 batch-16 steps. Both started at 0/12 and 0/4. The complete fit took 157.997
+seconds and peaked at 383.988 MiB; its disposable states cannot initialize the
+broad comparison. Broader training remains subject to measured admission.
+Source routing alone cannot solve the fresh correct-paragraph
 failure. No architecture is adopted, gate opened, source-absent memory demonstrated
 or official exam run.
 
