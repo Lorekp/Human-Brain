@@ -1,0 +1,20 @@
+{
+  "terminal": "report_serialization_failed_after_model_execution",
+  "source_revision": "2c44b4e6b58bf47c8ae290183f76ad16f4a6e115",
+  "process_exit_code": 1,
+  "error": "TypeError: Object of type int64 is not JSON serializable",
+  "failure_site": "contextual_binding_python_session.run final _json(report), line 1094",
+  "full_json_report_retained": false,
+  "scientific_verdict": "not independently verified; no adoption decision from partial log",
+  "artifacts": {
+    "benchmarks\\contextual_protected_contrast_v1_interrupted.npz": {
+      "bytes": 339975,
+      "sha256": "2d50ba7c8ece9b27fcc2a7f6dffe264d29e62814c6d62f966c4f8b4b3770910d"
+    },
+    "benchmarks\\contextual_protected_contrast_v1_interrupted.log": {
+      "bytes": 44542,
+      "sha256": "150f2232300b4afa6fd7f54a9046193194de5913187e86b4cdd0e624be6fc736"
+    }
+  },
+  "recovery_boundary": "Only a diagnosed reporting-only correction may be replayed under the unchanged experiment contract; retain both attempts, compare saved arrays and logged outcomes exactly excluding timing. Replay is not independent fresh evidence."
+}
