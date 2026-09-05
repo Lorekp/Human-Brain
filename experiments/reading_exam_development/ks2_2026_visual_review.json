@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "reviewed_utc": "2026-09-05T20:54:39.5581810Z",
+  "method": "Codex in-app browser; rendered viewport screenshots inspected through CUA",
+  "viewport": {
+    "width": 1234,
+    "height": 712
+  },
+  "page": "ks2_2026_amelia/review.html",
+  "files": {
+    "review.html": "59b7dd419191a31e34687026ecbfe84f29ac37f112e8949fcfc20288555f7308",
+    "route-map.png": "a9a4b97c339861460b7fd15429d9c71bac112b9b9987b55f5cdf5aadf77826e1",
+    "questions.json": "757f5d4c60d257f73c05c2a2cce0728d40295bae939c0d0f99759387215565c3",
+    "passage.txt": "6c3dc3242592ff149942fd8c5906a0c8218b38a73afcb9a660a103f496be691d",
+    "passage_structure.json": "67a1664bcd73fe435c73a74188dbbb5f88ca90923f0edec792689a494bfe5283"
+  },
+  "checks": [
+    "Passage headings and paragraphs remain readable without horizontal clipping at the reviewed viewport.",
+    "Route map loads with readable Oakland, Equator and Lae labels.",
+    "Q25 and Q27 show four separate unmarked option boxes in original order.",
+    "Q30 shows all three printed rows and one available mark.",
+    "Q36 shows five event rows with the supplied 1 only in row 2 and one available mark.",
+    "Crown attribution and OGL link render at the footer.",
+    "No official answer keys are displayed in the reviewed page."
+  ],
+  "changes_required": false,
+  "limitations": [
+    "Desktop review at one viewport; no mobile, print-layout or automated accessibility certification.",
+    "Screenshots were inspected in the task tool outputs; no screenshot files were exported.",
+    "This is visual preparation QA, not a learner run or comprehension score.",
+    "The historical nine-file extraction directory is unchanged."
+  ]
+}

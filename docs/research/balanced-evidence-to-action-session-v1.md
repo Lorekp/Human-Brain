@@ -49,10 +49,11 @@ Conventional pooled old answers improve 5/12 to 9/12 without fresh supported gai
 All saved audits pass, including strict UTF-8 execution; earlier failures remain
 recorded under their original contracts.
 
-**Next integrated priority:** prepare the selected
-[token-pointer acquisition comparison](token-pointer-acquisition.md), then return
-its persistent learner to actual actions and feedback under that contract.
-Source routing alone cannot resolve fresh correct-paragraph failure.
+The [token-pointer comparison](../../experiments/r4_integrated/token_pointer_result.md)
+has now completed acquisition and executed continuation, with both qualifications
+failing. Its active [decision review](token-pointer-acquisition.md#active-next-step-bounded-decision-review)
+must separate supported acquisition, answerability and continuation before the
+next bounded change. Source routing alone cannot resolve fresh comprehension.
 Labeled rehearsal and complete retained paragraphs do not establish source-absent
 memory, autonomous recovery or broader integration success. No automatic optimizer,
 epoch, label, threshold or producer sweep follows.
@@ -72,13 +73,14 @@ competition gradients are not executed FAIL labels.
 
 Authentic official-exam development remains complementary pressure under the
 [reading plan](reading-comprehension-evaluation.md). The repeated KS2 Q6a/b items
-are regression observations with pending human marks, not fresh examination
+are exposed regression observations, not fresh examination
 evidence. Select additional official passage groups through a separate frozen
 manifest; preserve paper/passage exposure boundaries and official marking guidance.
 The [prepared 2026 fixture](official-reading-next-candidate.md) now has verified
 PDF custody, corrected passage/map and original questions with separate official
-keys. Source content review is complete and a structured response contract is
-proposed; scorer implementation and model binding remain pending. The whole paper
+keys. Source content and desktop layout reviews are complete; the strict
+structured-response scorer passes 45 mechanical tests. Model binding remains
+pending. The whole paper
 is developer-exposed, not reserve material.
 Authored cases do not replace independent reading evaluation.
 
@@ -149,6 +151,47 @@ composition, and tool-driven recovery. Authentic public reading examinations in
 [reading-comprehension evaluation](reading-comprehension-evaluation.md) provide
 complementary language pressure; follow that plan's development/held-out split.
 Exam items must come from authentic public exams, not LLM-authored substitutes.
+
+## Source-absent memory and action interface
+
+This implementation inventory prepares the return to stages 1–8 after the closed
+token-pointer comparison; it selects no successor learning mechanism.
+Its reader resets recurrent activations at sequence boundaries and emits
+positions in supplied documents. Retaining trained weights therefore does not
+make its existing output interface usable after source removal.
+
+Reuse the existing acquisition/query separation: document consolidation receives
+raw documents and provenance, without future questions or answer labels; a later
+query receives the persistent checkpoint and request. The memory implementation
+must emit answer bytes or STOP from that state. Its decision must identify the
+queried checkpoint and request, and distinguish retained evidence from an
+occurrence in a currently supplied document. Do not construct a synthetic source
+document containing a saved answer merely to satisfy the pointer adapter.
+
+The action seam already exists:
+[`ContextualOccurrenceMotor.apply`](../../experiments/r4_integrated/contextual_occurrence_motor.py)
+takes an action request, current workspace files and replacement bytes. Preserve
+the separate reading question and action instruction. Escape a selected UTF-8
+value with the existing literal encoder, pass it through the learned motor, and
+use the existing strict child executor. Expected answers belong only to scoring;
+they must not enter memory lookup, emission or motor selection. STOP supplies no
+replacement. A new general wrapper is unnecessary before a memory implementation
+can supply this interface.
+
+For the source-removal test, reload the declared checkpoint in a fresh process
+whose inference inputs omit source documents and their feature cache. Account
+separately for weights, neuron state, lexical values, provenance, raw/derived
+documents and retrieval indices. The older neutral memory retains exact endpoint
+lexemes: this is disclosed lexical storage, not evidence of semantic compression.
+A retained raw-source or contextual-token store remains a declared retrieval
+condition even if its files have been renamed or removed from the request.
+
+Compare the same acquired state with learning, memory retrieval and the neuronal
+core disabled, plus a disclosed retrieval-only reference. Test newly acquired
+facts after interference, renamed executed actions and earlier-skill retention.
+Saving teacher question/answer pairs would test supervised memorization; it does
+not satisfy the answer-free document-acquisition stages. Fix the concrete memory
+recipe, cohort and resource budget after the bounded decision review.
 
 ## Common observation and feedback contract
 

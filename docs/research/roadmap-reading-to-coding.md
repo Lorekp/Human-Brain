@@ -75,22 +75,20 @@ The [fixed-rehearsal comparison](../../experiments/r4_integrated/fixed_rehearsal
 establishes retention and execution of all sixteen taught questions when their
 correct paragraphs are supplied. Conventional rehearsal also passes and fits sooner.
 
-The subsequent [fresh-source session](../../experiments/r4_integrated/fresh_source_result.md)
-fails qualification. Every policy answers 0/8 fresh supported questions, even
-with the correct paragraph supplied. Before new learning, pooling sources drops
-cells' old supported score from 12/12 to 0/12; subsequent updates reduce their
-correct-paragraph retention to 4/12. Conventional pooled old answers improve
-5/12 to 9/12, with no fresh supported transfer. All three saved-evidence audits
-pass; no architecture is adopted or integrated gate passed.
+The [fresh-source failure](../../experiments/r4_integrated/fresh_source_result.md)
+led to the now-completed
+[token-pointer comparison](../../experiments/r4_integrated/token_pointer_result.md).
+It also fails qualification: cells answer 18/192 untaught supported questions and
+26/64 STOPs; the conventional reader reaches 23/192 and 28/64, missing its STOP
+floor too. Cells retain initially correct old actions and improve old supported
+execution 5/12 to 7/12, but gain no fresh supported success over their frozen mate
+and lose one fresh STOP. The full saved-evidence audit passes. No architecture
+is adopted or integrated gate passed.
 
-The completed [decision review](pooled-reading-failure-review.md) selects
-[token-pointer acquisition](token-pointer-acquisition.md), now the active
-preparation contract: generic language features, bidirectional rate-cell reading,
-endpoint/NULL supervision and varied training with strong conventional and causal
-controls, then a return to executed actions. Both implemented readers passed its
-fixed sixteen-question preflight; broad acquisition still requires measured
-admission. Source routing alone cannot repair fresh comprehension.
-Do not treat declining loss or fitted old answers as reusable acquisition.
+The active [post-comparison decision review](token-pointer-acquisition.md#active-next-step-bounded-decision-review)
+must distinguish acquisition, answerability and continuation before the next
+bounded change. Source routing alone cannot repair fresh comprehension; fitted
+old answers and declining loss do not establish reusable acquisition.
 
 The closed acquisition diagnostics use explicit answer/STOP supervision over retained
 raw sources and a frozen external encoder. These are not answer-free internalization,

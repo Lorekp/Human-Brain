@@ -1,5 +1,13 @@
 # Token-pointer acquisition: decision and preparation contract
 
+**Closed comparison, 2026-09-05.** The
+[completed result](../../experiments/r4_integrated/token_pointer_result.md) fails
+acquisition and integration qualification despite mechanically complete,
+independently audited evidence. Cells reach 18/192 untaught supported answers and
+26/64 STOPs; BiLSTM reaches 23/192 and 28/64. The original frozen contract lives at
+source commit `9d73bba3908583add036d88c0cc04a2d23b0f368`; its criteria are unchanged.
+The preparation and run below are completed history, not instructions to rerun.
+
 Selected 2026-09-05 after the [pooled-source failure](../../experiments/r4_integrated/fresh_source_result.md).
 Research window: **18:41–19:26 UTC**, at most 45 minutes. This review selects one
 implementation and comparison; no experimental model was downloaded or run.
@@ -285,7 +293,7 @@ from 0/12 supported and 0/4 STOP to 12/12 and 4/4 after exactly 256 batch-16 ste
 each. All 8,192 presentations and 64 probes complete in 157.997 seconds, peaking
 at 383.988 MiB. This qualifies small-set learning only. The old sixteen remain
 exposed, and these states are disposable. Twenty-three numerical/state tests
-and eight actual neutral action children also pass; no broad task has run.
+and eight actual neutral action children also passed before the broad run.
 
 Shape-scaled timing estimates exceed the four-hour budget when every operation
 is charged at the query/context attention growth ratio. Resolve that uncertainty
@@ -304,9 +312,10 @@ memory, including a separate exhaustive-cosine allowance, encoding, every probe,
 continuation, child and artifact cost. It leaves 49 minutes within the four-hour
 run limit. This is admission evidence, not a hardware worst-case guarantee.
 The [full-run admission](../../benchmarks/token_pointer_acquisition_v1.admission.json)
-freezes the exact source, data, checks and cost receipts. Preparation is complete;
-execute this one comparison from fresh prescribed seeds. No broad result is yet
-available, and the hard limits remain mandatory.
+freezes the exact source, data, checks and cost receipts. The one admitted
+comparison subsequently completed from fresh prescribed seeds in 3,637.303 seconds
+at 2,234.484 MiB peak parent working set. Its result is linked above; do not rerun
+this spent comparison.
 
 Admit one run only if measured batch/encoding/probe/action costs conservatively
 project its full prescribed work within **four hours**, including artifacts,
@@ -320,3 +329,13 @@ is required before implementing this selected recipe.
 Source-absent knowledge, answer-free acquisition, genuine structured Amelia
 responses and autonomous multi-step software recovery remain open. This reader
 is a component aimed at the shared persistent workload, not its completion.
+
+## Active next step: bounded decision review
+
+Spend at most 30 minutes comparing the saved failure distributions and relevant
+primary research before selecting another scored fit. Separate weak supported
+acquisition, answerability, and continuation transfer; the unqualified positive
+control does not isolate a cell-equation failure. Compare alternatives against
+the source-absent integration target, name the next observed failure and one
+reusable hypothesis, and fix a concrete work/resource budget. Preserve this run;
+no automatic extra epochs, selected checkpoint or retrospective threshold repair.

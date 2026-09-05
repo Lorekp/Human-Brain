@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with token-pointer small-fit preparation; broad evidence pending.
+Updated 2026-09-05 with the completed token-pointer comparison and exam-scorer QA.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -10,7 +10,30 @@ with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. Hybrid permission does not relabel existing
 cell-only evidence or reopen protected evaluations.
 
-## Current fresh-source actions and acquisition failure
+## Current token-pointer acquisition and action result
+
+The [full comparison](../experiments/r4_integrated/token_pointer_result.md) completes
+all prescribed work but fails acquisition and integration qualification. After
+8,192 TRAIN questions and eight epochs, untaught supported/STOP counts are cells
+18/192 + 26/64, frozen producer 0/192 + 64/64, bypass 13/192 + 43/64, and BiLSTM
+23/192 + 28/64. Cells miss the required gains and STOP floor; BiLSTM misses the
+STOP floor, leaving the positive control unqualified.
+
+In the exposed action continuation, cells preserve every initially correct old
+pooled/oracle decision and improve old supported execution 5/12 to 7/12. Cells
+and their frozen mate each solve 1/8 fresh supported tasks; cells score 0/2 fresh
+STOPs against the mate's 1/2. No policy solves a late supported task. All 468
+primary actions, 468 oracle probes, 92 continuation offers and 494 children
+complete; 24 repairs are external teacher supervision.
+
+The saved-only audit passes without rerunning inference or children. Runtime is
+3,637.303 seconds with 2,234.484 MiB peak parent working set. The result links full
+counts, controls, source/checkpoint custody and retained-byte accounting. No
+architecture is adopted and no gate passes. Separately, the authentic 2026 exam
+scorer passes 45 mechanical checks and its review page passes desktop visual QA;
+genuine structured model responses and an exam run remain pending.
+
+## Earlier fresh-source actions and acquisition failure
 
 The [fresh-source session](../experiments/r4_integrated/fresh_source_result.md)
 fails qualification. All six policies solve 0/8 fresh supported first attempts,
@@ -40,7 +63,7 @@ reference and causal controls. Its implemented cell and BiLSTM readers each
 passed the fixed original-sixteen preflight at 12/12 supported and 4/4 STOP after
 256 batch-16 steps. Both started at 0/12 and 0/4. The complete fit took 157.997
 seconds and peaked at 383.988 MiB; its disposable states cannot initialize the
-broad comparison. Broader training remains subject to measured admission.
+broad comparison. The subsequently completed broad result is reported above.
 Source routing alone cannot solve the fresh correct-paragraph
 failure. No architecture is adopted, gate opened, source-absent memory demonstrated
 or official exam run.

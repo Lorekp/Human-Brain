@@ -42,17 +42,29 @@ Keys were checked against official scheme text. Preserve wording, instructions,
 option order, row labels and supplied entries; do not split Q30's mark. The
 other fourteen marks remain unevaluated. This is a proposal, not a frozen roster.
 The current scalar span interface cannot emit all these response
-formats. The proposed contract below makes the missing interface explicit;
-implementation and model binding remain pending before evaluation.
+formats. The contract below makes the missing interface explicit;
+the scorer is now implemented, while model binding remains pending before evaluation.
 
-## Proposed machine response contract
+## Implemented machine response contract
+
+The [pure scorer](../../experiments/reading_exam_development/ks2_2026_scoring.py)
+provides `learner_request`, `validate_response` and evaluator-only `score_response`.
+Its 45 mechanical tests pass, including strict serialization, indivisible marks,
+source hashes, and a check that request construction/validation never read the
+rubric. The source-bound receipt is `.pytest-tmp/ks2-2026-scoring-qa.json`
+(`7e4686307983583c48f92a41addca43574aed6d67ad8dec6c7632c4cee6d7a30`).
+This is scorer QA, not a learner result or an exam attempt. Request construction
+includes the original map PNG; the future producer must actually consume it or
+declare a text-only condition. Key separation is a data-routing convention, not
+a filesystem sandbox.
 
 Present the unchanged passage/structure, route map and one original item at a
 time, in order 25, 27, 30, 36. Rubric bytes and previous marks stay outside the
 learner. A model unable to consume the map requires a declared text-only condition,
 not a claim of complete original passage presentation.
 
-One final UTF-8 JSON response per item has `item`, `status` (`answer` or `stop`),
+One final UTF-8 JSON response per item has `item` (the original string ID),
+`status` (`answer` or `stop`),
 and `response` (an object, or null for STOP). Generic format instructions contain
 no worked answers from this paper. Printed-order positions address the original
 options/rows without rewriting them:
@@ -74,10 +86,10 @@ responses also receive zero, recorded separately from valid wrong answers.
 This requires genuine structured answer production. Host option matching,
 year extraction or event ordering would add a solver, not merely format a span.
 The existing 2024 scalar scorer and its learner ingestion cannot supply this seam;
-preserve that experiment. Implement only a small pure closed-response scorer and
-a declared producer binding when available. Until then, report the unsupported
-interface before evaluation rather than fabricate four comprehension failures.
-No scorer or model execution is introduced by this proposal.
+preserve that experiment. The pure scorer now exists; a genuine structured
+producer binding remains necessary. Until then, report the unsupported interface
+before evaluation rather than fabricate four comprehension failures. No model
+execution has been introduced by this implementation.
 
 ## Remaining preparation and exposure
 
@@ -99,7 +111,7 @@ Poppler 26.07.0 rendered at 110 DPI. Visual review covered reading pages 8-9,
 answer pages 14-19, mark pages 26-35 and all three copyright pages; PDF page
 indices (one-based) match the printed page numbers for the reading, answer and
 mark pages. The passage headings, paragraphs and final-route map are legible.
-The answer layouts and four proposed keys above agree with the visible scheme:
+The answer layouts and four selected keys above agree with the visible scheme:
 Q25/Q27 on scheme pages 26/27, Q30 on page 28, and Q36 on page 32. Q36's supplied
 `1` is in its second printed row. Copyright pages 2-3 confirm commissioned Crown
 text/map and the two Getty photograph exceptions; the cover photograph and logos
@@ -113,11 +125,15 @@ separate rubric, unchanged-pixel map crop and source custody. Transcriber and
 independent orchestrator comparisons cover all eight passage paragraphs and the
 selected question/marking pages. Corrections and checks are in the linked fixture.
 
-The optional HTML review aid passes static structure checks but has not had a
-rendered-layout review: no usable browser was available. This does not substitute
-for or alter the original page comparisons. The proposed machine contract above
-still requires implementation, source/interface freeze and model binding before evaluation.
-No answer policy, score or learner exposure was introduced by preparation.
+The optional HTML review aid now passes a
+[desktop browser review](../../experiments/reading_exam_development/ks2_2026_visual_review.json)
+at 1234×712: passage text, map labels, all four response layouts, Q36's supplied
+rank and attribution are readable without observed clipping. No layout change
+was needed. This review does not certify mobile or print layouts and does not
+replace the original page comparisons. The original extraction files remain
+unchanged. The machine contract above still requires an evaluation-specific
+source/interface freeze and model binding before evaluation. No answer policy,
+score or learner exposure was introduced by preparation.
 
 The developer inspected full 2026 reading/answer text and relevant marking
 sections. Treat the **whole KS2 2026 paper as developer-exposed**, including
