@@ -15,6 +15,157 @@ from humanbrain.plastic_memory import (  # noqa: E402
 
 
 @pytest.mark.parametrize("kind", ["cell", "bypass"])
+def test_local_rule_independent_scalar_oracle_and_delayed_feedback(kind):
+    cell = StreamingRateCell(2, 2, kind, seed=41).double()
+    if kind == "cell":
+        with torch.no_grad():
+            cell.recurrent.copy_(torch.tensor([[0.7, -0.3], [0.2, 0.6]]))
+    inputs = np.array(
+        [[[0.3, -0.2], [0.5, 0.1]], [[-0.4, 0.7], [0.2, -0.5]], [[0.8, 0.3], [-0.2, 0.4]]]
+    )
+    w, bias = cell.weight.detach().numpy().copy(), cell.bias.detach().numpy().copy()
+    u = cell.recurrent.detach().numpy().copy() if kind == "cell" else np.zeros((2, 2))
+    h = np.zeros((2, 2))
+    ew, eu, eb = np.zeros((2, 2, 2)), np.zeros((2, 2, 2)), np.zeros((2, 2))
+    state = cell.initial_learning_state(2)
+    for x in inputs:
+        previous = h.copy()
+        for b in range(2):
+            for j in range(2):
+                a = np.tanh(
+                    sum(w[j, i] * x[b, i] for i in range(2))
+                    + bias[j]
+                    + sum(u[j, i] * previous[b, i] for i in range(2))
+                )
+                d = (0.5 if kind == "cell" else 1.0) * (1 - a * a)
+                carry = 0.5 + d * u[j, j] if kind == "cell" else 0.0
+                h[b, j] = previous[b, j] + 0.5 * (a - previous[b, j]) if kind == "cell" else a
+                for i in range(2):
+                    ew[b, j, i] = carry * ew[b, j, i] + d * x[b, i]
+                    eu[b, j, i] = carry * eu[b, j, i] + d * previous[b, i]
+                eb[b, j] = carry * eb[b, j] + d
+        state = cell.local_step(torch.from_numpy(x).requires_grad_(), state)
+        np.testing.assert_allclose(state.activity, h, atol=1e-14, rtol=1e-13)
+        np.testing.assert_allclose(state.input_eligibility, ew, atol=1e-14, rtol=1e-13)
+        np.testing.assert_allclose(state.bias_eligibility, eb, atol=1e-14, rtol=1e-13)
+        if kind == "cell":
+            np.testing.assert_allclose(state.recurrent_eligibility, eu, atol=1e-14, rtol=1e-13)
+        else:
+            assert state.recurrent_eligibility is None
+    saved = state.snapshot()
+    signal = torch.tensor([[0.7, -0.6], [-0.2, 0.8]], dtype=torch.float64, requires_grad=True)
+    cell.bias.requires_grad_(False)
+    assert cell.apply_learning_signal(state, signal, 0.03)
+    np.testing.assert_allclose(
+        cell.weight.detach(),
+        w - 0.03 * (signal.detach().numpy()[:, :, None] * ew).mean(0),
+        atol=1e-14,
+    )
+    if kind == "cell":
+        np.testing.assert_allclose(
+            cell.recurrent.detach(),
+            u - 0.03 * (signal.detach().numpy()[:, :, None] * eu).mean(0),
+            atol=1e-14,
+        )
+    assert torch.equal(cell.bias, torch.from_numpy(bias))
+    assert signal.grad is None
+    assert all(p.grad is None for p in cell.parameters())
+    for name, value in state.snapshot().items():
+        if value is not None:
+            assert torch.equal(value, saved[name])
+            assert not value.requires_grad and value.grad_fn is None
+
+
+def test_local_eligibility_matches_diagonal_recurrence_finite_difference():
+    cell = StreamingRateCell(2, 2, seed=5).double()
+    xs = np.array([[0.4, -0.7], [0.1, 0.6], [-0.3, 0.9]])
+    state = cell.initial_learning_state(1)
+    for x in xs:
+        state = cell.local_step(torch.from_numpy(x[None]), state)
+    arrays = {name: p.detach().numpy().copy() for name, p in cell.named_parameters()}
+
+    def reference():
+        h = np.zeros(2)
+        for x in xs:
+            a = np.tanh(arrays["weight"] @ x + arrays["recurrent"] @ h + arrays["bias"])
+            h = h + 0.5 * (a - h)
+        return h
+
+    trace_names = {
+        "weight": "input_eligibility",
+        "recurrent": "recurrent_eligibility",
+        "bias": "bias_eligibility",
+    }
+    for name, array in arrays.items():
+        trace = getattr(state, trace_names[name])[0].numpy()
+        for index in np.ndindex(array.shape):
+            old = array[index]
+            array[index] = old + 1e-6
+            plus = reference()[index[0]]
+            array[index] = old - 1e-6
+            minus = reference()[index[0]]
+            array[index] = old
+            assert trace[index] == pytest.approx((plus - minus) / 2e-6, abs=1e-9, rel=1e-7)
+
+
+@pytest.mark.parametrize("kind", ["cell", "bypass"])
+def test_local_masking_freeze_snapshot_reset_and_no_history(kind):
+    cell = StreamingRateCell(2, 3, kind, seed=2).double()
+    x = torch.tensor([[0.2, -0.1], [0.5, 0.8]], dtype=torch.float64, requires_grad=True)
+    state = cell.local_step(x)
+    original = state.snapshot()
+    next_x = torch.tensor([[float("nan"), float("nan")], [0.9, -0.2]], dtype=torch.float64)
+    next_state = cell.local_step(next_x, state, mask=torch.tensor([False, True]))
+    for name, value in vars(next_state).items():
+        if value is not None:
+            assert torch.equal(value[0], original[name][0])
+            assert value.data_ptr() != getattr(state, name).data_ptr()
+            assert not value.requires_grad and value.grad_fn is None
+    before = copy.deepcopy(cell.state_dict())
+    signal = torch.tensor([[float("nan")] * 3, [0.2, -0.4, 0.6]], dtype=torch.float64)
+    mask = torch.tensor([False, True])
+    assert not cell.apply_learning_signal(
+        next_state, signal, 0.1, mask=mask, learning_enabled=False
+    )
+    assert not cell.apply_learning_signal(next_state, signal, 0.0, mask=mask)
+    assert not cell.apply_learning_signal(
+        next_state, signal, 0.1, mask=torch.zeros(2, dtype=torch.bool)
+    )
+    cell.requires_grad_(False)
+    assert not cell.apply_learning_signal(next_state, signal, 0.1, mask=mask)
+    for name, value in cell.state_dict().items():
+        assert torch.equal(value, before[name])
+    cell.requires_grad_(True)
+    assert cell.apply_learning_signal(next_state, signal, 0.1, mask=mask)
+    expected = before["weight"] - 0.1 * signal[1, :, None] * next_state.input_eligibility[1]
+    torch.testing.assert_close(cell.weight, expected, rtol=1e-14, atol=1e-15)
+    restored = cell.restore_learning_state(next_state.snapshot())
+    for name, value in vars(restored).items():
+        if value is not None:
+            assert torch.equal(value, getattr(next_state, name))
+            assert value.data_ptr() != getattr(next_state, name).data_ptr()
+    replica = StreamingRateCell(2, 3, kind).double()
+    replica.load_state_dict(copy.deepcopy(cell.state_dict()))
+    continued = replica.local_step(x, restored)
+    expected_state = cell.local_step(x, next_state)
+    for name, value in vars(continued).items():
+        if value is not None:
+            assert torch.equal(value, getattr(expected_state, name))
+    reset = cell.reset_eligibility(restored)
+    assert torch.equal(reset.activity, restored.activity)
+    assert not torch.count_nonzero(reset.input_eligibility)
+    assert not torch.count_nonzero(reset.bias_eligibility)
+    assert not torch.count_nonzero(
+        cell.reset_eligibility(restored, preserve_activity=False).activity
+    )
+    tampered = restored.snapshot()
+    tampered["activity"].requires_grad_()
+    with pytest.raises(ValueError, match="autograd"):
+        cell.restore_learning_state(tampered)
+    assert x.grad is None
+
+
+@pytest.mark.parametrize("kind", ["cell", "bypass"])
 def test_streaming_arithmetic_private_rng_and_restore(kind):
     rng = torch.random.get_rng_state().clone()
     cell = StreamingRateCell(2, 3, kind, seed=91).double()

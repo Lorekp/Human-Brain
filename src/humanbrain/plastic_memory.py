@@ -1,8 +1,11 @@
-"""Explicit, differentiable fast synapses; no tokenizer, answer labels or input cache.
+"""Fast synapses and local rate-cell learning; no tokenizer or input cache.
 
 A learned controller writes M += beta * (v - M k) k^T with unit-L2 keys,
-bounded values and beta in (0, 1). Offline gradients train the controller and
-maps; a document write itself needs no future query or answer. This is a small
+bounded values and beta in (0, 1). The differentiable reference can train its
+controller/maps with offline gradients; a write needs no future query or answer.
+StreamingRateCell also provides graph-free local eligibility/signal updates.
+Local credit through the complete memory writer/maps remains a separate task.
+This is a small
 delta-rule mechanism, not established semantic compression or lossless storage.
 Interference remains possible between nonorthogonal keys.
 Unit-L2 normalization is our adaptation, not the component-sum normalization
@@ -19,6 +22,7 @@ default float32 dimensions). Writes cost O(H*D + H*H + H*(K+V) + V*K) for cells;
 reads cost O(K*D + V*K). Offline autograd storage grows with sequence length.
 """
 
+import math
 from dataclasses import dataclass
 
 import torch
@@ -30,6 +34,27 @@ def _size(value: int) -> int:
     if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
         raise ValueError("dimensions must be positive integers")
     return value
+
+
+@dataclass(frozen=True)
+class RateCellLearningState:
+    """Caller-owned activity and local eligibility; no input history or graph.
+
+    Per stream this costs H + H*D + H*H + H scalars for a cell; bypass omits
+    the recurrent array. These traces are retained model state if feedback is
+    delayed beyond source removal, and must be counted separately from memory.
+    """
+
+    activity: Tensor
+    input_eligibility: Tensor
+    recurrent_eligibility: Tensor | None
+    bias_eligibility: Tensor
+
+    def snapshot(self) -> dict[str, Tensor | None]:
+        return {
+            name: None if value is None else value.detach().clone()
+            for name, value in vars(self).items()
+        }
 
 
 class StreamingRateCell(nn.Module):
@@ -70,11 +95,195 @@ class StreamingRateCell(nn.Module):
             state = self.initial_state(inputs.shape[0])
         if state.shape != (inputs.shape[0], self.hidden_size):
             raise ValueError("state must have shape [batch, hidden_size]")
+        return self._step(inputs, state)[0]
+
+    def _step(self, inputs: Tensor, state: Tensor) -> tuple[Tensor, Tensor]:
+        """Shared forward arithmetic for differentiable and local-only paths."""
         drive = F.linear(inputs, self.weight, self.bias)
         if self.kind == "bypass":
-            return torch.tanh(drive)
+            activation = torch.tanh(drive)
+            return activation, activation
         activation = torch.tanh(drive + F.linear(state, self.recurrent))
-        return state + 0.5 * (activation - state)
+        return state + 0.5 * (activation - state), activation
+
+    def initial_learning_state(self, batch_size: int) -> RateCellLearningState:
+        activity = self.initial_state(batch_size)
+        return RateCellLearningState(
+            activity,
+            activity.new_zeros(batch_size, self.hidden_size, self.input_size),
+            activity.new_zeros(batch_size, self.hidden_size, self.hidden_size)
+            if self.kind == "cell"
+            else None,
+            torch.zeros_like(activity),
+        )
+
+    def _check_learning_state(self, state: RateCellLearningState) -> int:
+        if not isinstance(state, RateCellLearningState) or state.activity.ndim != 2:
+            raise ValueError("state must be a RateCellLearningState")
+        batch = _size(state.activity.shape[0])
+        shapes = {
+            "activity": (batch, self.hidden_size),
+            "input_eligibility": (batch, self.hidden_size, self.input_size),
+            "bias_eligibility": (batch, self.hidden_size),
+        }
+        if self.kind == "cell":
+            shapes["recurrent_eligibility"] = (batch, self.hidden_size, self.hidden_size)
+        elif state.recurrent_eligibility is not None:
+            raise ValueError("bypass must not contain recurrent eligibility")
+        for name, shape in shapes.items():
+            value = getattr(state, name)
+            if not isinstance(value, Tensor) or value.shape != shape:
+                raise ValueError(f"invalid {name} shape")
+            if value.dtype != self.weight.dtype or value.device != self.weight.device:
+                raise ValueError("learning state dtype/device must match parameters")
+            if value.requires_grad or value.grad_fn is not None:
+                raise ValueError("local learning state must not retain autograd history")
+            if not bool(torch.isfinite(value).all()):
+                raise ValueError("learning state must be finite")
+        return batch
+
+    def _active_mask(self, mask: Tensor | None, batch: int) -> Tensor:
+        if mask is None:
+            return torch.ones(batch, dtype=torch.bool, device=self.weight.device)
+        if mask.shape != (batch,) or mask.dtype != torch.bool or mask.device != self.weight.device:
+            raise ValueError("mask must be boolean [batch] on the parameter device")
+        return mask
+
+    def restore_learning_state(self, snapshot: dict[str, Tensor | None]) -> RateCellLearningState:
+        if set(snapshot) != {
+            "activity",
+            "input_eligibility",
+            "recurrent_eligibility",
+            "bias_eligibility",
+        }:
+            raise ValueError("invalid local learning snapshot fields")
+        state = RateCellLearningState(**snapshot)
+        self._check_learning_state(state)
+        return RateCellLearningState(**state.snapshot())
+
+    def reset_eligibility(
+        self, state: RateCellLearningState, *, preserve_activity: bool = True
+    ) -> RateCellLearningState:
+        """Explicitly end credit retention; optionally reset activation as well."""
+        batch = self._check_learning_state(state)
+        empty = self.initial_learning_state(batch)
+        return RateCellLearningState(
+            state.activity.detach().clone() if preserve_activity else empty.activity,
+            empty.input_eligibility,
+            empty.recurrent_eligibility,
+            empty.bias_eligibility,
+        )
+
+    @torch.no_grad()
+    def local_step(
+        self,
+        inputs: Tensor,
+        state: RateCellLearningState | None = None,
+        *,
+        mask: Tensor | None = None,
+    ) -> RateCellLearningState:
+        """Advance forward activity and approximate, synapse-local self-path traces.
+
+        For cell j, d=.5*(1-tanh(s_j)^2), carry=.5+d*U_jj, and
+        e_ji'=carry*e_ji+d*pre_i (input, previous activity, or one).
+        Off-diagonal recurrent paths are deliberately omitted: these are NOT
+        full recurrent gradients. Bypass uses instantaneous (1-tanh(s)^2)*pre
+        with no trace carry. Parameter changes do not retroactively recompute
+        old traces. Padding preserves every state tensor and ignores input NaNs.
+        """
+        if inputs.ndim != 2 or inputs.shape[1] != self.input_size:
+            raise ValueError("inputs must have shape [batch, input_size]")
+        if inputs.dtype != self.weight.dtype or inputs.device != self.weight.device:
+            raise ValueError("inputs dtype/device must match parameters")
+        if state is None:
+            state = self.initial_learning_state(inputs.shape[0])
+        batch = self._check_learning_state(state)
+        if inputs.shape[0] != batch:
+            raise ValueError("inputs and learning state batch must match")
+        active = self._active_mask(mask, batch)
+        safe = torch.where(active[:, None], inputs, 0)
+        if not bool(torch.isfinite(safe).all()):
+            raise ValueError("active inputs must be finite")
+        activity, activation = self._step(safe, state.activity)
+        derivative = 1 - activation.square()
+        if self.kind == "cell":
+            derivative = 0.5 * derivative
+            carry = 0.5 + derivative * self.recurrent.diagonal()
+            recurrent = (
+                carry[:, :, None] * state.recurrent_eligibility
+                + derivative[:, :, None] * state.activity[:, None, :]
+            )
+            recurrent = torch.where(active[:, None, None], recurrent, state.recurrent_eligibility)
+        else:
+            carry = torch.zeros_like(derivative)
+            recurrent = None
+        result = RateCellLearningState(
+            torch.where(active[:, None], activity, state.activity),
+            torch.where(
+                active[:, None, None],
+                carry[:, :, None] * state.input_eligibility
+                + derivative[:, :, None] * safe[:, None, :],
+                state.input_eligibility,
+            ),
+            recurrent,
+            torch.where(
+                active[:, None], carry * state.bias_eligibility + derivative, state.bias_eligibility
+            ),
+        )
+        self._check_learning_state(result)
+        return result
+
+    @torch.no_grad()
+    def apply_learning_signal(
+        self,
+        state: RateCellLearningState,
+        signal: Tensor,
+        learning_rate: float,
+        *,
+        mask: Tensor | None = None,
+        learning_enabled: bool = True,
+    ) -> bool:
+        """Mutate owned trainable parameters by -eta*mean_active(L_j*e_ji).
+
+        L is one externally declared scalar per neuron, NOT a per-synapse
+        gradient. This method does not compute it. Frozen requires_grad=False
+        parameters, disabled learning, and an empty active batch never change.
+        State/traces are unchanged; caller explicitly resets or continues them.
+        Return whether any parameter actually changed; no optimizer or .grad use.
+        """
+        batch = self._check_learning_state(state)
+        if not math.isfinite(learning_rate) or learning_rate < 0:
+            raise ValueError("learning_rate must be finite and nonnegative")
+        if not isinstance(learning_enabled, bool):
+            raise ValueError("learning_enabled must be boolean")
+        if signal.shape != (batch, self.hidden_size):
+            raise ValueError("signal must have shape [batch, hidden_size]")
+        if signal.device != self.weight.device or signal.dtype != self.weight.dtype:
+            raise ValueError("signal dtype/device must match parameters")
+        active = self._active_mask(mask, batch)
+        safe = torch.where(active[:, None], signal, 0)
+        if not bool(torch.isfinite(safe).all()):
+            raise ValueError("active signals must be finite")
+        count = int(active.sum())
+        if not learning_enabled or learning_rate == 0 or count == 0:
+            return False
+        pairs = [(self.weight, state.input_eligibility), (self.bias, state.bias_eligibility)]
+        if self.kind == "cell":
+            pairs.append((self.recurrent, state.recurrent_eligibility))
+        # Check all proposals before mutation, so overflow cannot partially update.
+        proposals = []
+        for parameter, trace in pairs:
+            if parameter.requires_grad:
+                factor = safe if trace.ndim == 2 else safe[:, :, None]
+                change = (factor * trace).sum(dim=0) * (learning_rate / count)
+                candidate = parameter - change
+                if not bool(torch.isfinite(candidate).all()):
+                    raise ValueError("local update produced nonfinite parameters")
+                proposals.append((parameter, candidate))
+        changed = any(not torch.equal(parameter, candidate) for parameter, candidate in proposals)
+        for parameter, candidate in proposals:
+            parameter.copy_(candidate)
+        return changed
 
 
 @dataclass(frozen=True)

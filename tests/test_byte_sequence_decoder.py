@@ -167,3 +167,171 @@ def test_invalid_teacher_masks_tokens_and_context_fail_explicitly():
     mask[0, 1] = False
     with pytest.raises(ValueError, match="right-padded"):
         byte_sequence_loss(logits, targets, mask)
+
+
+def _assert_decoder_state_equal(first, second):
+    assert first.keys() == second.keys()
+    for name, value in first.items():
+        assert torch.equal(value, second[name]) if torch.is_tensor(value) else value == second[name]
+
+
+@pytest.mark.parametrize("kind", ["cell", "bypass"])
+def test_local_two_step_rule_matches_independent_scalar_oracle(kind):
+    decoder = ByteSequenceDecoder(2, 3, 2, kind=kind, seed=91, local_learning=True).double()
+    context = torch.tensor([[0.2, -0.4], [0.3, 0.1]], dtype=torch.float64, requires_grad=True)
+    h = torch.zeros(2, 3, dtype=torch.float64)
+    ew = torch.zeros(2, 3, 4, dtype=torch.float64)
+    eu = torch.zeros(2, 3, 3, dtype=torch.float64)
+    eb = torch.zeros(2, 3, dtype=torch.float64)
+    state = None
+    with torch.no_grad():
+        for tokens in (torch.tensor([BYTE_BOS, BYTE_BOS]), torch.tensor([97, 98])):
+            x = torch.cat((context.detach(), decoder.embedding(tokens)), -1)
+            old = h.clone()
+            for row in range(2):
+                for j in range(3):
+                    drive = float(decoder.cell.bias[j]) + sum(
+                        float(decoder.cell.weight[j, i] * x[row, i]) for i in range(4)
+                    )
+                    if kind == "cell":
+                        drive += sum(
+                            float(decoder.cell.recurrent[j, i] * old[row, i]) for i in range(3)
+                        )
+                    activation = math.tanh(drive)
+                    derivative = (1 - activation**2) * (0.5 if kind == "cell" else 1)
+                    carry = (
+                        0.5 + derivative * float(decoder.cell.recurrent[j, j])
+                        if kind == "cell"
+                        else 0
+                    )
+                    h[row, j] = (
+                        old[row, j] + 0.5 * (activation - old[row, j])
+                        if kind == "cell"
+                        else activation
+                    )
+                    ew[row, j] = carry * ew[row, j] + derivative * x[row]
+                    eu[row, j] = carry * eu[row, j] + derivative * old[row]
+                    eb[row, j] = carry * eb[row, j] + derivative
+            step = decoder.local_step(context, tokens, state)
+            state = step.state
+        torch.testing.assert_close(state.activity, h, atol=1e-14, rtol=1e-14)
+        torch.testing.assert_close(state.input_eligibility, ew, atol=1e-14, rtol=1e-14)
+        targets = torch.tensor([BYTE_EOS, 255])
+        delta = step.logits.softmax(-1)
+        delta[0, BYTE_EOS] -= 1
+        delta[1, 255] -= 1
+        signal = delta @ decoder.hidden_feedback.T
+        expected = copy.deepcopy(decoder.state_dict())
+        eta = 0.07
+        expected["output.weight"] -= eta * delta.T @ h / 2
+        expected["output.bias"] -= eta * delta.mean(0)
+        expected["cell.weight"] -= eta * (signal[:, :, None] * ew).mean(0)
+        expected["cell.bias"] -= eta * (signal * eb).mean(0)
+        if kind == "cell":
+            expected["cell.recurrent"] -= eta * (signal[:, :, None] * eu).mean(0)
+    with patch.object(torch.autograd, "backward", side_effect=AssertionError("no backward")):
+        old_cell_weight = decoder.cell.weight.detach().clone()
+        old_output_weight = decoder.output.weight.detach().clone()
+        feedback = decoder.teach_local(step, targets, eta)
+    assert feedback.teacher_count == 2 and feedback.updated
+    assert not torch.equal(old_cell_weight, decoder.cell.weight)
+    assert not torch.equal(old_output_weight, decoder.output.weight)
+    torch.testing.assert_close(feedback.hidden_signal, signal)
+    torch.testing.assert_close(feedback.context_signal, delta @ decoder.context_feedback.T)
+    for name, value in expected.items():
+        if torch.is_tensor(value):
+            torch.testing.assert_close(decoder.state_dict()[name], value, atol=1e-14, rtol=1e-14)
+    assert context.grad is None
+    assert all(parameter.grad is None for parameter in decoder.parameters())
+    assert all(
+        not value.requires_grad
+        for value in (step.logits, feedback.hidden_signal, feedback.context_signal)
+    )
+    assert not decoder.embedding.weight.requires_grad
+
+
+def test_local_masks_freezing_and_fixed_state_are_honest_noops():
+    decoder = ByteSequenceDecoder(2, 3, 2, local_learning=True).double()
+    initial = copy.deepcopy(decoder.state_dict())
+    context = torch.tensor([[0.1, 0.2], [torch.nan, torch.nan]], dtype=torch.float64)
+    step = decoder.local_step(
+        context, torch.tensor([BYTE_BOS, -999]), mask=torch.tensor([True, False])
+    )
+    receipt = decoder.teach_local(step, torch.tensor([BYTE_EOS, -999]), 0.1, learning_enabled=False)
+    assert receipt.teacher_count == 1 and not receipt.updated
+    assert torch.count_nonzero(receipt.hidden_signal[1]) == 0
+    _assert_decoder_state_equal(initial, decoder.state_dict())
+    single = copy.deepcopy(decoder)
+    one_step = single.local_step(context[:1], torch.tensor([BYTE_BOS]))
+    single.teach_local(one_step, torch.tensor([65]), 0.1)
+    mixed = decoder.teach_local(step, torch.tensor([65, -999]), 0.1)
+    assert mixed.teacher_count == 1 and mixed.updated
+    _assert_decoder_state_equal(single.state_dict(), decoder.state_dict())
+    initial = copy.deepcopy(decoder.state_dict())
+    decoder.requires_grad_(False)
+    assert not decoder.teach_local(step, torch.tensor([65, -999]), 0.1).updated
+    _assert_decoder_state_equal(initial, decoder.state_dict())
+    empty = decoder.local_step(
+        torch.full((2, 2), torch.nan, dtype=torch.float64),
+        torch.tensor([-1, -1]),
+        step.state,
+        mask=torch.zeros(2, dtype=torch.bool),
+    )
+    for name, value in step.state.snapshot().items():
+        other = empty.state.snapshot()[name]
+        assert value is None if other is None else torch.equal(value, other)
+    receipt = decoder.teach_local(empty, torch.tensor([-1, -1]), 0.1)
+    assert receipt.teacher_count == 0 and receipt.loss == 0 and not receipt.updated
+    _assert_decoder_state_equal(initial, decoder.state_dict())
+
+
+def test_local_delayed_feedback_reload_and_read_only_generation():
+    decoder = ByteSequenceDecoder(2, 3, 2, seed=4, local_learning=True)
+    context = torch.tensor([[0.1, 0.3]])
+    first = decoder.local_step(context, torch.tensor([BYTE_BOS]))
+    snapshot = first.snapshot()
+    second = decoder.local_step(context, torch.tensor([65]), first.state)
+    decoder.teach_local(second, torch.tensor([66]), 0.02)
+    buffer = io.BytesIO()
+    torch.save({"model": decoder.state_dict(), "pending": snapshot}, buffer)
+    buffer.seek(0)
+    saved = torch.load(buffer, weights_only=True)
+    restored = ByteSequenceDecoder(2, 3, 2, seed=99, local_learning=True)
+    restored.load_state_dict(saved["model"])
+    pending = restored.restore_local_step(saved["pending"])
+    assert pending.logits.data_ptr() != saved["pending"]["logits"].data_ptr()
+    assert torch.equal(pending.logits, first.logits)
+    receipt = decoder.teach_local(first, torch.tensor([70]), 0.03)
+    again = restored.teach_local(pending, torch.tensor([70]), 0.03)
+    assert receipt.loss == again.loss and receipt.teacher_count == again.teacher_count == 1
+    _assert_decoder_state_equal(decoder.state_dict(), restored.state_dict())
+    before = copy.deepcopy(restored.state_dict())
+    assert restored.generate(context, 3) == decoder.generate(context, 3)
+    _assert_decoder_state_equal(before, restored.state_dict())
+
+
+def test_local_initial_identity_private_rng_and_invalid_feedback_atomicity():
+    rng = torch.random.get_rng_state().clone()
+    reference = ByteSequenceDecoder(2, 3, 2, seed=5)
+    local = ByteSequenceDecoder(2, 3, 2, seed=5, local_learning=True)
+    assert torch.equal(rng, torch.random.get_rng_state())
+    for name, parameter in reference.named_parameters():
+        assert torch.equal(parameter, dict(local.named_parameters())[name])
+    assert "local_learning" not in reference.get_extra_state()
+    assert local.get_extra_state()["local_learning"] == "fixed-embedding-random-feedback-v1"
+    context = torch.tensor([[0.1, -0.2]])
+    tokens = torch.tensor([[BYTE_BOS, 65]])
+    assert torch.equal(reference(context, tokens), local(context, tokens))
+    with pytest.raises(ValueError, match="local_learning=True"):
+        reference.local_step(context, tokens[:, 0])
+    step = local.local_step(context, tokens[:, 0])
+    before = copy.deepcopy(local.state_dict())
+    for target, rate in ((torch.tensor([BYTE_BOS]), 0.1), (torch.tensor([65]), float("nan"))):
+        with pytest.raises(ValueError):
+            local.teach_local(step, target, rate)
+        _assert_decoder_state_equal(before, local.state_dict())
+    bad = step.snapshot()
+    bad["state"]["input_eligibility"][0, 0, 0] = torch.nan
+    with pytest.raises(ValueError):
+        local.restore_local_step(bad)
+    _assert_decoder_state_equal(before, local.state_dict())

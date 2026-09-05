@@ -55,20 +55,30 @@ learner. The withdrawn recipe already corrected a query-only training shortcut
 by varying key-to-value assignments across episodes; preserve this design lesson
 so the same question requires different answers from different memories.
 
-The bounded review selects an eligibility-based local update for the existing
-streaming cells, informed by [e-prop](https://doi.org/10.1038/s41467-020-17236-y).
-First implement per-synapse forward traces, explicit neuron-level feedback and
-local output updates. Fixed feedback connections are a candidate; their signals
-approximate credit and must not be described as the full recurrent gradient.
+The streaming cells now implement per-synapse forward eligibility and explicit
+neuron-level updates; the byte decoder implements fixed feedback and local
+readout updates. Twenty-nine focused tests pass, including ten new checks of
+local arithmetic, delayed feedback, masks, frozen controls and detached restore.
+These updates use no backward pass or optimizer. Their
+[e-prop-inspired](https://doi.org/10.1038/s41467-020-17236-y) self-path traces and
+fixed feedback approximate credit; they are not the full recurrent gradient.
 The existing native three-factor readout provides a local-update precedent, but
 training only an output head over fixed cells is insufficient for the intended
 learned contextual representation.
 
-Delayed feedback to document writing remains a separate unresolved part of the
-same loop: the fast matrix's local delta write does not teach its controller or
-addressing maps. Specify that credit pathway before an integrated learning run.
-Declare which traces persist after source removal and count their bytes. Teacher
-feedback is permitted; a teacher performing inference is not learner success.
+Delayed feedback to document writing remains unresolved: the fast matrix's
+local delta write does not teach its controller or addressing maps. The next
+candidate associates each synapse's eligibility with actual neural write keys,
+then uses the neural query key to select credit at feedback; the
+[local writer-credit proposal](local-writer-credit.md) fixes the equations,
+signal dependencies and event clocks. A single aggregate
+trace can cancel opposite eligibilities from separately addressed facts.
+Transport tags through the same fixed-key overwrite operation as fast memory;
+this remains an approximation that omits changing-key and other indirect paths.
+At current dimensions, writer/controller-map tags cost about 3.74 MB per stream,
+before other state. Declare and count them after source removal. Require useful
+new-value performance over a frozen-writer control, not just parameter movement.
+Teacher feedback is permitted; a teacher performing inference is not learner success.
 
 Before the next learning experiment, fix its roster, local rule, feedback,
 update budget, stopping criteria and measured cost ceiling. Return to new-value,
