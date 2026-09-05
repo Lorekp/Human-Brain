@@ -71,10 +71,11 @@ Oracle-source answers reach only 24/48 and 28/48, with 13/16 and 12/16 correct
 STOPs; all-source reading is worse. Runtime/custody checks pass, but the required
 competence does not. No routing mechanism is fitted or adopted.
 
-**Next integrated priority:** a bounded review of acquisition experience and
-sensory representation, informed by the within-source binding/abstention failures.
-Choose one material change that can distinguish missing learning experience from
-an inadequate trainable computation, then return to actual persistent execution.
+**Next integrated priority:** prepare the [broader public-QA comparison](public-qa-acquisition-plan.md)
+using unchanged aligned cells/encoder, human-written acquisition material and a
+trained conventional reader. Fixed early/late TRAIN probes distinguish fit from
+stability; the final all-source Python return measures useful transfer of training.
+Acquisition evidence and motor readiness are separate from general integrated adoption.
 No automatic optimizer, epoch, label,
 threshold or producer sweep, fresh comparison or protected evaluation follows.
 The [previous failure review](rate-cell-failure-review.md), original

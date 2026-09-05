@@ -86,9 +86,11 @@ does not proceed: its [frozen reader qualification](../../experiments/r4_integra
 fails even with the correct document supplied (24/48 and 28/48 exact answers).
 Within-source entity/property errors and incorrect abstentions remain; more sources
 worsen performance. No router is fitted and no reader replacement follows
-automatically. The next bounded acquisition review must compare broader ordinary
-language experience with richer declared sensory representations, preserve strong
-learning-disabled/conventional controls, and return to the persistent executed loop.
+automatically. The [next acquisition plan](public-qa-acquisition-plan.md) selects
+broader human-written public-QA teaching with the unchanged cell computation and
+sensory encoder, a trained conventional reader and learning-disabled controls.
+It separately measures acquisition, retained TRAIN fit and return to the executed
+loop; the source/data/cost contract must be frozen before its one scored run.
 Do not automatically extend attention, epochs, rates, labels, thresholds or solver
 budgets, or treat declining loss as useful acquisition. The
 [previous failure review](rate-cell-failure-review.md) remains historical.

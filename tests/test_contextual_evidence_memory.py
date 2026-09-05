@@ -2351,3 +2351,212 @@ def test_query_aligned_attention_formula_window_reset_bypass_and_empty_query():
         assert not np.any(gradients["attention_weights"])
         assert not np.any(gradients["query_context_weights"])
         assert model.predict(query, SpanInventory(())).stop_reason == "empty_inventory"
+
+
+def test_conventional_attention_parameter_count_initialization_and_independent_forward():
+    from humanbrain.conventional_attention_reader import (
+        PARAMETER_NAMES,
+        ConventionalAttentionReader,
+    )
+    from humanbrain.rate_cell_reader import SpanInventory
+
+    query, original = _rate_cell_synthetic_inputs()
+    inventory = SpanInventory(original.documents, window_words=5)
+    model = ConventionalAttentionReader()
+    assert tuple(model._weights) == PARAMETER_NAMES
+    assert sum(x.size for x in model._weights.values()) == 37377
+    assert model.snapshot()["allocated_parameter_bytes"] == 299016
+    assert model.snapshot()["allocated_optimizer_bytes"] == 598096
+    assert len(model.checkpoint_arrays()) == 25
+    assert not any("recurrent" in key for key in model._weights)
+    rng = np.random.default_rng(0)
+    np.testing.assert_array_equal(
+        model._weights["input_weights"], rng.standard_normal((64, 386)) / np.sqrt(2)
+    )
+    np.testing.assert_array_equal(
+        model._weights["fusion_weights"], rng.standard_normal((64, 128)) / np.sqrt(128)
+    )
+    np.testing.assert_array_equal(
+        model._weights["span_heads"], rng.standard_normal((3, 64)) * (0.01 / np.sqrt(64))
+    )
+    np.testing.assert_array_equal(
+        model._weights["stop_head"], rng.standard_normal(64) * (0.01 / np.sqrt(64))
+    )
+    np.testing.assert_array_equal(model._weights["attention_weights"], np.eye(64))
+    w = model._weights
+    q = np.array(
+        [np.tanh(w["input_weights"] @ np.r_[v, 1, 0] + w["input_bias"]) for v in query.vectors]
+    )
+    expected_scores, expected_states = [], []
+    for window in inventory.windows:
+        states = []
+        for vector in window.vectors:
+            d = np.tanh(w["input_weights"] @ np.r_[vector, 0, 1] + w["input_bias"])
+            logits = np.array([d @ w["attention_weights"] @ u / 8 for u in q])
+            probabilities = np.exp(logits - logits.max())
+            probabilities /= probabilities.sum()
+            h = np.tanh(w["fusion_weights"] @ np.r_[d, probabilities @ q] + w["fusion_bias"])
+            states.append(h)
+        states = np.array(states)
+        expected_states.extend(states)
+        for start in range(len(states)):
+            for end in range(start + 1, len(states) + 1):
+                expected_scores.append(
+                    states[start] @ w["span_heads"][0]
+                    + states[end - 1] @ w["span_heads"][1]
+                    + states[start:end].mean(axis=0) @ w["span_heads"][2]
+                )
+    f = model._forward(query, inventory)
+    np.testing.assert_allclose(f["scores"], expected_scores, atol=1e-14, rtol=1e-13)
+    np.testing.assert_allclose(f["hidden"], expected_states, atol=1e-14, rtol=1e-13)
+    expected_stop = np.mean(expected_states, axis=0) @ w["stop_head"] + w["stop_bias"][0]
+    assert f["stop_logit"] == pytest.approx(expected_stop, abs=1e-14)
+    # Window boundaries constrain candidates, but cannot add recurrence to producer.
+    np.testing.assert_allclose(f["hidden"], model._forward(query, original)["hidden"], atol=1e-14)
+
+
+def test_conventional_attention_full_parameter_directional_gradients():
+    from humanbrain.conventional_attention_reader import ConventionalAttentionReader
+
+    query, inventory = _rate_cell_synthetic_inputs()
+    model = ConventionalAttentionReader()
+    rng = np.random.default_rng(185)
+    model._weights["attention_weights"] += rng.standard_normal((64, 64)) * 0.2
+    model._weights["span_heads"] *= 30
+    model._weights["stop_head"] *= 30
+    epsilon = 1e-5
+    for gold in (inventory.gold_indices(b"quiet silver river"), None):
+        _, gradients, _ = model.loss_and_gradients(query, inventory, gold)
+        assert np.linalg.norm(gradients["attention_weights"]) > 1e-7
+        for name, weight in model._weights.items():
+            direction = rng.standard_normal(weight.shape)
+            direction /= np.linalg.norm(direction)
+            original = weight.copy()
+            model._weights[name] = original + epsilon * direction
+            plus = model.loss_and_gradients(query, inventory, gold)[0]
+            model._weights[name] = original - epsilon * direction
+            minus = model.loss_and_gradients(query, inventory, gold)[0]
+            model._weights[name] = original
+            analytic = float(np.sum(gradients[name] * direction))
+            assert analytic == pytest.approx((plus - minus) / (2 * epsilon), abs=2e-8, rel=1e-4)
+        # Modality columns must backpropagate through both query and document roles.
+        for index in ((4, 384), (7, 385), (13, 16)):
+            original = model._weights["input_weights"][index]
+            model._weights["input_weights"][index] = original + epsilon
+            plus = model.loss_and_gradients(query, inventory, gold)[0]
+            model._weights["input_weights"][index] = original - epsilon
+            minus = model.loss_and_gradients(query, inventory, gold)[0]
+            model._weights["input_weights"][index] = original
+            assert gradients["input_weights"][index] == pytest.approx(
+                (plus - minus) / (2 * epsilon), abs=2e-8, rel=1e-4
+            )
+
+
+@pytest.mark.parametrize("clip", [1.0, 0.01])
+def test_conventional_attention_learning_stop_masks_and_frozen_state(clip):
+    from humanbrain.conventional_attention_reader import ConventionalAttentionReader
+
+    query, inventory = _rate_cell_synthetic_inputs()
+    gold = inventory.gold_indices(b"quiet silver river")
+    model = ConventionalAttentionReader(gradient_clip_norm=clip)
+    frozen = ConventionalAttentionReader(mode="frozen", gradient_clip_norm=clip)
+    initial = frozen.checkpoint_arrays()
+    for name, weight in model._weights.items():
+        np.testing.assert_array_equal(weight, frozen._weights[name])
+    _, gradients, _ = model.loss_and_gradients(query, inventory, gold)
+    first = model.observe(query, inventory, gold)
+    assert first["parameter_update_applied"]
+    assert first["loss_after"] < first["before_objective"]["loss"]
+    assert first["native_update_applied"] is False
+    if clip == 0.01:
+        assert 0 < first["clip_scale"] < 1
+    for name, raw_gradient in gradients.items():
+        g = raw_gradient * first["clip_scale"]
+        np.testing.assert_allclose(model._first[name], 0.1 * g, atol=1e-15, rtol=1e-13)
+        np.testing.assert_allclose(model._second[name], 0.001 * g**2, atol=1e-15, rtol=1e-13)
+        expected = frozen._weights[name] - 0.001 * (0.1 * g / (1 - 0.9)) / (
+            np.sqrt(0.001 * g**2 / (1 - 0.999)) + 1e-8
+        )
+        np.testing.assert_allclose(model._weights[name], expected, atol=1e-15, rtol=1e-13)
+    warmed = model.checkpoint_arrays()
+    second = model.observe(query, inventory, None)
+    assert second["before"] == first["after"]
+    assert second["loss_after"] < second["before_objective"]["loss"]
+    assert second["adam_steps_after"]["span_heads"] == 1
+    for prefix in ("weight_", "adam_first_", "adam_second_"):
+        np.testing.assert_array_equal(
+            model.checkpoint_arrays()[prefix + "span_heads"], warmed[prefix + "span_heads"]
+        )
+    for target in (gold, None):
+        receipt = frozen.observe(query, inventory, target)
+        assert receipt["active_parameters"] == [] and not receipt["parameter_update_applied"]
+        assert receipt["gradient_norm"] == 0
+    for name, value in initial.items():
+        np.testing.assert_array_equal(frozen.checkpoint_arrays()[name], value)
+    parent = model.checkpoint_sha256
+    prediction = model.predict(query, inventory)
+    assert model.checkpoint_sha256 == parent
+    with pytest.raises(ValueError):
+        prediction.span_scores.setflags(write=True)
+
+
+def test_conventional_attention_empty_inputs_query_sensitivity_and_same_decisions():
+    from humanbrain.conventional_attention_reader import ConventionalAttentionReader
+    from humanbrain.rate_cell_reader import SpanInventory, TokenInput
+
+    query, inventory = _rate_cell_synthetic_inputs()
+    model = ConventionalAttentionReader()
+    alternate = TokenInput(query.raw, query.byte_spans, -query.vectors, query.encoder_sha256)
+    assert not np.array_equal(
+        model.predict(query, inventory).span_scores, model.predict(alternate, inventory).span_scores
+    )
+    empty = TokenInput(b"", (), np.zeros((0, 384)), "synthetic")
+    _, gradients, audit = model.loss_and_gradients(empty, inventory, None)
+    assert audit["attention_entries"] == 0 and audit["recurrent_cell_steps"] == 0
+    assert not np.any(gradients["attention_weights"])
+    assert model.predict(query, SpanInventory(())).stop_reason == "empty_inventory"
+    model._weights["stop_head"][:] = 0
+    model._weights["stop_bias"][:] = 0
+    assert model.predict(query, inventory).stop_reason == "answerability_STOP"
+    model._weights["stop_bias"][:] = -1
+    model._weights["span_heads"][:] = 0
+    assert model.predict(query, inventory).stop_reason == "span_tie"
+
+
+def test_conventional_attention_learns_one_fixed_supported_and_stop_toy():
+    from humanbrain.conventional_attention_reader import ConventionalAttentionReader
+    from humanbrain.rate_cell_reader import SpanInventory, TokenDocument, TokenInput, _word_spans
+
+    def tokens(raw, columns):
+        vectors = np.zeros((len(columns), 384))
+        vectors[np.arange(len(columns)), columns] = 1
+        return TokenInput(raw, _word_spans(raw), vectors, "fixed-synthetic-one-hot")
+
+    inventory = SpanInventory((TokenDocument(
+        b"toy", b"synthetic", tokens(b"copper pine silver", [3, 4, 5])
+    ),))
+    lessons = (
+        (tokens(b"morning", [0]), inventory.gold_indices(b"copper pine")),
+        (tokens(b"evening", [1]), inventory.gold_indices(b"silver")),
+        (tokens(b"absent", [2]), None),
+    )
+    model, frozen = ConventionalAttentionReader(), ConventionalAttentionReader(mode="frozen")
+
+    def correctness(reader):
+        result = []
+        for query, gold in lessons:
+            prediction = reader.predict(query, inventory)
+            result.append(
+                prediction.stopped if gold is None else prediction.candidate_index in gold
+            )
+        return result
+
+    initial = correctness(frozen)
+    for _ in range(85):
+        for query, gold in lessons:
+            model.observe(query, inventory, gold)
+    assert model.offer_count == 255
+    final = correctness(model)
+    assert final == [True, True, True], {"initial": initial, "final": final}
+    assert sum(final) > sum(initial)
+    assert correctness(frozen) == initial and frozen.offer_count == 0
