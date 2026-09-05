@@ -80,17 +80,21 @@ class ContextualEvidenceMemory:
         *,
         learning_rate: float = 1.0,
         learning_enabled: bool = True,
+        interaction_gain: float = 1.0,
     ) -> None:
         if not np.isfinite(learning_rate) or learning_rate <= 0:
             raise ValueError("learning_rate must be finite and positive")
+        if not np.isfinite(interaction_gain) or interaction_gain <= 0:
+            raise ValueError("interaction_gain must be finite and positive")
         self.encoder = encoder
         self.learning_rate = float(learning_rate)
         self.learning_enabled = learning_enabled
+        self._interaction_gain = float(interaction_gain)
         self._documents: list[OpaqueDocument] = []
         self._candidates: list[_Candidate] = []
         self._vectors = np.empty((0, _DIMENSION), dtype=np.float64)
         self._contexts: list[np.ndarray] = []
-        self._storage_root = _digest([])
+        self._storage_root = _digest({"representation": self.representation_policy})
         self._storage_ancestry = {self._storage_root: 0}
         self._weights = np.zeros((2, _FEATURES), dtype=np.float64)
         self._bias = np.zeros(2, dtype=np.float64)
@@ -108,10 +112,22 @@ class ContextualEvidenceMemory:
         self.update_count = 0
 
     @property
+    def interaction_gain(self) -> float:
+        return self._interaction_gain
+
+    @property
+    def representation_policy(self) -> dict:
+        return {
+            "kind": "unit_query_span_window_with_scaled_hadamard_products_v1",
+            "interaction_gain": self.interaction_gain,
+        }
+
+    @property
     def checkpoint_sha256(self) -> str:
         return _digest(
             {
                 "encoder": self.encoder.sha256,
+                "representation": self.representation_policy,
                 "storage": self._storage_root,
                 "synapses": self.synapse_sha256,
                 "feedback": self._feedback_root,
@@ -149,6 +165,7 @@ class ContextualEvidenceMemory:
         )
         compiled_race = self._race._unit_voltage.nbytes + self._race._unit_voltage_threshold.nbytes
         return {
+            "interaction_gain": self.interaction_gain,
             "raw_source_bytes": raw,
             "candidate_lexical_bytes": lexical,
             "context_vector_bytes": vectors,
@@ -226,7 +243,13 @@ class ContextualEvidenceMemory:
             overlap = float(candidate.emitted.decode("utf-8").casefold() in query_words)
             rows.append(
                 np.concatenate(
-                    (q, vector, q * vector, q * self._contexts[candidate.window_index], [overlap])
+                    (
+                        q,
+                        vector,
+                        self.interaction_gain * (q * vector),
+                        self.interaction_gain * (q * self._contexts[candidate.window_index]),
+                        [overlap],
+                    )
                 )
             )
         return np.asarray(rows, dtype=np.float64).reshape(-1, _FEATURES), self._vectors @ q
@@ -296,6 +319,19 @@ class ContextualEvidenceMemory:
             index,
             "conventional_learned",
             "tonic_stop_or_tie" if index is None else None,
+        )
+
+    def raw_score_reference(self, query: bytes) -> ContextualEvidenceDecision:
+        """Disclosed linear reference before current saturation; no neuronal race."""
+        rows, _ = self._features(query)
+        drive = rows @ (self._weights[0] - self._weights[1]) + self._bias[0] - self._bias[1]
+        # Invert the unchanged current map at the tonic STOP current. Require a
+        # unique strict win, including against STOP, before float tanh saturation.
+        scores = np.append(drive, np.arctanh((600.1 - 600.0) / 200.0))
+        best = np.flatnonzero(scores == scores.max())
+        index = int(best[0]) if len(best) == 1 and best[0] < len(self._candidates) else None
+        return self._decision(
+            query, rows, index, "raw_learned_score", "tonic_stop_or_tie" if index is None else None
         )
 
     def external_only(self, query: bytes) -> ContextualEvidenceDecision:

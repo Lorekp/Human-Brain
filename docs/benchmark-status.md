@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with executed revisitation and the conditioning diagnosis.
+Updated 2026-09-05 with executed interaction conditioning and retention evidence.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -12,20 +12,26 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current contextual evidence-to-Python result
 
-The [executed revisitation comparison](../experiments/r4_integrated/contextual_revisit_result.md)
-still solves 0/8 fresh tasks. Revisitation selects `denim` throughout; replay's
-neuronal path STOPs while its conventional readout selects `topaz`. Neither
-retains both properties for any entity. Both ledgers now require query-dependent
-ranking, but weak interaction features and interference prevent useful learning;
-collision-triggered exploration also changes which negatives get taught.
+The [executed conditioning comparison](../experiments/r4_integrated/contextual_conditioned_result.md)
+improves retained executed edits from 1/16 at gain 1 to 11/16 at gain 16 under
+raw/mapped learned-score readouts. Three old entities retain both properties.
+The neuronal path scores only 1/16: fifteen first-spike collisions block ten
+otherwise-correct selections. Raw and mapped winners agree throughout this run.
+All policies still solve 0/8 fresh tasks; old answer preferences and a neighboring
+entity's value show that reusable entity/property binding remains missing.
 
-A fixed receipt-only follow-up gives the existing native rule an interaction
-gain of 16: it fits all 32 recorded contrasts after two passes and 42 updates.
-The original scaling still misranks fifteen pairs after four passes. This earns
-integration against gain 1 under matched teaching/exploration policies, not a
-fresh-task claim. The complete executed run takes 97.96 seconds and peaks at
-283.16 MiB parent working set. The result report owns resource scope, exposure,
-formal pending exam marks and diagnostic limitations. Protected gates stay closed.
+Both gains use the same executed teaching/replay policy, but collect different
+on-policy negatives. Frozen evidence learners receive matched feedback and solve
+no tasks. Host references share the fixed learned motor and therefore isolate
+evidence selection, not the entire neuronal system. This is reused-task retention
+progress, not a neuronal generalization gate pass.
+
+The complete comparison takes 156.64 seconds and peaks at 288.67 MiB parent
+working set. Twenty-two focused tests pass. The result report owns costs,
+component/exposure disclosures and pending official reference exam marks.
+Prioritize reusable binding, with a separately bounded spike-readout repair.
+Protected gates stay closed. The [preceding revisitation result](../experiments/r4_integrated/contextual_revisit_result.md)
+retains the executed failure and the receipt-only diagnostic that earned this trial.
 
 ## Earlier pairwise learning comparison
 

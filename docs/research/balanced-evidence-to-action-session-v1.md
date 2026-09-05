@@ -33,38 +33,44 @@ passes its narrow recall, transfer, retention and no-action checks. Detailed
 scores and failures are in [benchmark status](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 The original eight-stage sequence below remains the integration contract.
 
-The [executed revisitation and conditioning results](../../experiments/r4_integrated/contextual_revisit_result.md)
-still show 0/8 fresh edits. The teaching now requires conditional ranking, but
-the native learner loses distinctions. A fixed gain of 16 on query-interaction
-features fits all 32 recorded contrasts after two passes; original scaling
-still misranks fifteen after four. This mechanism result earns integration.
+The [completed conditioning comparison](../../experiments/r4_integrated/contextual_conditioned_result.md)
+retains 11/16 old executed edits under gain-16 raw/mapped learned-score readouts,
+versus 1/16 at gain 1. The neuronal path solves only 1/16; first-spike collisions
+discard ten correct selections. All policies still solve 0/8 fresh tasks, selecting
+old values or a neighboring entity's value. Both-property retention exists for
+three old entities, but reusable entity/property binding has not emerged.
 
-Next compare **interaction gain 1 versus 16** in the same executed replay loop.
-Keep the encoder, generic candidates, native update rule/learning rate 1, motor
-and GLIF dynamics. Reuse the declared public teaching requests/schedule openly;
-declare fresh transfer cases before outputs. Use 48 autonomous teaching attempts,
-32 actual FAIL/teacher-PASS pairs, and at most four older receipt replays after
-each new correction (128 replay-update offers maximum). Budget two hours for
-implementation/diagnosis; do not tune gain or extend training after transfer.
+Next test **candidate-relative token interactions** in the same executed loop,
+as motivated by the [research review](contextual-learning-review.md). Specify
+the representation before outputs: distinguish a candidate's relationship to
+query-matching entity/property tokens even when answers share one window.
+Keep generic, unfiltered candidate enumeration and native feedback learning;
+do not substitute an answer-key filter or a hand-written relation solver.
+Compare against the tested gain-16 representation, with separate raw, mapped,
+spiking, external and matched learning-disabled evidence controls. All policies
+currently share a learned motor prior; these are evidence-selection ablations.
 
-For both gains, when the neuronal selection STOPs, execute its conventional
-learned-score proposal if available; use external cosine only if that also STOPs.
-This explicitly labeled training exploration addresses the previous fallback's
-failure to challenge its own wrongly ranked winner. It never counts as neuronal
-first-attempt success. Successful attempts need no invented negative; only actual
-executed corrections enter the immutable replay ledger. Preserve occurrence and
-checkpoint custody on rehearsal. Every updater has a same-seed frozen mate with
-identical ingestion and feedback; report differing on-policy negatives between
-updaters and all source/storage/component contributions.
+A parallel bounded readout refinement may recover already-useful rankings.
+Preserve exact ties as STOP and verify any first-crossing refinement against
+its declared cell dynamics. Disabling uniqueness is not a valid repair. Keep
+this attribution separate from fresh ranking: readout recovery cannot fix a
+wrong learned winner. Raw and mapped winners agree in the completed trial;
+there is no observed winner loss from current saturation in that result.
 
-Evaluate eight supported fresh queries, two unsupported probes and sixteen old
-queries, with updating/frozen neurons, conventional learned-score and external-only
-references. Target at least 6/8 fresh and 12/16 retained executed edits, including
-both properties for three fresh entities; report unsupported behavior separately.
-Keep original exam questions untuned. Inspect margins and actual learned-score
-winners before revisiting spike dynamics. Constraint fitting alone is no capability
-pass; persistent retention without fresh transfer instead motivates representational
-work from the [research review](contextual-learning-review.md). Annotation layouts
+Retain the [executed correction/replay contract](../../experiments/r4_integrated/contextual_conditioned_protocol.md):
+48 teaching attempts, 32 actual FAIL/teacher-PASS pairs, at most four older
+receipt replays after each new correction, and 128 replay offers maximum.
+Declare any openly reused teaching and fresh transfer cases before outputs.
+Budget each proposed mechanism to two hours implementation/diagnosis and one
+fixed candidate; return to integration without extending budgets after transfer.
+After neuronal STOP, raw-score/external training exploration remains explicitly
+labeled and never counts as neuronal success. Frozen mates receive identical
+ingestion and feedback; report differing on-policy negatives between updaters.
+
+Targets remain at least 6/8 fresh and 12/16 retained neuronal executed edits,
+including both properties for three fresh entities; report the two unsupported
+probes separately. Keep original exam questions untuned. Retention progress
+earns the next bounded comparison, not a capability gate. Annotation layouts
 and broader challenges remain deferred. Completed evidence remains unchanged.
 
 Use a small reusable TRAIN workload with the following eight stages. This is a

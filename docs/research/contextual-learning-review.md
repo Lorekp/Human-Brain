@@ -2,6 +2,15 @@
 
 Date: 2026-09-05. Bounded research recommendation; no new model run.
 
+Follow-up: the recommended revisitation/replay and subsequent interaction
+conditioning have now run. The [latest executed result](../../experiments/r4_integrated/contextual_conditioned_result.md)
+retains 11/16 taught edits under learned-score readouts but solves 0/8 fresh
+tasks. Candidate-relative token interactions are now the primary next comparison.
+Unlike the original failure below, the latest result also demonstrates correct
+rankings lost to spike collisions, justifying a separately bounded readout change.
+The [active plan](balanced-evidence-to-action-session-v1.md) owns current work;
+the original reasoning and recommendations below retain their historical scope.
+
 ## Evidence and its limits
 
 The [executed comparison](../../benchmarks/contextual_pairwise_python_development_v1.json)

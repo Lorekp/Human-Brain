@@ -66,7 +66,12 @@ def test_ingestion_control_storage_and_inference_are_identical_and_read_only(enc
         assert update.decision_for_span(query, value).emitted == value
     before = update.checkpoint_sha256
     arrays = update.checkpoint_arrays()
-    for policy in (update.respond, update.external_only, update.conventional):
+    for policy in (
+        update.respond,
+        update.external_only,
+        update.conventional,
+        update.raw_score_reference,
+    ):
         decision = policy(query)
         assert decision.checkpoint_sha256 == before
         assert update.checkpoint_sha256 == before
@@ -223,9 +228,14 @@ def test_pairwise_rejects_mismatched_query_same_occurrence_and_stop_atomically(e
     assert memory.feedback_count == memory.update_count == 0
 
 
-def test_revisit_preserves_occurrences_after_updates_and_appended_duplicates(encoder) -> None:
-    update = ContextualEvidenceMemory(encoder)
-    frozen = ContextualEvidenceMemory(encoder, learning_enabled=False)
+@pytest.mark.parametrize("interaction_gain", (1.0, 16.0))
+def test_revisit_preserves_occurrences_after_updates_and_appended_duplicates(
+    encoder, interaction_gain
+) -> None:
+    update = ContextualEvidenceMemory(encoder, interaction_gain=interaction_gain)
+    frozen = ContextualEvidenceMemory(
+        encoder, learning_enabled=False, interaction_gain=interaction_gain
+    )
     for memory in (update, frozen):
         memory.ingest((document(),))
     query = b"How many messages does Cafe receive?"
@@ -342,3 +352,115 @@ def test_revisit_validates_original_count_and_retained_eligibility_even_with_new
     memory._contexts[candidate.window_index] = np.zeros(384)
     with pytest.raises(ValueError, match="eligibility does not match"):
         memory.revisit_decision(selected)
+
+
+@pytest.mark.parametrize("gain", (0.0, -1.0, float("nan"), float("inf"), -float("inf")))
+def test_interaction_gain_rejects_nonpositive_and_nonfinite_values(encoder, gain) -> None:
+    with pytest.raises(ValueError, match="interaction_gain must be finite and positive"):
+        ContextualEvidenceMemory(encoder, interaction_gain=gain)
+
+
+def test_interaction_gain_scales_only_product_blocks_and_binds_identity(encoder) -> None:
+    default = ContextualEvidenceMemory(encoder)
+    baseline = ContextualEvidenceMemory(encoder, interaction_gain=1.0)
+    amplified = ContextualEvidenceMemory(encoder, interaction_gain=16.0)
+    frozen = ContextualEvidenceMemory(encoder, interaction_gain=16.0, learning_enabled=False)
+    assert default.checkpoint_sha256 == baseline.checkpoint_sha256
+    assert amplified.checkpoint_sha256 == frozen.checkpoint_sha256
+    assert baseline.checkpoint_sha256 != amplified.checkpoint_sha256
+    for memory in (default, baseline, amplified, frozen):
+        memory.ingest((document(),))
+        assert memory.storage_summary["interaction_gain"] == memory.interaction_gain
+        assert memory.representation_policy["interaction_gain"] == memory.interaction_gain
+    query = b"Does Cafe receive 17 messages?"
+    default_rows, default_similarity = default._features(query)
+    baseline_rows, baseline_similarity = baseline._features(query)
+    amplified_rows, amplified_similarity = amplified._features(query)
+    np.testing.assert_array_equal(default_rows, baseline_rows)
+    np.testing.assert_array_equal(default_similarity, baseline_similarity)
+    np.testing.assert_array_equal(baseline_similarity, amplified_similarity)
+    np.testing.assert_array_equal(
+        baseline_rows[:, 768:1152], baseline_rows[:, :384] * baseline_rows[:, 384:768]
+    )
+    np.testing.assert_array_equal(amplified_rows[:, :768], baseline_rows[:, :768])
+    np.testing.assert_array_equal(amplified_rows[:, 768:1536], 16 * baseline_rows[:, 768:1536])
+    np.testing.assert_array_equal(amplified_rows[:, 1536:], baseline_rows[:, 1536:])
+    for policy in (amplified.respond, amplified.conventional, amplified.external_only):
+        decision = policy(query)
+        if not decision.stopped:
+            assert decision.eligibility == tuple(amplified_rows[decision.candidate_index])
+    teacher = amplified.decision_for_span(query, b"17")
+    assert teacher.eligibility == tuple(amplified_rows[teacher.candidate_index])
+    assert frozen.replay_decision(teacher).eligibility == teacher.eligibility
+    with pytest.raises(AttributeError):
+        amplified.interaction_gain = 1.0
+
+
+def test_pairwise_native_update_uses_scaled_coordinates_and_rejects_other_gain(encoder) -> None:
+    baseline = ContextualEvidenceMemory(encoder)
+    amplified = ContextualEvidenceMemory(encoder, interaction_gain=16.0)
+    frozen_baseline = ContextualEvidenceMemory(encoder, learning_enabled=False)
+    frozen_amplified = ContextualEvidenceMemory(
+        encoder, interaction_gain=16.0, learning_enabled=False
+    )
+    sources = (document(), OpaqueDocument(b"birch", b"public", b"Birch sends 31 reports."))
+    for memory in (baseline, amplified, frozen_baseline, frozen_amplified):
+        memory.ingest(sources)
+    query = b"How many messages does Cafe receive?"
+    old = baseline.decision_for_span(query, b"17")
+    rejected = amplified.decision_for_span(query, b"31")
+    accepted = amplified.decision_for_span(query, b"17")
+    assert old.candidate_index == accepted.candidate_index and old.emitted == accepted.emitted
+    assert old.storage_sha256 != accepted.storage_sha256
+    for incompatible, decision in ((frozen_amplified, old), (frozen_baseline, accepted)):
+        with pytest.raises(ValueError, match="different retained source store"):
+            incompatible.replay_decision(decision)
+        with pytest.raises(ValueError, match="different retained source store"):
+            incompatible.revisit_decision(decision)
+    delta = np.asarray(accepted.eligibility) - np.asarray(rejected.eligibility)
+    assert np.linalg.norm(delta[768:1152]) > 0
+    assert np.linalg.norm(delta[1152:1536]) > 0
+    frozen_pair = tuple(frozen_amplified.replay_decision(row) for row in (rejected, accepted))
+    receipt = amplified.observe_comparison(rejected, accepted)
+    frozen_receipt = frozen_amplified.observe_comparison(*frozen_pair)
+    step = amplified.learning_rate / np.sqrt(1.0 + delta @ delta)
+    weights = amplified.checkpoint_arrays()
+    np.testing.assert_allclose(weights["readout_synapses_pa"][0], step * delta, atol=1e-14)
+    np.testing.assert_allclose(weights["readout_synapses_pa"][1], -step * delta, atol=1e-14)
+    np.testing.assert_array_equal(weights["pacemaker_synapses_pa"], np.zeros(2))
+    assert receipt["gap_after"] == pytest.approx(2 * step * (delta @ delta))
+    assert receipt["eligibility_delta_sha256"] == frozen_receipt["eligibility_delta_sha256"]
+    assert receipt["synaptic_update"] and not frozen_receipt["synaptic_update"]
+
+
+def test_raw_score_reference_preserves_distinct_saturated_drives_without_mutation(encoder) -> None:
+    memory = ContextualEvidenceMemory(encoder, interaction_gain=16.0)
+    query = b"How many messages does Cafe receive?"
+    assert memory.raw_score_reference(query).stopped
+    memory.ingest((document(),))
+    assert memory.raw_score_reference(query).stopped
+    selected = memory.decision_for_span(query, b"17")
+    # A large span drive saturates tanh, but retains a unique raw score maximum.
+    memory._weights[0, 384:768] = 1_000 * memory._vectors[selected.candidate_index]
+    before = memory.checkpoint_sha256
+    raw = memory.raw_score_reference(query)
+    assert raw.candidate_index == selected.candidate_index
+    assert raw.emitted == b"17" and raw.mode == "raw_learned_score"
+    assert raw.eligibility == selected.eligibility
+    assert raw.physical_cell_steps == 0 and raw.spike_step is None
+    assert memory.conventional(query).stopped
+    assert memory.checkpoint_sha256 == before
+    memory._weights.fill(0)
+    memory._bias[0] = 1_000
+    assert memory.raw_score_reference(query).stopped  # Equal raw scores stay ambiguous.
+
+
+def test_raw_score_reference_requires_strict_win_over_tonic_stop(encoder) -> None:
+    memory = ContextualEvidenceMemory(encoder)
+    memory.ingest((OpaqueDocument(b"single", b"public", b"ready"),))
+    threshold = np.arctanh((600.1 - 600.0) / 200.0)
+    for bias in (0.0, threshold):
+        memory._bias[0] = bias
+        assert memory.raw_score_reference(b"Configure").stopped
+    memory._bias[0] = np.nextafter(threshold, np.inf)
+    assert memory.raw_score_reference(b"Configure").emitted == b"ready"
