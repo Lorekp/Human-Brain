@@ -1,16 +1,45 @@
 # Benchmark status
 
-Updated 2026-09-05 with fixed-budget rehearsal retention and exact execution.
+Updated 2026-09-05 with fresh-source acquisition and retention failures.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
 experiments; older "next" steps are not a competing work queue. The immediate
-plan is the [small integrated session](research/balanced-evidence-to-action-session-v1.md),
+workload is the [small integrated session](research/balanced-evidence-to-action-session-v1.md),
 with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. Hybrid permission does not relabel existing
 cell-only evidence or reopen protected evaluations.
 
-## Current fixed-budget rehearsal and Python return
+## Current fresh-source actions and acquisition failure
+
+The [fresh-source session](../experiments/r4_integrated/fresh_source_result.md)
+fails qualification. All six policies solve 0/8 fresh supported first attempts,
+including correct-paragraph diagnostics. All six newly taught supported questions
+also remain wrong in final correct-paragraph probes. The two untaught supported
+later tasks show no transfer. Two semantically ambiguous STOP items remain
+visible and unscored under the separately frozen revision; the original admission
+abort is preserved. These are project-exposed public TRAIN questions, fresh only
+to the restored parents' sixteen-question experience.
+
+Pooling the old paragraphs before learning changes cells' supported score from
+12/12 with the correct paragraph to 0/12: all twelve selections come from other
+sources. After 23 offers per updater, cell correct-paragraph retention falls to
+4/12 while its matched frozen parent stays at 12/12. Conventional pooled old
+answers improve 5/12 to 9/12, with perfect correct-paragraph retention. This is
+old-task adaptation without fresh supported gain.
+
+All three saved-evidence audits pass: 69 offers, 312 primary actions, 312 oracle
+probes, 19 teacher corrections, two motor demos and 274 checkpoint/input arrays.
+The 333 child executions leave 314 authenticated workspaces and 942 files.
+Runner time is 63.792 seconds, outer time 64.029 seconds, peak parent working set
+351.832 MiB. No audit reexecutes the learner or children.
+
+The next [acquisition review](research/pooled-reading-failure-review.md) specifies
+one bounded research activity before another fit. Source routing alone cannot
+solve the fresh correct-paragraph failure. No architecture is adopted, gate
+opened, source-absent memory demonstrated or official exam run.
+
+## Earlier fixed-budget rehearsal and Python return
 
 The [fixed-rehearsal comparison](../experiments/r4_integrated/fixed_rehearsal_result.md)
 passes its narrow qualification. From authenticated fitted-A parents, each
@@ -29,8 +58,8 @@ The pass uses exposed questions, labeled rehearsal and the correct paragraph
 inventory for each prediction. It establishes retention on the taught set, not
 source-absent recall or fresh transfer. The frozen-producer control has a weaker
 after-A parent, limiting continuation-specific attribution. The
-[next integrated decision](../experiments/r4_integrated/fixed_rehearsal_result.md#next-decision)
-tests fresh questions against a cumulative source pool in real actions. No
+[subsequent integrated session](../experiments/r4_integrated/fresh_source_result.md)
+tests fresh questions against a cumulative source pool, with the failure above. No
 architecture is adopted or gate opened; official structured responses remain pending.
 
 ## Earlier actual-language acquisition and forgetting

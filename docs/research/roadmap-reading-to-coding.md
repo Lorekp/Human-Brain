@@ -68,44 +68,26 @@ success. Teacher corrections may follow first attempts; they do not count as
 learner successes or autonomous recovery.
 
 The first [narrow executed slice](../../experiments/r4_integrated/neutral_document_python_session.md)
-remains limited positional-reading and literal-edit evidence. The adopted
-AROW/BINDING baseline and all earlier frozen results retain their contracts.
-The [query-aligned rate-cell comparison](../../experiments/r4_integrated/query_aligned_rate_cell_result.md)
-is closed without adoption: supported execution remains 0/48 in every phase.
-One correct conditional answer wins but is rejected by the gate; changing that
-gate cannot repair the other 47 selections. Alternate wording and source growth
-also reduce correct unsupported STOPs. Corrected live payload accounting passes;
-the result records the separate numerical replay limitation and diagnosis.
-The preceding [rate-cell](../../experiments/r4_integrated/contextual_rate_cell_result.md),
-[full-choice](../../experiments/r4_integrated/contextual_full_choice_result.md) and
-[inconclusive feasibility](../../experiments/r4_integrated/contextual_full_choice_feasibility_result.md)
-results remain closed. None establishes architectural impossibility.
+remains positional-reading and literal-edit evidence. The adopted AROW/BINDING
+baseline and earlier frozen results retain their contracts; see
+[benchmark status](../benchmark-status.md) for their outcomes and limitations.
+The [fixed-rehearsal comparison](../../experiments/r4_integrated/fixed_rehearsal_result.md)
+establishes retention and execution of all sixteen taught questions when their
+correct paragraphs are supplied. Conventional rehearsal also passes and fits sooner.
 
-The [conditional experience-addressing proposal](acquisition-strategy-review.md)
-does not proceed: its [frozen reader qualification](../../experiments/r4_integrated/frozen_reader_qualification_result.md)
-fails even with the correct document supplied (24/48 and 28/48 exact answers).
-Within-source entity/property errors and incorrect abstentions remain; more sources
-worsen performance. No router is fitted and no reader replacement follows
-automatically. The [broader public-QA comparison](../../experiments/r4_integrated/public_qa_acquisition_result.md)
-also closes without adoption: cells acquire 0/192 supported public answers,
-0/48 final TRAIN answers and 0/48 executed answers in both wordings. Conventional
-results are weak too; neither supplies a useful positive acquisition control.
-The [actual-language qualification](../../experiments/r4_integrated/real_input_qualification_result.md)
-establishes acquisition of both eight-case blocks, but cells forget six fitted A
-cases while learning B. Final cells execute 8/12 supported answers and preserve
-2/4 STOPs; the conventional control retains and executes all 16. Qualification
-fails and no architecture is adopted. The subsequent
-[fixed-rehearsal comparison](../../experiments/r4_integrated/fixed_rehearsal_result.md)
-passes its narrow qualification: cells and conventional rehearsal retain and
-execute all 16 taught cases at the same new-offer budget; conventional fits sooner.
-The active [fresh-source action plan](fresh-source-action-plan.md)
-returns these parents to fresh questions and a cumulative source pool in real
-actions. The current pass still supplies each question's correct paragraph;
-remove that oracle routing and keep source-absent memory explicitly pending.
-The new UTF-8 executor passes strict audits; the earlier failed receipt is unchanged.
-Do not automatically extend attention, epochs, rates, labels, thresholds or solver
-budgets, or treat declining loss as useful acquisition. The
-[previous failure review](rate-cell-failure-review.md) remains historical.
+The subsequent [fresh-source session](../../experiments/r4_integrated/fresh_source_result.md)
+fails qualification. Every policy answers 0/8 fresh supported questions, even
+with the correct paragraph supplied. Before new learning, pooling sources drops
+cells' old supported score from 12/12 to 0/12; subsequent updates reduce their
+correct-paragraph retention to 4/12. Conventional pooled old answers improve
+5/12 to 9/12, with no fresh supported transfer. All three saved-evidence audits
+pass; no architecture is adopted or integrated gate passed.
+
+The active [acquisition decision review](pooled-reading-failure-review.md)
+specifies one bounded primary-source review to choose a credible acquisition
+comparison before another fit. Source routing alone cannot repair fresh
+correct-paragraph failure. Do not automatically extend epochs, rates, labels,
+thresholds or solver budgets, or treat declining loss as useful acquisition.
 
 The closed acquisition diagnostics use explicit answer/STOP supervision over retained
 raw sources and a frozen external encoder. These are not answer-free internalization,

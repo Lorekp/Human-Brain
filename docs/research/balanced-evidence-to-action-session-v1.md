@@ -33,62 +33,28 @@ passes its narrow recall, transfer, retention and no-action checks. Detailed
 scores and failures are in [benchmark status](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 The original eight-stage sequence below remains the integration contract.
 
-The [full-choice acquisition attempt](../../experiments/r4_integrated/contextual_full_choice_result.md)
-selected by the [interface review](contextual-trainable-interface-review.md) is
-complete and fails. After 256 encounters/511 offers, actual supported execution
-is 2/48, alternate wording 5/48, and unsupported STOP 0/16. All final answers are
-single words. Source growth changes no choices. All audits pass; raw/affine
-choices and supported selection/execution agree. Each update improves its own
-lesson, but supported loss improves while STOP loss worsens across passes.
+Earlier acquisition and feasibility diagnostics remain closed; their outcomes,
+failed checks and scoped conclusions are recorded in
+[benchmark status](../benchmark-status.md). None justifies an automatic rerun
+or a pass of the broader integration contract.
 
-The [joint-ranking feasibility diagnostic](../../experiments/r4_integrated/contextual_full_choice_feasibility_result.md)
-is also closed. Three LPs solve 192 active constraints; a fourth with 256 times
-out. The saved partial vector violates 28,151 of all 93,312 original unit-margin
-constraints. This is **inconclusive**, with no feasibility or infeasibility
-certificate. The entire preparation/solve/verification effort ended within its
-30-minute deadline; the run itself used 900.123 seconds against 900 configured.
-Do not extend this solver run or deploy its host weights.
-
-The [rate-cell preflight](../../experiments/r4_integrated/contextual_rate_cell_result.md)
-is also closed without adoption. One 299.067-second acquisition produces 0/48
-supported executions in every phase and 16/16 correct unsupported STOPs, matching
-the fully frozen learner's abstentions. No correct answer wins the conditional
-span ranking, so a different STOP threshold alone cannot repair this checkpoint.
-Independent numerical replay passes. The original object-based learner-payload
-counter omitted the runner's `__main__` reader objects; its byte total is invalid.
-Preserve the original receipt and use the separate resource correction.
-
-The subsequent [query-aligned comparison](../../experiments/r4_integrated/query_aligned_rate_cell_result.md)
-also closes without adoption. All four phases remain at 0/48 supported
-executions; one correct conditional winner is gate-blocked. Correct unsupported
-STOPs are 16/16 and 15/16 for actual wording before/after growth, but 8/16 and
-6/16 for alternate wording. Its repaired live payload count passes; the result
-owns the numerical replay limitation and diagnosis.
-
-The [conditional addressing proposal](acquisition-strategy-review.md) now stops
-at its [reader qualification](../../experiments/r4_integrated/frozen_reader_qualification_result.md).
-Oracle-source answers reach only 24/48 and 28/48, with 13/16 and 12/16 correct
-STOPs; all-source reading is worse. Runtime/custody checks pass, but the required
-competence does not. No routing mechanism is fitted or adopted.
-
-The [broader public-QA comparison](../../experiments/r4_integrated/public_qa_acquisition_result.md)
-completes without adoption: cells answer 0/192 supported public probes, 0/48 final
-TRAIN questions and 0/48 Python requests in both wordings. Conventional TRAIN fit
-is weak too. The subsequent [actual-input qualification](../../experiments/r4_integrated/real_input_qualification_result.md)
-fits both eight-case blocks but forgets six A decisions after B; final cells
-execute 8/12 supported answers and preserve 2/4 STOPs. Conventional retains all 16.
 The [fixed-budget rehearsal comparison](../../experiments/r4_integrated/fixed_rehearsal_result.md)
-now passes its narrow qualification: both full rehearsal learners retain and
-execute all sixteen taught decisions. Conventional fits sooner. All new actions
-pass strict UTF-8 roundtrips; the earlier failure remains recorded.
-**Next integrated priority:** [fresh questions and cumulative-source actions](../../experiments/r4_integrated/fixed_rehearsal_result.md#next-decision),
-removing correct-paragraph routing from actual attempts while retaining matched
-controls. Labeled rehearsal and stored complete paragraphs do not establish
-source-absent memory, autonomous recovery or broader integration success.
-No automatic optimizer, epoch, label, threshold or producer sweep follows.
-The [previous failure review](rate-cell-failure-review.md), original
-[rate-cell plan](contextual-rate-cell-preflight-plan.md) and frozen protocols
-retain their historical scope.
+passes its narrow qualification: cells and conventional rehearsal retain and
+execute all sixteen taught decisions with correct-paragraph routing; conventional
+fits sooner. The subsequent [fresh-source session](../../experiments/r4_integrated/fresh_source_result.md)
+fails. All policies solve 0/8 fresh supported questions even in correct-paragraph
+diagnostics. Pooling old sources immediately drops cells' supported answers from
+12/12 to 0/12; new learning then reduces correct-paragraph retention to 4/12.
+Conventional pooled old answers improve 5/12 to 9/12 without fresh supported gain.
+All saved audits pass, including strict UTF-8 execution; earlier failures remain
+recorded under their original contracts.
+
+**Next integrated priority:** the [acquisition decision review](pooled-reading-failure-review.md)
+selects one bounded primary-source review to define a credible acquisition
+comparison. Source routing alone cannot resolve fresh correct-paragraph failure.
+Labeled rehearsal and complete retained paragraphs do not establish source-absent
+memory, autonomous recovery or broader integration success. No automatic optimizer,
+epoch, label, threshold or producer sweep follows.
 
 The closed diagnostics' exact-answer/STOP supervision is a declared stronger teaching
 contract. It does not pass the answer-free acquisition stages of the broader
