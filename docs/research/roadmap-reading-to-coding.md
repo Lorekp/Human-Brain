@@ -73,12 +73,14 @@ the same-seed frozen control solves none. Type-annotation layout variation
 fails, and an original public-exam diagnostic scores 0/2 with no acquired frames.
 See [measured evidence](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 This is exact positional reading and a learned literal-edit pattern, not the
-general integrated gate. The [latest contextual comparison](../../experiments/r4_integrated/contextual_conditioned_result.md)
-improves retained executed edits to 11/16 under learned-score host readouts, but
-the neuronal path solves only 1/16 and all policies fail the eight fresh tasks.
-Prioritize reusable entity/property binding; separately repair the measured
-first-spike collisions that discard useful retained selections. Keep those two
-claims distinct. Improve this loop before provenance revision,
+general integrated gate. The [latest contextual comparison](../../experiments/r4_integrated/contextual_binding_result.md)
+recovers five retained edits through spike interpolation, reaching 9/16 on its
+baseline, but all policies still fail eight fresh tasks. New binding features
+receive only one effective update: later external-negative contrasts are already
+satisfied while the learner's own wrong leaders never receive feedback. Next
+challenge those leaders through executed training exploration, preserving
+evaluation abstention and reporting neuronal success separately. Improve this
+loop before provenance revision,
 multi-hop composition, or the full balanced challenge. The
 [balanced session plan](balanced-evidence-to-action-session-v1.md) owns the next
 bounded comparison and later 24-episode challenge.
