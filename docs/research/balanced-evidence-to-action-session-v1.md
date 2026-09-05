@@ -77,11 +77,15 @@ TRAIN questions and 0/48 Python requests in both wordings. Conventional TRAIN fi
 is weak too. The subsequent [actual-input qualification](../../experiments/r4_integrated/real_input_qualification_result.md)
 fits both eight-case blocks but forgets six A decisions after B; final cells
 execute 8/12 supported answers and preserve 2/4 STOPs. Conventional retains all 16.
-**Next integrated priority:** the [fixed-budget rehearsal comparison](../../experiments/r4_integrated/real_input_qualification_result.md#next-decision),
-using fitted-A checkpoints and final predictions in real execution. Retention
-and action coupling must pass before another broad comparison.
-No automatic optimizer, epoch, label,
-threshold or producer sweep, fresh comparison or protected evaluation follows.
+The [fixed-budget rehearsal comparison](../../experiments/r4_integrated/fixed_rehearsal_result.md)
+now passes its narrow qualification: both full rehearsal learners retain and
+execute all sixteen taught decisions. Conventional fits sooner. All new actions
+pass strict UTF-8 roundtrips; the earlier failure remains recorded.
+**Next integrated priority:** [fresh questions and cumulative-source actions](../../experiments/r4_integrated/fixed_rehearsal_result.md#next-decision),
+removing correct-paragraph routing from actual attempts while retaining matched
+controls. Labeled rehearsal and stored complete paragraphs do not establish
+source-absent memory, autonomous recovery or broader integration success.
+No automatic optimizer, epoch, label, threshold or producer sweep follows.
 The [previous failure review](rate-cell-failure-review.md), original
 [rate-cell plan](contextual-rate-cell-preflight-plan.md) and frozen protocols
 retain their historical scope.

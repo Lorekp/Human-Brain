@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with actual-language acquisition and measured forgetting.
+Updated 2026-09-05 with fixed-budget rehearsal retention and exact execution.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -10,7 +10,30 @@ with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. Hybrid permission does not relabel existing
 cell-only evidence or reopen protected evaluations.
 
-## Current actual-language acquisition, retention and Python return
+## Current fixed-budget rehearsal and Python return
+
+The [fixed-rehearsal comparison](../experiments/r4_integrated/fixed_rehearsal_result.md)
+passes its narrow qualification. From authenticated fitted-A parents, each
+updating arm receives 2,048 new offers. Cells alternating A/B retain all A and
+learn all B, executing 12/12 supported answers and 4/4 correct STOPs. B-only
+exactly reproduces the prior six lost A decisions. Matched no-learning cells
+retain A but solve no B answers. Conventional rehearsal also passes, fitting
+by the 128-offer probe; cells by 384. No cell advantage over conventional is shown.
+
+All 8,192 new offer receipts, 1,904 probes, 300 checkpoint arrays and 114 actual
+workspaces pass saved audits. Explicit UTF-8/LF child transport passes strict
+roundtrips; the earlier failed audit stays unchanged. Runtime is 62.601 seconds
+including primary artifacts, 63.424 seconds outer, with 333.262 MiB peak parent RSS.
+
+The pass uses exposed questions, labeled rehearsal and the correct paragraph
+inventory for each prediction. It establishes retention on the taught set, not
+source-absent recall or fresh transfer. The frozen-producer control has a weaker
+after-A parent, limiting continuation-specific attribution. The
+[next integrated decision](../experiments/r4_integrated/fixed_rehearsal_result.md#next-decision)
+tests fresh questions against a cumulative source pool in real actions. No
+architecture is adopted or gate opened; official structured responses remain pending.
+
+## Earlier actual-language acquisition and forgetting
 
 The [actual-input qualification](../experiments/r4_integrated/real_input_qualification_result.md)
 demonstrates acquisition on 16 exposed public TRAIN questions with complete
@@ -28,11 +51,8 @@ all claimed successes have lossless stdout, and scores are unchanged. The failur
 and scoped audit remain separate. Runtime is 97.496 seconds including artifacts,
 98.651 seconds for the outer process, with 315.234 MiB peak parent working set.
 
-The [next bounded work](../experiments/r4_integrated/real_input_qualification_result.md#next-decision)
-compares fixed rehearsal with B-only teaching at equal update budgets, restores
-the fitted-A parents, and returns final answers to execution. Rehearsal declares
-its external labeled lesson store. Fresh transfer, source-absent memory and
-official structured reading responses remain unestablished.
+Its prescribed rehearsal continuation is reported above. Fresh transfer,
+source-absent memory and official structured reading responses remain unestablished.
 
 ## Earlier broader public-QA acquisition and Python return
 

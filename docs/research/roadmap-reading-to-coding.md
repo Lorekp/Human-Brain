@@ -94,11 +94,15 @@ The [actual-language qualification](../../experiments/r4_integrated/real_input_q
 establishes acquisition of both eight-case blocks, but cells forget six fitted A
 cases while learning B. Final cells execute 8/12 supported answers and preserve
 2/4 STOPs; the conventional control retains and executes all 16. Qualification
-fails and no architecture is adopted. The active [fixed-rehearsal plan](fixed-rehearsal-plan.md)
-implements the [next decision](../../experiments/r4_integrated/real_input_qualification_result.md#next-decision)
-as one fixed-budget comparison from authenticated after-A checkpoints,
-with matched controls and the same answers returned to execution. Preserve the
-recorded stdout transport defect and repair it in the new execution path.
+fails and no architecture is adopted. The subsequent
+[fixed-rehearsal comparison](../../experiments/r4_integrated/fixed_rehearsal_result.md)
+passes its narrow qualification: cells and conventional rehearsal retain and
+execute all 16 taught cases at the same new-offer budget; conventional fits sooner.
+The active [next decision](../../experiments/r4_integrated/fixed_rehearsal_result.md#next-decision)
+returns these parents to fresh questions and a cumulative source pool in real
+actions. The current pass still supplies each question's correct paragraph;
+remove that oracle routing and keep source-absent memory explicitly pending.
+The new UTF-8 executor passes strict audits; the earlier failed receipt is unchanged.
 Do not automatically extend attention, epochs, rates, labels, thresholds or solver
 budgets, or treat declining loss as useful acquisition. The
 [previous failure review](rate-cell-failure-review.md) remains historical.
