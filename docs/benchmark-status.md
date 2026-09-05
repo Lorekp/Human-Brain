@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with affine neuronal readout recovery and retention diagnosis.
+Updated 2026-09-05 with the failed capped-update comparison and feedback-coverage diagnosis.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -12,24 +12,30 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current contextual evidence-to-Python result
 
-The [affine readout comparison](../experiments/r4_integrated/contextual_affine_readout_result.md)
-recovers BINDING neuronal execution of 4/8 fresh and 2/16 retained edits at the
-saved exploration weights. GAIN16 remains at 0/8 and 9/16. Affine matches all
-52 updating raw selections and 52 frozen STOPs; all 416 archived decisions
-reproduce. Neither arm handles both properties for a fresh entity, and both
-updaters wrongly act on unsupported probes. No generalization gate passes.
+The [capped-update comparison](../experiments/r4_integrated/contextual_capped_update_result.md)
+rejects the new rule: FIXED's affine neuronal policy executes 3/8 fresh and 2/16
+retained edits; CAPPED executes 0/8 and 1/16. Frozen mates solve none. Neither
+updater handles both properties for an entity, and both wrongly act on unsupported
+requests. All 52 updating raw and affine selections/outcomes agree. No gate passes.
 
-The completed run takes 77.65 seconds and peaks at 301.10 MiB parent working
-set; 39 focused core tests pass. An earlier 66.82-second attempt remains recorded
-with its exam-ingestion harness error. The corrected run reproduces its completed
-BINDING actions exactly. Exam marks remain pending; the result report owns
-resource and claim details. References share the fixed learned motor and isolate
-evidence selection rather than the entire neuronal system.
+Each arm admits 32 actual FAIL/teacher-PASS pairs and 118 replays, with identical
+exposure to its frozen mate. CAPPED makes 120 native updates versus FIXED's 80,
+yet ends with eight negative pair margins versus six. Nine FIXED retained failures
+satisfy every admitted contrast. Seven of their final wrong leaders were actually
+executed later, after the pair budget was spent, and received no learning update.
+This exposes incomplete feedback coverage alongside continued interference.
 
-Next compare bounded corrective steps to reduce measured update interference,
-keeping competitor coverage and exposure budgets fixed. Six BINDING certified
-contrasts became negative again, but nine failed old queries fit every recorded
-contrast: stability is only part of the ranking problem. Protected gates stay closed.
+All 47 focused core tests pass. Independent algebra verifies all 600 feedback
+receipts and saved weights; all 572 transfer/retention executions preserve decoys
+and source absence. The run takes 284.18 seconds and peaks at 331.16 MiB parent
+working set. Exam answers remain pending human scoring. The result report owns
+full costs, hashes and causal limits; shared-motor controls isolate evidence
+selection rather than the entire neuronal system.
+
+Keep fixed updates and the affine action path. Next perform one bounded TRAIN-only
+representation feasibility check, then return to integrated feedback allocation;
+the active plan owns the details. The [previous affine comparison](../experiments/r4_integrated/contextual_affine_readout_result.md)
+preserves the earlier readout recovery. Protected gates remain closed.
 The preceding [exploration result](../experiments/r4_integrated/contextual_exploration_result.md)
 records the 80 BINDING native updates that acquired the recovered selections.
 The earlier [binding/readout result](../experiments/r4_integrated/contextual_binding_result.md)

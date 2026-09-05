@@ -33,50 +33,49 @@ passes its narrow recall, transfer, retention and no-action checks. Detailed
 scores and failures are in [benchmark status](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 The original eight-stage sequence below remains the integration contract.
 
-The [completed affine readout comparison](../../experiments/r4_integrated/contextual_affine_readout_result.md)
-matches all saved raw selections through neuronal execution. BINDING now executes
-4/8 fresh and 2/16 retained edits at unchanged weights; GAIN16 remains at 0/8 and
-9/16. Neither handles both properties for a fresh entity. Both updating policies
-wrongly act on unsupported probes. This resolves saturation on the reused cases,
-not the remaining relation-selection, retention or uncertainty failures.
+The [capped-update comparison](../../experiments/r4_integrated/contextual_capped_update_result.md)
+fails: FIXED executes 3/8 fresh and 2/16 retained edits; CAPPED gives 0/8 and
+1/16. Both wrongly act on unsupported requests. Keep the fixed rule and affine
+neuronal action path. Neither step-size tuning nor readout adjustment is the next
+priority. The result report owns the completed contract, costs and full counts.
 
-Next test **whether limiting update overshoot stabilizes useful learned skills**.
-Six BINDING recorded pair margins became negative again; one moved from +17.218
-to -8.665 within the final replay block. Nine failed old queries nevertheless fit
-every recorded contrast, so stability alone may not repair global ranking.
+Feedback coverage is now a concrete integration issue. Nine FIXED retained
+failures satisfy every admitted contrast. Seven of their final wrong leaders
+were executed again only after the 32-pair budget was exhausted and received no
+learning update. Five other failures have erased pair margins. Capping steps
+increased erased/weak constraints and did not improve retention.
 
-Compare two BINDING learners using the existing versus a unit-margin-capped
-native update. For eligibility difference `d`, `n=d·d` and gap `g`, the current
-rule changes the gap by `2*eta*n/sqrt(1+n)`. When `g<1` and `n>0`, test
-`eta_eff=min(eta_0,(1-g)*sqrt(1+n)/(2*n))`; otherwise skip. Keep `eta_0=1`,
-scratch bias discarded and native synapse mutation intact. Bind the step policy
-to state/receipts, preserve default behavior, and record effective rate, norm,
-gap, cap activation and actual updates. No new native ABI is needed.
+Next answer one bounded diagnostic question: **can the existing BINDING features
+jointly rank the sixteen taught answers above all wrong candidates in the four
+TRAIN documents?** Use the unchanged feature construction, the complete 285
+training candidates and existing teacher labels. Use no transfer or exam labels
+in this diagnostic; do not load them into it. Keep pure-query weights
+and persistent bias at zero, respecting the comparison learner's invariants.
+Declare exact constraints, numerical tolerances and verification before solving.
+A conventional solver is an external capacity reference: never install its
+weights in the learner or report its fit as neuronal learning.
 
-Use the validated affine neuronal policy for both arms' primary training and
-evaluation, with the same full-candidate raw exploration after STOP. Each updater
-has a matching frozen mate with identical certified exposure. Keep representation,
-gain, motor, sixteen teaching requests, 48 encounters, 32 actual FAIL/PASS pairs,
-four older replays per correction and 128 replay offers fixed under the
-[existing feedback contract](../../experiments/r4_integrated/contextual_exploration_protocol.md).
-Declare openly reused teaching and new transfer instances before model outputs.
-Report divergent on-policy ledgers, fresh/retained execution, correct-to-wrong
-ranking changes, unsupported actions, final rank/STOP diagnostics and cost.
+Budget one fixed TRAIN-only feasibility check and at most 45 minutes for setup
+and diagnosis. Independently verify any feasible witness against every declared
+constraint. Feasibility rules out impossibility on that finite roster, not
+learning-rule convergence or generalization. A solver failure or unsupported
+infeasibility claim is inconclusive. Do not add representations or tune margins
+until the diagnostic contract is complete.
 
-Budget one step policy and one integrated comparison, with two hours for
-implementation/diagnosis. Do not add epochs, filter candidates, change thresholds
-or choose an ablation from spent scores. The earlier margin-deficit conditioning
-study left 23 subunit margins despite zero wrong pairs; all its applied rates
-were below one, so this cap would not have changed that trajectory. Smaller
-steps may lose protective margins or learn too slowly. Judge executed capability
-and retention, not numerical margin fit. If it fails, compare stability against competitor
-coverage before another mechanism. All references share the learned motor and
-isolate evidence selection rather than the whole neuronal system.
+Return directly to the integrated loop afterward. If the representation admits
+the required ranking, compare feedback allocation so that later actual wrong
+actions can receive correction instead of exhausting the budget on earlier
+contrasts and rehearsal. Preregister the allocation and total update-offer budget,
+retain same-seed frozen mates, and use new transfer instances. If a concrete
+representation conflict is verified, design the smallest change addressing it.
+Do not begin another chain of isolated mechanisms or reuse spent transfer labels.
 
 Targets remain at least 6/8 fresh and 12/16 retained neuronal executed edits,
 including both properties for three fresh entities; report unsupported behavior
-separately. Keep original exam questions untuned. Annotation layouts, the broader
-challenge and protected gates remain deferred; completed evidence is unchanged.
+separately. Keep original exam questions untuned. All references still share the
+learned motor and isolate evidence selection rather than the whole neuronal
+system. Annotation layouts, the broader challenge and protected gates remain
+deferred; completed evidence is unchanged.
 
 Use a small reusable TRAIN workload with the following eight stages. This is a
 capability sequence, not an already materialized or frozen eight-episode cohort;

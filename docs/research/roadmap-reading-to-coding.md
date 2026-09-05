@@ -73,18 +73,16 @@ the same-seed frozen control solves none. Type-annotation layout variation
 fails, and an original public-exam diagnostic scores 0/2 with no acquired frames.
 See [measured evidence](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 This is exact positional reading and a learned literal-edit pattern, not the
-general integrated gate. The [latest contextual comparison](../../experiments/r4_integrated/contextual_affine_readout_result.md)
-recovers the binding arm's 4/8 fresh and 2/16 retained edits through an affine
-neuronal readout at unchanged weights. Saturation is resolved on these reused
-cases, but ranking and retention remain weak; no fresh entity has both properties
-correct. Later feedback can erase previously correct margins, while many failed
-queries already satisfy every recorded contrast. Next test bounded corrective
-steps in the integrated loop, keeping the candidate inventory and exposure
-budgets fixed; on-policy errors can still produce different negative coverage.
-Improve this loop before provenance revision,
-multi-hop composition, or the full balanced challenge. The
-[balanced session plan](balanced-evidence-to-action-session-v1.md) owns the next
-bounded comparison and later 24-episode challenge.
+general integrated gate. The [latest contextual comparison](../../experiments/r4_integrated/contextual_capped_update_result.md)
+rejects capped corrections: fixed updates execute 3/8 fresh and 2/16 retained
+edits, versus 0/8 and 1/16 when capped. Affine neuronal readout works, but useful
+ranking and retention remain weak. Nine fixed-arm failures satisfy all admitted
+contrasts; seven later executed errors arrived after the correction budget was
+spent. Other failures involve erased margins. Keep the fixed rule, perform one
+short TRAIN-only representation feasibility check, then return to an integrated
+feedback-allocation comparison. The [balanced session plan](balanced-evidence-to-action-session-v1.md)
+owns that bounded work and the later 24-episode challenge. Improve this loop
+before provenance revision, multi-hop composition or the full challenge.
 
 Alongside integration, apply two inexpensive sources of pressure:
 
