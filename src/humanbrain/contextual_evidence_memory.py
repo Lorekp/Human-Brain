@@ -27,6 +27,13 @@ _RACE_STEPS = 600
 _CANDIDATE_FEATURES = 84
 _CANDIDATE_GAIN = 16.0
 _POSITION_SCALES = (2.0, 8.0, 32.0)
+_AFFINE_READOUT_POLICY = (
+    "affine_stop_centered_v1;"
+    "tau=atanh((600.1-600.0)/200.0);d=raw-tau;R=max(1,max(abs(d)));"
+    "I=600.1+200*(d/R);STOP=600.1;"
+    "race=linear_glif_endpoint_interpolation_v1;"
+    "ties=equal_or_adjacent_float64_times_stop"
+)
 
 
 def _digest(value: object) -> str:
@@ -36,6 +43,16 @@ def _digest(value: object) -> str:
 def _unit(value: np.ndarray) -> np.ndarray:
     array = np.asarray(value, dtype=np.float64)
     return array / max(float(np.linalg.norm(array)), 1e-12)
+
+
+def _affine_currents(drive: np.ndarray) -> np.ndarray:
+    """Common positive scaling; finite-precision aliases are not broken here."""
+    if not np.isfinite(drive).all():
+        raise ValueError("affine readout requires finite raw drives")
+    delta = drive - np.arctanh((600.1 - 600.0) / 200.0)
+    scale = max(1.0, float(np.max(np.abs(delta)))) if len(delta) else 1.0
+    # Divide first: multiplying a finite raw drive by 200 could overflow.
+    return np.append(600.1 + 200.0 * (delta / scale), 600.1)
 
 
 def _words(raw: bytes) -> tuple[tuple[int, int], ...]:
@@ -505,19 +522,40 @@ class ContextualEvidenceMemory:
         """Separate neuronal timing approximation at the same learned checkpoint."""
         rows, _ = self._features(query)
         currents = self._currents(rows)
+        return self._interpolated_decision(
+            query, rows, currents, "neuronal_interpolated", self.readout_policy["comparison"]
+        )
+
+    def respond_affine_interpolated(self, query: bytes) -> ContextualEvidenceDecision:
+        """Opt-in bounded affine currents through the unchanged interpolated race.
+
+        The map preserves mathematical ordering including the tonic STOP. Raw
+        ties and numerical aliases remain STOPs; this is not universally
+        injective in float64. Its identity belongs only to this decision, leaving
+        existing checkpoint and readout identities unchanged.
+        """
+        rows, _ = self._features(query)
+        currents = _affine_currents(self._raw_drives(rows))
+        return self._interpolated_decision(
+            query, rows, currents, "neuronal_affine_interpolated", _AFFINE_READOUT_POLICY
+        )
+
+    def _interpolated_decision(
+        self, query: bytes, rows: np.ndarray, currents: np.ndarray, mode: str, policy: str
+    ) -> ContextualEvidenceDecision:
         try:
             result = self._race.race_many_interpolated(currents[None, :])[0]
         except RestingGlifRaceFailure as error:
             return self._decision(
-                query, rows, None, "neuronal_interpolated", str(error),
-                _RACE_STEPS * len(currents), readout_policy=self.readout_policy["comparison"],
+                query, rows, None, mode, str(error),
+                _RACE_STEPS * len(currents), readout_policy=policy,
             )
         index = result.winner_cell if result.winner_cell < len(self._candidates) else None
         return self._decision(
-            query, rows, index, "neuronal_interpolated",
+            query, rows, index, mode,
             "tonic_stop" if index is None else None,
             (result.spike_step + 1) * len(currents), result.spike_step,
-            readout_policy=self.readout_policy["comparison"],
+            readout_policy=policy,
             estimated_crossing_time_ms=result.estimated_crossing_time_ms,
             coarse_spike_candidates=result.coarse_spike_candidates,
             simultaneous_spike_candidates=result.simultaneous_spike_candidates,

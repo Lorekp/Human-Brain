@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 from humanbrain.contextual_evidence_memory import (
     ContextualEvidenceMemory,
+    _affine_currents,
     _candidate_match_features,
     _position_kernels,
 )
@@ -738,3 +739,95 @@ def test_interpolated_readout_recovers_same_checkpoint_choice_and_preserves_ties
     memory._bias[0] = 3.0
     tied = memory.respond_interpolated(query)
     assert tied.stopped and "indistinguishable" in tied.stop_reason
+
+
+def test_affine_current_map_preserves_stop_geometry_without_overflow() -> None:
+    threshold = np.arctanh((600.1 - 600.0) / 200.0)
+    raw = np.asarray([-2.0, 0.0, threshold, 3.0, 3.0])
+    actual = _affine_currents(raw)
+    np.testing.assert_allclose(actual[:-1], 600.1 + 200 * ((raw - threshold) / (3 - threshold)))
+    assert actual[-1] == actual[2] == 600.1
+    assert actual[0] < actual[1] < actual[2] < actual[3] == actual[4]
+    permutation = np.asarray([4, 2, 0, 3, 1])
+    np.testing.assert_array_equal(_affine_currents(raw[permutation])[:-1], actual[permutation])
+    np.testing.assert_array_equal(_affine_currents(np.empty(0)), [600.1])
+    with np.errstate(over="raise", invalid="raise"):
+        extreme = _affine_currents(np.asarray([-np.finfo(float).max, np.finfo(float).max]))
+    np.testing.assert_allclose(extreme, [400.1, 800.1, 600.1])
+    for value in (float("nan"), float("inf"), -float("inf")):
+        with pytest.raises(ValueError, match="finite raw drives"):
+            _affine_currents(np.asarray([value]))
+
+
+@pytest.mark.parametrize("binding", (False, True))
+@pytest.mark.parametrize("reverse", (False, True))
+def test_affine_neuronal_readout_recovers_saturated_choice_without_identity_changes(
+    encoder, binding, reverse
+) -> None:
+    memory = ContextualEvidenceMemory(encoder, candidate_interactions=binding)
+    documents = (
+        OpaqueDocument(b"affine-alpha", b"public", b"alpha"),
+        OpaqueDocument(b"affine-beta", b"public", b"beta"),
+    )
+    memory.ingest(documents[::-1] if reverse else documents)
+    query = b"Select beta"
+    rows, _ = memory._features(query)
+    # Controlled readout state, not a capability result: both raw drives are
+    # positive and tanh-saturated, while beta has a distinct larger score.
+    drives = np.asarray([48.0 if c.emitted == b"beta" else 32.0 for c in memory._candidates])
+    memory._weights[0] = np.linalg.lstsq(rows, drives, rcond=None)[0]
+    np.testing.assert_allclose(memory._raw_drives(rows), drives, atol=1e-12)
+    before, storage = memory.checkpoint_sha256, memory.storage_summary
+    old_policies = memory.readout_policy
+    old = tuple(policy(query) for policy in (
+        memory.respond, memory.respond_interpolated, memory.conventional, memory.raw_score_reference
+    ))
+    assert all(decision.stopped for decision in old[:3])
+    assert old[3].emitted == b"beta"
+    selected = memory.respond_affine_interpolated(query)
+    assert selected.emitted == b"beta" and selected.candidate_index == old[3].candidate_index
+    assert selected.mode == "neuronal_affine_interpolated"
+    assert selected.eligibility == tuple(rows[selected.candidate_index])
+    assert selected.physical_cell_steps > 0 and selected.spike_step is not None
+    assert np.isfinite(selected.estimated_crossing_time_ms)
+    assert selected.readout_policy.startswith("affine_stop_centered_v1;")
+    assert "I=600.1+200*(d/R);STOP=600.1" in selected.readout_policy
+    assert "linear_glif_endpoint_interpolation_v1" in selected.readout_policy
+    assert selected.readout_policy not in old_policies.values()
+    assert memory.checkpoint_sha256 == before == selected.checkpoint_sha256
+    assert memory.storage_summary == storage and memory.readout_policy == old_policies
+    assert old == tuple(policy(query) for policy in (
+        memory.respond, memory.respond_interpolated, memory.conventional, memory.raw_score_reference
+    ))
+    with pytest.raises(ValueError, match="custody changed"):
+        memory.observe_feedback(replace(selected, readout_policy=old_policies["comparison"]), 1)
+    assert memory.checkpoint_sha256 == before
+
+
+def test_affine_neuronal_empty_frozen_true_ties_and_floating_aliases_stop(encoder) -> None:
+    memory = ContextualEvidenceMemory(encoder, learning_enabled=False)
+    query = b"Configure"
+    assert memory.respond_affine_interpolated(query).stopped
+    memory.ingest((OpaqueDocument(b"single-affine", b"public", b"ready"),))
+    assert memory.respond_affine_interpolated(query).stopped
+    threshold = np.arctanh((600.1 - 600.0) / 200.0)
+    for raw in (threshold, np.nextafter(threshold, np.inf)):
+        memory._bias[0] = raw
+        before = memory.checkpoint_sha256
+        # The adjacent raw value is strictly above STOP, but current addition
+        # rounds it onto STOP. Such aliases cannot justify inventing a winner.
+        assert _affine_currents(np.asarray([raw]))[0] == 600.1
+        decision = memory.respond_affine_interpolated(query)
+        assert decision.stopped and "indistinguishable" in decision.stop_reason
+        assert memory.checkpoint_sha256 == before
+    assert memory.raw_score_reference(query).emitted == b"ready"
+    memory._bias[0] = np.finfo(float).max
+    assert memory.respond_affine_interpolated(query).emitted == b"ready"
+    memory.ingest((OpaqueDocument(b"second-affine", b"public", b"steady"),))
+    assert memory.respond_affine_interpolated(query).stopped  # Equal positive candidate leaders.
+    for raw in (float("nan"), float("inf"), -float("inf")):
+        memory._bias[0] = raw
+        before = memory.checkpoint_sha256
+        with pytest.raises(ValueError, match="finite raw drives"):
+            memory.respond_affine_interpolated(query)
+        assert memory.checkpoint_sha256 == before
