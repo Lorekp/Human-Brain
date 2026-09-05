@@ -23,6 +23,19 @@ ranges; the constraints are a known-good baseline, not a complete dependency loc
 Installation requires package-index access or a populated pip cache.
 
 Always invoke tooling through this checkout's `.venv`; activation is optional.
+
+The optional token-pointer experiment uses PyTorch. Its qualified CPU setup is
+Python 3.11 and `torch==2.14.0+cpu` from the official CPU wheel index:
+
+```powershell
+./.venv/Scripts/python.exe -m pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu 'torch==2.14.0+cpu' 'sympy==1.14.0' 'networkx==3.6.1' 'mpmath==1.3.0'
+./.venv/Scripts/python.exe -m pip install -e '.[pointer]'
+```
+
+Install the CPU wheel first; it satisfies the `pointer` extra's public version
+pin. No CUDA packages are needed for this experiment. Check available disk and
+the experiment's resource plan before installation or feature caching.
+
 Ruff's repository configuration targets Python 3.11 and owns the lint rules;
 parent-project settings must not introduce syntax unsupported by this interpreter.
 `tools/dev.py doctor` checks Git root, environment root, and the actual imported

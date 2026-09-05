@@ -4,8 +4,9 @@ Selected 2026-09-05 after the [pooled-source failure](../../experiments/r4_integ
 Research window: **18:41–19:26 UTC**, at most 45 minutes. This review selects one
 implementation and comparison; no experimental model was downloaded or run.
 Research and decision review completed at **19:09 UTC**, before publication.
-Preparation is next. Freeze its completed code, data and receipts before the one
+Preparation is active. Freeze its completed code, data and receipts before the one
 comparison below. Earlier experiments and their failures remain unchanged.
+Preparation started **2026-09-05 19:12 UTC**, with deadline **23:12 UTC**.
 
 ## Decision and evidence
 
@@ -244,10 +245,25 @@ float32 full cache through that constructor. Hash the new representation and
 stream batches and compact update journals instead of retaining every trajectory.
 
 At 18:43 UTC this host had 33.38 GB physical RAM, 9.27 GB available, 4.29 GB free
-disk and a 12 GB RTX 4070 SUPER. Torch is absent. Prefer its CPU-only installation
-for this bounded first recipe; pin a supported wheel and dependencies after
-checking download/install sizes. CUDA setup is not a prerequisite or a parallel
-optimization queue. [Official installation guidance](https://pytorch.org/get-started/locally/).
+disk and a 12 GB RTX 4070 SUPER. Preparation installed PyTorch **2.14.0+cpu**
+from the official CPU index after measuring four dependency wheels: 132,882,493
+download bytes and 511,525,477 expanded bytes. The disposable wheels were removed
+after installation. See [setup](../development.md) for the pinned CPU command.
+CUDA setup is not a prerequisite or a parallel optimization queue.
+[Official installation guidance](https://pytorch.org/get-started/locally/).
+
+The actual fixed roster has 14,930 distinct question/paragraph inputs and
+808,418 word rows. All float32 features total 1,241,730,048 bytes. Reference
+2,058 inputs in the authenticated old archive and cast each once into a bounded
+190,420,992-byte RAM cache; write the remaining 1,051,309,056 bytes to one read-only
+indexed float32 file. This preserves every input and avoids duplicate durable
+features. The index and minimal journal bring planned new disk use to
+1,079,773,324 bytes. Reserve another 96 MiB for runner/checkpoint/action artifacts
+and at least 1 GiB free disk; recheck current free space at admission.
+
+The implemented parameter counts are 131,971 for cells, 115,587 for the bypass,
+526,979 for BiLSTM, and 259 trainable endpoint/NULL parameters in the frozen
+producer control. Numerical and neutral interface QA precede the scored fit.
 
 Start one **four-hour preparation window** when implementation begins. Build the
 batched reader/control, exact word-pointer input/action seam and bounded cache in

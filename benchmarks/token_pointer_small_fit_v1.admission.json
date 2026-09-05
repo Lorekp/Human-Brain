@@ -1,0 +1,121 @@
+{
+  "status": "prepared_without_fit",
+  "fixture_sha256": "aa988986d8f04d7e796e485ccea33f24c96cadad09f03779de844905ee5ad41b",
+  "ids": [
+    "56cff817234ae51400d9c1a4",
+    "57275d775951b619008f88ce",
+    "570d2598fed7b91900d45c52",
+    "5a82fb2ee60761001a2eb2b4",
+    "56f8c74d9b226e1400dd0fb6",
+    "5733f58f4776f419006615b7",
+    "57261f2f38643c19005ad045",
+    "59fb3401ee36d60018400d5b",
+    "572eb3abdfa6aa1500f8d2d7",
+    "56e1399dcd28a01900c676cf",
+    "56de42a5cffd8e1900b4b734",
+    "5acffa5077cf76001a6866c6",
+    "56d9a294dc89441400fdb662",
+    "572f876aa23a5019007fc6f3",
+    "572913111d0469140077901c",
+    "5a8c6b60fd22b3001a8d875b"
+  ],
+  "inputs": {
+    "10999bc12dbd5ed9dfddc71da0f3b3e3e16cd6c5670c4db179ebeb25070b80d0": "6fa9a55d28464538ac696c193a3d4c4f329a53923b88f3331345fcef1726464e",
+    "13bd2884a0153d9e7689c9d44c29851521bb7a51c49d3be33d01b2bcc3a80726": "5445cafd2c3751651fdfe0486297277b3da8c5ed192c81ee002eae57b30dadc0",
+    "1c448de62c631b868695ea50f439147af7ddb9ab92832bb9576c3425b8f2868d": "e1a7f41af50c415008b880da90ca3655f730d6cdf256675c8aa0bad028eadef9",
+    "1e783baec0bda19af0ded33e01f82228dbe4110dcb1a195ff44affa3a2156f39": "d131a92bb7b29ada49c56cf3a6929d154a268bcb57ca2f225693010ee90bcc9c",
+    "22612b22e65e1d5819284cc8569b15f5936b063a66e8aa59c48b97beebf997ba": "e56acc8b289bb02e0dd69efcff79bb050c2fff6dc0d07a945080bce6bcd0b401",
+    "2bc4fb1a55906b1fe07dd3e633740259e8001bc80b12a57b3837b405f2dcc09e": "6ed751a0338c1c4a97d6e02b4303db133f8ffdb754e5bc4d0e03e5fd0403f4c1",
+    "2eeb86a9dbc230fdaad49cb8ef0421062ff7adac3d1e34db7928c28ebb814a54": "377859ad43c38f85e394434f1149c80f118dc88b4120822ad26c2ca72dffc8a3",
+    "49e4b002fc1b609f6efc73e9b05ac7449b243785e81d47274822fc8d243dc0a5": "fc5246b0003b4366a61892aaa57311f5b27b178cbba8441cf3c831a1e0c0e5bb",
+    "56635811810c5be496e718b6d43732577fe08fcfa3e6c6d496f7734f97181ca7": "15aecaef7d363d987a493468a42b9f3a624a47b1e66a6b8ec91c52b5748ed9ea",
+    "56b67dd36ae01ac631d9c15c4cc0126cdbaf0a3384a2ca484095f2a5d7799b5a": "bf109f81719c269bb695067131ee6550bfba3f7e693005532df4cc6321e304a2",
+    "5bcf3bef89b8a11c3c4272c9a9d3cbee60ffa608b8fa8679831939b364d6e331": "09628a1c7e346c01ae3a039de0c8ac9a274a0fd3ba5929ddbc75b14e011906e8",
+    "5cf525da14171570691466301550a6c8673a60232a9e3cbd53b0a37a3be0cd47": "62d5d08cf2485903b2fc6c824e1787a609250b13356540a42f7cb38dca3191d9",
+    "6aed6a26725d5bbf83abf1d9375bc669650e9b8934d08e943691d555ef061db3": "9c25b3dfcb462aa51c9dd9f4a25a100e624bcd386471d9469626b9c81e8c19a6",
+    "6fa7827d976dcb977c7dd589db14c7e59172294eb26510d0fc5765fdc76a4e47": "796259e483414805adfcac0cd73c2238d405d8a5bb47d19b302dfb076b53fa00",
+    "791b723ebfea4707f96b665c424b647dcf74820146a050bdd4918973918f2378": "0fa4a9089eec64bd31672c42732902d3cbc47a9ca91532a56e5ebc535a3b2b51",
+    "7c3de01dd0f452edb967be71586347c1d3d59d527ee1f361d57d943cfeb26303": "edb15db3de9989eabd26af02e0ccde1ca8362d133d1e986af5e10443eb1e18bc",
+    "82e7feaabe2d42b1817a1c8796b80fdab4c030a67345185a0d6b3e73d8c1a467": "076b9886721290f11ac2767aff2e3b6b4a3e7633ef89220075dd261e42dfd71a",
+    "84b042e924b0a5fbdf0f3100f169744ea20c4d1b739deb2c538b6ee64f671f46": "a32e3d8c4aade157cb909be9f247933fba157712c05e23c53730179fc8e71ad1",
+    "85ecda602988aefb216b523d6ae69f49f0bb8a75db49262e111148742b58224d": "d65fd256580046b5a413f76044a11922da98e30794119dbd17bbc3d987649f30",
+    "8ecb94b45fd92016ccf1b1b7f9d83e4fd32d617fcde4954701e34c63d36cc22b": "ec0005cf9d900cdf9bab2550ad442946309e168206f3fc828616b36760e72b03",
+    "91d90a5ad59531deef554f07de1363a7920061ee55355d1ff3fc4f70d9280326": "9c8df18a3f3dea88301138f4860f11cf1758306df62021c07dde4f60d08f9da3",
+    "a9c40bddd49d23cda692ddad0997463b78bcb6ec04874c79704de91efcc55013": "7c8eda70b3c42b626162459cc6967ad2915c529ca289d7018d4bd4f66162d084",
+    "b676af998f01cd5a748b30d99f72acdbbe6abf347012ac88a410710082eb0583": "e88fe894085d2e2f6b4bbdc87c6ebfbd34617f31f2efb003382f60ebd254478e",
+    "bf9cb894c5cd29023b8ae75af45091b722e7266dfff0246d29aa2633e3978066": "a0870504303c05e84c44dc09a02a8dabb9dfc172c0704dd24525a3bd1acb3e14",
+    "c59c3bdd844a302148ea9a183637a05380daf8e4fc8e8343a3f52db9dc8abda0": "ba800b75199fe010d8849bc85c9828a3fed1e07071cba75d518d3208215a9876",
+    "d84c451182991ef326d1fba58da276e284a704694adc4c1eb1b507dca27d8b2c": "6b50c3d5b10b95b0e65c2e4d63e8c21737fc32a047d2b13c029a7cf6fa496493",
+    "dd87778011a9f7ce57512cb520d347bdc33e3736e30ab6f9ff6ec7e1b8605093": "eefd98440527504964f8c95ecb40de859d101b4bee8dd739332cc8b6568e358a",
+    "e1508cb4a7a456ce606e7a7b5679748dca31c3f99cd4456362984d198443bfae": "ed8669783f0b5afa90619f433348d67556255dc290717035209a6d27f0aac05d",
+    "e5650672099c765294440de0df9a27e135588de8a560c6a8f89aa4378edc5aff": "80c222bb485ce39a231942bac916d98308338825f5e9b033e16f56100493be0b",
+    "e764c1b7f0c6a051a56d61b369d6e2702b23e43e1f2b70ce3b5a9defd995e7f1": "ac47a29e34bcc812e0b5350bd8f35f64ed4712a90f3abfe7d7ba1b0b4ad1b105",
+    "ec2c8e5404f68fe4de6b189a49c5f5bd17c6c0ea1a784ae670bfc6457d88574a": "f17b156b6db56936b932e83223d5d82fb3a1f9cfc28974150c08dcb3c00e39cf",
+    "f85b041479cc495d38622f8c2cc2d7665228d4d2a213b519d033da37333abe36": "5fe1253847dc2d96d12f19b7548c10c4e606136ae2aa14a16377af853b8ac4f2"
+  },
+  "source_files": {
+    "src/humanbrain/token_pointer_reader.py": "7e1b473f90c5696f607ed7e081e503af40f66761d2d059a76650ec54f72d9efe",
+    "experiments/r4_integrated/token_pointer_runtime.py": "9fc8b70f5e9e9857799bad041c22dd55d726e426abc1c40a138c0bbe3f529db5",
+    "experiments/r4_integrated/token_pointer_data.py": "9a50d8c31adfb3f1976039251b229778b9ae2d28b17a33bbbaf74000c0028350",
+    "experiments/r4_integrated/token_pointer_preflight.py": "7055a7a2888cdcfd6f95811ff215c6f69bb7875ddb07d1611e123e56761b53a6",
+    "experiments/r4_integrated/public_qa_data.py": "36403b86f462201d529f4ec6a24fc297e75ba3641c10f1168586f157005e0bd6",
+    "experiments/r4_integrated/real_input_qualification_cases_v1.json": "aa988986d8f04d7e796e485ccea33f24c96cadad09f03779de844905ee5ad41b",
+    "tests/test_token_pointer_reader.py": "bf7b45260aaefedab8240f2e28045cece89c1d934a608a84786c3a7399972e2e",
+    "benchmarks/native_scaling.py": "c0814158b1231131ee15fd9f2f1ab232731df61c70b10b74ec59c4ec095ad5e7",
+    "docs/research/token-pointer-acquisition.md": "114ca98e677742106579318ff4c8de1cf56ee5eff30afb964d66b4ebe8fac91c",
+    "pyproject.toml": "eee26164fcd37e95e8edbf14096a9693904bbebc1e8325af50f5bc406dbbf12c"
+  },
+  "qa_receipts": {
+    ".pytest-tmp/token-pointer-core-handoff.json": "85cdf601832d17dc54e27aeee5a3ceb2fb6b0353742808ccb550eba766580928",
+    ".pytest-tmp/token-pointer-runtime-handoff.json": "10fabb2fc91457ca6f300bc32d9ad0eef61b4355c02e6079c52050e3dc722b43",
+    ".pytest-tmp/token-pointer-optional-dependency.json": "7ab7018907f3f01e95bbf7dabfa57fd7489e01063c476414dd803fce619acd29",
+    ".pytest-tmp/token-pointer-action-qa.json": "1eda3f51567ab98d00a5e77ad3fe92e4599b991378b677890251e95ecbf62897",
+    ".pytest-tmp/token-pointer-data-qa.json": "b4efce44d37d3895fc024a14b5bf83edd4ea80c8aacb1167b5268269944bee52",
+    ".pytest-tmp/dev/doctor-y3fqy06n/receipt.json": "b4e3ac783e368ca53dae1f2c01d4db24589a4737c0aa6054e6673ce5c717abb4",
+    ".pytest-tmp/dev/qa-yjmt9qgd/receipt.json": "36a3584301955dd216b1b3102aa3603998e93a952a012696be50e3f197082e8d",
+    ".pytest-tmp/token-pointer-dependency-bytes.json": "3d85f6be921cac387393f182b19d345feeb5db3aa0dd01438307ca589f59a793"
+  },
+  "branches": [
+    "cell",
+    "lstm"
+  ],
+  "steps_per_branch": 256,
+  "batch_size": 16,
+  "presentations": 8192,
+  "readonly_probes": 64,
+  "seconds": 900,
+  "peak_parent_mib": 4096,
+  "criterion": {
+    "each_branch_final_supported": 12,
+    "each_branch_final_STOP": 4
+  },
+  "exposure": "Original exposed supervised TRAIN sixteen; O11 role-label caveat unchanged",
+  "state_use": "Disposable; never seed broad comparison",
+  "environment": {
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]",
+    "executable": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Scripts\\python.exe",
+    "packages": {
+      "torch": "2.14.0+cpu",
+      "numpy": "2.4.6",
+      "sympy": "1.14.0",
+      "networkx": "3.6.1",
+      "mpmath": "1.3.0",
+      "onnxruntime": "1.29.0",
+      "tokenizers": "0.23.1"
+    },
+    "variables": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "HUMANBRAIN_DEVICE": "cpu",
+      "HUMANBRAIN_NATIVE_CACHE": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.native-cache"
+    },
+    "torch_threads": 1,
+    "device": "cpu"
+  },
+  "disk": {
+    "free_bytes": 45310341120,
+    "artifact_allowance_bytes": 67108864,
+    "reserve_bytes": 1073741824
+  }
+}
