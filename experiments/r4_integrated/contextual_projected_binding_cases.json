@@ -1,0 +1,116 @@
+{
+  "kind": "Authored development fresh evaluator for BASELINE versus PROJECTED under shared mixed-length teaching; two familiar-form and two broader-form entities plus two unsupported requests, six documents and ten tasks; expected values are evaluator-only; this is not external independent reading-comprehension evidence.",
+  "training_source": "experiments/r4_integrated/contextual_projected_binding_common_train.json",
+  "transfer": [
+    {
+      "name": "fresh-ikzu-transport",
+      "key": "ikzu",
+      "value": "mountain ash",
+      "module": "projected_binding_fresh_0",
+      "stale": "unconfigured",
+      "request": "Configure ikzu using its documented transport setting.",
+      "document_id": "projected-binding-ikzu",
+      "document": "The service ikzu uses mountain ash for transport and ametrine as its audit label. An audit timetable names ikzu twice to schedule inspections; those entries contain dates rather than configuration values.",
+      "stratum": "familiar"
+    },
+    {
+      "name": "fresh-ikzu-audit",
+      "key": "ikzu",
+      "value": "ametrine",
+      "module": "projected_binding_fresh_0",
+      "stale": "unconfigured",
+      "request": "Apply the documented audit label to ikzu.",
+      "document_id": "projected-binding-ikzu",
+      "document": "The service ikzu uses mountain ash for transport and ametrine as its audit label. An audit timetable names ikzu twice to schedule inspections; those entries contain dates rather than configuration values.",
+      "stratum": "familiar"
+    },
+    {
+      "name": "fresh-jrev-transport",
+      "key": "jrev",
+      "value": "axinite",
+      "module": "projected_binding_fresh_1",
+      "stale": "unconfigured",
+      "request": "Use the transport setting documented for jrev.",
+      "document_id": "projected-binding-jrev",
+      "document": "For jrev, red clover is the audit label and axinite is the transport setting. A separate transport checklist mentions the audit timetable, but neither heading introduces another setting.",
+      "stratum": "familiar"
+    },
+    {
+      "name": "fresh-jrev-audit",
+      "key": "jrev",
+      "value": "red clover",
+      "module": "projected_binding_fresh_1",
+      "stale": "unconfigured",
+      "request": "Set the audit label for jrev from the documentation.",
+      "document_id": "projected-binding-jrev",
+      "document": "For jrev, red clover is the audit label and axinite is the transport setting. A separate transport checklist mentions the audit timetable, but neither heading introduces another setting.",
+      "stratum": "familiar"
+    },
+    {
+      "name": "fresh-klym-transport",
+      "key": "klym",
+      "value": "sweet briar",
+      "module": "projected_binding_fresh_2",
+      "stale": "unconfigured",
+      "request": "Set klym to the value its notes assign to communication between services.",
+      "document_id": "projected-binding-klym",
+      "document": "Before describing klym, the notes list transport and audit as review topics. Messages sent by klym between services travel using sweet briar. To identify its audit records, klym attaches bastnaesite; the review date is recorded separately.",
+      "stratum": "broader"
+    },
+    {
+      "name": "fresh-klym-audit",
+      "key": "klym",
+      "value": "bastnaesite",
+      "module": "projected_binding_fresh_2",
+      "stale": "unconfigured",
+      "request": "Find what klym attaches to identify audit records and configure that value.",
+      "document_id": "projected-binding-klym",
+      "document": "Before describing klym, the notes list transport and audit as review topics. Messages sent by klym between services travel using sweet briar. To identify its audit records, klym attaches bastnaesite; the review date is recorded separately.",
+      "stratum": "broader"
+    },
+    {
+      "name": "fresh-lorn-transport",
+      "key": "lorn",
+      "value": "danburite",
+      "module": "projected_binding_fresh_3",
+      "stale": "unconfigured",
+      "request": "Which value does lorn use to carry messages between services? Apply that transport setting.",
+      "document_id": "projected-binding-lorn",
+      "document": "An audit inspection lists lorn without assigning it a label. The configuration paragraph does: lorn audit records carry wild garlic. For communication between services, the same service uses danburite as its transport setting; the inspection date does not change either value.",
+      "stratum": "broader"
+    },
+    {
+      "name": "fresh-lorn-audit",
+      "key": "lorn",
+      "value": "wild garlic",
+      "module": "projected_binding_fresh_3",
+      "stale": "unconfigured",
+      "request": "Configure lorn with the value carried by its audit records, as described in the configuration paragraph.",
+      "document_id": "projected-binding-lorn",
+      "document": "An audit inspection lists lorn without assigning it a label. The configuration paragraph does: lorn audit records carry wild garlic. For communication between services, the same service uses danburite as its transport setting; the inspection date does not change either value.",
+      "stratum": "broader"
+    },
+    {
+      "name": "fresh-mvez-transport",
+      "key": "mvez",
+      "value": null,
+      "module": "projected_binding_fresh_4",
+      "stale": "unconfigured",
+      "request": "Configure mvez using its documented transport setting.",
+      "document_id": "projected-binding-mvez",
+      "document": "The service mvez labels its audit records eudialyte. A transport inspection is scheduled for mvez, but these notes give no transport setting for that service.",
+      "stratum": "unsupported"
+    },
+    {
+      "name": "fresh-nysk-audit",
+      "key": "nysk",
+      "value": null,
+      "module": "projected_binding_fresh_5",
+      "stale": "unconfigured",
+      "request": "Apply the audit label documented for nysk.",
+      "document_id": "projected-binding-nysk",
+      "document": "The transport setting for nysk is goshenite. An audit review mentions nysk and lists a meeting date; the service notes do not specify a label for its audit records.",
+      "stratum": "unsupported"
+    }
+  ]
+}

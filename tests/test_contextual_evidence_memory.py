@@ -1306,3 +1306,159 @@ def test_arow_core_satisfied_zero_and_policy_rejections() -> None:
     receipt = memory.observe_comparison(*pair)
     assert receipt["step_skipped_reason"] == "zero_delta"
     assert memory.covariance_summary == before
+
+
+def _projected_bilinear_memory(**options):
+    memory = ContextualEvidenceMemory(
+        _SyntheticProtectionEncoder(), candidate_interactions=True,
+        interaction_gain=16.0, projected_bilinear=True, comparison_step_policy="arow", **options
+    )
+    memory.ingest((OpaqueDocument(b"projection-test", b"synthetic", b"alpha beta gamma"),))
+    return memory
+
+
+def test_projected_bilinear_recipe_formula_and_independent_block_ablations() -> None:
+    memory = _projected_bilinear_memory()
+    baseline = ContextualEvidenceMemory(
+        _SyntheticProtectionEncoder(), candidate_interactions=True,
+        interaction_gain=16.0, comparison_step_policy="arow"
+    )
+    baseline.ingest(tuple(memory._documents))
+    random = np.random.default_rng(0)
+    for matrix in (memory._projected_query_matrix, memory._projected_span_matrix):
+        q, r = np.linalg.qr(random.standard_normal((384, 32), dtype=np.float64), mode="reduced")
+        expected = q * np.where(np.diag(r) < 0, -1.0, 1.0)
+        np.testing.assert_array_equal(matrix, expected)
+        np.testing.assert_allclose(matrix.T @ matrix, np.eye(32), atol=1e-14)
+        with pytest.raises(ValueError):
+            matrix.setflags(write=True)
+    assert memory.projection_summary["query_matrix_sha256"] != memory.projection_summary[
+        "span_matrix_sha256"
+    ]
+    full, external = memory._features(b"request")
+    old, old_external = baseline._features(b"request")
+    np.testing.assert_array_equal(full[:, :1621], old)
+    np.testing.assert_array_equal(external, old_external)
+    for i, span in enumerate(memory._vectors):
+        q = full[i, :384]
+        expected = 16 * np.outer(q @ memory._projected_query_matrix,
+                                 span @ memory._projected_span_matrix).ravel()
+        np.testing.assert_array_equal(full[i, 1621:], expected)
+    disabled, _ = memory._features(b"request", projected_bilinear_ablation="disabled")
+    diagonal, _ = memory._features(b"request", projected_bilinear_ablation="diagonal_only")
+    binding_disabled, _ = memory._features(b"request", interaction_ablation="disabled")
+    np.testing.assert_array_equal(disabled[:, :1621], full[:, :1621])
+    np.testing.assert_array_equal(disabled[:, 1621:], 0)
+    np.testing.assert_array_equal(diagonal[:, :1621], full[:, :1621])
+    expected_diagonal = full[:, 1621:].reshape(-1, 32, 32) * np.eye(32)
+    np.testing.assert_array_equal(diagonal[:, 1621:], expected_diagonal.reshape(-1, 1024))
+    np.testing.assert_array_equal(binding_disabled[:, 1621:], full[:, 1621:])
+    assert np.any(full[:, 1621:] != diagonal[:, 1621:])
+    assert baseline.projection_summary == {"policy": "none"}
+    assert "projected_bilinear" not in baseline.representation_policy
+    assert "projected_bilinear" not in baseline.storage_summary
+
+
+def test_projected_bilinear_learning_and_frozen_state_account_for_full_dimension() -> None:
+    memory = _projected_bilinear_memory()
+    frozen = _projected_bilinear_memory(learning_enabled=False)
+    assert memory.checkpoint_sha256 == frozen.checkpoint_sha256
+    projection, initial_covariance = memory.projection_summary, memory.covariance_summary
+    assert projection["fixed_array_bytes"] == 196608
+    assert projection["feature_dimension"] == 2645
+    assert initial_covariance["allocated_array_bytes"] == 55968200
+    assert initial_covariance["scratch_array_bytes"] == 2645 * 8
+    pair = _protection_pair(memory)
+    frozen_pair = tuple(frozen.replay_decision(row) for row in pair)
+    delta = np.array(pair[1].eligibility) - np.array(pair[0].eligibility)
+    beta = 1 / (1 + delta @ delta)
+    receipt = memory.observe_comparison(*pair)
+    control = frozen.observe_comparison(*frozen_pair)
+    np.testing.assert_allclose(memory._weights, [beta * delta / 2, -beta * delta / 2], atol=1e-14)
+    assert np.any(memory._weights[:, 1621:])
+    assert receipt["covariance"]["matrix_vector_entries"] == 2645**2
+    assert control["covariance"]["matrix_vector_entries"] == 0
+    assert frozen.covariance_summary == initial_covariance
+    assert memory.projection_summary == frozen.projection_summary == projection
+    assert memory.feedback_count == frozen.feedback_count == 2
+    assert frozen.update_count == 0
+    np.testing.assert_array_equal(frozen._weights, 0)
+    for model in (memory, frozen):
+        np.testing.assert_array_equal(model._bias, 0)
+        np.testing.assert_array_equal(model._weights[:, :384], 0)
+        assert "projected_query_matrix" not in model.checkpoint_arrays()
+        arrays = model.checkpoint_arrays(include_learning_state=True)
+        assert set(arrays) == {
+            "readout_synapses_pa", "pacemaker_synapses_pa", "covariance",
+            "projected_query_matrix", "projected_span_matrix"
+        }
+        assert arrays["readout_synapses_pa"].shape == (2, 2645)
+        for kind in ("query", "span"):
+            array = arrays[f"projected_{kind}_matrix"]
+            assert sha256(array.tobytes()).hexdigest() == projection[f"{kind}_matrix_sha256"]
+            array.fill(0)
+        assert model.projection_summary == projection
+        storage = model.storage_summary
+        source_bytes = sum(storage[key] for key in (
+            "raw_source_bytes", "candidate_lexical_bytes", "context_vector_bytes",
+            "identity_bytes", "storage_ancestry_payload_bytes",
+            "candidate_interaction_payload_bytes"
+        ))
+        assert storage["payload_bytes"] == source_bytes + 55968200 + 196608
+        assert storage["retained_array_and_byte_payload_bytes"] == (
+            storage["payload_bytes"] + storage["synapse_array_bytes"] + 16 + 2 * 2645 * 8
+            + storage["compiled_race_array_bytes"]
+        )
+
+
+def test_projected_bilinear_replay_preserves_expanded_eligibility_after_ingestion() -> None:
+    memory = _projected_bilinear_memory()
+    original = _protection_pair(memory)
+    memory.observe_comparison(*original)
+    projection, covariance = memory.projection_summary, memory.covariance_summary
+    # Enough added rows to exercise a different candidate population, without
+    # a model download or a project TRAIN/fresh fixture.
+    memory.ingest((OpaqueDocument(b"later", b"synthetic", b"another gamma " * 40),))
+    rebound = tuple(memory.revisit_decision(row) for row in original)
+    assert [row.eligibility for row in rebound] == [row.eligibility for row in original]
+    assert memory.projection_summary == projection and memory.covariance_summary == covariance
+    parent = memory.checkpoint_sha256
+    for ablation in ("disabled", "diagonal_only"):
+        decision = memory.raw_score_reference(b"request", projected_bilinear_ablation=ablation)
+        assert f"_projected_bilinear_ablation_{ablation}" in decision.mode
+        with pytest.raises(ValueError, match="read-only"):
+            memory.observe_comparison(decision, rebound[1])
+        with pytest.raises(ValueError, match="read-only"):
+            memory.revisit_decision(decision)
+    assert memory.checkpoint_sha256 == parent and memory.projection_summary == projection
+    assert memory.covariance_summary == covariance
+    receipt = memory.observe_comparison(*rebound)
+    assert receipt["eligibility_delta_sha256"] == sha256(
+        (np.asarray(original[1].eligibility) - original[0].eligibility).tobytes()
+    ).hexdigest()
+    assert memory.projection_summary == projection
+
+
+def test_projected_bilinear_policy_rejects_invalid_or_cross_feature_custody() -> None:
+    encoder = _SyntheticProtectionEncoder()
+    for options in ({"projected_bilinear": 1}, {"projected_bilinear": True}):
+        with pytest.raises(ValueError, match="projected"):
+            ContextualEvidenceMemory(encoder, **options)
+    plain = ContextualEvidenceMemory(
+        encoder, candidate_interactions=True, interaction_gain=16.0,
+        comparison_step_policy="arow", learning_enabled=False
+    )
+    projected = _projected_bilinear_memory()
+    plain.ingest(tuple(projected._documents))
+    decision = _protection_pair(projected)[0]
+    with pytest.raises(ValueError, match="different retained source store"):
+        plain.replay_decision(decision)
+    with pytest.raises(ValueError, match="requires projected_bilinear"):
+        plain.raw_score_reference(b"request", projected_bilinear_ablation="disabled")
+    with pytest.raises(ValueError, match="unknown projected"):
+        projected.raw_score_reference(b"request", projected_bilinear_ablation="other")
+    changed = replace(decision, eligibility=(*decision.eligibility[:-1], 99.0))
+    before = projected.checkpoint_sha256
+    with pytest.raises(ValueError, match="custody changed"):
+        projected.observe_comparison(changed, _protection_pair(projected)[1])
+    assert projected.checkpoint_sha256 == before and projected.feedback_count == 0

@@ -168,6 +168,7 @@ class ContextualEvidenceMemory:
         learning_enabled: bool = True,
         interaction_gain: float = 1.0,
         candidate_interactions: bool = False,
+        projected_bilinear: bool = False,
         comparison_step_policy: str = "fixed",
         comparison_protection_policy: str = "none",
         protection_capacity: int = 48,
@@ -178,6 +179,10 @@ class ContextualEvidenceMemory:
             raise ValueError("interaction_gain must be finite and positive")
         if type(candidate_interactions) is not bool:
             raise ValueError("candidate_interactions must be a bool")
+        if type(projected_bilinear) is not bool:
+            raise ValueError("projected_bilinear must be a bool")
+        if projected_bilinear and not candidate_interactions:
+            raise ValueError("projected bilinear features require candidate_interactions")
         if comparison_step_policy not in ("fixed", "unit_margin_capped", "arow"):
             raise ValueError("unknown comparison_step_policy")
         if comparison_step_policy == "arow" and learning_rate != 1.0:
@@ -193,6 +198,22 @@ class ContextualEvidenceMemory:
         self.learning_enabled = learning_enabled
         self._interaction_gain = float(interaction_gain)
         self._candidate_interactions = candidate_interactions
+        self._projected_bilinear = projected_bilinear
+        if projected_bilinear:
+            generator = np.random.default_rng(0)
+            projections = []
+            for _ in range(2):
+                draw = generator.standard_normal((_DIMENSION, 32), dtype=np.float64)
+                orthogonal, triangular = np.linalg.qr(draw, mode="reduced")
+                orthogonal *= np.where(np.diag(triangular) < 0.0, -1.0, 1.0)
+                # An immutable bytes owner also prevents callers re-enabling
+                # writes to these fixed preprocessing arrays through setflags.
+                projections.append(np.frombuffer(orthogonal.tobytes(), dtype=np.float64).reshape(
+                    _DIMENSION, 32
+                ))
+            self._projected_query_matrix, self._projected_span_matrix = projections
+            self._projected_query_hash = sha256(memoryview(projections[0])).hexdigest()
+            self._projected_span_hash = sha256(memoryview(projections[1])).hexdigest()
         self._comparison_step_policy = comparison_step_policy
         self._comparison_protection_policy = comparison_protection_policy
         self._protection_capacity = protection_capacity
@@ -211,7 +232,9 @@ class ContextualEvidenceMemory:
             storage_identity["comparison_protection"] = self.protection_policy
         self._storage_root = _digest(storage_identity)
         self._storage_ancestry = {self._storage_root: 0}
-        feature_count = _FEATURES + _CANDIDATE_FEATURES * candidate_interactions
+        feature_count = (
+            _FEATURES + _CANDIDATE_FEATURES * candidate_interactions + 1024 * projected_bilinear
+        )
         self._weights = np.zeros((2, feature_count), dtype=np.float64)
         self._bias = np.zeros(2, dtype=np.float64)
         self._heterogeneity = np.zeros(2, dtype=np.float64)
@@ -246,6 +269,36 @@ class ContextualEvidenceMemory:
     @property
     def candidate_interactions(self) -> bool:
         return self._candidate_interactions
+
+    @property
+    def projected_bilinear(self) -> bool:
+        return self._projected_bilinear
+
+    @property
+    def projection_summary(self) -> dict:
+        """Fixed preprocessing identity, not learned encoder or projection state."""
+        if not self.projected_bilinear:
+            return {"policy": "none"}
+        return {
+            "policy": "fixed_projected_bilinear_append_v1",
+            "rank": 32,
+            "seed": 0,
+            "construction": "default_rng(0); two sequential float64 standard_normal(384,32); "
+            "reduced_QR; Q_columns_times_sign_R_diagonal; zero_sign_positive",
+            "query_matrix_sha256": self._projected_query_hash,
+            "span_matrix_sha256": self._projected_span_hash,
+            "matrix_shape": [384, 32],
+            "feature_dimension": _FEATURES + _CANDIDATE_FEATURES + 1024,
+            "block_offset": _FEATURES + _CANDIDATE_FEATURES,
+            "block_features": 1024,
+            "gain": self.interaction_gain,
+            "layout": "row_major_query_coordinate_then_span_coordinate",
+            "normalization": "existing_unit_inputs; no_projected_vector_renormalization",
+            "diagonal_ablation": "keep_equal_indices_in_projected_coordinates_only",
+            "fixed_array_bytes": self._projected_query_matrix.nbytes
+            + self._projected_span_matrix.nbytes,
+            "learned_projection_bytes": 0,
+        }
 
     @property
     def comparison_step_policy(self) -> str:
@@ -353,6 +406,8 @@ class ContextualEvidenceMemory:
                 "query_pooling": "mean_over_all_word_occurrences; other_excludes_same_index",
                 "source_scope": "existing_48_word_window",
             }
+        if self.projected_bilinear:
+            policy["projected_bilinear"] = self.projection_summary
         return policy
 
     @property
@@ -404,6 +459,9 @@ class ContextualEvidenceMemory:
             )
         if include_learning_state and self.comparison_step_policy == "arow":
             arrays["covariance"] = self._covariance.copy()
+        if include_learning_state and self.projected_bilinear:
+            arrays["projected_query_matrix"] = self._projected_query_matrix.copy()
+            arrays["projected_span_matrix"] = self._projected_span_matrix.copy()
         return arrays
 
     @property
@@ -476,6 +534,11 @@ class ContextualEvidenceMemory:
             summary["retained_array_and_byte_payload_bytes"] += (
                 covariance["allocated_array_bytes"] + covariance["scratch_array_bytes"]
             )
+        if self.projected_bilinear:
+            projection = self.projection_summary
+            summary["projected_bilinear"] = projection
+            summary["payload_bytes"] += projection["fixed_array_bytes"]
+            summary["retained_array_and_byte_payload_bytes"] += projection["fixed_array_bytes"]
         return summary
 
     def ingest(self, documents: tuple[OpaqueDocument, ...]) -> None:
@@ -561,12 +624,20 @@ class ContextualEvidenceMemory:
         self._storage_ancestry[self._storage_root] = len(self._candidates)
 
     def _features(
-        self, query: bytes, *, interaction_ablation: str | None = None
+        self,
+        query: bytes,
+        *,
+        interaction_ablation: str | None = None,
+        projected_bilinear_ablation: str | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         if interaction_ablation not in (None, "disabled", "position_collapsed"):
             raise ValueError("unknown interaction ablation")
         if interaction_ablation is not None and not self.candidate_interactions:
             raise ValueError("interaction ablation requires candidate_interactions")
+        if projected_bilinear_ablation not in (None, "disabled", "diagonal_only"):
+            raise ValueError("unknown projected bilinear ablation")
+        if projected_bilinear_ablation is not None and not self.projected_bilinear:
+            raise ValueError("projected bilinear ablation requires projected_bilinear")
         encoded = self.encoder.encode(query)
         q = _unit(encoded.sentence_vector)
         rows = []
@@ -605,6 +676,18 @@ class ContextualEvidenceMemory:
                         collapsed=interaction_ablation == "position_collapsed",
                     )
             result = np.concatenate((result, _CANDIDATE_GAIN * extra), axis=1)
+        if self.projected_bilinear:
+            extra = np.zeros((len(rows), 1024), dtype=np.float64)
+            if projected_bilinear_ablation != "disabled":
+                projected_query = q @ self._projected_query_matrix
+                for i, vector in enumerate(self._vectors):
+                    # Keep the reduction independent of the total candidate
+                    # count, so append-only ingestion preserves replay bytes.
+                    block = np.outer(projected_query, vector @ self._projected_span_matrix)
+                    if projected_bilinear_ablation == "diagonal_only":
+                        block = np.diag(np.diag(block))
+                    extra[i] = self.interaction_gain * block.reshape(-1)
+            result = np.concatenate((result, extra), axis=1)
         return result, self._vectors @ q
 
     def _decision(
@@ -747,10 +830,18 @@ class ContextualEvidenceMemory:
         )
 
     def raw_score_reference(
-        self, query: bytes, *, interaction_ablation: str | None = None
+        self,
+        query: bytes,
+        *,
+        interaction_ablation: str | None = None,
+        projected_bilinear_ablation: str | None = None,
     ) -> ContextualEvidenceDecision:
         """Disclosed linear reference before current saturation; no neuronal race."""
-        rows, _ = self._features(query, interaction_ablation=interaction_ablation)
+        rows, _ = self._features(
+            query,
+            interaction_ablation=interaction_ablation,
+            projected_bilinear_ablation=projected_bilinear_ablation,
+        )
         drive = self._raw_drives(rows)
         # Invert the unchanged current map at the tonic STOP current. Require a
         # unique strict win, including against STOP, before float tanh saturation.
@@ -760,6 +851,8 @@ class ContextualEvidenceMemory:
         mode = "raw_learned_score"
         if interaction_ablation is not None:
             mode += "_ablation_" + interaction_ablation
+        if projected_bilinear_ablation is not None:
+            mode += "_projected_bilinear_ablation_" + projected_bilinear_ablation
         return self._decision(
             query, rows, index, mode, "tonic_stop_or_tie" if index is None else None
         )

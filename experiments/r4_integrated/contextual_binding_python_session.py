@@ -112,9 +112,14 @@ def _snapshot(memory) -> dict:
     result = shared.snapshot(memory)
     weights = memory.checkpoint_arrays()["readout_synapses_pa"]
     difference = weights[0] - weights[1]
-    result["feature_block_l2"]["candidate_interactions"] = float(np.linalg.norm(difference[1537:]))
+    result["feature_block_l2"]["candidate_interactions"] = float(
+        np.linalg.norm(difference[1537:1621])
+    )
     result["representation_policy"] = memory.representation_policy
     result["readout_policy"] = memory.readout_policy
+    if memory.projected_bilinear:
+        result["projection"] = memory.projection_summary
+        result["feature_block_l2"]["projected_bilinear"] = float(np.linalg.norm(difference[1621:]))
     if memory.comparison_step_policy == "arow":
         result["covariance"] = memory.covariance_summary
     return result
@@ -316,6 +321,19 @@ def evaluation_policies(
                     name,
                     update,
                     partial(update.raw_score_reference, interaction_ablation=ablation),
+                    None,
+                )
+            )
+    if update.projected_bilinear:
+        for name, ablation in (
+            ("disable_projected_bilinear", "disabled"),
+            ("diagonal_projected_bilinear", "diagonal_only"),
+        ):
+            policies.append(
+                EvaluationPolicy(
+                    name,
+                    update,
+                    partial(update.raw_score_reference, projected_bilinear_ablation=ablation),
                     None,
                 )
             )
@@ -842,6 +860,7 @@ def run(
     protection_policies: dict[str, str] | None = None,
     track_source_competition=False,
     teaching_fixture_paths: dict[str, Path] | None = None,
+    projected_bilinear_policies: dict[str, bool] | None = None,
 ) -> dict:
     if exploration_policy not in ("thresholded", "raw_candidate"):
         raise ValueError("unknown training exploration policy")
@@ -860,6 +879,11 @@ def run(
             raise ValueError("protection policies must name every explicit arm exactly once")
         if set(protection_policies.values()) - {"none", "orthogonal_certified"}:
             raise ValueError("unknown comparison protection policy")
+    if projected_bilinear_policies is not None:
+        if arm_specs is None or set(projected_bilinear_policies) != {spec[0] for spec in arm_specs}:
+            raise ValueError("projected bilinear policies must name every explicit arm")
+        if any(type(value) is not bool for value in projected_bilinear_policies.values()):
+            raise ValueError("projected bilinear policies must be boolean")
     fixture_path = HERE / "contextual_binding_cases.json" if fixture_path is None else fixture_path
     output = output.resolve()
     if output.exists() or output.with_suffix(".npz").exists():
@@ -950,6 +974,8 @@ def run(
                 step_options["comparison_protection_policy"] = protection_policies[name]
                 if protection_policies[name] != "none":
                     step_options["protection_capacity"] = 48
+            if projected_bilinear_policies is not None:
+                step_options["projected_bilinear"] = projected_bilinear_policies[name]
             update = ContextualEvidenceMemory(
                 encoder,
                 learning_rate=1.0,
@@ -984,9 +1010,11 @@ def run(
                 arm["teaching_fixture"] = {
                     "path": teaching_fixture_paths[name].resolve().relative_to(ROOT).as_posix(),
                     "sha256": sha256(teaching_fixture_paths[name].read_bytes()).hexdigest(),
-                    "common_probe_scope": "same compact requests for both arms; probe document "
+                    "common_probe_scope": "same common requests for both arms; probe document "
                     "bytes are never ingested in place of the arm's teaching rendition",
                 }
+            if projected_bilinear_policies is not None:
+                arm["projected_bilinear"] = projected_bilinear_policies[name]
             if arm_specs is not None:
                 arm["comparison_step_policy"] = step_policy
             if protection_policies is not None:
@@ -1073,6 +1101,12 @@ def run(
                 began = time.perf_counter()
                 competition = arm["source_competition"]
                 competition["after_fresh"] = _old_query_scores(update, fixtures["training"])
+                if projected_bilinear_policies is not None:
+                    arm["teaching_probe_after_fresh"] = {
+                        **_old_query_scores(update, arm_teaching["training"]),
+                        "scope": "read-only actual-TRAIN query selection after fresh ingestion; "
+                        "not executed success or feedback",
+                    }
                 competition["synapse_sha256_after"] = update.synapse_sha256
                 if competition["synapse_sha256_before"] != competition["synapse_sha256_after"]:
                     raise RuntimeError("fresh ingestion changed the trained synapses")
@@ -1152,6 +1186,13 @@ def run(
                     raise RuntimeError("exam changed learned protection state")
             arm["phase_seconds"]["exam"] = time.perf_counter() - began
             arm["end"], arm["frozen_end"] = _snapshot(update), _snapshot(frozen)
+            if update.projected_bilinear and any(
+                snapshot["projection"] != arm["seed"]["projection"]
+                for snapshot in (
+                    arm["trained"], arm["frozen_trained"], arm["end"], arm["frozen_end"]
+                )
+            ):
+                raise RuntimeError("fixed projection identity changed during the session")
             record(
                 "exam",
                 arm=name,
@@ -1170,6 +1211,8 @@ def run(
                 "; includes full trained and fixed-initial AROW covariance; "
                 "covariance is training state, not used for inference"
             )
+        if projected_bilinear_policies and any(projected_bilinear_policies.values()):
+            report["synapse_checkpoint"]["scope"] += "; includes fixed projection matrices"
         report["sources_unchanged_during_run"] = _hashes(source_paths) == report["source_sha256"]
         if not report["sources_unchanged_during_run"]:
             raise RuntimeError("sources changed during comparison")
