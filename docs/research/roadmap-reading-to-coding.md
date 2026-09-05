@@ -81,19 +81,20 @@ The preceding [rate-cell](../../experiments/r4_integrated/contextual_rate_cell_r
 [inconclusive feasibility](../../experiments/r4_integrated/contextual_full_choice_feasibility_result.md)
 results remain closed. None establishes architectural impossibility.
 
-The [acquisition-strategy review](acquisition-strategy-review.md) selects conditional
-preparation of rapid neuronal experience addressing with a frozen pretrained
-reader. First check that reader's competence and cost on exposed development
-material. Then test learned memory access against frozen cells, ordinary retrieval,
-an independent conventional learned router and the same reader over the full corpus.
-Reject an incidental neuronal component if those references dominate. This tests
-acquired addressing, not neuronal language understanding or an adopted architecture.
+The [conditional experience-addressing proposal](acquisition-strategy-review.md)
+does not proceed: its [frozen reader qualification](../../experiments/r4_integrated/frozen_reader_qualification_result.md)
+fails even with the correct document supplied (24/48 and 28/48 exact answers).
+Within-source entity/property errors and incorrect abstentions remain; more sources
+worsen performance. No router is fitted and no reader replacement follows
+automatically. The next bounded acquisition review must compare broader ordinary
+language experience with richer declared sensory representations, preserve strong
+learning-disabled/conventional controls, and return to the persistent executed loop.
 Do not automatically extend attention, epochs, rates, labels, thresholds or solver
 budgets, or treat declining loss as useful acquisition. The
 [previous failure review](rate-cell-failure-review.md) remains historical.
 
-This acquisition diagnostic uses explicit answer/STOP supervision over retained
-raw sources and a frozen external encoder. It is not answer-free internalization,
+The closed acquisition diagnostics use explicit answer/STOP supervision over retained
+raw sources and a frozen external encoder. These are not answer-free internalization,
 fresh transfer, or a pass of the general integrated gate. Keep its controls and
 costs explicit. Provenance revision, composition, full challenge and scaling
 remain deferred until useful acquired and fresh behavior improves.

@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the failed query-aligned rate-cell comparison.
+Updated 2026-09-05 with the failed frozen external-reader qualification.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -10,7 +10,23 @@ with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. Hybrid permission does not relabel existing
 cell-only evidence or reopen protected evaluations.
 
-## Current contextual evidence-to-Python result
+## Current external-reader qualification
+
+The [fixed pretrained reader](../experiments/r4_integrated/frozen_reader_qualification_result.md)
+fails qualification. Known relevant sources produce 24/48 exact supported answers
+and 13/16 correct STOPs in actual wording; alternate wording gives 28/48 and 12/16.
+All-source reading falls to 20/48 and 2/16, then 13/48 and 4/16 respectively.
+Reliable entity/property binding and absence decisions remain missing even within
+the correct source. The conditional episodic-router comparison does not proceed.
+
+One complete run takes 206.841 seconds, processes 2,176 windows/132,124 paired
+tokens, and peaks at 689.441 MiB parent working set. Source custody, recorded
+byte extraction, decision aggregation, marks and resources pass saved-data audits;
+unretained logits are not independently recomputed. There are no learning updates,
+Python actions, official-exam scores or neuronal claims in this external component
+check. No replacement reader or fit to its successful subset follows automatically.
+
+## Latest contextual evidence-to-Python result
 
 The [query-aligned rate-cell comparison](../experiments/r4_integrated/query_aligned_rate_cell_result.md)
 is **closed without adoption**. Trainable aligned cells solve 0/48 supported
@@ -26,9 +42,9 @@ the independent numerical rollout's tolerance failure and saved-state diagnosis;
 the failed replay is not a passing audit. All 3,330 retained execution workspaces
 match recorded actions and outcomes. Runtime is 336.597 seconds, peak parent
 working set 297.313 MiB, and corrected counted payload 104,421,866 bytes including
-encoder files. The [completed strategy review](research/acquisition-strategy-review.md)
-selects conditional experience-addressing preparation, starting with a fixed
-external reader's competence and cost; no new mechanism has been adopted.
+encoder files. The [subsequent strategy review](research/acquisition-strategy-review.md)
+selected the conditional experience-addressing preparation that stopped at the
+reader qualification above; no new mechanism has been adopted.
 No integrated, fresh, official-exam or protected gate passes.
 
 ## Earlier rate-cell acquisition

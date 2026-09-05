@@ -1,12 +1,16 @@
 # Acquisition strategy after the query-aligned failure
 
-Decision review, 2026-09-05; selected for conditional preparation, not an adopted
-implementation. Preparation window: 11:24–13:24 UTC. First establish the fixed
-external reader's output and resource ceiling on exposed development material;
-do not fit a router around an unqualified reader.
+Decision review, 2026-09-05; historical conditional proposal, not an adopted
+implementation. The [one qualification](../../experiments/r4_integrated/frozen_reader_qualification_result.md)
+completed after preparation within 11:24–13:24 UTC and **failed**: known-source
+answers are 24/48 and 28/48, below 44/48; STOPs also miss their threshold.
+The proposed router comparison therefore does not proceed with this reader.
+The design below records the rationale and rejected admission path; it does not
+authorize replacement readers, threshold tuning or another fit.
 The [roadmap](roadmap-reading-to-coding.md) and [active plan](balanced-evidence-to-action-session-v1.md)
 own priorities. The [alignment rationale](rate-cell-failure-review.md) remains historical.
-No model, encoder, fit, new teaching data or experiment was run for this review.
+The review itself ran no models; the separately frozen qualification owns its
+subsequent execution and negative result.
 
 ## Evidence and the unresolved question
 

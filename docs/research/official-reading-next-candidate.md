@@ -42,7 +42,42 @@ Keys were checked against official scheme text. Preserve wording, instructions,
 option order, row labels and supplied entries; do not split Q30's mark. The
 other fourteen marks remain unevaluated. This is a proposal, not a frozen roster.
 The current scalar span interface cannot emit all these response
-formats; a declared structured-output contract is required before evaluation.
+formats. The proposed contract below makes the missing interface explicit;
+implementation and model binding remain pending before evaluation.
+
+## Proposed machine response contract
+
+Present the unchanged passage/structure, route map and one original item at a
+time, in order 25, 27, 30, 36. Rubric bytes and previous marks stay outside the
+learner. A model unable to consume the map requires a declared text-only condition,
+not a claim of complete original passage presentation.
+
+One final UTF-8 JSON response per item has `item`, `status` (`answer` or `stop`),
+and `response` (an object, or null for STOP). Generic format instructions contain
+no worked answers from this paper. Printed-order positions address the original
+options/rows without rewriting them:
+
+| Item | Response object |
+| --- | --- |
+| Q25, Q27 | `selected_options`: exactly one integer index, 1–4. |
+| Q30 | `years`: three integers or null blanks, in printed row order. |
+| Q36 | `ranks`: four integers or null blanks for printed rows 1, 3, 4, 5. |
+
+For Q36, the evaluator inserts the supplied `1` at row 2 from the **question**.
+Complete writable ranks must permute 2–5. Score the reconstructed response against
+the separate official rubric; Q30 and Q36 remain one mark each, with no partial
+credit. Never infer a missing value, sort answers, or extract digits from prose.
+Malformed JSON, duplicate fields, extra selections, wrong lengths/types/IDs and
+invalid ranks receive zero with a format reason. STOP, blank and missing/late
+responses also receive zero, recorded separately from valid wrong answers.
+
+This requires genuine structured answer production. Host option matching,
+year extraction or event ordering would add a solver, not merely format a span.
+The existing 2024 scalar scorer and its learner ingestion cannot supply this seam;
+preserve that experiment. Implement only a small pure closed-response scorer and
+a declared producer binding when available. Until then, report the unsupported
+interface before evaluation rather than fabricate four comprehension failures.
+No scorer or model execution is introduced by this proposal.
 
 ## Remaining preparation and exposure
 
@@ -80,8 +115,8 @@ selected question/marking pages. Corrections and checks are in the linked fixtur
 
 The optional HTML review aid passes static structure checks but has not had a
 rendered-layout review: no usable browser was available. This does not substitute
-for or alter the original page comparisons. A frozen machine response/scoring
-contract, access boundary and model binding remain necessary before evaluation.
+for or alter the original page comparisons. The proposed machine contract above
+still requires implementation, source/interface freeze and model binding before evaluation.
 No answer policy, score or learner exposure was introduced by preparation.
 
 The developer inspected full 2026 reading/answer text and relevant marking

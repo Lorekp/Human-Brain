@@ -65,18 +65,23 @@ STOPs are 16/16 and 15/16 for actual wording before/after growth, but 8/16 and
 6/16 for alternate wording. Its repaired live payload count passes; the result
 owns the numerical replay limitation and diagnosis.
 
-**Next integrated priority:** the [selected conditional comparison](acquisition-strategy-review.md)
-of neuronal experience addressing with a frozen competent reader. Qualify the
-external reader before router fitting, then require useful acquisition/retention
-against strong ordinary and full-corpus controls in the persistent executed loop.
-This is acquired addressing, not neuronal comprehension or an adopted architecture.
+The [conditional addressing proposal](acquisition-strategy-review.md) now stops
+at its [reader qualification](../../experiments/r4_integrated/frozen_reader_qualification_result.md).
+Oracle-source answers reach only 24/48 and 28/48, with 13/16 and 12/16 correct
+STOPs; all-source reading is worse. Runtime/custody checks pass, but the required
+competence does not. No routing mechanism is fitted or adopted.
+
+**Next integrated priority:** a bounded review of acquisition experience and
+sensory representation, informed by the within-source binding/abstention failures.
+Choose one material change that can distinguish missing learning experience from
+an inadequate trainable computation, then return to actual persistent execution.
 No automatic optimizer, epoch, label,
 threshold or producer sweep, fresh comparison or protected evaluation follows.
 The [previous failure review](rate-cell-failure-review.md), original
 [rate-cell plan](contextual-rate-cell-preflight-plan.md) and frozen protocols
 retain their historical scope.
 
-The diagnostic's exact-answer/STOP supervision is a declared stronger teaching
+The closed diagnostics' exact-answer/STOP supervision is a declared stronger teaching
 contract. It does not pass the answer-free acquisition stages of the broader
 integration sequence below. Retained raw sources and external encoder features
 also prevent a claim of source-free internalization. Keep these distinctions
@@ -96,8 +101,9 @@ evidence. Select additional official passage groups through a separate frozen
 manifest; preserve paper/passage exposure boundaries and official marking guidance.
 The [prepared 2026 fixture](official-reading-next-candidate.md) now has verified
 PDF custody, corrected passage/map and original questions with separate official
-keys. Source content review is complete; machine response/scoring and model
-binding remain pending. The whole paper is developer-exposed, not reserve material.
+keys. Source content review is complete and a structured response contract is
+proposed; scorer implementation and model binding remain pending. The whole paper
+is developer-exposed, not reserve material.
 Authored cases do not replace independent reading evaluation.
 
 Targets remain at least 6/8 fresh and 12/16 retained edits, including both
