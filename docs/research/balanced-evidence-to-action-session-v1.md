@@ -33,39 +33,41 @@ passes its narrow recall, transfer, retention and no-action checks. Detailed
 scores and failures are in [benchmark status](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 The original eight-stage sequence below remains the integration contract.
 
-The [completed binding/readout comparison](../../experiments/r4_integrated/contextual_binding_result.md)
-recovers five retained edits through interpolation, bringing GAIN16 neuronal
-execution to 9/16 at unchanged weights. Both-property retention exists for three
-old entities, but fresh performance remains 0/8. BINDING STOPs throughout and its
-unthresholded leaders are also wrong on all supported fresh/retained queries.
-Only its first correction changes weights: the other external-negative contrasts
-already satisfy their margins, leaving its own wrong leaders unchallenged.
+The [completed own-error exploration comparison](../../experiments/r4_integrated/contextual_exploration_result.md)
+gives BINDING 80 effective native updates and raw-score execution of 4/8 fresh
+and 2/16 retained edits. Its neuronal policies STOP throughout because positive
+`tanh` saturation maps distinct scores to identical currents. All correct scores
+are above STOP; lowering the threshold is not the remedy. GAIN16 retains 9/16
+through interpolation but solves no fresh tasks. Neither arm handles both
+properties for a fresh entity. Collapsing position preserves BINDING's fresh
+total and improves old selection, limiting claims about its geometry.
 
-Next repair **training exploration after STOP** in the same integrated loop.
-Execute the unique highest raw candidate even below the STOP threshold; use
-external cosine only when candidates have no unique raw leader. Keep this
-proposal explicitly labeled as exploration and retain thresholded evaluation.
-An actually executed wrong leader followed by teacher PASS necessarily supplies
-a violated ranking margin. Correct exploration produces no fabricated negative.
-This tests feedback coverage before rejecting or retuning the new features.
+Next integrate **the existing learned ranking into neuronal execution**. Test
+one opt-in STOP-centered affine current map with the existing interpolated race:
+for raw drives `s`, use `d=s-tau`, `R=max(1,max(abs(d)))`, and
+`I=600.1+200*d/R`, with `tau=atanh((600.1-600)/200)` and tonic STOP at 600.1.
+This common positive scaling preserves mathematical ordering and the existing
+STOP boundary; finite-precision aliases and true ties remain explicit STOPs.
+Keep all candidates, existing defaults, old policy identities and spent evidence
+unchanged; bind the new mapping to its own decision/readout identity.
 
-Keep GAIN16 and BINDING representations fixed, generic candidates unfiltered,
-native learning rate/rule unchanged, and discrete teaching for attribution.
-Evaluate discrete/interpolated neurons and their matched frozen controls,
-raw/mapped scores, external cosine and the existing binding ablations. Preserve
-true-tie STOPs; interpolation is the validated numerical policy, not a reason
-to change rankings. All references still share the learned motor prior, so the
-controls isolate evidence selection rather than the entire neuronal system.
+First reproduce saved old-policy decisions, then execute this one new policy at
+the same saved numerical weights, with matched frozen controls, unchanged motor,
+source exposure and requests. No training, added cases, threshold tuning, feature
+changes or learning-rule changes. Validate empty/zero states, ties including STOP,
+candidate permutation, large finite drives, nonfinite rejection and read-only
+state. Report raw-to-neuronal agreement, actual edits, unsupported actions and
+resources. This is openly reused development and readout recovery, not new
+generalization. Budget one map, one saved-checkpoint comparison and two hours
+implementation/diagnosis; preserve results in a new artifact.
 
-Retain the [executed correction/replay limits](../../experiments/r4_integrated/contextual_binding_protocol.md):
-48 teaching attempts, 32 actual FAIL/teacher-PASS pairs, at most four older
-receipt replays per correction and 128 replay offers. Declare openly reused
-teaching and fresh transfer inputs before outputs. Budget one fixed comparison
-and two hours implementation/diagnosis; do not extend training after transfer.
-Frozen mates receive identical ingestion/feedback, and differing on-policy
-negatives between updaters must be reported. If correct leaders later remain
-below STOP, investigate an explicit action-versus-STOP learning contract rather
-than silently lowering the evaluation threshold.
+Then return to entity/property ranking and retention. A readout fix cannot repair
+the four wrong fresh and fourteen wrong old raw selections, and will expose the
+raw scorer's unsupported false positives. Keep the existing
+[exploration/feedback contract](../../experiments/r4_integrated/contextual_exploration_protocol.md)
+for later training comparisons. Do not extend training or select an ablation
+because it scores better on this spent cohort. All references share the learned
+motor and isolate evidence selection rather than the whole neuronal system.
 
 Targets remain at least 6/8 fresh and 12/16 retained neuronal executed edits,
 including both properties for three fresh entities; report unsupported behavior

@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with candidate-relative binding and spike-readout evidence.
+Updated 2026-09-05 with executed own-error exploration and current-map diagnosis.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -12,23 +12,26 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current contextual evidence-to-Python result
 
-The [binding/readout comparison](../experiments/r4_integrated/contextual_binding_result.md)
-raises GAIN16 neuronal retention from 4/16 to 9/16 through interpolation at
-unchanged weights, matching raw/mapped references. Three old entities retain
-both properties. All policies still solve 0/8 fresh tasks. New binding features
-STOP throughout; their unthresholded leaders also answer every supported task
-incorrectly. This is a failed representation trial with a useful readout repair.
+The [own-error exploration comparison](../experiments/r4_integrated/contextual_exploration_result.md)
+supplies effective feedback on actual learned mistakes. BINDING applies 80 native
+updates and its raw-score reference executes 4/8 fresh and 2/16 retained edits.
+Its mapped and neuronal policies still STOP on every request: positive current-map
+saturation destroys unique raw rankings before the race. No fresh entity has both
+properties correct. Collapsing positional features preserves the fresh total and
+improves old selection, so no positional-benefit claim is established.
 
-BINDING receives only one native update: all later external-negative contrasts
-already satisfy their margins, while its own wrong leaders are never executed
-as negatives. The next comparison changes that training exploration, preserving
-evaluation STOP. Frozen controls receive matched feedback and solve no tasks.
-References share the fixed learned motor, isolating evidence selection rather
-than removal of the entire neuronal system. No generalization gate passes.
+GAIN16 remains at 0/8 fresh and 9/16 retained with interpolation/raw/mapped
+readouts, or 4/16 retained with discrete neurons. Frozen mates receive matched
+feedback and solve nothing; raw policies wrongly act on both unsupported probes.
+References share the fixed learned motor and isolate evidence selection rather
+than the entire neuronal system. No generalization gate passes.
 
-The complete run takes 187.05 seconds and peaks at 324.32 MiB parent working
-set; 45 focused tests pass. The result report owns diagnostic, resource and exam
-claim limits. Protected gates stay closed. The earlier
+The run takes 232.46 seconds and peaks at 330.34 MiB parent working set;
+33 focused core tests pass. The result report owns resource, diagnostic and
+pending exam-scoring details. Next compare one bounded current map at saved
+weights, then return to ranking and retention. Protected gates stay closed.
+The earlier [binding/readout result](../experiments/r4_integrated/contextual_binding_result.md)
+preserves the initial feedback-coverage failure and interpolation validation. The
 [conditioning result](../experiments/r4_integrated/contextual_conditioned_result.md)
 records the 11/16 host retention that earned the new trial; it uses a different
 cohort. The [revisitation result](../experiments/r4_integrated/contextual_revisit_result.md)
