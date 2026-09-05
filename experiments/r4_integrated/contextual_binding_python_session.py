@@ -153,6 +153,23 @@ def _pair_diagnostics(memory, arm, fixtures) -> dict:
     for item, rank in zip(fixtures["training"], arm["rank_diagnostics"]["retention"], strict=True):
         matching = [pair for pair in pairs if pair["query"] == item["request"]]
         negatives = {pair["rejected_candidate_index"] for pair in matching}
+        leader = rank["unique_top_candidate_index"]
+        executed_steps = []
+        for encounter in arm["training"]:
+            if encounter["case"] != item["name"]:
+                continue
+            action = encounter.get("exploration", encounter["first"])
+            if (
+                action["edited"]
+                and not action["execution"]["passed"]
+                and action["selection"]["candidate_index"] == leader
+            ):
+                executed_steps.append(encounter["step"])
+        admitted_leader_pairs = [
+            {"pair_id": pair["pair_id"], "final_margin": pair["final_margin"]}
+            for pair in matching
+            if pair["rejected_candidate_index"] == leader
+        ]
         queries.append(
             {
                 "case": item["name"],
@@ -160,6 +177,10 @@ def _pair_diagnostics(memory, arm, fixtures) -> dict:
                 "distinct_executed_negative_occurrences": len(negatives),
                 "unique_top_candidate_index": rank["unique_top_candidate_index"],
                 "top_was_executed_negative": rank["unique_top_candidate_index"] in negatives,
+                "final_leader_was_executed_failure": bool(executed_steps),
+                "final_leader_executed_failure_steps": executed_steps,
+                "final_leader_was_admitted_negative": bool(admitted_leader_pairs),
+                "final_leader_admitted_negative_pairs": admitted_leader_pairs,
                 "all_recorded_pairs_fit": None
                 if not matching
                 else all(pair["final_margin"] >= 1 - 1e-10 for pair in matching),
@@ -368,9 +389,13 @@ def _teach(
     exploration_policy="thresholded",
     primary_policy="respond",
     track_learning_diagnostics=False,
+    allocation_policy="baseline",
 ):
     if exploration_policy not in ("thresholded", "raw_candidate"):
         raise ValueError("unknown training exploration policy")
+    if allocation_policy not in ("baseline", "reserve_future_corrections"):
+        raise ValueError("unknown feedback allocation policy")
+    pair_limit = replay.PAIR_BUDGET if allocation_policy == "baseline" else 48
     cases = {item["name"]: item for item in fixtures["training"]}
     seen, encountered, ledger = {}, {}, []
     replay_cursor = replay_count = 0
@@ -472,7 +497,7 @@ def _teach(
             row["correction_status"] = "no_needed_correction"
         elif not candidate_result["edited"]:
             row["correction_status"] = "no_executed_negative"
-        elif len(ledger) == replay.PAIR_BUDGET:
+        elif len(ledger) == pair_limit:
             row["correction_status"] = "pair_budget_exhausted"
         else:
             try:
@@ -522,33 +547,46 @@ def _teach(
                         atol=1e-10,
                     ):
                         raise RuntimeError("wrong-leader correction was inert or its gap changed")
-                older = len(ledger)
                 ledger.append(pair)
                 arm["ledger"].append(pair.record())
                 row["correction_status"] = "applied"
                 row["old_query_scores_after_new"] = _old_query_scores(update, encountered.values())
-                if older:
-                    count = min(4, older, replay.REPLAY_BUDGET - replay_count)
-                    for offset in range(count):
-                        previous = ledger[(replay_cursor + offset) % older]
-                        row["feedback"].append(
-                            replay._feedback(update, frozen, previous, replay=True)
-                        )
-                    replay_count += count
-                    replay_cursor = (replay_cursor + count) % older
-                    if count:
-                        row["old_query_scores_after_rehearsal"] = _old_query_scores(
-                            update, encountered.values()
-                        )
-                if track_learning_diagnostics:
-                    before = row["old_query_scores_before_new"]
-                    after = row["old_query_scores_after_new"]
-                    row["old_query_transitions"] = {
-                        "new": _score_transitions(before, after),
-                        "rehearsal": _score_transitions(
-                            after, row.get("old_query_scores_after_rehearsal", after)
-                        ),
-                    }
+        admitted = row["correction_status"] == "applied"
+        older = len(ledger) - int(admitted)
+        if allocation_policy == "baseline":
+            count = min(4, older, replay.REPLAY_BUDGET - replay_count) if admitted else 0
+        else:
+            allocation = _reserved_replay_allowance(step, len(ledger), replay_count, admitted)
+            count = allocation["replay_offers"]
+            allocation["trigger"] = (
+                "after_new_correction" if admitted else "after_" + row["correction_status"]
+            )
+            allocation["timing"] = "after primary/fallback and existing teacher execution"
+            row["allocation"] = allocation
+        before_rehearsal = row.get("old_query_scores_after_new")
+        if count and before_rehearsal is None and track_learning_diagnostics:
+            before_rehearsal = _old_query_scores(update, encountered.values())
+            row["old_query_scores_before_rehearsal"] = before_rehearsal
+        for offset in range(count):
+            previous = ledger[(replay_cursor + offset) % older]
+            row["feedback"].append(replay._feedback(update, frozen, previous, replay=True))
+        replay_count += count
+        if older and (admitted or count):
+            replay_cursor = (replay_cursor + count) % older
+        if count:
+            row["old_query_scores_after_rehearsal"] = _old_query_scores(
+                update, encountered.values()
+            )
+        if track_learning_diagnostics and (admitted or count):
+            transitions = {}
+            if admitted:
+                transitions["new"] = _score_transitions(
+                    row["old_query_scores_before_new"], row["old_query_scores_after_new"]
+                )
+            transitions["rehearsal"] = _score_transitions(
+                before_rehearsal, row.get("old_query_scores_after_rehearsal", before_rehearsal)
+            )
+            row["old_query_transitions"] = transitions
         encountered.setdefault(case_name, item)
         row["after"], row["frozen_after"] = _snapshot(update), _snapshot(frozen)
         row["new_pair_count"], row["replay_count"] = len(ledger), replay_count
@@ -596,9 +634,43 @@ def _teach(
         "fifo_policy": "append in admission order; cap 32; final correction rehearsal "
         "completes before updates stop",
     }
-    if len(seen) != 4 or len(ledger) > replay.PAIR_BUDGET or replay_count > replay.REPLAY_BUDGET:
+    if allocation_policy != "baseline":
+        arm["ledger_summary"].update(
+            allocation_policy=allocation_policy,
+            offer_budget=150,
+            offers_used=len(ledger) + replay_count,
+            unused_offer_budget=150 - len(ledger) - replay_count,
+            max_new_pairs=48,
+            fifo_policy="append certified pairs in admission order; at most48; no padding",
+        )
+    invalid_replays = (
+        replay_count > replay.REPLAY_BUDGET
+        if allocation_policy == "baseline"
+        else len(ledger) + replay_count > 150
+    )
+    if len(seen) != 4 or len(ledger) > pair_limit or invalid_replays:
         raise RuntimeError("teaching exposure or feedback budget differs from protocol")
     return seen
+
+
+def _reserved_replay_allowance(step, pair_count, replay_count, admitted) -> dict:
+    """Budget arithmetic only; no query, reward, rank or eligibility input."""
+    remaining = 48 - step
+    used = pair_count + replay_count
+    free = 150 - used - remaining
+    older = pair_count - int(admitted)
+    if not 1 <= step <= 48 or free < 0 or older < 0:
+        raise RuntimeError("feedback reservation invariant failed")
+    return {
+        "policy": "reserve_future_corrections",
+        "offer_budget": 150,
+        "used_before_replay": used,
+        "remaining_encounters": remaining,
+        "reserved_for_future_corrections": remaining,
+        "free_replay_offers": free,
+        "eligible_old_pairs": older,
+        "replay_offers": min(4, older, free),
+    }
 
 
 def rank_diagnostics(memory, fixtures) -> dict:
@@ -663,6 +735,7 @@ def run(
     primary_policy="respond",
     include_affine=False,
     track_learning_diagnostics=False,
+    allocation_policies: dict[str, str] | None = None,
 ) -> dict:
     if exploration_policy not in ("thresholded", "raw_candidate"):
         raise ValueError("unknown training exploration policy")
@@ -788,6 +861,9 @@ def run(
             report["arms"][name] = arm
             if arm_specs is not None:
                 arm["comparison_step_policy"] = step_policy
+            allocation = "baseline" if allocation_policies is None else allocation_policies[name]
+            if allocation_policies is not None:
+                arm["allocation_policy"] = allocation
             began = time.perf_counter()
             seen = _teach(
                 name,
@@ -801,6 +877,7 @@ def run(
                 exploration_policy=exploration_policy,
                 primary_policy=primary_policy,
                 track_learning_diagnostics=track_learning_diagnostics,
+                allocation_policy=allocation,
             )
             arm["phase_seconds"]["teaching"] = time.perf_counter() - began
             arm["trained"], arm["frozen_trained"] = _snapshot(update), _snapshot(frozen)

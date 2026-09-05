@@ -1,0 +1,116 @@
+{
+  "kind": "public development; baseline versus future-correction reservation; linked sixteen teaching requests/48 encounters; fresh transfer substitutions preserve existing strata",
+  "training_source": "experiments/r4_integrated/contextual_binding_cases.json",
+  "transfer": [
+    {
+      "name": "fresh-raku-transport",
+      "key": "raku",
+      "value": "apricot",
+      "module": "reserved_fresh_0",
+      "stale": "unconfigured",
+      "request": "Configure raku using its documented transport setting.",
+      "document_id": "reserved-fresh-raku",
+      "document": "The service raku uses apricot for transport and plum as its audit label.",
+      "stratum": "simple"
+    },
+    {
+      "name": "fresh-raku-audit",
+      "key": "raku",
+      "value": "plum",
+      "module": "reserved_fresh_0",
+      "stale": "unconfigured",
+      "request": "Apply the documented audit label to raku.",
+      "document_id": "reserved-fresh-raku",
+      "document": "The service raku uses apricot for transport and plum as its audit label.",
+      "stratum": "simple"
+    },
+    {
+      "name": "fresh-seno-audit",
+      "key": "seno",
+      "value": "pear",
+      "module": "reserved_fresh_1",
+      "stale": "unconfigured",
+      "request": "Set the audit label for seno from the documentation.",
+      "document_id": "reserved-fresh-seno",
+      "document": "The service zanu uses lychee for transport and papaya as its audit label. The service seno uses peach for transport and pear as its audit label.",
+      "stratum": "neighboring_entity"
+    },
+    {
+      "name": "fresh-seno-transport",
+      "key": "seno",
+      "value": "peach",
+      "module": "reserved_fresh_1",
+      "stale": "unconfigured",
+      "request": "Use the transport setting documented for seno.",
+      "document_id": "reserved-fresh-seno",
+      "document": "The service zanu uses lychee for transport and papaya as its audit label. The service seno uses peach for transport and pear as its audit label.",
+      "stratum": "neighboring_entity"
+    },
+    {
+      "name": "fresh-tavi-transport",
+      "key": "tavi",
+      "value": "mango",
+      "module": "reserved_fresh_2",
+      "stale": "unconfigured",
+      "request": "Which transport should tavi use according to the documentation? Apply it.",
+      "document_id": "reserved-fresh-tavi",
+      "document": "For tavi, mango is the transport setting; its audit label is guava. The unrelated pexo service also uses mango for transport.",
+      "stratum": "repeated_value"
+    },
+    {
+      "name": "fresh-tavi-audit",
+      "key": "tavi",
+      "value": "guava",
+      "module": "reserved_fresh_2",
+      "stale": "unconfigured",
+      "request": "Configure tavi with its audit label.",
+      "document_id": "reserved-fresh-tavi",
+      "document": "For tavi, mango is the transport setting; its audit label is guava. The unrelated pexo service also uses mango for transport.",
+      "stratum": "repeated_value"
+    },
+    {
+      "name": "fresh-vumi-audit",
+      "key": "vumi",
+      "value": "date",
+      "module": "reserved_fresh_3",
+      "stale": "unconfigured",
+      "request": "Which audit marker is recorded for vumi? Apply it.",
+      "document_id": "reserved-fresh-vumi",
+      "document": "The audit marker date belongs to vumi. When messages move between services, vumi's configured transport is fig.",
+      "stratum": "paraphrase_order_reversal"
+    },
+    {
+      "name": "fresh-vumi-transport",
+      "key": "vumi",
+      "value": "fig",
+      "module": "reserved_fresh_3",
+      "stale": "unconfigured",
+      "request": "Set vumi's transport from the documented connection choice.",
+      "document_id": "reserved-fresh-vumi",
+      "document": "The audit marker date belongs to vumi. When messages move between services, vumi's configured transport is fig.",
+      "stratum": "paraphrase_order_reversal"
+    },
+    {
+      "name": "unsupported-wexa-transport",
+      "key": "wexa",
+      "value": null,
+      "module": "reserved_missing_wexa",
+      "stale": "unconfigured",
+      "request": "Configure wexa using its documented transport setting.",
+      "document_id": "reserved-missing-wexa",
+      "document": "The service wexa is monitored during startup. Its owner is zanu.",
+      "stratum": "unsupported"
+    },
+    {
+      "name": "unsupported-yopi-audit",
+      "key": "yopi",
+      "value": null,
+      "module": "reserved_missing_yopi",
+      "stale": "unconfigured",
+      "request": "Apply the documented audit label to yopi.",
+      "document_id": "reserved-missing-yopi",
+      "document": "The transport setting of yopi is quince. No audit label is specified.",
+      "stratum": "unsupported"
+    }
+  ]
+}
