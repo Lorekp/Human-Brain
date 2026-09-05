@@ -1168,6 +1168,108 @@ pub unsafe extern "C" fn humanbrain_three_factor_update_projected(
     winner
 }
 
+/// Pairwise AROW adaptation with fixed regularization one and no bias update.
+///
+/// This is conventional global covariance arithmetic, not cell-local plasticity.
+/// Return 0 for a satisfied/zero contrast, 1 for an update, and 2 for invalid
+/// numerical state. Metrics are original margin, directional variance, beta,
+/// and alpha; the latter three stay zero on an early margin/zero-delta return.
+/// Scratch holds the pre-update covariance times the original eligibility.
+///
+/// # Safety
+/// Inputs have lengths D, 2*D, D*D, D, and 4 respectively. Mutable arrays are
+/// mutually disjoint and do not alias eligibility. Covariance must be symmetric.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_pairwise_arow_update(
+    cell_count: usize,
+    eligibility: *const f64,
+    readout_synapses_pa: *mut f64,
+    covariance: *mut f64,
+    covariance_eligibility: *mut f64,
+    metrics: *mut f64,
+) -> usize {
+    if cell_count == 0 || cell_count.checked_mul(cell_count).is_none() {
+        return 2;
+    }
+    let d = slice::from_raw_parts(eligibility, cell_count);
+    let weights = slice::from_raw_parts_mut(readout_synapses_pa, 2 * cell_count);
+    let covariance = slice::from_raw_parts_mut(covariance, cell_count * cell_count);
+    let p = slice::from_raw_parts_mut(covariance_eligibility, cell_count);
+    let metrics = slice::from_raw_parts_mut(metrics, 4);
+    p.fill(0.0);
+    metrics.fill(0.0);
+    let mut margin = 0.0;
+    let mut nonzero = false;
+    for i in 0..cell_count {
+        if !d[i].is_finite() || !weights[i].is_finite() || !weights[cell_count + i].is_finite() {
+            return 2;
+        }
+        margin += (weights[i] - weights[cell_count + i]) * d[i];
+        nonzero |= d[i] != 0.0;
+    }
+    if !margin.is_finite() {
+        return 2;
+    }
+    // Validate caller-owned state even when the original margin will skip learning.
+    for i in 0..cell_count {
+        for j in 0..cell_count {
+            let value = covariance[i * cell_count + j];
+            if !value.is_finite() || value != covariance[j * cell_count + i] {
+                return 2;
+            }
+        }
+    }
+    metrics[0] = margin;
+    if margin >= 1.0 || !nonzero {
+        return 0;
+    }
+    for i in 0..cell_count {
+        for j in 0..cell_count {
+            let value = covariance[i * cell_count + j];
+            p[i] += value * d[j];
+        }
+        if !p[i].is_finite() {
+            return 2;
+        }
+    }
+    let mut variance = 0.0;
+    for i in 0..cell_count {
+        variance += d[i] * p[i];
+    }
+    let beta = 1.0 / (variance + 1.0);
+    let alpha = (1.0 - margin) * beta;
+    if !variance.is_finite() || variance <= 0.0 || !alpha.is_finite() || beta <= 0.0 {
+        return 2;
+    }
+    // Validate every proposed value before publishing either learned array.
+    for i in 0..cell_count {
+        let change = (0.5 * alpha) * p[i];
+        if !(weights[i] + change).is_finite() || !(weights[cell_count + i] - change).is_finite() {
+            return 2;
+        }
+        for j in i..cell_count {
+            let next = covariance[i * cell_count + j] - beta * (p[i] * p[j]);
+            if !next.is_finite() || (i == j && next <= 0.0) {
+                return 2;
+            }
+        }
+    }
+    for i in 0..cell_count {
+        let change = (0.5 * alpha) * p[i];
+        weights[i] += change;
+        weights[cell_count + i] -= change;
+        for j in i..cell_count {
+            let next = covariance[i * cell_count + j] - beta * (p[i] * p[j]);
+            covariance[i * cell_count + j] = next;
+            covariance[j * cell_count + i] = next;
+        }
+    }
+    metrics[1] = variance;
+    metrics[2] = beta;
+    metrics[3] = alpha;
+    1
+}
+
 /// Sum currents from a bounded set of explicit output-cell contacts.
 ///
 /// # Safety

@@ -600,7 +600,9 @@ def _toolchain_entries(toolchain: _NativeToolchain) -> tuple[tuple[str, bytes], 
         if field != "sdk_environment"
     }
     record["sdk_environment"] = list(toolchain.sdk_environment)
-    return (("@toolchain", json.dumps(record, sort_keys=True, separators=(",", ":")).encode("utf-8")),)
+    return (
+        ("@toolchain", json.dumps(record, sort_keys=True, separators=(",", ":")).encode("utf-8")),
+    )
 
 
 def _native_build_plan(source_root: Path | None = None) -> _NativeBuildPlan:
@@ -993,6 +995,11 @@ def _load_library() -> ctypes.CDLL:
             ctypes.c_double,
         ]
         library.humanbrain_three_factor_update_projected.restype = ctypes.c_size_t
+        library.humanbrain_pairwise_arow_update.argtypes = [
+            ctypes.c_size_t, _F64_POINTER, _F64_POINTER, _F64_POINTER,
+            _F64_POINTER, _F64_POINTER,
+        ]
+        library.humanbrain_pairwise_arow_update.restype = ctypes.c_size_t
         library.humanbrain_sparse_readout_current.argtypes = [
             ctypes.c_size_t,
             ctypes.c_size_t,
@@ -1555,6 +1562,55 @@ class NativeThreeFactorLearner:
         if winner > self._output_cells:
             raise RuntimeError("native projected learner rejected its array dimensions")
         return winner
+
+
+    def update_arow(
+        self, covariance: np.ndarray, covariance_eligibility: np.ndarray
+    ) -> dict:
+        """Apply fixed-r=1 pairwise covariance arithmetic; persistent bias is excluded.
+
+        Only two output rows are supported (GO minus NO). The caller owns the
+        covariance, its initialization and custody. No matrix solver is used.
+        """
+        if self._output_cells != 2:
+            raise ValueError("AROW requires exactly two output rows")
+        if not self._readout_synapses_pa.flags.writeable:
+            raise ValueError("readout synapses must be writable")
+        for other in (
+            self._eligibility, self._pacemaker_synapses_pa, self._output_heterogeneity_pa
+        ):
+            if np.shares_memory(self._readout_synapses_pa, other):
+                raise ValueError("readout synapses must not alias learner inputs or bias")
+        arrays = (
+            (covariance, (self._reservoir_cells, self._reservoir_cells), "covariance"),
+            (covariance_eligibility, (self._reservoir_cells,), "covariance eligibility"),
+        )
+        for array, shape, name in arrays:
+            _require_native_array(array, dtype=np.dtype(np.float64), shape=shape, name=name)
+            if not array.flags.writeable:
+                raise ValueError(f"{name} must be writable")
+            for other in (
+                self._eligibility, self._readout_synapses_pa,
+                self._pacemaker_synapses_pa, self._output_heterogeneity_pa,
+            ):
+                if np.shares_memory(array, other):
+                    raise ValueError(f"{name} must not alias learner arrays")
+        if np.shares_memory(covariance, covariance_eligibility):
+            raise ValueError("covariance and scratch must not alias")
+        metrics = np.zeros(4, dtype=np.float64)
+        status = int(self._library.humanbrain_pairwise_arow_update(
+            self._reservoir_cells, _f64(self._eligibility), _f64(self._readout_synapses_pa),
+            _f64(covariance), _f64(covariance_eligibility), _f64(metrics),
+        ))
+        if status not in (0, 1):
+            raise RuntimeError("native AROW rejected nonfinite or invalid covariance state")
+        return {
+            "native_update_applied": status == 1,
+            "gap_before": float(metrics[0]),
+            "directional_variance": float(metrics[1]) if status else None,
+            "beta": float(metrics[2]) if status else None,
+            "alpha": float(metrics[3]) if status else 0.0,
+        }
 
 
 class NativeSparseCellReadout:

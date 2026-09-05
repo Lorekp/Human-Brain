@@ -178,8 +178,10 @@ class ContextualEvidenceMemory:
             raise ValueError("interaction_gain must be finite and positive")
         if type(candidate_interactions) is not bool:
             raise ValueError("candidate_interactions must be a bool")
-        if comparison_step_policy not in ("fixed", "unit_margin_capped"):
+        if comparison_step_policy not in ("fixed", "unit_margin_capped", "arow"):
             raise ValueError("unknown comparison_step_policy")
+        if comparison_step_policy == "arow" and learning_rate != 1.0:
+            raise ValueError("AROW comparison requires fixed learning_rate=1")
         if comparison_protection_policy not in ("none", "orthogonal_certified"):
             raise ValueError("unknown comparison_protection_policy")
         if type(protection_capacity) is not int or protection_capacity <= 0:
@@ -203,6 +205,8 @@ class ContextualEvidenceMemory:
         if self.comparison_step_policy != "fixed":
             storage_identity["comparison_step_policy"] = self.comparison_step_policy
             storage_identity["maximum_learning_rate"] = self.learning_rate
+        if self.comparison_step_policy == "arow":
+            storage_identity["comparison_covariance"] = "pairwise_arow_identity_r1_v1"
         if self.comparison_protection_policy != "none":
             storage_identity["comparison_protection"] = self.protection_policy
         self._storage_root = _digest(storage_identity)
@@ -212,6 +216,13 @@ class ContextualEvidenceMemory:
         self._bias = np.zeros(2, dtype=np.float64)
         self._heterogeneity = np.zeros(2, dtype=np.float64)
         self._eligibility = np.zeros(feature_count, dtype=np.float64)
+        if self.comparison_step_policy == "arow":
+            self._covariance = np.eye(feature_count, dtype=np.float64)
+            self._covariance.setflags(write=False)
+            self._covariance_eligibility = np.zeros(feature_count, dtype=np.float64)
+            self._covariance_hash = sha256(memoryview(self._covariance)).hexdigest()
+            self._covariance_initial_hash = self._covariance_hash
+            self._covariance_update_count = 0
         if self.comparison_protection_policy != "none":
             self._protection_basis = np.empty((0, feature_count), dtype=np.float64)
             self._protected_deltas = np.empty((0, feature_count), dtype=np.float64)
@@ -243,6 +254,35 @@ class ContextualEvidenceMemory:
     @property
     def comparison_protection_policy(self) -> str:
         return self._comparison_protection_policy
+
+    @property
+    def covariance_summary(self) -> dict:
+        """Training-only state identity, cached after each authorized mutation.
+
+        Public exports are copies; the retained matrix is read-only outside the
+        native learning call. Inference never reads or modifies this matrix.
+        """
+        if self.comparison_step_policy != "arow":
+            return {"policy": "none"}
+        state = {
+            "policy": "pairwise_arow_identity_r1_v1",
+            "covariance_sha256": self._covariance_hash,
+            "initial_covariance_sha256": self._covariance_initial_hash,
+            "update_count": self._covariance_update_count,
+        }
+        return {
+            **state,
+            "state_sha256": _digest(state),
+            "shape": list(self._covariance.shape),
+            "regularization": 1.0,
+            "allocated_array_bytes": self._covariance.nbytes,
+            "learned_payload_bytes": (
+                self._covariance.nbytes if self._covariance_update_count else 0
+            ),
+            "scratch_array_bytes": self._covariance_eligibility.nbytes,
+            "initial_state_unchanged": self._covariance_hash == self._covariance_initial_hash,
+            "inference_uses_covariance": False,
+        }
 
     @property
     def protection_capacity(self) -> int:
@@ -340,14 +380,16 @@ class ContextualEvidenceMemory:
             state["maximum_learning_rate"] = self.learning_rate
         if self.comparison_protection_policy != "none":
             state["comparison_protection"] = self.protection_summary["state_sha256"]
+        if self.comparison_step_policy == "arow":
+            state["comparison_covariance"] = self.covariance_summary["state_sha256"]
         return _digest(state)
 
     @property
     def synapse_sha256(self) -> str:
         return sha256(self._weights.tobytes() + self._bias.tobytes()).hexdigest()
 
-    def checkpoint_arrays(self) -> dict[str, np.ndarray]:
-        """Return independent copies for recording the learned synaptic state."""
+    def checkpoint_arrays(self, *, include_learning_state: bool = False) -> dict[str, np.ndarray]:
+        """Copy synapses; explicitly opt in to the dense training covariance export."""
         arrays = {
             "readout_synapses_pa": self._weights.copy(),
             "pacemaker_synapses_pa": self._bias.copy(),
@@ -360,6 +402,8 @@ class ContextualEvidenceMemory:
                     self._protection_record_bytes(), dtype=np.uint8
                 ).copy(),
             )
+        if include_learning_state and self.comparison_step_policy == "arow":
+            arrays["covariance"] = self._covariance.copy()
         return arrays
 
     @property
@@ -424,6 +468,13 @@ class ContextualEvidenceMemory:
             summary["payload_bytes"] += protection["learned_payload_bytes"]
             summary["retained_array_and_byte_payload_bytes"] += (
                 protection["learned_payload_bytes"] + protection["scratch_array_bytes"]
+            )
+        if self.comparison_step_policy == "arow":
+            covariance = self.covariance_summary
+            summary["comparison_covariance"] = covariance
+            summary["payload_bytes"] += covariance["allocated_array_bytes"]
+            summary["retained_array_and_byte_payload_bytes"] += (
+                covariance["allocated_array_bytes"] + covariance["scratch_array_bytes"]
             )
         return summary
 
@@ -816,6 +867,8 @@ class ContextualEvidenceMemory:
         """Apply exactly one consequence at this parent; wrapper authenticates execution."""
         if self.comparison_protection_policy != "none":
             raise ValueError("orthogonal protection requires pairwise comparison feedback")
+        if self.comparison_step_policy == "arow":
+            raise ValueError("AROW requires pairwise comparison feedback")
         if reward not in (-1, 1) or type(reward) is not int:
             raise ValueError("reward must be exactly -1 or +1")
         if decision.checkpoint_sha256 != self.checkpoint_sha256:
@@ -863,6 +916,8 @@ class ContextualEvidenceMemory:
         delta = np.asarray(accepted.eligibility) - np.asarray(rejected.eligibility)
         if self.comparison_protection_policy != "none":
             return self._observe_protected_comparison(rejected, accepted, delta, before)
+        if self.comparison_step_policy == "arow":
+            return self._observe_covariance_comparison(rejected, accepted, delta, before)
         gap_before = float((self._weights[0] - self._weights[1]) @ delta)
         norm_squared = float(delta @ delta)
         proposed_rate = self.learning_rate
@@ -923,6 +978,100 @@ class ContextualEvidenceMemory:
             "bias_policy": "zero scratch pair bias; persistent bias excluded and unchanged",
             "feedback_events": 2,
             "mode": "same_query_pairwise",
+        }
+
+    def _observe_covariance_comparison(self, rejected, accepted, delta, before) -> dict:
+        """Disclosed native AROW adaptation, using only the authenticated pair.
+
+        Feedback execution remains the caller's responsibility. Covariance is
+        persistent learning state, never a candidate selector or replay memory.
+        """
+        state_before = self.covariance_summary
+        synapses_before = self.synapse_sha256
+        norm_squared = float(delta @ delta)
+        # Use the native scalar accumulation order also for frozen/no-op receipts.
+        margin = 0.0
+        for go, no, trace in zip(self._weights[0], self._weights[1], delta, strict=True):
+            margin += (float(go) - float(no)) * float(trace)
+        if not np.isfinite(margin) or not np.isfinite(norm_squared):
+            raise ValueError("AROW comparison requires finite weights and eligibility")
+        result = {
+            "native_update_applied": False, "gap_before": margin,
+            "directional_variance": None, "beta": None, "alpha": 0.0,
+        }
+        p = self._covariance_eligibility
+        direction_hash = None
+        direction_norm_squared = None
+        try:
+            if self.learning_enabled:
+                self._eligibility[:] = delta
+                self._covariance.setflags(write=True)
+                result = self._native.update_arow(self._covariance, p)
+                if result["native_update_applied"]:
+                    direction_hash = sha256(memoryview(p)).hexdigest()
+                    direction_norm_squared = float(p @ p)
+                    new_hash = sha256(memoryview(self._covariance)).hexdigest()
+                    self._covariance_update_count += int(new_hash != self._covariance_hash)
+                    self._covariance_hash = new_hash
+            elif self._covariance_hash != self._covariance_initial_hash:
+                raise RuntimeError("frozen AROW covariance differs from its initial state")
+        finally:
+            self._covariance.setflags(write=False)
+            self._eligibility.fill(0.0)
+            p.fill(0.0)
+        applied = result["native_update_applied"]
+        synapses_after = self.synapse_sha256
+        changed = synapses_after != synapses_before
+        covariance_changed = self._covariance_hash != state_before["covariance_sha256"]
+        skip_reason = None
+        if not self.learning_enabled:
+            skip_reason = "learning_disabled"
+        elif margin >= 1.0:
+            skip_reason = "satisfied_margin"
+        elif norm_squared == 0.0:
+            skip_reason = "zero_delta"
+        elif not changed and not covariance_changed:
+            skip_reason = "native_no_mutation"
+        self.feedback_count += 2
+        self.update_count += int(applied)
+        for decision, reward in ((rejected, -1), (accepted, 1)):
+            self._feedback_root = _digest([self._feedback_root, decision.sha256, reward])
+        return {
+            "before": before, "after": self.checkpoint_sha256,
+            "rejected_decision_sha256": rejected.sha256,
+            "accepted_decision_sha256": accepted.sha256,
+            "eligibility_delta_sha256": sha256(delta.tobytes()).hexdigest(),
+            "gap_before": result["gap_before"],
+            "gap_after": float((self._weights[0] - self._weights[1]) @ delta),
+            "comparison_step_policy": self.comparison_step_policy,
+            "eligibility_delta_norm_squared": norm_squared,
+            "proposed_learning_rate": result["alpha"],
+            "effective_learning_rate": result["alpha"] if changed else 0.0,
+            "cap_active": False,
+            "step_skipped_reason": skip_reason,
+            "learning_enabled": self.learning_enabled,
+            "native_update_applied": applied,
+            "synaptic_update": changed,
+            "bias_policy": "persistent bias excluded and unchanged; native AROW has no bias input",
+            "feedback_events": 2, "mode": "same_query_pairwise",
+            "covariance": {
+                "before": state_before, "after": self.covariance_summary,
+                "synapse_sha256_before": synapses_before,
+                "synapse_sha256_after": synapses_after,
+                "covariance_update": covariance_changed,
+                "covariance_eligibility_sha256": direction_hash,
+                "covariance_eligibility_norm_squared": direction_norm_squared,
+                "directional_variance": result["directional_variance"],
+                "beta": result["beta"], "alpha": result["alpha"],
+                "direction_computed": direction_hash is not None,
+                "rate_semantics": "effective GO-minus-NO coefficient alpha; each row uses alpha/2",
+                "matrix_vector_entries": len(delta) ** 2 if applied else 0,
+                "rank_one_unique_entries": len(delta) * (len(delta) + 1) // 2 if applied else 0,
+                "symmetry_validation_entries": len(delta) ** 2 if self.learning_enabled else 0,
+                "proposed_covariance_validation_entries": (
+                    len(delta) * (len(delta) + 1) // 2 if applied else 0
+                ),
+            },
         }
 
     def _contrast_identity(self, rejected, accepted, delta_hash: str) -> str:

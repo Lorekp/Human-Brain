@@ -115,6 +115,8 @@ def _snapshot(memory) -> dict:
     result["feature_block_l2"]["candidate_interactions"] = float(np.linalg.norm(difference[1537:]))
     result["representation_policy"] = memory.representation_policy
     result["readout_policy"] = memory.readout_policy
+    if memory.comparison_step_policy == "arow":
+        result["covariance"] = memory.covariance_summary
     return result
 
 
@@ -1009,6 +1011,15 @@ def run(
             )
             arm["phase_seconds"]["teaching"] = time.perf_counter() - began
             arm["trained"], arm["frozen_trained"] = _snapshot(update), _snapshot(frozen)
+            covariance_state = None
+            if step_policy == "arow":
+                covariance_state = {
+                    "update": update.covariance_summary,
+                    "frozen": frozen.covariance_summary,
+                }
+                if covariance_state["frozen"] != arm["seed"]["covariance"]:
+                    raise RuntimeError("frozen control changed its initial covariance")
+                arm["covariance_after_teaching"] = covariance_state
             if teaching_fixture_paths is not None:
                 arm["teaching_probe_after_training"] = {
                     **_old_query_scores(update, arm_teaching["training"]),
@@ -1048,6 +1059,11 @@ def run(
             if len(seen) != 10:
                 raise RuntimeError("fresh source exposure differs from protocol")
             arm["transfer_start"] = _snapshot(update)
+            if covariance_state is not None and covariance_state != {
+                "update": update.covariance_summary,
+                "frozen": frozen.covariance_summary,
+            }:
+                raise RuntimeError("fresh ingestion changed learned covariance")
             if protected_state is not None and protected_state != {
                 "update": update.protection_summary,
                 "frozen": frozen.protection_summary,
@@ -1087,6 +1103,11 @@ def run(
                         "common-probe wording only, so zero pairs does not mean the fact "
                         "was never taught"
                     )
+            if covariance_state is not None and covariance_state != {
+                "update": update.covariance_summary,
+                "frozen": frozen.covariance_summary,
+            }:
+                raise RuntimeError("evaluation changed learned covariance")
             if protected_state is not None and protected_state != {
                 "update": update.protection_summary,
                 "frozen": frozen.protection_summary,
@@ -1108,12 +1129,20 @@ def run(
                 }
             )
             for policy_name, memory in (("update", update), ("frozen", frozen)):
-                for key, value in memory.checkpoint_arrays().items():
+                state_options = {"include_learning_state": True} if step_policy == "arow" else {}
+                for key, value in memory.checkpoint_arrays(**state_options).items():
                     arrays[f"{name}_{policy_name}_{key}"] = value
             began = time.perf_counter()
             arm["exam"] = prior._exam(
                 [(p.name, p.memory, p.method) for p in policies if p.method is not None]
             )
+            if covariance_state is not None:
+                arm["covariance_after_exam"] = {
+                    "update": update.covariance_summary,
+                    "frozen": frozen.covariance_summary,
+                }
+                if covariance_state != arm["covariance_after_exam"]:
+                    raise RuntimeError("exam changed learned covariance")
             if protected_state is not None:
                 arm["protection_after_exam"] = {
                     "update": update.protection_summary,
@@ -1136,6 +1165,11 @@ def run(
             "scope": "trained synapses; ordered fixtures and receipts reconstruct "
             "storage and lineage",
         }
+        if any(spec[2] == "arow" for spec in specs):
+            report["synapse_checkpoint"]["scope"] += (
+                "; includes full trained and fixed-initial AROW covariance; "
+                "covariance is training state, not used for inference"
+            )
         report["sources_unchanged_during_run"] = _hashes(source_paths) == report["source_sha256"]
         if not report["sources_unchanged_during_run"]:
             raise RuntimeError("sources changed during comparison")

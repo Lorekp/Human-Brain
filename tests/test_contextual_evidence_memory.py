@@ -1183,3 +1183,126 @@ def test_protected_validation_rejects_native_raw_contrast_erasure(monkeypatch) -
     assert memory.feedback_count == before_count  # A failed check is not a passed receipt.
     np.testing.assert_array_equal(memory._eligibility, 0)
     np.testing.assert_array_equal(memory._projected_eligibility, 0)
+
+
+def _covariance_memory(**options):
+    memory = ContextualEvidenceMemory(
+        _SyntheticProtectionEncoder(), comparison_step_policy="arow", **options
+    )
+    memory.ingest((OpaqueDocument(b"synthetic", b"public-test", b"alpha beta gamma"),))
+    return memory
+
+
+def test_arow_core_covariance_custody_frozen_and_explicit_export() -> None:
+    update = _covariance_memory(candidate_interactions=True)
+    frozen = _covariance_memory(candidate_interactions=True, learning_enabled=False)
+    initial = update.covariance_summary
+    assert update.checkpoint_sha256 == frozen.checkpoint_sha256
+    assert initial == frozen.covariance_summary
+    assert initial["allocated_array_bytes"] == 1621**2 * 8
+    assert initial["learned_payload_bytes"] == 0
+    assert "covariance" not in update.checkpoint_arrays()
+    assert not update._covariance.flags.writeable
+    original = _protection_pair(update)
+    frozen_pair = tuple(frozen.replay_decision(d) for d in original)
+    d = np.array(original[1].eligibility) - np.array(original[0].eligibility)
+    beta = 1 / (d @ d + 1)
+    receipt = update.observe_comparison(*original)
+    frozen_receipt = frozen.observe_comparison(*frozen_pair)
+    np.testing.assert_allclose(update._weights, [0.5 * beta * d, -0.5 * beta * d], atol=1e-14)
+    np.testing.assert_allclose(update._covariance, np.eye(len(d)) - beta * np.outer(d, d))
+    assert receipt["gap_after"] == pytest.approx((d @ d) / (1 + d @ d))
+    assert receipt["covariance"]["covariance_eligibility_sha256"] == sha256(d.tobytes()).hexdigest()
+    assert receipt["covariance"]["covariance_update"]
+    assert update.covariance_summary["update_count"] == 1
+    assert update.covariance_summary["learned_payload_bytes"] == 1621**2 * 8
+    assert frozen.covariance_summary == initial
+    assert not frozen_receipt["native_update_applied"]
+    assert not frozen_receipt["covariance"]["direction_computed"]
+    assert frozen_receipt["covariance"]["directional_variance"] is None
+    assert frozen.update_count == 0 and frozen.feedback_count == update.feedback_count == 2
+    for memory in (update, frozen):
+        np.testing.assert_array_equal(memory._bias, 0)
+        np.testing.assert_array_equal(memory._eligibility, 0)
+        np.testing.assert_array_equal(memory._covariance_eligibility, 0)
+        exported = memory.checkpoint_arrays(include_learning_state=True)["covariance"]
+        assert (
+            sha256(exported.tobytes()).hexdigest()
+            == memory.covariance_summary["covariance_sha256"]
+        )
+        exported.fill(0)
+        assert np.any(memory._covariance)  # Caller cannot change retained/cached state.
+        before = memory.checkpoint_sha256
+        for select in (
+            memory.respond_affine_interpolated, memory.raw_score_reference, memory.external_only
+        ):
+            select(b"request")
+        assert memory.checkpoint_sha256 == before
+        assert not memory._covariance.flags.writeable
+        plain = ContextualEvidenceMemory(_SyntheticProtectionEncoder(), candidate_interactions=True)
+        plain.ingest(tuple(memory._documents))
+        additional = (
+            memory.storage_summary["retained_array_and_byte_payload_bytes"]
+            - plain.storage_summary["retained_array_and_byte_payload_bytes"]
+        )
+        assert additional == initial["allocated_array_bytes"] + initial["scratch_array_bytes"]
+    with pytest.raises(ValueError, match="stale parent"):
+        update.observe_comparison(*original)
+    frozen_fixed = ContextualEvidenceMemory(_SyntheticProtectionEncoder(), learning_enabled=False,
+                                           candidate_interactions=True)
+    frozen_fixed.ingest(tuple(update._documents))
+    with pytest.raises(ValueError, match="different retained source store"):
+        frozen_fixed.replay_decision(original[0])
+
+
+def test_arow_core_revisit_has_history_dependent_direction_without_source_mutation() -> None:
+    memory = _covariance_memory()
+    original = _protection_pair(memory)
+    first = memory.observe_comparison(*original)
+    pair = _protection_pair(memory, b"beta", b"gamma")
+    d = np.asarray(pair[1].eligibility) - np.asarray(pair[0].eligibility)
+    before_s = memory.checkpoint_arrays(include_learning_state=True)["covariance"]
+    before_w = memory._weights.copy()
+    p = before_s @ d
+    margin = float((before_w[0] - before_w[1]) @ d)
+    beta = 1 / (d @ p + 1)
+    alpha = (1 - margin) * beta
+    receipt = memory.observe_comparison(*pair)
+    np.testing.assert_allclose(memory._weights - before_w, [alpha * p / 2, -alpha * p / 2])
+    np.testing.assert_allclose(memory._covariance, before_s - beta * np.outer(p, p), atol=1e-14)
+    assert not np.allclose(p, d)
+    assert receipt["covariance"]["before"] == first["covariance"]["after"]
+    state = memory.covariance_summary
+    memory.ingest((OpaqueDocument(b"later", b"public", b"another request"),))
+    assert memory.covariance_summary == state
+    rebound = tuple(memory.revisit_decision(d) for d in original)
+    assert [d.eligibility for d in rebound] == [d.eligibility for d in original]
+    assert memory.observe_comparison(*rebound)["covariance"]["before"] == state
+
+
+def test_arow_core_satisfied_zero_and_policy_rejections() -> None:
+    memory = _covariance_memory()
+    pair = _protection_pair(memory)
+    d = np.asarray(pair[1].eligibility) - np.asarray(pair[0].eligibility)
+    memory._weights[0] = 2 * d / (d @ d)
+    state = memory.covariance_summary
+    receipt = memory.observe_comparison(*_protection_pair(memory))
+    assert receipt["step_skipped_reason"] == "satisfied_margin"
+    assert not receipt["native_update_applied"]
+    assert memory.covariance_summary == state
+    with pytest.raises(ValueError, match="pairwise comparison"):
+        memory.observe_feedback(_protection_pair(memory)[1], 1)
+    for options in (
+        {"learning_rate": 2.0}, {"comparison_protection_policy": "orthogonal_certified"}
+    ):
+        with pytest.raises(ValueError):
+            _covariance_memory(**options)
+    memory = _covariance_memory()
+    memory.ingest((OpaqueDocument(b"duplicate", b"public", b"alpha beta gamma"),))
+    rows, _ = memory._features(b"request")
+    indices = [i for i, c in enumerate(memory._candidates) if c.emitted == b"alpha"]
+    pair = [memory._decision(b"request", rows, i, "teacher_executed_span") for i in indices]
+    before = memory.covariance_summary
+    receipt = memory.observe_comparison(*pair)
+    assert receipt["step_skipped_reason"] == "zero_delta"
+    assert memory.covariance_summary == before

@@ -111,6 +111,125 @@ def test_projected_three_factor_rejects_scratch_alias_before_mutation() -> None:
     assert not weights.any() and not bias.any()
 
 
+def test_arow_native_matches_reference_across_correlated_contrasts() -> None:
+    trace = np.zeros(4)
+    weights, bias = np.zeros((2, 4)), np.array([7.0, -3.0])
+    covariance, scratch = np.eye(4), np.zeros(4)
+    expected_weights, expected_covariance = weights.copy(), covariance.copy()
+    learner = NativeThreeFactorLearner(
+        eligibility=trace, output_heterogeneity_pa=np.array([9.0, -5.0]),
+        readout_synapses_pa=weights, pacemaker_synapses_pa=bias,
+    )
+    for delta in ([1., 2., 0., -1.], [2., -1., 1., 0.], [-1., -2., 1., 1.]) * 4:
+        trace[:] = delta
+        margin = float((expected_weights[0] - expected_weights[1]) @ trace)
+        p = expected_covariance @ trace
+        beta = 1.0 / (trace @ p + 1.0)
+        alpha = (1.0 - margin) * beta
+        if margin < 1.0:
+            expected_weights += np.array([0.5 * alpha * p, -0.5 * alpha * p])
+            expected_covariance -= beta * np.outer(p, p)
+        result = learner.update_arow(covariance, scratch)
+        assert result["gap_before"] == pytest.approx(margin, abs=1e-13)
+        assert result["native_update_applied"] == (margin < 1.0)
+        if margin < 1.0:
+            np.testing.assert_allclose(scratch, p, atol=1e-13)
+            assert result["alpha"] == pytest.approx(alpha, abs=1e-13)
+            assert result["directional_variance"] == pytest.approx(trace @ p, abs=1e-13)
+        np.testing.assert_allclose(weights, expected_weights, atol=1e-13)
+        np.testing.assert_allclose(covariance, expected_covariance, atol=1e-13)
+        np.testing.assert_array_equal(covariance, covariance.T)
+        np.testing.assert_array_equal(bias, [7.0, -3.0])
+    np.linalg.cholesky(covariance)
+    assert not np.array_equal(covariance, np.eye(4))
+
+
+@pytest.mark.parametrize("trace, go", [([1., 0.], [1., 0.]), ([0., 0.], [0., 0.])])
+def test_arow_native_gate_and_zero_contrast_leave_covariance_unchanged(trace, go) -> None:
+    weights = np.array([go, [0., 0.]])
+    covariance, scratch, bias = np.eye(2), np.ones(2), np.zeros(2)
+    before = weights.copy()
+    learner = NativeThreeFactorLearner(
+        eligibility=np.array(trace), output_heterogeneity_pa=np.zeros(2),
+        readout_synapses_pa=weights, pacemaker_synapses_pa=bias,
+    )
+    result = learner.update_arow(covariance, scratch)
+    assert not result["native_update_applied"]
+    assert result["directional_variance"] is result["beta"] is None
+    assert result["alpha"] == 0
+    np.testing.assert_array_equal(weights, before)
+    np.testing.assert_array_equal(covariance, np.eye(2))
+    np.testing.assert_array_equal(scratch, 0)
+    np.testing.assert_array_equal(bias, 0)
+
+
+@pytest.mark.parametrize("bad", [
+    [[-1., 0.], [0., 1.]], [[0., 0.], [0., 0.]],
+    [[1., 0.2], [0., 1.]], [[float("nan"), 0.], [0., 1.]],
+])
+def test_arow_native_invalid_covariance_rejects_before_mutation(bad) -> None:
+    covariance = np.array(bad)
+    before = covariance.copy()
+    weights, bias = np.zeros((2, 2)), np.zeros(2)
+    learner = NativeThreeFactorLearner(
+        eligibility=np.array([1., 0.]), output_heterogeneity_pa=np.zeros(2),
+        readout_synapses_pa=weights, pacemaker_synapses_pa=bias,
+    )
+    with pytest.raises(RuntimeError, match="invalid covariance"):
+        learner.update_arow(covariance, np.zeros(2))
+    np.testing.assert_array_equal(covariance, before)
+    np.testing.assert_array_equal(weights, 0)
+    np.testing.assert_array_equal(bias, 0)
+
+
+def test_arow_native_rejects_aliased_workspace() -> None:
+    weights, bias, trace = np.zeros((2, 2)), np.zeros(2), np.array([1., 2.])
+    learner = NativeThreeFactorLearner(
+        eligibility=trace, output_heterogeneity_pa=np.zeros(2),
+        readout_synapses_pa=weights, pacemaker_synapses_pa=bias,
+    )
+    with pytest.raises(ValueError, match="must not alias"):
+        learner.update_arow(np.eye(2), trace)
+    with pytest.raises(ValueError, match="must not alias"):
+        learner.update_arow(weights, np.zeros(2))
+    np.testing.assert_array_equal(weights, 0)
+
+
+def test_arow_native_rejects_readonly_or_input_aliased_weights() -> None:
+    for alias in ("eligibility", "bias", "heterogeneity", "readonly"):
+        weights = np.zeros((2, 2))
+        trace, bias, heterogeneity = np.ones(2), np.zeros(2), np.zeros(2)
+        if alias == "eligibility":
+            trace = weights[0]
+        elif alias == "bias":
+            bias = weights[0]
+        elif alias == "heterogeneity":
+            heterogeneity = weights[0]
+        else:
+            weights.setflags(write=False)
+        learner = NativeThreeFactorLearner(
+            eligibility=trace, output_heterogeneity_pa=heterogeneity,
+            readout_synapses_pa=weights, pacemaker_synapses_pa=bias,
+        )
+        with pytest.raises(ValueError, match=r"writable|must not alias"):
+            learner.update_arow(np.eye(2), np.zeros(2))
+        np.testing.assert_array_equal(weights, 0)
+
+
+@pytest.mark.parametrize("bad", [
+    [[1., 0.2], [0., 1.]], [[float("nan"), 0.], [0., 1.]],
+])
+def test_arow_native_noop_still_rejects_invalid_covariance(bad) -> None:
+    weights, bias = np.array([[2., 0.], [0., 0.]]), np.zeros(2)
+    learner = NativeThreeFactorLearner(
+        eligibility=np.array([1., 0.]), output_heterogeneity_pa=np.zeros(2),
+        readout_synapses_pa=weights, pacemaker_synapses_pa=bias,
+    )
+    with pytest.raises(RuntimeError, match="invalid covariance"):
+        learner.update_arow(np.array(bad), np.zeros(2))
+    np.testing.assert_array_equal(weights, [[2., 0.], [0., 0.]])
+
+
 def test_observation_changes_only_cell_and_synapse_state() -> None:
     circuit = small_circuit()
     before = circuit.eligibility

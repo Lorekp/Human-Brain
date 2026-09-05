@@ -1,0 +1,116 @@
+{
+  "kind": "Authored public-development fresh evaluator for fixed versus covariance-aware learning; two familiar-form and two broader-form entities plus two unsupported requests; fixed expectations are evaluator-only; not independent reading-comprehension evidence.",
+  "training_source": "experiments/r4_integrated/contextual_curriculum_compact_train.json",
+  "transfer": [
+    {
+      "name": "fresh-lovi-transport",
+      "key": "lovi",
+      "value": "yellow flag",
+      "module": "covariance_fresh_0",
+      "stale": "unconfigured",
+      "request": "Configure lovi using its documented transport setting.",
+      "document_id": "covariance-lovi",
+      "document": "The service lovi uses yellow flag for transport and meadowsweet as its audit label.",
+      "stratum": "familiar"
+    },
+    {
+      "name": "fresh-lovi-audit",
+      "key": "lovi",
+      "value": "meadowsweet",
+      "module": "covariance_fresh_0",
+      "stale": "unconfigured",
+      "request": "Apply the documented audit label to lovi.",
+      "document_id": "covariance-lovi",
+      "document": "The service lovi uses yellow flag for transport and meadowsweet as its audit label.",
+      "stratum": "familiar"
+    },
+    {
+      "name": "fresh-myru-audit",
+      "key": "myru",
+      "value": "scabious",
+      "module": "covariance_fresh_1",
+      "stale": "unconfigured",
+      "request": "Set the audit label for myru from the documentation.",
+      "document_id": "covariance-myru",
+      "document": "For myru, scabious is the audit label and harebell is the transport setting.",
+      "stratum": "familiar"
+    },
+    {
+      "name": "fresh-myru-transport",
+      "key": "myru",
+      "value": "harebell",
+      "module": "covariance_fresh_1",
+      "stale": "unconfigured",
+      "request": "Use the transport setting documented for myru.",
+      "document_id": "covariance-myru",
+      "document": "For myru, scabious is the audit label and harebell is the transport setting.",
+      "stratum": "familiar"
+    },
+    {
+      "name": "fresh-nefi-transport",
+      "key": "nefi",
+      "value": "lady fern",
+      "module": "covariance_fresh_2",
+      "stale": "unconfigured",
+      "request": "Configure nefi with the value used to carry communication between services.",
+      "document_id": "covariance-nefi",
+      "document": "The nefi service labels its audit records betony. For communication between services it uses lady fern, even while a maintenance check is running.",
+      "stratum": "broader"
+    },
+    {
+      "name": "fresh-nefi-audit",
+      "key": "nefi",
+      "value": "betony",
+      "module": "covariance_fresh_2",
+      "stale": "unconfigured",
+      "request": "What label does nefi put on its audit records? Apply it.",
+      "document_id": "covariance-nefi",
+      "document": "The nefi service labels its audit records betony. For communication between services it uses lady fern, even while a maintenance check is running.",
+      "stratum": "broader"
+    },
+    {
+      "name": "fresh-oxpa-audit",
+      "key": "oxpa",
+      "value": "chicory",
+      "module": "covariance_fresh_3",
+      "stale": "unconfigured",
+      "request": "Which identifier appears on oxpa's audit records? Apply it.",
+      "document_id": "covariance-oxpa",
+      "document": "An operator reviewing oxpa sees chicory on the service's audit records. Its transport setting is agrimony; the review schedule changes neither configured value.",
+      "stratum": "broader"
+    },
+    {
+      "name": "fresh-oxpa-transport",
+      "key": "oxpa",
+      "value": "agrimony",
+      "module": "covariance_fresh_3",
+      "stale": "unconfigured",
+      "request": "Use the documented value that oxpa employs for transport between services.",
+      "document_id": "covariance-oxpa",
+      "document": "An operator reviewing oxpa sees chicory on the service's audit records. Its transport setting is agrimony; the review schedule changes neither configured value.",
+      "stratum": "broader"
+    },
+    {
+      "name": "unsupported-pyvi-transport",
+      "key": "pyvi",
+      "value": null,
+      "module": "covariance_fresh_4",
+      "stale": "unconfigured",
+      "request": "Configure pyvi using its documented transport setting.",
+      "document_id": "covariance-pyvi",
+      "document": "The audit label assigned to pyvi is woodruff. A checklist headed transport review mentions pyvi but provides no transport setting.",
+      "stratum": "unsupported"
+    },
+    {
+      "name": "unsupported-qelu-audit",
+      "key": "qelu",
+      "value": null,
+      "module": "covariance_fresh_5",
+      "stale": "unconfigured",
+      "request": "Which label identifies qelu's audit records? Apply it.",
+      "document_id": "covariance-qelu",
+      "document": "The qelu service sends traffic between services using avens. Its audit timetable lists inspection dates without stating a label for the audit records.",
+      "stratum": "unsupported"
+    }
+  ]
+}
