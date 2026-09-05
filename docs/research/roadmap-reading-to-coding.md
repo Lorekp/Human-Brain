@@ -81,14 +81,16 @@ The preceding [rate-cell](../../experiments/r4_integrated/contextual_rate_cell_r
 [inconclusive feasibility](../../experiments/r4_integrated/contextual_full_choice_feasibility_result.md)
 results remain closed. None establishes architectural impossibility.
 
-Repeated failed acquisition now calls for a bounded review of the learning
-strategy before selecting the next integrated experiment. Compare how experiences
-are retained and reused, how reusable computation is learned, and what a disclosed
-pretrained knowledge component could contribute. Select one falsifiable next
-step against the persistent executed loop. Do not automatically extend attention,
-epochs, rates, labels, thresholds or solver budgets, or treat declining loss as
-useful acquisition. The [previous failure review](rate-cell-failure-review.md)
-is the historical rationale for the completed alignment comparison.
+The [acquisition-strategy review](acquisition-strategy-review.md) selects conditional
+preparation of rapid neuronal experience addressing with a frozen pretrained
+reader. First check that reader's competence and cost on exposed development
+material. Then test learned memory access against frozen cells, ordinary retrieval,
+an independent conventional learned router and the same reader over the full corpus.
+Reject an incidental neuronal component if those references dominate. This tests
+acquired addressing, not neuronal language understanding or an adopted architecture.
+Do not automatically extend attention, epochs, rates, labels, thresholds or solver
+budgets, or treat declining loss as useful acquisition. The
+[previous failure review](rate-cell-failure-review.md) remains historical.
 
 This acquisition diagnostic uses explicit answer/STOP supervision over retained
 raw sources and a frozen external encoder. It is not answer-free internalization,

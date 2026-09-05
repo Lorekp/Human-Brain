@@ -1,0 +1,71 @@
+{
+  "status": "reviewable preparation draft; no evaluation interface or run authorized",
+  "passage_title": "Amelia Earhart",
+  "original_group_header": "Questions 25–38 are about Amelia Earhart (pages 8–9)",
+  "selection_note": "Only original Q25, Q27, Q30 and Q36 are included; original order and response formats are retained.",
+  "items": [
+    {
+      "id": "25",
+      "printed_page": 14,
+      "format": "single_option_checkbox",
+      "quote": "…because of the achievements of brave, pioneering pilots who flew in some of the first powered planes.",
+      "quote_style": {"italic": "entire quote", "bold": ["pioneering"]},
+      "text": "The word pioneering tells us that the pilots…",
+      "text_style": {"italic": ["pioneering"]},
+      "instruction": "Tick one.",
+      "instruction_style": {"bold": ["one"]},
+      "options": [
+        "flew aeroplanes for many years.",
+        "were not very good at flying.",
+        "could perform tricks and stunts when flying.",
+        "tested out a new way of travelling."
+      ],
+      "printed_marks": "1 mark"
+    },
+    {
+      "id": "27",
+      "printed_page": 15,
+      "format": "single_option_checkbox",
+      "section_reference": "Look at the section: Amelia's first flights.",
+      "section_reference_style": {"bold_italic": ["Amelia's first flights."]},
+      "text": "When did Amelia decide to become a pilot?",
+      "instruction": "Tick one.",
+      "instruction_style": {"bold": ["one"]},
+      "options": [
+        "when she first saw an aeroplane",
+        "when she first went on a flight",
+        "when she saw most pilots were men",
+        "when she first visited an air show"
+      ],
+      "printed_marks": "1 mark"
+    },
+    {
+      "id": "30",
+      "printed_page": 16,
+      "format": "three_row_year_table",
+      "text": "Using information from the text, write the year that each of Amelia's achievements happened.",
+      "column_headers": ["", "Year"],
+      "rows": [
+        {"text": "Amelia got a pilot's licence.", "supplied_value": null},
+        {"text": "Amelia flew on a plane between Canada and Wales.", "supplied_value": null},
+        {"text": "Amelia flew across the Atlantic on her own.", "supplied_value": null}
+      ],
+      "printed_marks": "1 mark"
+    },
+    {
+      "id": "36",
+      "printed_page": 18,
+      "format": "five_event_ordering_with_supplied_entry",
+      "text": "Number the following events 1–5 to show the order in which they happened.",
+      "instruction": "The first one has been done for you.",
+      "rows": [
+        {"text": "Amelia arrived in New Guinea.", "supplied_value": null},
+        {"text": "Amelia travelled in a plane for the first time.", "supplied_value": 1},
+        {"text": "Amelia got her pilot's licence.", "supplied_value": null},
+        {"text": "Amelia had her plane repaired in Hawaii.", "supplied_value": null},
+        {"text": "Amelia went on a flight between Canada and Wales.", "supplied_value": null}
+      ],
+      "printed_marks": "1 mark"
+    }
+  ]
+}

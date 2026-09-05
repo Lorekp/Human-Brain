@@ -1,0 +1,90 @@
+{
+  "status": "transcriber and independent root source review complete; rendered HTML layout review pending; no scoring",
+  "reviewed_utc_date": "2026-09-05",
+  "method": "Manual line-by-line comparison to the individually rendered pages, not acceptance of raw layout extraction.",
+  "independent_source_review": {
+    "reviewer": "root agent",
+    "passage_question_and_key_pages": [
+      "reading-08",
+      "reading-09",
+      "answer-14",
+      "answer-15",
+      "answer-16",
+      "answer-18",
+      "marks-26",
+      "marks-27",
+      "marks-28",
+      "marks-32"
+    ],
+    "result": "no content discrepancy found",
+    "evidence": "parent review message, 2026-09-05"
+  },
+  "HTML_layout_review": {
+    "status": "pending",
+    "reason": "CUA reports no available browser; installed Playwright package has no browser executable. Static structure checked; no browser installation attempted."
+  },
+  "visual_source_checks": {
+    "reading-08.png": "Title, both photograph captions, two section headings and all four paragraphs compared line by line.",
+    "reading-09.png": "Three section headings, all four paragraphs, superscript ordinal and complete Crown route map compared line by line.",
+    "answer-14.png": "Original group header and complete Q25 quote/emphasis/stem/instruction/options/mark.",
+    "answer-15.png": "Complete visible Q27 only; hidden duplicate Q25 excluded.",
+    "answer-16.png": "Complete Q30 prompt, Year header, row wording/order and single mark.",
+    "answer-18.png": "Complete Q36 prompt/instruction/five rows, supplied second-row 1 and single mark.",
+    "marks-26.png": "Q25 fourth option checked.",
+    "marks-27.png": "Q27 second option checked.",
+    "marks-28.png": "Q30 1923/1928/1932; all three required for one mark.",
+    "marks-32.png": "Q36 printed-row key 5/1/2/4/3, including supplied 1; one mark.",
+    "copyright-1.png": "Crown default, logo exclusion and exact OGL attribution.",
+    "copyright-2.png": "Crown Amelia text and third-party cover/plane photograph exceptions.",
+    "copyright-3.png": "Crown route map and third-party portrait exception."
+  },
+  "corrections_from_raw_extraction": [
+    "Dropped hidden duplicate text from facing/overlaid question pages; Q25 is not repeated on the visible Q27 page.",
+    "Restored ordinary letter sequences from extraction artifacts such as /f_ly and split words/numbers; no wording paraphrase.",
+    "Restored visible curly apostrophes/quotes, ellipsis and en dash where extraction has replacement characters. Preserved straight apostrophes in the answer-booklet questions.",
+    "Joined visual line wrapping and repeated layout whitespace into single spaces; preserved paragraph and heading boundaries.",
+    "Plain text flattens superscript 2nd; structure/HTML restores superscript nd.",
+    "Photographs excluded but their original Crown text captions retained. New review layout does not claim original page geometry."
+  ],
+  "map_crop": {
+    "source": "reading-09.png",
+    "source_sha256": "89d329ea2e6eef0c4d35798784ff2b57967a5d94e24290d89668e70483f11144",
+    "source_size_pixels": [
+      910,
+      1287
+    ],
+    "crop_xyxy_pixels": [
+      0,
+      867,
+      910,
+      1287
+    ],
+    "output_size_pixels": [
+      910,
+      420
+    ],
+    "resampled": false,
+    "pixel_equality_to_source_crop": true,
+    "excludes_photos_and_logos": true,
+    "preserves_map_caption_and_printed_page_number": true
+  },
+  "static_checks": {
+    "passage_blocks": 17,
+    "passage_paragraphs": 8,
+    "items": [
+      "25",
+      "27",
+      "30",
+      "36"
+    ],
+    "available_marks": 4,
+    "Q30_row_count": 3,
+    "Q36_row_count": 5,
+    "Q36_supplied_entry": {
+      "row_1based": 2,
+      "value": 1
+    },
+    "keys_separate_from_review_HTML": true,
+    "no_replacement_characters_in_passage": true
+  }
+}

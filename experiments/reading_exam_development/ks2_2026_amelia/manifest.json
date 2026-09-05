@@ -1,0 +1,148 @@
+{
+  "status": "reviewable extraction draft; no learner ingestion, evaluation or scoring interface",
+  "authority": "Standards and Testing Agency, Department for Education, England",
+  "assessment": "May 2026 national curriculum tests, key stage 2 English reading",
+  "published": "2026-05-22",
+  "passage": "Amelia Earhart",
+  "passage_printed_pages": [
+    8,
+    9
+  ],
+  "partition": "public development; entire 2026 paper already developer-exposed",
+  "source_landing_url": "https://www.gov.uk/government/publications/key-stage-2-tests-2026-english-reading-test-materials",
+  "sources": [
+    {
+      "url": "https://assets.publishing.service.gov.uk/media/6a0af4c9229555d0fe826722/2026_KS2_English_reading_booklet.pdf",
+      "final_url": "https://assets.publishing.service.gov.uk/media/6a0af4c9229555d0fe826722/2026_KS2_English_reading_booklet.pdf",
+      "status": 200,
+      "bytes": 10307852,
+      "sha256": "98fc6c64f67d08b0a17e333ba4a379f4acc281defd873a4576bdfdf2ae5c8871",
+      "pages": 12,
+      "path": ".pytest-tmp\\official-reading-2026-source-custody\\2026_KS2_English_reading_booklet.pdf",
+      "extraction_path": ".pytest-tmp\\official-reading-2026-source-custody\\2026_KS2_English_reading_booklet.txt",
+      "extraction_sha256": "824b12fe47c85cc529d0dbd1361a7f618a63e0ed76c33c727df5a7f9c795476e",
+      "content_type": "application/pdf"
+    },
+    {
+      "url": "https://assets.publishing.service.gov.uk/media/6a0af4ea229555d0fe826723/2026_KS2_English_reading_answer_booklet.pdf",
+      "final_url": "https://assets.publishing.service.gov.uk/media/6a0af4ea229555d0fe826723/2026_KS2_English_reading_answer_booklet.pdf",
+      "status": 200,
+      "bytes": 428093,
+      "sha256": "6c179aa107f4d9fca1c87109c4da02813d152cb97b80dd39dbedd44f1a43576c",
+      "pages": 20,
+      "path": ".pytest-tmp\\official-reading-2026-source-custody\\2026_KS2_English_reading_answer_booklet.pdf",
+      "extraction_path": ".pytest-tmp\\official-reading-2026-source-custody\\2026_KS2_English_reading_answer_booklet.txt",
+      "extraction_sha256": "4584b8747e61aed172bbeafa12887a549fb5730773618db1a5b0705863f65dea",
+      "content_type": "application/pdf"
+    },
+    {
+      "url": "https://assets.publishing.service.gov.uk/media/6a0af5ae279ebb7d24f8f3ae/2026_KS2_English_reading_mark_schemes.pdf",
+      "final_url": "https://assets.publishing.service.gov.uk/media/6a0af5ae279ebb7d24f8f3ae/2026_KS2_English_reading_mark_schemes.pdf",
+      "status": 200,
+      "bytes": 852782,
+      "sha256": "e309d94fa6e30c089ee4ba9462e0936b493993b4cf957dc0cd317aeb76c8cd8a",
+      "pages": 36,
+      "path": ".pytest-tmp\\official-reading-2026-source-custody\\2026_KS2_English_reading_mark_schemes.pdf",
+      "extraction_path": ".pytest-tmp\\official-reading-2026-source-custody\\2026_KS2_English_reading_mark_schemes.txt",
+      "extraction_sha256": "b18b35246da52aa3441b51eeff66b3a7fb849b2a4da4b427afcfce883e37c32e",
+      "content_type": "application/pdf"
+    },
+    {
+      "url": "https://assets.publishing.service.gov.uk/media/6a0c63d9f7c2e79c33db91fc/2026_copyright_ownership_key_stage_2_national_curriculum_tests.pdf",
+      "final_url": "https://assets.publishing.service.gov.uk/media/6a0c63d9f7c2e79c33db91fc/2026_copyright_ownership_key_stage_2_national_curriculum_tests.pdf",
+      "status": 200,
+      "bytes": 161477,
+      "sha256": "70c9edcc8177cad38c4aee94bdec3c754f8a1bd665a8daaeb9f6331a7d899309",
+      "pages": 3,
+      "path": ".pytest-tmp\\official-reading-2026-source-custody\\2026_copyright_ownership_key_stage_2_national_curriculum_tests.pdf",
+      "extraction_path": ".pytest-tmp\\official-reading-2026-source-custody\\2026_copyright_ownership_key_stage_2_national_curriculum_tests.txt",
+      "extraction_sha256": "c975bdca13bc3d1075b2f9f1e908269edb33d1e71deb719c51911a58de3c3870",
+      "content_type": "application/pdf"
+    }
+  ],
+  "source_custody_manifest_sha256": "f0dfb9a92e98d942a916afe27e41755f8015032ce36563869b17cd69c9580c6c",
+  "verified_render_sha256": {
+    "reading-08.png": "60f5a9718c68e1ae7bdbb415723adb45e9b7cbaec4bfaee9fdb97ee141df2f99",
+    "reading-09.png": "89d329ea2e6eef0c4d35798784ff2b57967a5d94e24290d89668e70483f11144",
+    "answer-14.png": "4f3b08dd4b8caa563aa7714d2dfe3c5a0bffdf528ce1988d51423462b4acbac7",
+    "answer-15.png": "dd966c0f9fcef68dc56d2e8adf450093ce6aacfdea24fcb85e628dc8edec5148",
+    "answer-16.png": "36f97ebe022696e847f7386b436e1948242780ebe648bb0e28c1494c6ece45f8",
+    "answer-18.png": "2e9642e997c0318600fce7bd77880225e990e32d7d595a363d7ad7ece81a737d",
+    "marks-26.png": "04841d6edd9ea1382fa243314ed13492b20bc819403745d79a1f3447a9e9f686",
+    "marks-27.png": "89ed52cb6b0d80325365225d79329dd509f821e4ad230565633e8228e0a41faf",
+    "marks-28.png": "80f7d65b74dc9916374423c3cac0b57e9905ad22a6275c9ff1055766ea6a5948",
+    "marks-32.png": "ccb02e04545428032106e771aab60427ce99ef9ce0b4f2a92f2a64c537b791a8",
+    "copyright-1.png": "0d66c36e52682a91961998d72fba94fbabbc399cbc5ae995bef213d9b09b1605",
+    "copyright-2.png": "65ef94c5036183093e9f2ebb1463ba1874943e6b3c0ae67ef0e3aa8790cc14e5",
+    "copyright-3.png": "68be1b6eb4619c1b3ca6e9a1032007796ad74768889f81657145be4060320c02"
+  },
+  "source_rendering": {
+    "pypdf": "6.10.0",
+    "pdftoppm": "26.07.0",
+    "render_dpi": 110
+  },
+  "rights": {
+    "text_questions_keys_route_map": "Crown copyright 2026; commissioned text/map and Crown default for questions/marking",
+    "copyright_report_pages": [
+      1,
+      2,
+      3
+    ],
+    "license_url": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+    "attribution": "Contains material developed by the Standards and Testing Agency for 2026 national curriculum assessments and licensed under Open Government Licence v3.0",
+    "excluded": [
+      "Getty Images/Bettmann plane photograph, reference 515162172",
+      "Getty Images/Staff portrait photograph, reference 1161352",
+      "Jim Handy Productions cover photograph",
+      "logos",
+      "barcodes and registration marks"
+    ],
+    "original_photograph_captions": "retained as text, photographs excluded"
+  },
+  "selected_items_in_original_order": [
+    "25",
+    "27",
+    "30",
+    "36"
+  ],
+  "available_marks": 4,
+  "passage_group_marks": 18,
+  "unevaluated_passage_items": [
+    "26",
+    "28",
+    "29",
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "37",
+    "38"
+  ],
+  "unevaluated_passage_marks": 14,
+  "exposure_limit": "Prior developer exposure includes the whole 2026 paper; public release gives no contamination-free claim for pretrained systems.",
+  "extraction": {
+    "version": "manual-render-checked-draft-v1",
+    "text_encoding": "UTF-8; LF",
+    "review_layout": "new static HTML preserving official response structures, not a facsimile",
+    "source_pdf_page_indices": "one-based PDF pages match printed reading/answer/mark pages used",
+    "keys_file": "rubric.json",
+    "review_file": "review.html",
+    "pending": "Rendered HTML layout review, response serialization, scoring/access protocol and model binding before any evaluation; independent source transcription review is complete."
+  },
+  "preparation_tool": {
+    "path": ".pytest-tmp\\prepare_ks2_2026_amelia.py",
+    "sha256": "4aa97b9552fa84475e5776ba2a62c3a625b0c6d18806d2526146e6165d5a87df",
+    "scope": "one-off ignored scratch generator; not learner or scoring runtime"
+  },
+  "fixture_sha256": {
+    "README.md": "17bf079e951a4f334af625427bb346f75c0157ccb4275930a632de96a517963b",
+    "passage.txt": "6c3dc3242592ff149942fd8c5906a0c8218b38a73afcb9a660a103f496be691d",
+    "passage_structure.json": "67a1664bcd73fe435c73a74188dbbb5f88ca90923f0edec792689a494bfe5283",
+    "questions.json": "757f5d4c60d257f73c05c2a2cce0728d40295bae939c0d0f99759387215565c3",
+    "rubric.json": "ea21cf26af23358ee42123b2db421702ce17fc2e08d305c1fbb947bbf3f4a067",
+    "route-map.png": "a9a4b97c339861460b7fd15429d9c71bac112b9b9987b55f5cdf5aadf77826e1",
+    "review.html": "59b7dd419191a31e34687026ecbfe84f29ac37f112e8949fcfc20288555f7308",
+    "extraction-review.json": "484fb2ea187ffcd6f192605b9ed58ec7cb5be32cffdedb3658d3a07bdfa96761"
+  }
+}

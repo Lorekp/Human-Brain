@@ -26,7 +26,9 @@ the independent numerical rollout's tolerance failure and saved-state diagnosis;
 the failed replay is not a passing audit. All 3,330 retained execution workspaces
 match recorded actions and outcomes. Runtime is 336.597 seconds, peak parent
 working set 297.313 MiB, and corrected counted payload 104,421,866 bytes including
-encoder files. A bounded acquisition-strategy review precedes another mechanism.
+encoder files. The [completed strategy review](research/acquisition-strategy-review.md)
+selects conditional experience-addressing preparation, starting with a fixed
+external reader's competence and cost; no new mechanism has been adopted.
 No integrated, fresh, official-exam or protected gate passes.
 
 ## Earlier rate-cell acquisition

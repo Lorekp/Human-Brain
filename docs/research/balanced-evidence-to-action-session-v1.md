@@ -65,10 +65,12 @@ STOPs are 16/16 and 15/16 for actual wording before/after growth, but 8/16 and
 6/16 for alternate wording. Its repaired live payload count passes; the result
 owns the numerical replay limitation and diagnosis.
 
-**Next integrated priority:** a bounded acquisition-strategy review, then one
-selected experiment on the persistent executed loop. Compare experience
-retention/reuse, learned computation and disclosed pretrained resources before
-committing to another reader variant. No automatic optimizer, epoch, label,
+**Next integrated priority:** the [selected conditional comparison](acquisition-strategy-review.md)
+of neuronal experience addressing with a frozen competent reader. Qualify the
+external reader before router fitting, then require useful acquisition/retention
+against strong ordinary and full-corpus controls in the persistent executed loop.
+This is acquired addressing, not neuronal comprehension or an adopted architecture.
+No automatic optimizer, epoch, label,
 threshold or producer sweep, fresh comparison or protected evaluation follows.
 The [previous failure review](rate-cell-failure-review.md), original
 [rate-cell plan](contextual-rate-cell-preflight-plan.md) and frozen protocols
@@ -92,10 +94,11 @@ Authentic official-exam development remains complementary pressure under the
 are regression observations with pending human marks, not fresh examination
 evidence. Select additional official passage groups through a separate frozen
 manifest; preserve paper/passage exposure boundaries and official marking guidance.
-The [selected 2026 candidate](official-reading-next-candidate.md) now has verified
-original PDF custody and visual key checks; its raw extraction still needs
-correction before becoming a learner fixture. The whole paper is developer-exposed,
-not reserve material. Authored cases do not replace independent reading evaluation.
+The [prepared 2026 fixture](official-reading-next-candidate.md) now has verified
+PDF custody, corrected passage/map and original questions with separate official
+keys. Source content review is complete; machine response/scoring and model
+binding remain pending. The whole paper is developer-exposed, not reserve material.
+Authored cases do not replace independent reading evaluation.
 
 Targets remain at least 6/8 fresh and 12/16 retained edits, including both
 properties for three fresh entities; translate them explicitly if the next roster

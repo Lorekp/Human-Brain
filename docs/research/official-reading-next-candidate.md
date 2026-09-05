@@ -1,7 +1,9 @@
 # Official reading candidate: KS2 2026 Amelia Earhart
 
-Source custody and visual review completed, 2026-09-05. Original PDFs are stored
-locally; no learner fixture, ingestion, evaluation or reserve designation.
+Source custody and checked fixture preparation completed, 2026-09-05.
+The [four-item fixture](../../experiments/reading_exam_development/ks2_2026_amelia/README.md)
+contains corrected passage text, the Crown route map, original questions and
+separate official keys. No learner ingestion, evaluation or reserve designation.
 This follows the [reading plan](reading-comprehension-evaluation.md).
 
 ## Source and reuse scope
@@ -25,7 +27,7 @@ preparing the complete passage group. Include the required attribution and
 
 > Contains material developed by the Standards and Testing Agency for 2026 national curriculum assessments and licensed under Open Government Licence v3.0
 
-## Proposed small diagnostic
+## Prepared small diagnostic
 
 Preserve the original passage and use a declared four-item, four-mark subset:
 
@@ -39,7 +41,7 @@ Preserve the original passage and use a declared four-item, four-mark subset:
 Keys were checked against official scheme text. Preserve wording, instructions,
 option order, row labels and supplied entries; do not split Q30's mark. The
 other fourteen marks remain unevaluated. This is a proposal, not a frozen roster.
-The current one-to-three-word span interface cannot emit all these response
+The current scalar span interface cannot emit all these response
 formats; a declared structured-output contract is required before evaluation.
 
 ## Remaining preparation and exposure
@@ -68,14 +70,19 @@ Q25/Q27 on scheme pages 26/27, Q30 on page 28, and Q36 on page 32. Q36's supplie
 text/map and the two Getty photograph exceptions; the cover photograph and logos
 remain excluded as stated above.
 
-Raw pypdf layout extraction is hashed but **not corrected or approved as a
-fixture**. It contains replacement characters, excessive spacing and duplicated
-hidden question content: for example, extracted answer page 15 includes Q25
-content absent from its visible page. The completed visual source review does
-not certify a machine transcription. Remaining work is an explicitly scoped,
-rights-compliant passage/map and structured-question extraction, checked line by
-line against these renders, with correction and final extraction hashes. No new
-question, answer policy, score or learner exposure was introduced by this work.
+The raw pypdf layout extraction remains unchanged and is not the learner fixture:
+it contains replacement characters, excessive spacing and hidden duplicated
+question content. The [prepared manifest](../../experiments/reading_exam_development/ks2_2026_amelia/manifest.json)
+binds the corrected transcription, source structure, original four questions,
+separate rubric, unchanged-pixel map crop and source custody. Transcriber and
+independent orchestrator comparisons cover all eight passage paragraphs and the
+selected question/marking pages. Corrections and checks are in the linked fixture.
+
+The optional HTML review aid passes static structure checks but has not had a
+rendered-layout review: no usable browser was available. This does not substitute
+for or alter the original page comparisons. A frozen machine response/scoring
+contract, access boundary and model binding remain necessary before evaluation.
+No answer policy, score or learner exposure was introduced by preparation.
 
 The developer inspected full 2026 reading/answer text and relevant marking
 sections. Treat the **whole KS2 2026 paper as developer-exposed**, including

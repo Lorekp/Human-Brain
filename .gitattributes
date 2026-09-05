@@ -13,6 +13,8 @@ experiments/r3_pilot/public_typed_ast_horizon2_int_visible_probe.json binary -eo
 experiments/r3_pilot/public_typed_factor_horizon2_int_created_child_gate.json binary -eol
 *.md text eol=lf
 experiments/reading_exam_development/passage.txt text eol=lf
+experiments/reading_exam_development/ks2_2026_amelia/passage.txt text eol=lf
+experiments/reading_exam_development/ks2_2026_amelia/review.html text eol=lf
 *.py text eol=lf
 *.rs text eol=lf
 *.toml text eol=lf

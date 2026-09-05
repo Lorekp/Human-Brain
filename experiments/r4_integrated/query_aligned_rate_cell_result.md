@@ -52,8 +52,9 @@ observations, not a fixed-checkpoint learning curve. Lower loss and occasional
 correct choices are insufficient here. They do not isolate forgetting, gradient
 interference, query conditioning or feature capacity as the unique cause.
 
-Return to the persistent executed-loop objective through a bounded acquisition
-strategy review. Do not extend this configuration's attention, epochs, rates,
+Return to the persistent executed-loop objective through the
+[acquisition-strategy review](../../docs/research/acquisition-strategy-review.md).
+Do not extend this configuration's attention, epochs, rates,
 thresholds, labels or solver budget. The preceding failed candidates and
 inconclusive feasibility diagnostic remain closed.
 

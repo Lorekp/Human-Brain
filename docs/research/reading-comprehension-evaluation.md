@@ -7,10 +7,12 @@ unevaluated. [Source manifest, official rubric, runner and measured limits](../.
 record the selected passage's OGL attribution and excluded photography.
 Reserved material and adjudication thresholds remain unselected.
 
-[KS2 2026 Amelia Earhart](official-reading-next-candidate.md) is the next
-metadata-only candidate, with four original closed-response items proposed.
-The whole 2026 paper is developer-exposed. Download/extraction custody and a
-structured-output contract remain unfinished; no new exam has run.
+[KS2 2026 Amelia Earhart](official-reading-next-candidate.md) now has a checked
+passage/map and four original closed-response items with separate official keys.
+The whole 2026 paper is developer-exposed. Source custody and transcription review
+are complete; the machine response/scoring contract and model binding remain
+unfinished. The optional HTML aid still needs rendered-layout review. No new exam
+has run.
 
 ## Purpose and sequencing
 

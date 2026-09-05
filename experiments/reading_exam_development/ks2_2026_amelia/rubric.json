@@ -1,0 +1,46 @@
+{
+  "status": "official marking material kept separate from learner-facing passage/questions; no scorer implemented",
+  "authority": "Standards and Testing Agency",
+  "source_product_code": "STA/26/9012/e",
+  "available_marks": 4,
+  "items": [
+    {
+      "id": "25",
+      "printed_scheme_page": 26,
+      "content_domain": "2a – give or explain the meaning of words in context",
+      "official_award_instruction": "Award 1 mark for:",
+      "correct_option_1based": 4,
+      "correct_option_text": "tested out a new way of travelling.",
+      "marks": 1
+    },
+    {
+      "id": "27",
+      "printed_scheme_page": 27,
+      "content_domain": "2b – retrieve and record information or identify key details from fiction and non-fiction",
+      "official_award_instruction": "Award 1 mark for:",
+      "correct_option_1based": 2,
+      "correct_option_text": "when she first went on a flight",
+      "marks": 1
+    },
+    {
+      "id": "30",
+      "printed_scheme_page": 28,
+      "content_domain": "2b – retrieve and record information or identify key details from fiction and non-fiction",
+      "official_award_instruction": "Award 1 mark for all three correct:",
+      "correct_years_in_printed_row_order": [1923, 1928, 1932],
+      "marks": 1,
+      "partial_credit": false
+    },
+    {
+      "id": "36",
+      "printed_scheme_page": 32,
+      "content_domain": "2c – summarise main ideas from more than one paragraph",
+      "official_award_instruction": "Award 1 mark for the correct sequence:",
+      "correct_numbers_in_printed_row_order": [5, 1, 2, 4, 3],
+      "supplied_entry": {"printed_row_1based": 2, "value": 1},
+      "marks": 1,
+      "partial_credit": false
+    }
+  ],
+  "interface_pending": "A later frozen evaluation protocol must define machine response serialization and invalid/missing response handling while preserving one choice, the complete three-row table, and the four unsupplied ordering entries. Do not split Q30 or Q36 into separately marked subquestions."
+}
