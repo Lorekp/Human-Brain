@@ -91,6 +91,7 @@ class ContextualEvidenceMemory:
         self._vectors = np.empty((0, _DIMENSION), dtype=np.float64)
         self._contexts: list[np.ndarray] = []
         self._storage_root = _digest([])
+        self._storage_ancestry = {self._storage_root: 0}
         self._weights = np.zeros((2, _FEATURES), dtype=np.float64)
         self._bias = np.zeros(2, dtype=np.float64)
         self._heterogeneity = np.zeros(2, dtype=np.float64)
@@ -134,6 +135,9 @@ class ContextualEvidenceMemory:
         lexical = sum(len(c.emitted) for c in self._candidates)
         vectors = self._vectors.nbytes + sum(v.nbytes for v in self._contexts)
         metadata = sum(len(d.document_id) + len(d.provenance_id) for d in self._documents)
+        # ASCII SHA-256 plus an eight-byte candidate count per ingestion root;
+        # Python container/object overhead remains excluded as elsewhere here.
+        ancestry = sum(len(root) + 8 for root in self._storage_ancestry)
         neural = sum(
             a.nbytes
             for a in (
@@ -149,11 +153,13 @@ class ContextualEvidenceMemory:
             "candidate_lexical_bytes": lexical,
             "context_vector_bytes": vectors,
             "identity_bytes": metadata,
+            "storage_ancestry_payload_bytes": ancestry,
+            "storage_ancestry_root_count": len(self._storage_ancestry),
             "synapse_array_bytes": self._weights.nbytes + self._bias.nbytes,
-            "payload_bytes": raw + lexical + vectors + metadata,
+            "payload_bytes": raw + lexical + vectors + metadata + ancestry,
             "compiled_race_array_bytes": compiled_race,
             "retained_array_and_byte_payload_bytes": (
-                raw + lexical + vectors + metadata + neural + compiled_race
+                raw + lexical + vectors + metadata + ancestry + neural + compiled_race
             ),
             "plastic_synapse_count": self._weights.size,
             "nonzero_plastic_synapses": int(np.count_nonzero(self._weights)),
@@ -210,6 +216,7 @@ class ContextualEvidenceMemory:
                 "contexts": sha256(b"".join(v.tobytes() for v in contexts)).hexdigest(),
             }
         )
+        self._storage_ancestry[self._storage_root] = len(self._candidates)
 
     def _features(self, query: bytes) -> tuple[np.ndarray, np.ndarray]:
         q = _unit(self.encoder.encode(query).sentence_vector)
@@ -310,21 +317,29 @@ class ContextualEvidenceMemory:
         rows, _ = self._features(query)
         return self._decision(query, rows, matches[0], "teacher_executed_span")
 
-    def _validated_rows(self, decision: ContextualEvidenceDecision) -> np.ndarray:
+    def _validated_rows(
+        self, decision: ContextualEvidenceDecision, *, allow_ancestor: bool = False
+    ) -> np.ndarray:
         record = asdict(decision)
         expected = record.pop("sha256")
         record["query"] = decision.query.hex()
         record["emitted"] = None if decision.emitted is None else decision.emitted.hex()
         if expected != _digest(record):
             raise ValueError("feedback decision custody changed")
-        if decision.storage_sha256 != self._storage_root:
+        candidate_count = (
+            len(self._candidates) if decision.storage_sha256 == self._storage_root else None
+        )
+        if allow_ancestor:
+            candidate_count = self._storage_ancestry.get(decision.storage_sha256)
+        if candidate_count is None:
             raise ValueError("feedback decision has a different retained source store")
         if decision.candidate_index is None:
             raise ValueError("STOP has no selected candidate to credit")
         rows, _ = self._features(decision.query)
         index = decision.candidate_index
         if (
-            not 0 <= index < len(self._candidates)
+            type(index) is not int
+            or not 0 <= index < candidate_count
             or self._candidates[index].emitted != decision.emitted
             or tuple(rows[index]) != decision.eligibility
         ):
@@ -341,6 +356,22 @@ class ContextualEvidenceMemory:
             rows=rows,
             index=decision.candidate_index,
             mode="yoked_" + decision.mode,
+        )
+
+    def revisit_decision(self, decision: ContextualEvidenceDecision) -> ContextualEvidenceDecision:
+        """Rebind a retained executed occurrence after updates or append-only ingestion.
+
+        The caller retains the original decision and authenticates its execution
+        receipts. This is explicit experience replay, not autonomous retrieval or
+        a fresh selection. The original storage root binds source identities;
+        its candidate count and exact eligibility preserve the old occurrence.
+        """
+        rows = self._validated_rows(decision, allow_ancestor=True)
+        return self._decision(
+            query=decision.query,
+            rows=rows,
+            index=decision.candidate_index,
+            mode="revisited_" + decision.mode,
         )
 
     def observe_feedback(self, decision: ContextualEvidenceDecision, reward: int) -> dict:

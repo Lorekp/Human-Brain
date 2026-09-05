@@ -1,0 +1,2972 @@
+{
+  "kind": "recorded comparison diagnosis; not neuronal capability evidence",
+  "source_sha256": {
+    "experiments/r4_integrated/contextual_revisit_diagnostic.py": "8fc21c9ea087a5f7f2d7c0d7d820c2a948f490ddb49358ee822bb46da8131b49",
+    "experiments/r4_integrated/contextual_pairwise_diagnostic.py": "ebe5b7f7c1658cd66fee5b38be27c39357d22d6b23cc67e21eea02813b6f7bc7",
+    "src/humanbrain/contextual_evidence_memory.py": "d800c4e944dcf88e1c2969692f7961fec2edf2f37ed490d44604fc2e72b3900c",
+    "src/humanbrain/frozen_context_encoder.py": "b8694bf04537c2baf7aec1d898fc328829fee1249a370859b3dff61493e5b9b4",
+    "src/humanbrain/opaque_document_event_tape.py": "18ba1020c81ad9f9f4d0ad76560c1f9aecf8817d8ccaa2a59a8a8244c2c55cf6",
+    "src/humanbrain/native.py": "2927a8bc3bdb25dc9f9c003a0476dbe779435807066bfabb891496eae2d9a875",
+    "src/humanbrain/resting_glif_race.py": "b78a14ad6f601800c170bbd9e53d6204e992842954f22ea646d5f9ec04accca0"
+  },
+  "original_sha256": "49115021601298c5d662aef99bab6023309bef2e850db13d8cd6473a0827f6e1",
+  "checkpoint_archive_sha256": "697bb7c9711ecf021d7c57e4567f1985277067b7c223ca6c28dbc1861348e550",
+  "case_fixture_sha256": "417bd72abc76a534f7af16ec214411fa688c76541cb0df812afc0f74ebd67308",
+  "arms": {
+    "REVISIT": {
+      "verified_exact_native_event_receipts_and_final_arrays": true,
+      "training_document_count": 8,
+      "retained_store": {
+        "raw_source_bytes": 617,
+        "candidate_lexical_bytes": 3029,
+        "context_vector_bytes": 946176,
+        "identity_bytes": 280,
+        "storage_ancestry_payload_bytes": 648,
+        "storage_ancestry_root_count": 9,
+        "synapse_array_bytes": 24608,
+        "payload_bytes": 950750,
+        "compiled_race_array_bytes": 9600,
+        "retained_array_and_byte_payload_bytes": 997270,
+        "plastic_synapse_count": 3074,
+        "nonzero_plastic_synapses": 2306,
+        "python_object_overhead_included": false,
+        "candidate_count": 300,
+        "document_count": 8,
+        "window_count": 8,
+        "feedback_count": 64,
+        "update_count": 32
+      },
+      "original_pair_count": 32,
+      "distinct_delta_count": 24,
+      "feedback_exposure_count": 32,
+      "replay_exposure_count": 0,
+      "pairs": [
+        {
+          "pair_id": "REVISIT-01",
+          "origin_step": 1,
+          "query": "Configure bren using its documented transport setting.",
+          "delta_sha256": "2c383931933149a8019688f5c7a4e6ca465ed4b29e1386b546c76c9cd8a058dc",
+          "rejected_occurrence": "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",12,16]",
+          "accepted_occurrence": "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",22,27]",
+          "rejected_emitted": "bren",
+          "accepted_emitted": "amber",
+          "initial_gap_after": 2.7827970500057786,
+          "final_margin": 1.8978068841133073,
+          "last_exposure_gap_after": 2.7827970500057786,
+          "margin_change_since_initial": -0.8849901658924713,
+          "margin_change_since_last": -0.8849901658924713,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.8483469322600643,
+            "query_times_span": 0.00446978549750293,
+            "query_times_window": 0.0,
+            "lexical_overlap": 1.0449901663557402
+          }
+        },
+        {
+          "pair_id": "REVISIT-02",
+          "origin_step": 2,
+          "query": "Apply the documented audit label to bren.",
+          "delta_sha256": "1e81c4cabbb3a0c5bdb299f8ede5d6fabeb43f49a70907fb3cb10d720366d9ac",
+          "rejected_occurrence": "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",22,27]",
+          "accepted_occurrence": "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",73,78]",
+          "rejected_emitted": "amber",
+          "accepted_emitted": "denim",
+          "initial_gap_after": 0.8729579020527085,
+          "final_margin": 0.8807762221084536,
+          "last_exposure_gap_after": 0.8729579020527085,
+          "margin_change_since_initial": 0.00781832005574512,
+          "margin_change_since_last": 0.00781832005574512,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.8728370811211219,
+            "query_times_span": 0.007939140987331523,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-03",
+          "origin_step": 3,
+          "query": "Set the audit label for daro from the documentation.",
+          "delta_sha256": "4d204c7d430c01ba75b31d5a176b819957272b393a891231780bd22f33cb3751",
+          "rejected_occurrence": "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",73,78]",
+          "accepted_occurrence": "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",27,33]",
+          "rejected_emitted": "denim",
+          "accepted_emitted": "indigo",
+          "initial_gap_after": 0.9344040614898801,
+          "final_margin": -0.569479627693386,
+          "last_exposure_gap_after": 0.9344040614898801,
+          "margin_change_since_initial": -1.503883689183266,
+          "margin_change_since_last": -1.503883689183266,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.5779434610674108,
+            "query_times_span": -0.00010871990400301813,
+            "query_times_window": 0.008572553278028031,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-04",
+          "origin_step": 4,
+          "query": "Use the transport setting documented for daro.",
+          "delta_sha256": "4c021c8b12dafaa01feebe7226e478424762a01aa974cec0326f951230ff7ce2",
+          "rejected_occurrence": "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",27,33]",
+          "accepted_occurrence": "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",45,50]",
+          "rejected_emitted": "indigo",
+          "accepted_emitted": "brass",
+          "initial_gap_after": 0.9465587873298267,
+          "final_margin": -0.19182008944515758,
+          "last_exposure_gap_after": 0.9465587873298267,
+          "margin_change_since_initial": -1.1383788767749843,
+          "margin_change_since_last": -1.1383788767749843,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.19587276483821492,
+            "query_times_span": 0.004052675393057375,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-05",
+          "origin_step": 5,
+          "query": "Which transport should fena use according to the documentation? Apply it.",
+          "delta_sha256": "4ca6bafbc128dcfba6c5ef3bb6f713f749b11bca6191c77b6563baa66d590e94",
+          "rejected_occurrence": "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",45,50]",
+          "accepted_occurrence": "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",30,36]",
+          "rejected_emitted": "brass",
+          "accepted_emitted": "copper",
+          "initial_gap_after": 0.9504113990520944,
+          "final_margin": -0.2585839223225561,
+          "last_exposure_gap_after": 0.9504113990520944,
+          "margin_change_since_initial": -1.2089953213746505,
+          "margin_change_since_last": -1.2089953213746505,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.27375927570927916,
+            "query_times_span": 0.004306870713935747,
+            "query_times_window": 0.010868482672787467,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-06",
+          "origin_step": 6,
+          "query": "Configure fena with its audit label.",
+          "delta_sha256": "ce80e2d25c6874aa3b6e9220cb40d5efcbdc4ba8bc7fa65aeb1075614ef275d8",
+          "rejected_occurrence": "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",30,36]",
+          "accepted_occurrence": "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",57,62]",
+          "rejected_emitted": "copper",
+          "accepted_emitted": "ivory",
+          "initial_gap_after": 0.9259625856344239,
+          "final_margin": 0.2567754144361853,
+          "last_exposure_gap_after": 0.9259625856344239,
+          "margin_change_since_initial": -0.6691871711982387,
+          "margin_change_since_last": -0.6691871711982387,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.25193665108582364,
+            "query_times_span": 0.004838763350361769,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-07",
+          "origin_step": 7,
+          "query": "Apply gori's documented audit label.",
+          "delta_sha256": "6bd87b8c1cf907ad2038ff533e4fac428324895062c7ff1134ab2fafc3a7d559",
+          "rejected_occurrence": "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",57,62]",
+          "accepted_occurrence": "[\"6c6561726e2d676f72692f30\",\"70726f76656e616e63652f6c6561726e2d676f72692f30\",\"cab619615b453d4044fe4ca16622af77a7b54f3239ecaad053e34479a8eb0486\",16,21]",
+          "rejected_emitted": "ivory",
+          "accepted_emitted": "khaki",
+          "initial_gap_after": 0.7838735196873989,
+          "final_margin": -0.15079757568637722,
+          "last_exposure_gap_after": 0.7838735196873989,
+          "margin_change_since_initial": -0.9346710953737761,
+          "margin_change_since_last": -0.9346710953737761,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.16591590763866218,
+            "query_times_span": 0.007235128903871143,
+            "query_times_window": 0.0078832030484138,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-08",
+          "origin_step": 8,
+          "query": "Set gori to the transport specified in the notes.",
+          "delta_sha256": "085eba104bc40a0b92b9ab0e290093d725b0736448ae2603f4359fbfd794a7a2",
+          "rejected_occurrence": "[\"6c6561726e2d676f72692f30\",\"70726f76656e616e63652f6c6561726e2d676f72692f30\",\"cab619615b453d4044fe4ca16622af77a7b54f3239ecaad053e34479a8eb0486\",16,21]",
+          "accepted_occurrence": "[\"6c6561726e2d676f72692f30\",\"70726f76656e616e63652f6c6561726e2d676f72692f30\",\"cab619615b453d4044fe4ca16622af77a7b54f3239ecaad053e34479a8eb0486\",71,76]",
+          "rejected_emitted": "khaki",
+          "accepted_emitted": "ebony",
+          "initial_gap_after": 0.7114925222500609,
+          "final_margin": 0.29454207609257865,
+          "last_exposure_gap_after": 0.7114925222500609,
+          "margin_change_since_initial": -0.4169504461574822,
+          "margin_change_since_last": -0.4169504461574822,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.2926248322987,
+            "query_times_span": 0.0019172437938786242,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-09",
+          "origin_step": 9,
+          "query": "Configure havi using its documented transport setting.",
+          "delta_sha256": "21a5c94e9d2a6967a454c086b0a23fa204aec0ee94cb0f0188a4a492a3dad95b",
+          "rejected_occurrence": "[\"6c6561726e2d676f72692f30\",\"70726f76656e616e63652f6c6561726e2d676f72692f30\",\"cab619615b453d4044fe4ca16622af77a7b54f3239ecaad053e34479a8eb0486\",71,76]",
+          "accepted_occurrence": "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",72,78]",
+          "rejected_emitted": "ebony",
+          "accepted_emitted": "marble",
+          "initial_gap_after": 0.972613014138801,
+          "final_margin": -0.06742654680864443,
+          "last_exposure_gap_after": 0.972613014138801,
+          "margin_change_since_initial": -1.0400395609474453,
+          "margin_change_since_last": -1.0400395609474453,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.08050049635675427,
+            "query_times_span": 0.005426634811934191,
+            "query_times_window": 0.0076473147361755915,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-10",
+          "origin_step": 10,
+          "query": "Apply the documented audit label to havi.",
+          "delta_sha256": "c2c7bacdda4c701cd2bbd8a7876ad66a5c1714a90bcc313eb9b53f4e1b5bea4a",
+          "rejected_occurrence": "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",72,78]",
+          "accepted_occurrence": "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",41,45]",
+          "rejected_emitted": "marble",
+          "accepted_emitted": "plum",
+          "initial_gap_after": 0.7604341192819929,
+          "final_margin": -0.058910563703814006,
+          "last_exposure_gap_after": 0.7604341192819929,
+          "margin_change_since_initial": -0.8193446829858069,
+          "margin_change_since_last": -0.8193446829858069,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.06165073607230314,
+            "query_times_span": 0.0027401723684891085,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-11",
+          "origin_step": 11,
+          "query": "Set the audit label for juna from the documentation.",
+          "delta_sha256": "3b39f8a075d4378bd3afbc58e34c95326ec44a9e39ff357a41878e92637a82ee",
+          "rejected_occurrence": "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",41,45]",
+          "accepted_occurrence": "[\"6c6561726e2d6a756e612f30\",\"70726f76656e616e63652f6c6561726e2d6a756e612f30\",\"d8af5b4db5cf422dc316139182ce8eda4933d1342db5e6b0fe469f321bfab106\",82,87]",
+          "rejected_emitted": "plum",
+          "accepted_emitted": "satin",
+          "initial_gap_after": 1.0541715217800038,
+          "final_margin": 0.11254899388253306,
+          "last_exposure_gap_after": 1.0541715217800038,
+          "margin_change_since_initial": -0.9416225278974708,
+          "margin_change_since_last": -0.9416225278974708,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.0973374467160144,
+            "query_times_span": 0.00625033520739644,
+            "query_times_window": 0.008961211959122133,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-12",
+          "origin_step": 12,
+          "query": "Use the transport setting documented for juna.",
+          "delta_sha256": "b8c36cd4aa71e34af79ff0a18965dedb8ac500ec08d0cb5dbf29e5ec1ea6736a",
+          "rejected_occurrence": "[\"6c6561726e2d6a756e612f30\",\"70726f76656e616e63652f6c6561726e2d6a756e612f30\",\"d8af5b4db5cf422dc316139182ce8eda4933d1342db5e6b0fe469f321bfab106\",82,87]",
+          "accepted_occurrence": "[\"6c6561726e2d6a756e612f30\",\"70726f76656e616e63652f6c6561726e2d6a756e612f30\",\"d8af5b4db5cf422dc316139182ce8eda4933d1342db5e6b0fe469f321bfab106\",25,31]",
+          "rejected_emitted": "satin",
+          "accepted_emitted": "quartz",
+          "initial_gap_after": 0.8024307277851919,
+          "final_margin": -0.08721277405962104,
+          "last_exposure_gap_after": 0.8024307277851919,
+          "margin_change_since_initial": -0.8896435018448129,
+          "margin_change_since_last": -0.8896435018448129,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.09350410404914324,
+            "query_times_span": 0.006291329989522218,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-13",
+          "origin_step": 13,
+          "query": "Which transport should kori use according to the documentation? Apply it.",
+          "delta_sha256": "ceab0ad73fa924ba83caddbf1078d9114c1e8fb4142df6764aeb643ab5471c46",
+          "rejected_occurrence": "[\"6c6561726e2d6a756e612f30\",\"70726f76656e616e63652f6c6561726e2d6a756e612f30\",\"d8af5b4db5cf422dc316139182ce8eda4933d1342db5e6b0fe469f321bfab106\",25,31]",
+          "accepted_occurrence": "[\"6c6561726e2d6b6f72692f30\",\"70726f76656e616e63652f6c6561726e2d6b6f72692f30\",\"0f084efce2f1f6f4eae7dde547dcc078154295d5789b3d2241aeeafb0784b9a6\",60,65]",
+          "rejected_emitted": "quartz",
+          "accepted_emitted": "slate",
+          "initial_gap_after": 0.9308787307332906,
+          "final_margin": -0.27421078634265045,
+          "last_exposure_gap_after": 0.9308787307332906,
+          "margin_change_since_initial": -1.205089517075941,
+          "margin_change_since_last": -1.205089517075941,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.28562587038992315,
+            "query_times_span": 0.00508440797090009,
+            "query_times_window": 0.0063306760763725285,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-14",
+          "origin_step": 14,
+          "query": "Configure kori with its audit label.",
+          "delta_sha256": "7e3c119b5a167057a150640254acddfb0778197551888e97c731e4c1abb4777e",
+          "rejected_occurrence": "[\"6c6561726e2d6b6f72692f30\",\"70726f76656e616e63652f6c6561726e2d6b6f72692f30\",\"0f084efce2f1f6f4eae7dde547dcc078154295d5789b3d2241aeeafb0784b9a6\",60,65]",
+          "accepted_occurrence": "[\"6c6561726e2d6b6f72692f30\",\"70726f76656e616e63652f6c6561726e2d6b6f72692f30\",\"0f084efce2f1f6f4eae7dde547dcc078154295d5789b3d2241aeeafb0784b9a6\",10,14]",
+          "rejected_emitted": "slate",
+          "accepted_emitted": "teal",
+          "initial_gap_after": 0.6339404371877791,
+          "final_margin": 0.11852288415195907,
+          "last_exposure_gap_after": 0.6339404371877791,
+          "margin_change_since_initial": -0.51541755303582,
+          "margin_change_since_last": -0.51541755303582,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.11308288610305087,
+            "query_times_span": 0.005439998048908166,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-15",
+          "origin_step": 15,
+          "query": "Apply luma's documented audit label.",
+          "delta_sha256": "ec7861a5ca68493803c13ff0f50c7c7f2bb30fcb32d6441e3fc9a35b77a085af",
+          "rejected_occurrence": "[\"6c6561726e2d6b6f72692f30\",\"70726f76656e616e63652f6c6561726e2d6b6f72692f30\",\"0f084efce2f1f6f4eae7dde547dcc078154295d5789b3d2241aeeafb0784b9a6\",10,14]",
+          "accepted_occurrence": "[\"6c6561726e2d6c756d612f30\",\"70726f76656e616e63652f6c6561726e2d6c756d612f30\",\"d91f3b79552f48e36ea3034c067e86c025a00812ad97f53e8089227565577c6b\",46,52]",
+          "rejected_emitted": "teal",
+          "accepted_emitted": "velour",
+          "initial_gap_after": 1.1119057746686754,
+          "final_margin": -0.2165390623944085,
+          "last_exposure_gap_after": 1.1119057746686754,
+          "margin_change_since_initial": -1.328444837063084,
+          "margin_change_since_last": -1.328444837063084,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.22520617437370427,
+            "query_times_span": 0.004718519790200041,
+            "query_times_window": 0.003948592189095642,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-16",
+          "origin_step": 16,
+          "query": "Set luma to the transport specified in the notes.",
+          "delta_sha256": "0fddf480e9b1afbda182997213a46e50f17599d0a8fd3bc3fedb847882619cff",
+          "rejected_occurrence": "[\"6c6561726e2d6c756d612f30\",\"70726f76656e616e63652f6c6561726e2d6c756d612f30\",\"d91f3b79552f48e36ea3034c067e86c025a00812ad97f53e8089227565577c6b\",46,52]",
+          "accepted_occurrence": "[\"6c6561726e2d6c756d612f30\",\"70726f76656e616e63652f6c6561726e2d6c756d612f30\",\"d91f3b79552f48e36ea3034c067e86c025a00812ad97f53e8089227565577c6b\",22,27]",
+          "rejected_emitted": "velour",
+          "accepted_emitted": "topaz",
+          "initial_gap_after": 1.063432493250137,
+          "final_margin": 0.42430115433895244,
+          "last_exposure_gap_after": 1.063432493250137,
+          "margin_change_since_initial": -0.6391313389111845,
+          "margin_change_since_last": -0.6391313389111845,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.41509053017685105,
+            "query_times_span": 0.009210624162101317,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-17",
+          "origin_step": 17,
+          "query": "Apply luma's documented audit label.",
+          "delta_sha256": "da24c4b5ecb2d05df5ee0dd33e2aef26e15693de45fbd6a2e3cd106cabb1b736",
+          "rejected_occurrence": "[\"6c6561726e2d6c756d612f30\",\"70726f76656e616e63652f6c6561726e2d6c756d612f30\",\"d91f3b79552f48e36ea3034c067e86c025a00812ad97f53e8089227565577c6b\",22,27]",
+          "accepted_occurrence": "[\"6c6561726e2d6c756d612f30\",\"70726f76656e616e63652f6c6561726e2d6c756d612f30\",\"d91f3b79552f48e36ea3034c067e86c025a00812ad97f53e8089227565577c6b\",46,52]",
+          "rejected_emitted": "topaz",
+          "accepted_emitted": "velour",
+          "initial_gap_after": 0.468582115210616,
+          "final_margin": -0.411926758968029,
+          "last_exposure_gap_after": 0.468582115210616,
+          "margin_change_since_initial": -0.880508874178645,
+          "margin_change_since_last": -0.880508874178645,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.41509053017685105,
+            "query_times_span": 0.0031637712088219768,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-18",
+          "origin_step": 18,
+          "query": "Set luma to the transport specified in the notes.",
+          "delta_sha256": "0fddf480e9b1afbda182997213a46e50f17599d0a8fd3bc3fedb847882619cff",
+          "rejected_occurrence": "[\"6c6561726e2d6c756d612f30\",\"70726f76656e616e63652f6c6561726e2d6c756d612f30\",\"d91f3b79552f48e36ea3034c067e86c025a00812ad97f53e8089227565577c6b\",46,52]",
+          "accepted_occurrence": "[\"6c6561726e2d6c756d612f30\",\"70726f76656e616e63652f6c6561726e2d6c756d612f30\",\"d91f3b79552f48e36ea3034c067e86c025a00812ad97f53e8089227565577c6b\",22,27]",
+          "rejected_emitted": "velour",
+          "accepted_emitted": "topaz",
+          "initial_gap_after": 1.0660431532419075,
+          "final_margin": 0.42430115433895244,
+          "last_exposure_gap_after": 1.0660431532419075,
+          "margin_change_since_initial": -0.641741998902955,
+          "margin_change_since_last": -0.641741998902955,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.41509053017685105,
+            "query_times_span": 0.009210624162101317,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-19",
+          "origin_step": 19,
+          "query": "Which transport should kori use according to the documentation? Apply it.",
+          "delta_sha256": "764ee21b35014fe042ba842c5c0e135ab1a00b09a151f3f764c5d44ef83fc2d0",
+          "rejected_occurrence": "[\"6c6561726e2d6c756d612f30\",\"70726f76656e616e63652f6c6561726e2d6c756d612f30\",\"d91f3b79552f48e36ea3034c067e86c025a00812ad97f53e8089227565577c6b\",22,27]",
+          "accepted_occurrence": "[\"6c6561726e2d6b6f72692f30\",\"70726f76656e616e63652f6c6561726e2d6b6f72692f30\",\"0f084efce2f1f6f4eae7dde547dcc078154295d5789b3d2241aeeafb0784b9a6\",60,65]",
+          "rejected_emitted": "topaz",
+          "accepted_emitted": "slate",
+          "initial_gap_after": 0.9958185486279167,
+          "final_margin": -0.2913683412706052,
+          "last_exposure_gap_after": 0.9958185486279167,
+          "margin_change_since_initial": -1.287186889898522,
+          "margin_change_since_last": -1.287186889898522,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.3029672419061977,
+            "query_times_span": 0.004104631720709852,
+            "query_times_window": 0.007494268914882627,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-20",
+          "origin_step": 20,
+          "query": "Configure kori with its audit label.",
+          "delta_sha256": "7e3c119b5a167057a150640254acddfb0778197551888e97c731e4c1abb4777e",
+          "rejected_occurrence": "[\"6c6561726e2d6b6f72692f30\",\"70726f76656e616e63652f6c6561726e2d6b6f72692f30\",\"0f084efce2f1f6f4eae7dde547dcc078154295d5789b3d2241aeeafb0784b9a6\",60,65]",
+          "accepted_occurrence": "[\"6c6561726e2d6b6f72692f30\",\"70726f76656e616e63652f6c6561726e2d6b6f72692f30\",\"0f084efce2f1f6f4eae7dde547dcc078154295d5789b3d2241aeeafb0784b9a6\",10,14]",
+          "rejected_emitted": "slate",
+          "accepted_emitted": "teal",
+          "initial_gap_after": 0.8040681014998311,
+          "final_margin": 0.11852288415195907,
+          "last_exposure_gap_after": 0.8040681014998311,
+          "margin_change_since_initial": -0.685545217347872,
+          "margin_change_since_last": -0.685545217347872,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.11308288610305087,
+            "query_times_span": 0.005439998048908166,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-21",
+          "origin_step": 21,
+          "query": "Set the audit label for juna from the documentation.",
+          "delta_sha256": "5c8281e01fea4fb93952d30604bd51d2b419dfd5770870101c2ec72ac4966ce0",
+          "rejected_occurrence": "[\"6c6561726e2d6b6f72692f30\",\"70726f76656e616e63652f6c6561726e2d6b6f72692f30\",\"0f084efce2f1f6f4eae7dde547dcc078154295d5789b3d2241aeeafb0784b9a6\",10,14]",
+          "accepted_occurrence": "[\"6c6561726e2d6a756e612f30\",\"70726f76656e616e63652f6c6561726e2d6a756e612f30\",\"d8af5b4db5cf422dc316139182ce8eda4933d1342db5e6b0fe469f321bfab106\",82,87]",
+          "rejected_emitted": "teal",
+          "accepted_emitted": "satin",
+          "initial_gap_after": 1.0909799778071787,
+          "final_margin": 0.2788416677191354,
+          "last_exposure_gap_after": 1.0909799778071787,
+          "margin_change_since_initial": -0.8121383100880433,
+          "margin_change_since_last": -0.8121383100880433,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.26604708833601554,
+            "query_times_span": 0.005597715560632521,
+            "query_times_window": 0.007196863822487512,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-22",
+          "origin_step": 22,
+          "query": "Use the transport setting documented for juna.",
+          "delta_sha256": "b8c36cd4aa71e34af79ff0a18965dedb8ac500ec08d0cb5dbf29e5ec1ea6736a",
+          "rejected_occurrence": "[\"6c6561726e2d6a756e612f30\",\"70726f76656e616e63652f6c6561726e2d6a756e612f30\",\"d8af5b4db5cf422dc316139182ce8eda4933d1342db5e6b0fe469f321bfab106\",82,87]",
+          "accepted_occurrence": "[\"6c6561726e2d6a756e612f30\",\"70726f76656e616e63652f6c6561726e2d6a756e612f30\",\"d8af5b4db5cf422dc316139182ce8eda4933d1342db5e6b0fe469f321bfab106\",25,31]",
+          "rejected_emitted": "satin",
+          "accepted_emitted": "quartz",
+          "initial_gap_after": 1.0050866818143764,
+          "final_margin": -0.08721277405962104,
+          "last_exposure_gap_after": 1.0050866818143764,
+          "margin_change_since_initial": -1.0922994558739976,
+          "margin_change_since_last": -1.0922994558739976,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.09350410404914324,
+            "query_times_span": 0.006291329989522218,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-23",
+          "origin_step": 23,
+          "query": "Configure havi using its documented transport setting.",
+          "delta_sha256": "f499ccafbe45194e71c34ec6d628770057aadf47af0d6ca971a9f0ba7c116e69",
+          "rejected_occurrence": "[\"6c6561726e2d6a756e612f30\",\"70726f76656e616e63652f6c6561726e2d6a756e612f30\",\"d8af5b4db5cf422dc316139182ce8eda4933d1342db5e6b0fe469f321bfab106\",25,31]",
+          "accepted_occurrence": "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",72,78]",
+          "rejected_emitted": "quartz",
+          "accepted_emitted": "marble",
+          "initial_gap_after": 0.7744941304870938,
+          "final_margin": 0.06549758658108676,
+          "last_exposure_gap_after": 0.7744941304870938,
+          "margin_change_since_initial": -0.7089965439060071,
+          "margin_change_since_last": -0.7089965439060071,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.05781739340543203,
+            "query_times_span": 0.0025187879726317215,
+            "query_times_window": 0.0051614052030229795,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-24",
+          "origin_step": 24,
+          "query": "Apply the documented audit label to havi.",
+          "delta_sha256": "c2c7bacdda4c701cd2bbd8a7876ad66a5c1714a90bcc313eb9b53f4e1b5bea4a",
+          "rejected_occurrence": "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",72,78]",
+          "accepted_occurrence": "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",41,45]",
+          "rejected_emitted": "marble",
+          "accepted_emitted": "plum",
+          "initial_gap_after": 0.8599469371299842,
+          "final_margin": -0.058910563703814006,
+          "last_exposure_gap_after": 0.8599469371299842,
+          "margin_change_since_initial": -0.9188575008337981,
+          "margin_change_since_last": -0.9188575008337981,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.06165073607230314,
+            "query_times_span": 0.0027401723684891085,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-25",
+          "origin_step": 25,
+          "query": "Apply gori's documented audit label.",
+          "delta_sha256": "8d58befb04262d145ecb03f717732ddb7ad93886cbec6efb0f1f0a5a7795c5ef",
+          "rejected_occurrence": "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",41,45]",
+          "accepted_occurrence": "[\"6c6561726e2d676f72692f30\",\"70726f76656e616e63652f6c6561726e2d676f72692f30\",\"cab619615b453d4044fe4ca16622af77a7b54f3239ecaad053e34479a8eb0486\",16,21]",
+          "rejected_emitted": "plum",
+          "accepted_emitted": "khaki",
+          "initial_gap_after": 0.8119712034330169,
+          "final_margin": -0.135618511456598,
+          "last_exposure_gap_after": 0.8119712034330169,
+          "margin_change_since_initial": -0.9475897148896149,
+          "margin_change_since_last": -0.9475897148896149,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.15047359986964262,
+            "query_times_span": 0.007721052733481688,
+            "query_times_window": 0.00713403567956288,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-26",
+          "origin_step": 26,
+          "query": "Set gori to the transport specified in the notes.",
+          "delta_sha256": "085eba104bc40a0b92b9ab0e290093d725b0736448ae2603f4359fbfd794a7a2",
+          "rejected_occurrence": "[\"6c6561726e2d676f72692f30\",\"70726f76656e616e63652f6c6561726e2d676f72692f30\",\"cab619615b453d4044fe4ca16622af77a7b54f3239ecaad053e34479a8eb0486\",16,21]",
+          "accepted_occurrence": "[\"6c6561726e2d676f72692f30\",\"70726f76656e616e63652f6c6561726e2d676f72692f30\",\"cab619615b453d4044fe4ca16622af77a7b54f3239ecaad053e34479a8eb0486\",71,76]",
+          "rejected_emitted": "khaki",
+          "accepted_emitted": "ebony",
+          "initial_gap_after": 0.7495468606886315,
+          "final_margin": 0.29454207609257865,
+          "last_exposure_gap_after": 0.7495468606886315,
+          "margin_change_since_initial": -0.45500478459605287,
+          "margin_change_since_last": -0.45500478459605287,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.2926248322987,
+            "query_times_span": 0.0019172437938786242,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-27",
+          "origin_step": 27,
+          "query": "Which transport should fena use according to the documentation? Apply it.",
+          "delta_sha256": "98bf8f163b6767ceaa5e0ad7cfc99060937f3c172449da4ed7670df79ffb7f9b",
+          "rejected_occurrence": "[\"6c6561726e2d676f72692f30\",\"70726f76656e616e63652f6c6561726e2d676f72692f30\",\"cab619615b453d4044fe4ca16622af77a7b54f3239ecaad053e34479a8eb0486\",71,76]",
+          "accepted_occurrence": "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",30,36]",
+          "rejected_emitted": "ebony",
+          "accepted_emitted": "copper",
+          "initial_gap_after": 1.0469528547063045,
+          "final_margin": -0.36188900400816404,
+          "last_exposure_gap_after": 1.0469528547063045,
+          "margin_change_since_initial": -1.4088418587144687,
+          "margin_change_since_last": -1.4088418587144687,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.37864557574586144,
+            "query_times_span": 0.007707053670697456,
+            "query_times_window": 0.00904951806700001,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-28",
+          "origin_step": 28,
+          "query": "Configure fena with its audit label.",
+          "delta_sha256": "ce80e2d25c6874aa3b6e9220cb40d5efcbdc4ba8bc7fa65aeb1075614ef275d8",
+          "rejected_occurrence": "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",30,36]",
+          "accepted_occurrence": "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",57,62]",
+          "rejected_emitted": "copper",
+          "accepted_emitted": "ivory",
+          "initial_gap_after": 0.8812875806750209,
+          "final_margin": 0.2567754144361853,
+          "last_exposure_gap_after": 0.8812875806750209,
+          "margin_change_since_initial": -0.6245121662388355,
+          "margin_change_since_last": -0.6245121662388355,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.25193665108582364,
+            "query_times_span": 0.004838763350361769,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-29",
+          "origin_step": 29,
+          "query": "Set the audit label for daro from the documentation.",
+          "delta_sha256": "a380bcab96b0409bcbee3c866ae403cfaa0a94e79d5e25327dbe61aef6a19466",
+          "rejected_occurrence": "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",57,62]",
+          "accepted_occurrence": "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",27,33]",
+          "rejected_emitted": "ivory",
+          "accepted_emitted": "indigo",
+          "initial_gap_after": 0.8767512859976672,
+          "final_margin": 0.2330152991206536,
+          "last_exposure_gap_after": 0.8767512859976672,
+          "margin_change_since_initial": -0.6437359868770136,
+          "margin_change_since_last": -0.6437359868770136,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.2176953894616704,
+            "query_times_span": 0.0050034594800112695,
+            "query_times_window": 0.010316450178971879,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-30",
+          "origin_step": 30,
+          "query": "Use the transport setting documented for daro.",
+          "delta_sha256": "4c021c8b12dafaa01feebe7226e478424762a01aa974cec0326f951230ff7ce2",
+          "rejected_occurrence": "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",27,33]",
+          "accepted_occurrence": "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",45,50]",
+          "rejected_emitted": "indigo",
+          "accepted_emitted": "brass",
+          "initial_gap_after": 0.9449089832339168,
+          "final_margin": -0.19182008944515758,
+          "last_exposure_gap_after": 0.9449089832339168,
+          "margin_change_since_initial": -1.1367290726790744,
+          "margin_change_since_last": -1.1367290726790744,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.19587276483821492,
+            "query_times_span": 0.004052675393057375,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-31",
+          "origin_step": 31,
+          "query": "Configure bren using its documented transport setting.",
+          "delta_sha256": "3fb3ad0dc45ea96afab6512c176f15aa6ca5fda9c10e49e7a78c9da68ce1a4fb",
+          "rejected_occurrence": "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",45,50]",
+          "accepted_occurrence": "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",22,27]",
+          "rejected_emitted": "brass",
+          "accepted_emitted": "amber",
+          "initial_gap_after": 0.6762422837557618,
+          "final_margin": -0.08649090368017431,
+          "last_exposure_gap_after": 0.6762422837557618,
+          "margin_change_since_initial": -0.7627331874359361,
+          "margin_change_since_last": -0.7627331874359361,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.09902085521549629,
+            "query_times_span": 0.005790356203835057,
+            "query_times_window": 0.006739595331486943,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REVISIT-32",
+          "origin_step": 32,
+          "query": "Apply the documented audit label to bren.",
+          "delta_sha256": "1e81c4cabbb3a0c5bdb299f8ede5d6fabeb43f49a70907fb3cb10d720366d9ac",
+          "rejected_occurrence": "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",22,27]",
+          "accepted_occurrence": "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",73,78]",
+          "rejected_emitted": "amber",
+          "accepted_emitted": "denim",
+          "initial_gap_after": 0.8807762221084534,
+          "final_margin": 0.8807762221084536,
+          "last_exposure_gap_after": 0.8807762221084534,
+          "margin_change_since_initial": 2.220446049250313e-16,
+          "margin_change_since_last": 2.220446049250313e-16,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.8728370811211219,
+            "query_times_span": 0.007939140987331523,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        }
+      ],
+      "exposures": [
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-01",
+          "step": 1,
+          "gap_after": 2.7827970500057786
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-02",
+          "step": 2,
+          "gap_after": 0.8729579020527085
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-03",
+          "step": 3,
+          "gap_after": 0.9344040614898801
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-04",
+          "step": 4,
+          "gap_after": 0.9465587873298267
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-05",
+          "step": 5,
+          "gap_after": 0.9504113990520944
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-06",
+          "step": 6,
+          "gap_after": 0.9259625856344239
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-07",
+          "step": 7,
+          "gap_after": 0.7838735196873989
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-08",
+          "step": 8,
+          "gap_after": 0.7114925222500609
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-09",
+          "step": 9,
+          "gap_after": 0.972613014138801
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-10",
+          "step": 10,
+          "gap_after": 0.7604341192819929
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-11",
+          "step": 11,
+          "gap_after": 1.0541715217800038
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-12",
+          "step": 12,
+          "gap_after": 0.8024307277851919
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-13",
+          "step": 13,
+          "gap_after": 0.9308787307332906
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-14",
+          "step": 14,
+          "gap_after": 0.6339404371877791
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-15",
+          "step": 15,
+          "gap_after": 1.1119057746686754
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-16",
+          "step": 16,
+          "gap_after": 1.063432493250137
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-17",
+          "step": 17,
+          "gap_after": 0.468582115210616
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-18",
+          "step": 18,
+          "gap_after": 1.0660431532419075
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-19",
+          "step": 19,
+          "gap_after": 0.9958185486279167
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-20",
+          "step": 20,
+          "gap_after": 0.8040681014998311
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-21",
+          "step": 21,
+          "gap_after": 1.0909799778071787
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-22",
+          "step": 22,
+          "gap_after": 1.0050866818143764
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-23",
+          "step": 23,
+          "gap_after": 0.7744941304870938
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-24",
+          "step": 24,
+          "gap_after": 0.8599469371299842
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-25",
+          "step": 25,
+          "gap_after": 0.8119712034330169
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-26",
+          "step": 26,
+          "gap_after": 0.7495468606886315
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-27",
+          "step": 27,
+          "gap_after": 1.0469528547063045
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-28",
+          "step": 28,
+          "gap_after": 0.8812875806750209
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-29",
+          "step": 29,
+          "gap_after": 0.8767512859976672
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-30",
+          "step": 30,
+          "gap_after": 0.9449089832339168
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-31",
+          "step": 31,
+          "gap_after": 0.6762422837557618
+        },
+        {
+          "kind": "new",
+          "pair_id": "REVISIT-32",
+          "step": 32,
+          "gap_after": 0.8807762221084534
+        }
+      ],
+      "occurrence_graph": {
+        "node_count": 17,
+        "unique_directed_edges": 24,
+        "acyclic": false,
+        "cycle": [
+          "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",22,27]",
+          "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",73,78]",
+          "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",27,33]",
+          "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",45,50]",
+          "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",22,27]"
+        ],
+        "topological_order": null,
+        "opposite_edges": [
+          {
+            "occurrences": [
+              "[\"6c6561726e2d6c756d612f30\",\"70726f76656e616e63652f6c6561726e2d6c756d612f30\",\"d91f3b79552f48e36ea3034c067e86c025a00812ad97f53e8089227565577c6b\",22,27]",
+              "[\"6c6561726e2d6c756d612f30\",\"70726f76656e616e63652f6c6561726e2d6c756d612f30\",\"d91f3b79552f48e36ea3034c067e86c025a00812ad97f53e8089227565577c6b\",46,52]"
+            ],
+            "forward_queries": [
+              "Apply luma's documented audit label."
+            ],
+            "reverse_queries": [
+              "Set luma to the transport specified in the notes."
+            ],
+            "distinct_query_reversal": true,
+            "same_query_conflict": false
+          }
+        ],
+        "query_dependent_opposite_edge_count": 1,
+        "query_independent_strict_order_impossible": true,
+        "scope": "identical document/provenance/content/byte-span occurrences, not emitted strings"
+      },
+      "constraint_geometry": {
+        "unique_delta_block_norm_ranges": {
+          "query": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 0.0
+          },
+          "span": {
+            "min": 0.9922204937511335,
+            "median": 1.181095052978479,
+            "max": 1.373662562044625
+          },
+          "query_times_span": {
+            "min": 0.049013051498684346,
+            "median": 0.06234335913312157,
+            "max": 0.08160211548936092
+          },
+          "query_times_window": {
+            "min": 0.0,
+            "median": 0.05120744495272208,
+            "max": 0.05806487277987212
+          },
+          "lexical_overlap": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 1.0
+          }
+        },
+        "distinct_query_direct_reversals": [
+          {
+            "pair_ids": [
+              "REVISIT-16",
+              "REVISIT-17"
+            ],
+            "sum_delta_norm": 0.0607104192650483,
+            "sum_conditional_components_norm": 0.0607104192650483,
+            "sum_block_norms": {
+              "query": 0.0,
+              "span": 0.0,
+              "query_times_span": 0.0607104192650483,
+              "query_times_window": 0.0,
+              "lexical_overlap": 0.0
+            },
+            "minimum_weight_difference_norm_for_two_unit_margins": 32.943274387028055,
+            "contradictory_zero_sum": false
+          },
+          {
+            "pair_ids": [
+              "REVISIT-17",
+              "REVISIT-18"
+            ],
+            "sum_delta_norm": 0.0607104192650483,
+            "sum_conditional_components_norm": 0.0607104192650483,
+            "sum_block_norms": {
+              "query": 0.0,
+              "span": 0.0,
+              "query_times_span": 0.0607104192650483,
+              "query_times_window": 0.0,
+              "lexical_overlap": 0.0
+            },
+            "minimum_weight_difference_norm_for_two_unit_margins": 32.943274387028055,
+            "contradictory_zero_sum": false
+          }
+        ],
+        "bound_scope": "Cauchy necessary lower bound 2/||d1+d2|| for both unit margins; not sufficient, not a fitted weight norm or capability result"
+      },
+      "saved_margins": {
+        "margin_violations_below_one": 31,
+        "wrong_or_tied_pairs": 17,
+        "min_margin": -0.569479627693386,
+        "mean_margin": 0.09491650120700613,
+        "margins": [
+          1.8978068841133073,
+          0.8807762221084536,
+          -0.569479627693386,
+          -0.19182008944515758,
+          -0.2585839223225561,
+          0.2567754144361853,
+          -0.15079757568637722,
+          0.29454207609257865,
+          -0.06742654680864443,
+          -0.058910563703814006,
+          0.11254899388253306,
+          -0.08721277405962104,
+          -0.27421078634265045,
+          0.11852288415195907,
+          -0.2165390623944085,
+          0.42430115433895244,
+          -0.411926758968029,
+          0.42430115433895244,
+          -0.2913683412706052,
+          0.11852288415195907,
+          0.2788416677191354,
+          -0.08721277405962104,
+          0.06549758658108676,
+          -0.058910563703814006,
+          -0.135618511456598,
+          0.29454207609257865,
+          -0.36188900400816404,
+          0.2567754144361853,
+          0.2330152991206536,
+          -0.19182008944515758,
+          -0.08649090368017431,
+          0.8807762221084536
+        ],
+        "weight_difference_l2": 1.9406467612073393,
+        "weight_block_l2": {
+          "query": 0.0,
+          "span": 1.5250045479978214,
+          "query_times_span": 0.4615485156261355,
+          "query_times_window": 0.36802105960611825,
+          "lexical_overlap": 1.0449901663557402
+        }
+      },
+      "forgetting": {
+        "initially_satisfied_then_violated": 7,
+        "last_satisfied_then_violated": 7
+      },
+      "full_feature_feasibility": {
+        "solver": "scipy.optimize.linprog/highs",
+        "scipy_version": "1.17.1",
+        "time_limit_seconds": 30,
+        "status": 0,
+        "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+        "constraint_count": 24,
+        "active_feature_count": 1153,
+        "verdict": "feasible_verified",
+        "seconds": 0.01423439999052789,
+        "margin_violations_below_one": 0,
+        "wrong_or_tied_pairs": 0,
+        "min_margin": 0.9999999999999998,
+        "mean_margin": 6703.859524447234,
+        "margins": [
+          1.0036513744561697,
+          139.39882358026918,
+          2269.16539877092,
+          24074.25539677819,
+          5510.261069979466,
+          22519.653207371848,
+          425.5706006376659,
+          55.19460294226856,
+          0.9999999999999998,
+          5273.769670060908,
+          279.23734152722875,
+          1.0000000000000002,
+          11346.516309237453,
+          3640.0188120317816,
+          1.0,
+          5181.51059131724,
+          20092.218077237318,
+          18783.339925746495,
+          2052.0407596693863,
+          29303.320903319214,
+          1.0,
+          5455.973247504983,
+          201.73527287188725,
+          4284.444924774647
+        ],
+        "weight_difference_l2": 123271434.52029331,
+        "weight_block_l2": {
+          "query": 0.0,
+          "span": 122988563.021083,
+          "query_times_span": 649.7412377275793,
+          "query_times_window": 8346252.682789653,
+          "lexical_overlap": 657.9660076586141
+        },
+        "solution_sha256": "ac19a984c43586f802e75bafb4e5266fc887679df5f632dabf36b95e6f7bf514"
+      },
+      "query_independent_span_feasibility": {
+        "solver": "scipy.optimize.linprog/highs",
+        "scipy_version": "1.17.1",
+        "time_limit_seconds": 30,
+        "status": 2,
+        "message": "The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)",
+        "constraint_count": 24,
+        "active_feature_count": 384,
+        "verdict": "solver_reports_infeasible",
+        "seconds": 0.002814899999066256
+      }
+    },
+    "REPLAY": {
+      "verified_exact_native_event_receipts_and_final_arrays": true,
+      "training_document_count": 8,
+      "retained_store": {
+        "raw_source_bytes": 617,
+        "candidate_lexical_bytes": 3029,
+        "context_vector_bytes": 946176,
+        "identity_bytes": 280,
+        "storage_ancestry_payload_bytes": 648,
+        "storage_ancestry_root_count": 9,
+        "synapse_array_bytes": 24608,
+        "payload_bytes": 950750,
+        "compiled_race_array_bytes": 9600,
+        "retained_array_and_byte_payload_bytes": 997270,
+        "plastic_synapse_count": 3074,
+        "nonzero_plastic_synapses": 2306,
+        "python_object_overhead_included": false,
+        "candidate_count": 300,
+        "document_count": 8,
+        "window_count": 8,
+        "feedback_count": 300,
+        "update_count": 79
+      },
+      "original_pair_count": 32,
+      "distinct_delta_count": 28,
+      "feedback_exposure_count": 150,
+      "replay_exposure_count": 118,
+      "pairs": [
+        {
+          "pair_id": "REPLAY-01",
+          "origin_step": 1,
+          "query": "Configure bren using its documented transport setting.",
+          "delta_sha256": "2c383931933149a8019688f5c7a4e6ca465ed4b29e1386b546c76c9cd8a058dc",
+          "rejected_occurrence": "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",12,16]",
+          "accepted_occurrence": "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",22,27]",
+          "rejected_emitted": "bren",
+          "accepted_emitted": "amber",
+          "initial_gap_after": 2.7827970500057786,
+          "final_margin": 2.5623910903657414,
+          "last_exposure_gap_after": 3.2061967437102368,
+          "margin_change_since_initial": -0.22040595964003717,
+          "margin_change_since_last": -0.6438056533444954,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.574601718937152,
+            "query_times_span": 0.0020223102356732472,
+            "query_times_window": 0.0,
+            "lexical_overlap": 3.1349704990672205
+          }
+        },
+        {
+          "pair_id": "REPLAY-02",
+          "origin_step": 2,
+          "query": "Apply the documented audit label to bren.",
+          "delta_sha256": "1e81c4cabbb3a0c5bdb299f8ede5d6fabeb43f49a70907fb3cb10d720366d9ac",
+          "rejected_occurrence": "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",22,27]",
+          "accepted_occurrence": "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",73,78]",
+          "rejected_emitted": "amber",
+          "accepted_emitted": "denim",
+          "initial_gap_after": 0.8729579020527085,
+          "final_margin": 2.6582713249132697,
+          "last_exposure_gap_after": 2.092481242892754,
+          "margin_change_since_initial": 1.7853134228605612,
+          "margin_change_since_last": 0.5657900820205155,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 2.6344315200336927,
+            "query_times_span": 0.023839804879576976,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-03",
+          "origin_step": 3,
+          "query": "Set the audit label for daro from the documentation.",
+          "delta_sha256": "4d204c7d430c01ba75b31d5a176b819957272b393a891231780bd22f33cb3751",
+          "rejected_occurrence": "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",73,78]",
+          "accepted_occurrence": "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",27,33]",
+          "rejected_emitted": "denim",
+          "accepted_emitted": "indigo",
+          "initial_gap_after": 0.9344040614898801,
+          "final_margin": 1.6950337101887467,
+          "last_exposure_gap_after": 2.533330476678902,
+          "margin_change_since_initial": 0.7606296486988666,
+          "margin_change_since_last": -0.8382967664901553,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 1.6409089726401578,
+            "query_times_span": 0.01370421451641931,
+            "query_times_window": 0.040420523032170336,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-04",
+          "origin_step": 4,
+          "query": "Use the transport setting documented for daro.",
+          "delta_sha256": "4c021c8b12dafaa01feebe7226e478424762a01aa974cec0326f951230ff7ce2",
+          "rejected_occurrence": "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",27,33]",
+          "accepted_occurrence": "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",45,50]",
+          "rejected_emitted": "indigo",
+          "accepted_emitted": "brass",
+          "initial_gap_after": 1.1498089433037726,
+          "final_margin": -0.11301201829006041,
+          "last_exposure_gap_after": 1.9230022699427978,
+          "margin_change_since_initial": -1.262820961593833,
+          "margin_change_since_last": -2.0360142882328582,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.13556275168132242,
+            "query_times_span": 0.022550733391262075,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-05",
+          "origin_step": 5,
+          "query": "Which transport should fena use according to the documentation? Apply it.",
+          "delta_sha256": "4ca6bafbc128dcfba6c5ef3bb6f713f749b11bca6191c77b6563baa66d590e94",
+          "rejected_occurrence": "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",45,50]",
+          "accepted_occurrence": "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",30,36]",
+          "rejected_emitted": "brass",
+          "accepted_emitted": "copper",
+          "initial_gap_after": 0.9875196846831937,
+          "final_margin": 0.42938669963532616,
+          "last_exposure_gap_after": 2.094554729930211,
+          "margin_change_since_initial": -0.5581329850478676,
+          "margin_change_since_last": -1.6651680302948848,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.3666779785436784,
+            "query_times_span": 0.019446564281415765,
+            "query_times_window": 0.043262156810232016,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-06",
+          "origin_step": 6,
+          "query": "Configure fena with its audit label.",
+          "delta_sha256": "ce80e2d25c6874aa3b6e9220cb40d5efcbdc4ba8bc7fa65aeb1075614ef275d8",
+          "rejected_occurrence": "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",30,36]",
+          "accepted_occurrence": "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",57,62]",
+          "rejected_emitted": "copper",
+          "accepted_emitted": "ivory",
+          "initial_gap_after": 0.8436177967538809,
+          "final_margin": 0.5025417888534727,
+          "last_exposure_gap_after": -0.6848077251887984,
+          "margin_change_since_initial": -0.34107600790040826,
+          "margin_change_since_last": 1.1873495140422712,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.4766478237918657,
+            "query_times_span": 0.025893965061606915,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-07",
+          "origin_step": 7,
+          "query": "Apply gori's documented audit label.",
+          "delta_sha256": "831337b76d20b2bb84efe3affd39b40508578c5c745d17419f8892b163f0892f",
+          "rejected_occurrence": "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",45,50]",
+          "accepted_occurrence": "[\"6c6561726e2d676f72692f30\",\"70726f76656e616e63652f6c6561726e2d676f72692f30\",\"cab619615b453d4044fe4ca16622af77a7b54f3239ecaad053e34479a8eb0486\",16,21]",
+          "rejected_emitted": "brass",
+          "accepted_emitted": "khaki",
+          "initial_gap_after": 0.5293689259689014,
+          "final_margin": 1.7587440644555281,
+          "last_exposure_gap_after": 2.3504931075199638,
+          "margin_change_since_initial": 1.2293751384866267,
+          "margin_change_since_last": -0.5917490430644357,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 1.7303467828490207,
+            "query_times_span": 0.01983484275356589,
+            "query_times_window": 0.008562438852940644,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-08",
+          "origin_step": 8,
+          "query": "Set gori to the transport specified in the notes.",
+          "delta_sha256": "26cd622f57bbf12cb0746a8724d8ab1287efd76b84060c12ee17068cd24cb676",
+          "rejected_occurrence": "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",57,62]",
+          "accepted_occurrence": "[\"6c6561726e2d676f72692f30\",\"70726f76656e616e63652f6c6561726e2d676f72692f30\",\"cab619615b453d4044fe4ca16622af77a7b54f3239ecaad053e34479a8eb0486\",71,76]",
+          "rejected_emitted": "ivory",
+          "accepted_emitted": "ebony",
+          "initial_gap_after": -0.18736735213877842,
+          "final_margin": 0.7543101388969302,
+          "last_exposure_gap_after": 1.0980173744838975,
+          "margin_change_since_initial": 0.9416774910357086,
+          "margin_change_since_last": -0.34370723558696725,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.6994079554190152,
+            "query_times_span": 0.02043292966424258,
+            "query_times_window": 0.03446925381367198,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-09",
+          "origin_step": 9,
+          "query": "Configure havi using its documented transport setting.",
+          "delta_sha256": "6de6a4e78ccb63a06f155bd0d91a9730a78cfbdb8878e6aaed830c6f17adeab3",
+          "rejected_occurrence": "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",57,62]",
+          "accepted_occurrence": "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",72,78]",
+          "rejected_emitted": "ivory",
+          "accepted_emitted": "marble",
+          "initial_gap_after": -0.7102024137424902,
+          "final_margin": -0.9823358545494918,
+          "last_exposure_gap_after": 1.7739140633612176,
+          "margin_change_since_initial": -0.27213344080700164,
+          "margin_change_since_last": -2.7562499179107096,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -1.024889566474238,
+            "query_times_span": 0.019230115791714734,
+            "query_times_window": 0.023323596133031047,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-10",
+          "origin_step": 10,
+          "query": "Apply the documented audit label to havi.",
+          "delta_sha256": "111a642ff703447d1a8ec21f703b52b9353dbcf8aee44380cd603cf9e779ae1d",
+          "rejected_occurrence": "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",20,34]",
+          "accepted_occurrence": "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",41,45]",
+          "rejected_emitted": "havi has audit",
+          "accepted_emitted": "plum",
+          "initial_gap_after": 2.5095073205563656,
+          "final_margin": 3.575020574072516,
+          "last_exposure_gap_after": 3.222284463763977,
+          "margin_change_since_initial": 1.0655132535161504,
+          "margin_change_since_last": 0.3527361103085389,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 3.562954044657352,
+            "query_times_span": 0.012066529415164564,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-11",
+          "origin_step": 11,
+          "query": "Set the audit label for juna from the documentation.",
+          "delta_sha256": "f0e570e178cea76d10593c1c1c40514b7f91f38eddaf0531829b27253aaa4dfd",
+          "rejected_occurrence": "[\"6c6561726e2d6a756e612f30\",\"70726f76656e616e63652f6c6561726e2d6a756e612f30\",\"d8af5b4db5cf422dc316139182ce8eda4933d1342db5e6b0fe469f321bfab106\",36,51]",
+          "accepted_occurrence": "[\"6c6561726e2d6a756e612f30\",\"70726f76656e616e63652f6c6561726e2d6a756e612f30\",\"d8af5b4db5cf422dc316139182ce8eda4933d1342db5e6b0fe469f321bfab106\",82,87]",
+          "rejected_emitted": "juna. The audit",
+          "accepted_emitted": "satin",
+          "initial_gap_after": 1.4455520722843551,
+          "final_margin": 4.561510706534058,
+          "last_exposure_gap_after": 3.181760826255486,
+          "margin_change_since_initial": 3.115958634249703,
+          "margin_change_since_last": 1.3797498802785721,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 4.552947144001818,
+            "query_times_span": 0.008563562532240615,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-12",
+          "origin_step": 12,
+          "query": "Use the transport setting documented for juna.",
+          "delta_sha256": "917e7cb51f23e8edeb9018bd8e024db302a739786f73fa927125dae98863c6a3",
+          "rejected_occurrence": "[\"6c6561726e2d676f72692f30\",\"70726f76656e616e63652f6c6561726e2d676f72692f30\",\"cab619615b453d4044fe4ca16622af77a7b54f3239ecaad053e34479a8eb0486\",71,76]",
+          "accepted_occurrence": "[\"6c6561726e2d6a756e612f30\",\"70726f76656e616e63652f6c6561726e2d6a756e612f30\",\"d8af5b4db5cf422dc316139182ce8eda4933d1342db5e6b0fe469f321bfab106\",25,31]",
+          "rejected_emitted": "ebony",
+          "accepted_emitted": "quartz",
+          "initial_gap_after": -0.9466575157580321,
+          "final_margin": 0.576684143251599,
+          "last_exposure_gap_after": 1.5884498046158422,
+          "margin_change_since_initial": 1.5233416590096311,
+          "margin_change_since_last": -1.0117656613642432,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.5357073809361028,
+            "query_times_span": 0.01145531211080103,
+            "query_times_window": 0.029521450204695366,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-13",
+          "origin_step": 13,
+          "query": "Which transport should kori use according to the documentation? Apply it.",
+          "delta_sha256": "7e692d0f16f559242572f81b7cba667dd7fd6beb2901041051b59805014a1d4e",
+          "rejected_occurrence": "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",72,78]",
+          "accepted_occurrence": "[\"6c6561726e2d6b6f72692f30\",\"70726f76656e616e63652f6c6561726e2d6b6f72692f30\",\"0f084efce2f1f6f4eae7dde547dcc078154295d5789b3d2241aeeafb0784b9a6\",60,65]",
+          "rejected_emitted": "marble",
+          "accepted_emitted": "slate",
+          "initial_gap_after": -0.7174155664884219,
+          "final_margin": 1.9884701415725137,
+          "last_exposure_gap_after": 2.51420962325103,
+          "margin_change_since_initial": 2.7058857080609355,
+          "margin_change_since_last": -0.5257394816785164,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 1.9391898666867577,
+            "query_times_span": 0.01567659210412034,
+            "query_times_window": 0.03360368278163492,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-14",
+          "origin_step": 14,
+          "query": "Configure kori with its audit label.",
+          "delta_sha256": "1b5f944332d9db0d0102d6f4f968ceec4171cc659dfd81598a8339197ce29cca",
+          "rejected_occurrence": "[\"6c6561726e2d676f72692f30\",\"70726f76656e616e63652f6c6561726e2d676f72692f30\",\"cab619615b453d4044fe4ca16622af77a7b54f3239ecaad053e34479a8eb0486\",71,76]",
+          "accepted_occurrence": "[\"6c6561726e2d6b6f72692f30\",\"70726f76656e616e63652f6c6561726e2d6b6f72692f30\",\"0f084efce2f1f6f4eae7dde547dcc078154295d5789b3d2241aeeafb0784b9a6\",10,14]",
+          "rejected_emitted": "ebony",
+          "accepted_emitted": "teal",
+          "initial_gap_after": -0.8053965675394827,
+          "final_margin": 0.07951719998979168,
+          "last_exposure_gap_after": 2.1865216288957425,
+          "margin_change_since_initial": 0.8849137675292744,
+          "margin_change_since_last": -2.1070044289059506,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 0.05170943957909923,
+            "query_times_span": 0.008039169176715875,
+            "query_times_window": 0.01976859123397649,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-15",
+          "origin_step": 15,
+          "query": "Apply luma's documented audit label.",
+          "delta_sha256": "2f323d185049f14bf5819077757e7951d29188dc04b57a12a62ea2807881f551",
+          "rejected_occurrence": "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",72,78]",
+          "accepted_occurrence": "[\"6c6561726e2d6c756d612f30\",\"70726f76656e616e63652f6c6561726e2d6c756d612f30\",\"d91f3b79552f48e36ea3034c067e86c025a00812ad97f53e8089227565577c6b\",46,52]",
+          "rejected_emitted": "marble",
+          "accepted_emitted": "velour",
+          "initial_gap_after": -0.7970763148110942,
+          "final_margin": 2.333207930956724,
+          "last_exposure_gap_after": 2.25487884323762,
+          "margin_change_since_initial": 3.130284245767818,
+          "margin_change_since_last": 0.07832908771910407,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 2.294748040318585,
+            "query_times_span": 0.01304275786228263,
+            "query_times_window": 0.02541713277585616,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-16",
+          "origin_step": 16,
+          "query": "Set luma to the transport specified in the notes.",
+          "delta_sha256": "150a48db0bf90790311662f08dcb0f924142d200103fe7c56a99345a798a66d2",
+          "rejected_occurrence": "[\"6c6561726e2d6b6f72692f30\",\"70726f76656e616e63652f6c6561726e2d6b6f72692f30\",\"0f084efce2f1f6f4eae7dde547dcc078154295d5789b3d2241aeeafb0784b9a6\",60,65]",
+          "accepted_occurrence": "[\"6c6561726e2d6c756d612f30\",\"70726f76656e616e63652f6c6561726e2d6c756d612f30\",\"d91f3b79552f48e36ea3034c067e86c025a00812ad97f53e8089227565577c6b\",22,27]",
+          "rejected_emitted": "slate",
+          "accepted_emitted": "topaz",
+          "initial_gap_after": 0.02078675543228692,
+          "final_margin": 2.655981802395421,
+          "last_exposure_gap_after": 2.3011785317290934,
+          "margin_change_since_initial": 2.6351950469631342,
+          "margin_change_since_last": 0.35480327066632755,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 2.6147973616543814,
+            "query_times_span": 0.027320681134098843,
+            "query_times_window": 0.013863759606941611,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-17",
+          "origin_step": 17,
+          "query": "Apply luma's documented audit label.",
+          "delta_sha256": "6d871be21a5da82bee0437a3cc60951e408ef97a73b0bc103216a8c1efc5ff1e",
+          "rejected_occurrence": "[\"6c6561726e2d6c756d612f30\",\"70726f76656e616e63652f6c6561726e2d6c756d612f30\",\"d91f3b79552f48e36ea3034c067e86c025a00812ad97f53e8089227565577c6b\",53,65]",
+          "accepted_occurrence": "[\"6c6561726e2d6c756d612f30\",\"70726f76656e616e63652f6c6561726e2d6c756d612f30\",\"d91f3b79552f48e36ea3034c067e86c025a00812ad97f53e8089227565577c6b\",46,52]",
+          "rejected_emitted": "as its audit",
+          "accepted_emitted": "velour",
+          "initial_gap_after": 2.1986094737209054,
+          "final_margin": 4.464467992549951,
+          "last_exposure_gap_after": 3.4031099567207654,
+          "margin_change_since_initial": 2.265858518829045,
+          "margin_change_since_last": 1.0613580358291852,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 4.441303847147516,
+            "query_times_span": 0.023164145402435186,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-18",
+          "origin_step": 18,
+          "query": "Set luma to the transport specified in the notes.",
+          "delta_sha256": "150a48db0bf90790311662f08dcb0f924142d200103fe7c56a99345a798a66d2",
+          "rejected_occurrence": "[\"6c6561726e2d6b6f72692f30\",\"70726f76656e616e63652f6c6561726e2d6b6f72692f30\",\"0f084efce2f1f6f4eae7dde547dcc078154295d5789b3d2241aeeafb0784b9a6\",60,65]",
+          "accepted_occurrence": "[\"6c6561726e2d6c756d612f30\",\"70726f76656e616e63652f6c6561726e2d6c756d612f30\",\"d91f3b79552f48e36ea3034c067e86c025a00812ad97f53e8089227565577c6b\",22,27]",
+          "rejected_emitted": "slate",
+          "accepted_emitted": "topaz",
+          "initial_gap_after": 1.8742349496167174,
+          "final_margin": 2.655981802395421,
+          "last_exposure_gap_after": 2.3011785317290934,
+          "margin_change_since_initial": 0.7817468527787035,
+          "margin_change_since_last": 0.35480327066632755,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 2.6147973616543814,
+            "query_times_span": 0.027320681134098843,
+            "query_times_window": 0.013863759606941611,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-19",
+          "origin_step": 19,
+          "query": "Which transport should kori use according to the documentation? Apply it.",
+          "delta_sha256": "e932e0d6a14f9853d71673452c2a38cbd8c4b4a2ab7390cb4029f9975e565d10",
+          "rejected_occurrence": "[\"6c6561726e2d6b6f72692f30\",\"70726f76656e616e63652f6c6561726e2d6b6f72692f30\",\"0f084efce2f1f6f4eae7dde547dcc078154295d5789b3d2241aeeafb0784b9a6\",35,48]",
+          "accepted_occurrence": "[\"6c6561726e2d6b6f72692f30\",\"70726f76656e616e63652f6c6561726e2d6b6f72692f30\",\"0f084efce2f1f6f4eae7dde547dcc078154295d5789b3d2241aeeafb0784b9a6\",60,65]",
+          "rejected_emitted": "Its transport",
+          "accepted_emitted": "slate",
+          "initial_gap_after": 1.4848380676898416,
+          "final_margin": 3.74038523244547,
+          "last_exposure_gap_after": 2.642859062235166,
+          "margin_change_since_initial": 2.255547164755628,
+          "margin_change_since_last": 1.0975261702103039,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 3.7282830087808208,
+            "query_times_span": 0.012102223664647336,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-20",
+          "origin_step": 20,
+          "query": "Configure kori with its audit label.",
+          "delta_sha256": "2bce44152c13c4a30d54b130411f9fff9198b9a986de0274055172a5902456ca",
+          "rejected_occurrence": "[\"6c6561726e2d6b6f72692f30\",\"70726f76656e616e63652f6c6561726e2d6b6f72692f30\",\"0f084efce2f1f6f4eae7dde547dcc078154295d5789b3d2241aeeafb0784b9a6\",22,38]",
+          "accepted_occurrence": "[\"6c6561726e2d6b6f72692f30\",\"70726f76656e616e63652f6c6561726e2d6b6f72692f30\",\"0f084efce2f1f6f4eae7dde547dcc078154295d5789b3d2241aeeafb0784b9a6\",10,14]",
+          "rejected_emitted": "audit label. Its",
+          "accepted_emitted": "teal",
+          "initial_gap_after": 2.3605110290954334,
+          "final_margin": 4.035307297573382,
+          "last_exposure_gap_after": 3.124397609023141,
+          "margin_change_since_initial": 1.674796268477949,
+          "margin_change_since_last": 0.9109096885502415,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 4.023554364216535,
+            "query_times_span": 0.011752933356845609,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-21",
+          "origin_step": 21,
+          "query": "Set the audit label for juna from the documentation.",
+          "delta_sha256": "f0e570e178cea76d10593c1c1c40514b7f91f38eddaf0531829b27253aaa4dfd",
+          "rejected_occurrence": "[\"6c6561726e2d6a756e612f30\",\"70726f76656e616e63652f6c6561726e2d6a756e612f30\",\"d8af5b4db5cf422dc316139182ce8eda4933d1342db5e6b0fe469f321bfab106\",36,51]",
+          "accepted_occurrence": "[\"6c6561726e2d6a756e612f30\",\"70726f76656e616e63652f6c6561726e2d6a756e612f30\",\"d8af5b4db5cf422dc316139182ce8eda4933d1342db5e6b0fe469f321bfab106\",82,87]",
+          "rejected_emitted": "juna. The audit",
+          "accepted_emitted": "satin",
+          "initial_gap_after": 1.726734834980455,
+          "final_margin": 4.561510706534058,
+          "last_exposure_gap_after": 2.5325596462009754,
+          "margin_change_since_initial": 2.834775871553603,
+          "margin_change_since_last": 2.0289510603330827,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 4.552947144001818,
+            "query_times_span": 0.008563562532240615,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-22",
+          "origin_step": 22,
+          "query": "Use the transport setting documented for juna.",
+          "delta_sha256": "2079cc98f92242447ed8cf398fdf4829427ba96eb808de522e4ebeb279db947d",
+          "rejected_occurrence": "[\"6c6561726e2d6a756e612f30\",\"70726f76656e616e63652f6c6561726e2d6a756e612f30\",\"d8af5b4db5cf422dc316139182ce8eda4933d1342db5e6b0fe469f321bfab106\",32,45]",
+          "accepted_occurrence": "[\"6c6561726e2d6a756e612f30\",\"70726f76656e616e63652f6c6561726e2d6a756e612f30\",\"d8af5b4db5cf422dc316139182ce8eda4933d1342db5e6b0fe469f321bfab106\",25,31]",
+          "rejected_emitted": "for juna. The",
+          "accepted_emitted": "quartz",
+          "initial_gap_after": 1.542736678498771,
+          "final_margin": 3.2281928753850075,
+          "last_exposure_gap_after": 2.25290439490582,
+          "margin_change_since_initial": 1.6854561968862365,
+          "margin_change_since_last": 0.9752884804791875,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 3.223799153263478,
+            "query_times_span": 0.004393722121531113,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-23",
+          "origin_step": 23,
+          "query": "Configure havi using its documented transport setting.",
+          "delta_sha256": "8731bb45bb7ddc59cd2431c9337dcc9b8efad86480fdcfa1c47da08551687bdf",
+          "rejected_occurrence": "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",20,28]",
+          "accepted_occurrence": "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",72,78]",
+          "rejected_emitted": "havi has",
+          "accepted_emitted": "marble",
+          "initial_gap_after": 2.3969515313836673,
+          "final_margin": 2.1849014806832003,
+          "last_exposure_gap_after": 1.1608128868854979,
+          "margin_change_since_initial": -0.212050050700467,
+          "margin_change_since_last": 1.0240885937977025,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 2.1608386732041334,
+            "query_times_span": 0.02406280747906661,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-24",
+          "origin_step": 24,
+          "query": "Apply the documented audit label to havi.",
+          "delta_sha256": "111a642ff703447d1a8ec21f703b52b9353dbcf8aee44380cd603cf9e779ae1d",
+          "rejected_occurrence": "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",20,34]",
+          "accepted_occurrence": "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",41,45]",
+          "rejected_emitted": "havi has audit",
+          "accepted_emitted": "plum",
+          "initial_gap_after": 2.3875272877787084,
+          "final_margin": 3.575020574072516,
+          "last_exposure_gap_after": 2.6056636587822517,
+          "margin_change_since_initial": 1.1874932862938077,
+          "margin_change_since_last": 0.9693569152902644,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 3.562954044657352,
+            "query_times_span": 0.012066529415164564,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-25",
+          "origin_step": 25,
+          "query": "Apply gori's documented audit label.",
+          "delta_sha256": "e65ffa2636e1888de07ad26470f15cfc934e6d40859fff9b733d2f4374ae4222",
+          "rejected_occurrence": "[\"6c6561726e2d676f72692f30\",\"70726f76656e616e63652f6c6561726e2d676f72692f30\",\"cab619615b453d4044fe4ca16622af77a7b54f3239ecaad053e34479a8eb0486\",0,9]",
+          "accepted_occurrence": "[\"6c6561726e2d676f72692f30\",\"70726f76656e616e63652f6c6561726e2d676f72692f30\",\"cab619615b453d4044fe4ca16622af77a7b54f3239ecaad053e34479a8eb0486\",16,21]",
+          "rejected_emitted": "The audit",
+          "accepted_emitted": "khaki",
+          "initial_gap_after": 2.6175032559201408,
+          "final_margin": 4.90437470039333,
+          "last_exposure_gap_after": 4.401470372191829,
+          "margin_change_since_initial": 2.286871444473189,
+          "margin_change_since_last": 0.5029043282015007,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 4.880924867948303,
+            "query_times_span": 0.023449832445027786,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-26",
+          "origin_step": 26,
+          "query": "Set gori to the transport specified in the notes.",
+          "delta_sha256": "abaa3b56d248521ba162043ee1c6e39e5196a106af7d2418740da498cd3fadd5",
+          "rejected_occurrence": "[\"6c6561726e2d676f72692f30\",\"70726f76656e616e63652f6c6561726e2d676f72692f30\",\"cab619615b453d4044fe4ca16622af77a7b54f3239ecaad053e34479a8eb0486\",50,65]",
+          "accepted_occurrence": "[\"6c6561726e2d676f72692f30\",\"70726f76656e616e63652f6c6561726e2d676f72692f30\",\"cab619615b453d4044fe4ca16622af77a7b54f3239ecaad053e34479a8eb0486\",71,76]",
+          "rejected_emitted": "transport, gori",
+          "accepted_emitted": "ebony",
+          "initial_gap_after": 1.014557568393732,
+          "final_margin": 2.933937472820974,
+          "last_exposure_gap_after": 2.437636715930762,
+          "margin_change_since_initial": 1.9193799044272422,
+          "margin_change_since_last": 0.496300756890212,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 2.912812621756112,
+            "query_times_span": 0.021124851064860287,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-27",
+          "origin_step": 27,
+          "query": "Which transport should fena use according to the documentation? Apply it.",
+          "delta_sha256": "1107e1ecc05488fac548404579994507ac5da96140c82ac02db3594c20fc369a",
+          "rejected_occurrence": "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",4,19]",
+          "accepted_occurrence": "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",30,36]",
+          "rejected_emitted": "fena, transport",
+          "accepted_emitted": "copper",
+          "initial_gap_after": 1.171388417109634,
+          "final_margin": 2.947842269364354,
+          "last_exposure_gap_after": 2.1073909250445233,
+          "margin_change_since_initial": 1.77645385225472,
+          "margin_change_since_last": 0.8404513443198307,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 2.946196983276651,
+            "query_times_span": 0.0016452860877023275,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-28",
+          "origin_step": 28,
+          "query": "Configure fena with its audit label.",
+          "delta_sha256": "06637372b2d61bd1a911aef42a1238a9d5c6b266c7d38fc31cfd4913abb24dcd",
+          "rejected_occurrence": "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",0,8]",
+          "accepted_occurrence": "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",57,62]",
+          "rejected_emitted": "For fena",
+          "accepted_emitted": "ivory",
+          "initial_gap_after": 1.2608990736591565,
+          "final_margin": 2.6093994265250964,
+          "last_exposure_gap_after": 2.609399426525097,
+          "margin_change_since_initial": 1.3485003528659398,
+          "margin_change_since_last": -4.440892098500626e-16,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 2.5888712957482563,
+            "query_times_span": 0.020528130776840615,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-29",
+          "origin_step": 29,
+          "query": "Set the audit label for daro from the documentation.",
+          "delta_sha256": "f8f8429bd341abae0f241413564517ccce99e9f99d888bd986b5b096325b6003",
+          "rejected_occurrence": "[\"6c6561726e2d6c756d612f30\",\"70726f76656e616e63652f6c6561726e2d6c756d612f30\",\"d91f3b79552f48e36ea3034c067e86c025a00812ad97f53e8089227565577c6b\",22,27]",
+          "accepted_occurrence": "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",27,33]",
+          "rejected_emitted": "topaz",
+          "accepted_emitted": "indigo",
+          "initial_gap_after": -3.1377367314447087,
+          "final_margin": -4.1998063820575915,
+          "last_exposure_gap_after": -3.1377367314447087,
+          "margin_change_since_initial": -1.0620696506128828,
+          "margin_change_since_last": -1.0620696506128828,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -4.236860712521122,
+            "query_times_span": 0.0074739073183503965,
+            "query_times_window": 0.029580423145180296,
+            "lexical_overlap": 0.0
+          }
+        },
+        {
+          "pair_id": "REPLAY-30",
+          "origin_step": 30,
+          "query": "Use the transport setting documented for daro.",
+          "delta_sha256": "5974b557bdc36518fbb7a90b6752390ca1cd2e23e687891ec8fa619e7d178871",
+          "rejected_occurrence": "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",19,23]",
+          "accepted_occurrence": "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",45,50]",
+          "rejected_emitted": "daro",
+          "accepted_emitted": "brass",
+          "initial_gap_after": 1.92411511550952,
+          "final_margin": 2.782118462500546,
+          "last_exposure_gap_after": 1.92411511550952,
+          "margin_change_since_initial": 0.858003346991026,
+          "margin_change_since_last": 0.858003346991026,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.3577951306150326,
+            "query_times_span": 0.004943094048357775,
+            "query_times_window": 0.0,
+            "lexical_overlap": 3.1349704990672205
+          }
+        },
+        {
+          "pair_id": "REPLAY-31",
+          "origin_step": 31,
+          "query": "Configure bren using its documented transport setting.",
+          "delta_sha256": "2c383931933149a8019688f5c7a4e6ca465ed4b29e1386b546c76c9cd8a058dc",
+          "rejected_occurrence": "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",12,16]",
+          "accepted_occurrence": "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",22,27]",
+          "rejected_emitted": "bren",
+          "accepted_emitted": "amber",
+          "initial_gap_after": 2.2290079661605686,
+          "final_margin": 2.5623910903657414,
+          "last_exposure_gap_after": 2.2290079661605686,
+          "margin_change_since_initial": 0.3333831242051728,
+          "margin_change_since_last": 0.3333831242051728,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": -0.574601718937152,
+            "query_times_span": 0.0020223102356732472,
+            "query_times_window": 0.0,
+            "lexical_overlap": 3.1349704990672205
+          }
+        },
+        {
+          "pair_id": "REPLAY-32",
+          "origin_step": 32,
+          "query": "Apply the documented audit label to bren.",
+          "delta_sha256": "82ae03774f8dce22cc8ec9f01a1cf9abb516a336054d4b2fa6ab9702cec427a3",
+          "rejected_occurrence": "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",54,63]",
+          "accepted_occurrence": "[\"6c6561726e2d6272656e2f30\",\"70726f76656e616e63652f6c6561726e2d6272656e2f30\",\"94287bcefe46f4dffe45f4d193c878e7e0406d7a43248f0daed1c16c9ff74570\",73,78]",
+          "rejected_emitted": "Its audit",
+          "accepted_emitted": "denim",
+          "initial_gap_after": 2.5351724446573636,
+          "final_margin": 3.3920367044079667,
+          "last_exposure_gap_after": 2.5351724446573636,
+          "margin_change_since_initial": 0.8568642597506031,
+          "margin_change_since_last": 0.8568642597506031,
+          "saved_margin_block_contributions": {
+            "query": 0.0,
+            "span": 3.36446805872978,
+            "query_times_span": 0.027568645678186725,
+            "query_times_window": 0.0,
+            "lexical_overlap": 0.0
+          }
+        }
+      ],
+      "exposures": [
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-01",
+          "step": 1,
+          "gap_after": 2.7827970500057786
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-02",
+          "step": 2,
+          "gap_after": 0.8729579020527085
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-01",
+          "step": 2,
+          "gap_after": 1.9945291139931327
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-03",
+          "step": 3,
+          "gap_after": 0.9344040614898801
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-01",
+          "step": 3,
+          "gap_after": 2.278324865968086
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-02",
+          "step": 3,
+          "gap_after": 1.4657570332967307
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-04",
+          "step": 4,
+          "gap_after": 1.1498089433037726
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-01",
+          "step": 4,
+          "gap_after": 1.0614355932611446
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-02",
+          "step": 4,
+          "gap_after": 1.6478882172166633
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-03",
+          "step": 4,
+          "gap_after": 0.8704672351501909
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-05",
+          "step": 5,
+          "gap_after": 0.9875196846831937
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-01",
+          "step": 5,
+          "gap_after": 1.2346192313820028
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-02",
+          "step": 5,
+          "gap_after": 2.0747901956854635
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-03",
+          "step": 5,
+          "gap_after": 1.7933844362664126
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-04",
+          "step": 5,
+          "gap_after": 0.8752932632875359
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-06",
+          "step": 6,
+          "gap_after": 0.8436177967538809
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-01",
+          "step": 6,
+          "gap_after": 3.2025765879497987
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-02",
+          "step": 6,
+          "gap_after": 2.4129490755163294
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-03",
+          "step": 6,
+          "gap_after": 1.9060958847632294
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-04",
+          "step": 6,
+          "gap_after": 1.4887090376013872
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-07",
+          "step": 7,
+          "gap_after": 0.5293689259689014
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-05",
+          "step": 7,
+          "gap_after": 1.385323852145125
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-06",
+          "step": 7,
+          "gap_after": 2.0930233263923483
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-01",
+          "step": 7,
+          "gap_after": 2.0405327507171096
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-02",
+          "step": 7,
+          "gap_after": 1.8337459001047358
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-08",
+          "step": 8,
+          "gap_after": -0.18736735213877842
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-03",
+          "step": 8,
+          "gap_after": 1.2269722792820412
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-04",
+          "step": 8,
+          "gap_after": 1.2319056010147964
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-05",
+          "step": 8,
+          "gap_after": 1.574545636936051
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-06",
+          "step": 8,
+          "gap_after": 2.178230526002222
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-09",
+          "step": 9,
+          "gap_after": -0.7102024137424902
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-07",
+          "step": 9,
+          "gap_after": 1.9337465438462118
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-08",
+          "step": 9,
+          "gap_after": 1.2193704271143204
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-01",
+          "step": 9,
+          "gap_after": 1.7073287630087752
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-02",
+          "step": 9,
+          "gap_after": 2.087618888248633
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-10",
+          "step": 10,
+          "gap_after": 2.5095073205563656
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-03",
+          "step": 10,
+          "gap_after": 1.9653747329251248
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-04",
+          "step": 10,
+          "gap_after": 1.7278816211815156
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-05",
+          "step": 10,
+          "gap_after": 1.4856877536154967
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-06",
+          "step": 10,
+          "gap_after": 1.240461241187215
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-11",
+          "step": 11,
+          "gap_after": 1.4455520722843551
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-07",
+          "step": 11,
+          "gap_after": 1.9586197838623076
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-08",
+          "step": 11,
+          "gap_after": 1.7703396337079196
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-09",
+          "step": 11,
+          "gap_after": 2.121000870666963
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-10",
+          "step": 11,
+          "gap_after": 2.7253278758110677
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-12",
+          "step": 12,
+          "gap_after": -0.9466575157580321
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-01",
+          "step": 12,
+          "gap_after": 1.69050647209392
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-02",
+          "step": 12,
+          "gap_after": 1.4483407673801825
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-03",
+          "step": 12,
+          "gap_after": 1.1216495678699754
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-04",
+          "step": 12,
+          "gap_after": 2.7321809083587274
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-13",
+          "step": 13,
+          "gap_after": -0.7174155664884219
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-05",
+          "step": 13,
+          "gap_after": 1.5945996400036666
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-06",
+          "step": 13,
+          "gap_after": 0.3099511456645646
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-07",
+          "step": 13,
+          "gap_after": 2.1339840571490054
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-08",
+          "step": 13,
+          "gap_after": 2.4592395331420347
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-14",
+          "step": 14,
+          "gap_after": -0.8053965675394827
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-09",
+          "step": 14,
+          "gap_after": 2.1503916970188035
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-10",
+          "step": 14,
+          "gap_after": 2.429012270756071
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-11",
+          "step": 14,
+          "gap_after": 2.7671376805104995
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-12",
+          "step": 14,
+          "gap_after": 0.8792676125420154
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-15",
+          "step": 15,
+          "gap_after": -0.7970763148110942
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-13",
+          "step": 15,
+          "gap_after": 2.238728108707445
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-14",
+          "step": 15,
+          "gap_after": 2.475438058118263
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-01",
+          "step": 15,
+          "gap_after": 3.478966912925216
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-02",
+          "step": 15,
+          "gap_after": 2.0105673648234914
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-16",
+          "step": 16,
+          "gap_after": 0.02078675543228692
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-03",
+          "step": 16,
+          "gap_after": 1.532257406304807
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-04",
+          "step": 16,
+          "gap_after": 2.287804914103331
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-05",
+          "step": 16,
+          "gap_after": 1.6007271475834837
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-06",
+          "step": 16,
+          "gap_after": -0.23274761950281092
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-17",
+          "step": 17,
+          "gap_after": 2.1986094737209054
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-07",
+          "step": 17,
+          "gap_after": 2.054758809524845
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-08",
+          "step": 17,
+          "gap_after": 1.1126058675799864
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-09",
+          "step": 17,
+          "gap_after": 2.7246350810090703
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-10",
+          "step": 17,
+          "gap_after": 2.624827015505085
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-18",
+          "step": 18,
+          "gap_after": 1.8742349496167174
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-11",
+          "step": 18,
+          "gap_after": 2.0608918737120367
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-12",
+          "step": 18,
+          "gap_after": 1.4133059246523492
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-13",
+          "step": 18,
+          "gap_after": 1.69737583087502
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-14",
+          "step": 18,
+          "gap_after": 1.5334033765938475
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-19",
+          "step": 19,
+          "gap_after": 1.4848380676898416
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-15",
+          "step": 19,
+          "gap_after": 1.0172875249646387
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-16",
+          "step": 19,
+          "gap_after": 3.1048604043527903
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-17",
+          "step": 19,
+          "gap_after": 2.571647530810544
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-18",
+          "step": 19,
+          "gap_after": 3.1048604043527903
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-20",
+          "step": 20,
+          "gap_after": 2.3605110290954334
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-01",
+          "step": 20,
+          "gap_after": 2.3023548699920635
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-02",
+          "step": 20,
+          "gap_after": 1.6359780395729768
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-03",
+          "step": 20,
+          "gap_after": 2.3594795344567
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-04",
+          "step": 20,
+          "gap_after": 2.0718815465578855
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-21",
+          "step": 21,
+          "gap_after": 1.726734834980455
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-05",
+          "step": 21,
+          "gap_after": 1.901974167608687
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-06",
+          "step": 21,
+          "gap_after": -1.020293336237425
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-07",
+          "step": 21,
+          "gap_after": 2.404292049989092
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-08",
+          "step": 21,
+          "gap_after": 2.225303610489999
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-22",
+          "step": 22,
+          "gap_after": 1.542736678498771
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-09",
+          "step": 22,
+          "gap_after": 1.3554507572855625
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-10",
+          "step": 22,
+          "gap_after": 1.968531784303933
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-11",
+          "step": 22,
+          "gap_after": 1.930096252288566
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-12",
+          "step": 22,
+          "gap_after": 2.6272098784486877
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-23",
+          "step": 23,
+          "gap_after": 2.3969515313836673
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-13",
+          "step": 23,
+          "gap_after": 1.9476902271737715
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-14",
+          "step": 23,
+          "gap_after": 1.6695744780653716
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-15",
+          "step": 23,
+          "gap_after": 1.029101152138094
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-16",
+          "step": 23,
+          "gap_after": 1.647941473811009
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-24",
+          "step": 24,
+          "gap_after": 2.3875272877787084
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-17",
+          "step": 24,
+          "gap_after": 2.1778593890924927
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-18",
+          "step": 24,
+          "gap_after": 1.647941473811009
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-19",
+          "step": 24,
+          "gap_after": 2.107983992791393
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-20",
+          "step": 24,
+          "gap_after": 2.217189586448992
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-25",
+          "step": 25,
+          "gap_after": 2.6175032559201408
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-21",
+          "step": 25,
+          "gap_after": 1.9978468541192946
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-22",
+          "step": 25,
+          "gap_after": 2.4606775885649688
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-23",
+          "step": 25,
+          "gap_after": 1.7134918803924777
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-24",
+          "step": 25,
+          "gap_after": 2.3875272877787084
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-26",
+          "step": 26,
+          "gap_after": 1.014557568393732
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-01",
+          "step": 26,
+          "gap_after": 3.2061967437102368
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-02",
+          "step": 26,
+          "gap_after": 2.092481242892754
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-03",
+          "step": 26,
+          "gap_after": 2.533330476678902
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-04",
+          "step": 26,
+          "gap_after": 1.9230022699427978
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-27",
+          "step": 27,
+          "gap_after": 1.171388417109634
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-05",
+          "step": 27,
+          "gap_after": 2.094554729930211
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-06",
+          "step": 27,
+          "gap_after": -0.6848077251887984
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-07",
+          "step": 27,
+          "gap_after": 2.3504931075199638
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-08",
+          "step": 27,
+          "gap_after": 1.0980173744838975
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-28",
+          "step": 28,
+          "gap_after": 1.2608990736591565
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-09",
+          "step": 28,
+          "gap_after": 1.7739140633612176
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-10",
+          "step": 28,
+          "gap_after": 3.222284463763977
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-11",
+          "step": 28,
+          "gap_after": 3.181760826255486
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-12",
+          "step": 28,
+          "gap_after": 1.5884498046158422
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-29",
+          "step": 29,
+          "gap_after": -3.1377367314447087
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-13",
+          "step": 29,
+          "gap_after": 2.51420962325103
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-14",
+          "step": 29,
+          "gap_after": 2.1865216288957425
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-15",
+          "step": 29,
+          "gap_after": 2.25487884323762
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-16",
+          "step": 29,
+          "gap_after": 2.3011785317290934
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-30",
+          "step": 30,
+          "gap_after": 1.92411511550952
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-17",
+          "step": 30,
+          "gap_after": 3.4031099567207654
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-18",
+          "step": 30,
+          "gap_after": 2.3011785317290934
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-19",
+          "step": 30,
+          "gap_after": 2.642859062235166
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-20",
+          "step": 30,
+          "gap_after": 3.124397609023141
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-31",
+          "step": 31,
+          "gap_after": 2.2290079661605686
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-21",
+          "step": 31,
+          "gap_after": 2.5325596462009754
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-22",
+          "step": 31,
+          "gap_after": 2.25290439490582
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-23",
+          "step": 31,
+          "gap_after": 1.1608128868854979
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-24",
+          "step": 31,
+          "gap_after": 2.6056636587822517
+        },
+        {
+          "kind": "new",
+          "pair_id": "REPLAY-32",
+          "step": 32,
+          "gap_after": 2.5351724446573636
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-25",
+          "step": 32,
+          "gap_after": 4.401470372191829
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-26",
+          "step": 32,
+          "gap_after": 2.437636715930762
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-27",
+          "step": 32,
+          "gap_after": 2.1073909250445233
+        },
+        {
+          "kind": "certified_replay",
+          "pair_id": "REPLAY-28",
+          "step": 32,
+          "gap_after": 2.609399426525097
+        }
+      ],
+      "occurrence_graph": {
+        "node_count": 30,
+        "unique_directed_edges": 28,
+        "acyclic": false,
+        "cycle": [
+          "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",27,33]",
+          "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",45,50]",
+          "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",30,36]",
+          "[\"6c6561726e2d66656e612f30\",\"70726f76656e616e63652f6c6561726e2d66656e612f30\",\"bc1a03b2711a9fb7901c0bd2c5d322b4dd3eabe6f00231a1b99805940221979e\",57,62]",
+          "[\"6c6561726e2d686176692f30\",\"70726f76656e616e63652f6c6561726e2d686176692f30\",\"ef20da4077ec9ba9e168607ab552f5503069c26b0a3c87cd15fe5fd490a77394\",72,78]",
+          "[\"6c6561726e2d6b6f72692f30\",\"70726f76656e616e63652f6c6561726e2d6b6f72692f30\",\"0f084efce2f1f6f4eae7dde547dcc078154295d5789b3d2241aeeafb0784b9a6\",60,65]",
+          "[\"6c6561726e2d6c756d612f30\",\"70726f76656e616e63652f6c6561726e2d6c756d612f30\",\"d91f3b79552f48e36ea3034c067e86c025a00812ad97f53e8089227565577c6b\",22,27]",
+          "[\"6c6561726e2d6461726f2f30\",\"70726f76656e616e63652f6c6561726e2d6461726f2f30\",\"d30faf59b914e69797800197bdfb8f7716034a16c43809da3323705ebe6d422c\",27,33]"
+        ],
+        "topological_order": null,
+        "opposite_edges": [],
+        "query_dependent_opposite_edge_count": 0,
+        "query_independent_strict_order_impossible": true,
+        "scope": "identical document/provenance/content/byte-span occurrences, not emitted strings"
+      },
+      "constraint_geometry": {
+        "unique_delta_block_norm_ranges": {
+          "query": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 0.0
+          },
+          "span": {
+            "min": 1.0209769629657002,
+            "median": 1.171201038569711,
+            "max": 1.3884452489739467
+          },
+          "query_times_span": {
+            "min": 0.054770844699074915,
+            "median": 0.0689097549807336,
+            "max": 0.09915066135463499
+          },
+          "query_times_window": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 0.07615115737746578
+          },
+          "lexical_overlap": {
+            "min": 0.0,
+            "median": 0.0,
+            "max": 1.0
+          }
+        },
+        "distinct_query_direct_reversals": [],
+        "bound_scope": "Cauchy necessary lower bound 2/||d1+d2|| for both unit margins; not sufficient, not a fitted weight norm or capability result"
+      },
+      "saved_margins": {
+        "margin_violations_below_one": 8,
+        "wrong_or_tied_pairs": 3,
+        "min_margin": -4.1998063820575915,
+        "mean_margin": 2.2316807859125474,
+        "margins": [
+          2.5623910903657414,
+          2.6582713249132697,
+          1.6950337101887467,
+          -0.11301201829006041,
+          0.42938669963532616,
+          0.5025417888534727,
+          1.7587440644555281,
+          0.7543101388969302,
+          -0.9823358545494918,
+          3.575020574072516,
+          4.561510706534058,
+          0.576684143251599,
+          1.9884701415725137,
+          0.07951719998979168,
+          2.333207930956724,
+          2.655981802395421,
+          4.464467992549951,
+          2.655981802395421,
+          3.74038523244547,
+          4.035307297573382,
+          4.561510706534058,
+          3.2281928753850075,
+          2.1849014806832003,
+          3.575020574072516,
+          4.90437470039333,
+          2.933937472820974,
+          2.947842269364354,
+          2.6093994265250964,
+          -4.1998063820575915,
+          2.782118462500546,
+          2.5623910903657414,
+          3.3920367044079667
+        ],
+        "weight_difference_l2": 10.993528789146545,
+        "weight_block_l2": {
+          "query": 0.0,
+          "span": 10.356016872247025,
+          "query_times_span": 1.3848618404763724,
+          "query_times_window": 1.3655429075277887,
+          "lexical_overlap": 3.1349704990672205
+        }
+      },
+      "forgetting": {
+        "initially_satisfied_then_violated": 1,
+        "last_satisfied_then_violated": 6
+      },
+      "full_feature_feasibility": {
+        "solver": "scipy.optimize.linprog/highs",
+        "scipy_version": "1.17.1",
+        "time_limit_seconds": 30,
+        "status": 0,
+        "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+        "constraint_count": 28,
+        "active_feature_count": 1153,
+        "verdict": "feasible_verified",
+        "seconds": 0.008291199992527254,
+        "margin_violations_below_one": 0,
+        "wrong_or_tied_pairs": 0,
+        "min_margin": 0.9999999999999998,
+        "mean_margin": 69.05470801138209,
+        "margins": [
+          34.7115835458025,
+          12.123891881100889,
+          0.9999999999999998,
+          123.96412082871149,
+          3.9766027065945626,
+          32.6802150493797,
+          72.3199687298728,
+          3.9244852744814587,
+          7.051645649564971,
+          3.820584248713106,
+          475.2517132129191,
+          4.656157379290531,
+          1.0,
+          515.9156550555052,
+          5.227285465901551,
+          25.373824028510352,
+          26.93459715678006,
+          32.38501159593577,
+          98.74161543856236,
+          1.0,
+          3.6783196134601104,
+          136.22113607467685,
+          30.824965789649163,
+          45.37946552220333,
+          12.056059802839489,
+          66.48164974404128,
+          148.04251026983343,
+          8.788760254368533
+        ],
+        "weight_difference_l2": 93446.85855157487,
+        "weight_block_l2": {
+          "query": 0.0,
+          "span": 0.0,
+          "query_times_span": 5932.815815381281,
+          "query_times_window": 93258.33505270488,
+          "lexical_overlap": 3.585559989942975
+        },
+        "solution_sha256": "f512890d3b891ee0a078987d427f5f9543262633d46b9a537d7492bcfa8682d4"
+      },
+      "query_independent_span_feasibility": {
+        "solver": "scipy.optimize.linprog/highs",
+        "scipy_version": "1.17.1",
+        "time_limit_seconds": 30,
+        "status": 0,
+        "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+        "constraint_count": 28,
+        "active_feature_count": 384,
+        "verdict": "inconclusive",
+        "seconds": 0.009825500004808418
+      }
+    }
+  },
+  "new_negatives": 0,
+  "transfer_evaluations": 0,
+  "protected_evaluations": 0,
+  "feasibility_tolerance": 1e-07,
+  "native": {
+    "source_digest": "318e973405b1f92e92d04fb75f0ddcca91e18bc648148e59e295cc61772ef5af",
+    "library": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.native-cache\\318e973405b1f92e92d04fb75f0ddcca91e18bc648148e59e295cc61772ef5af\\x86_64-pc-windows-msvc\\release\\humanbrain_kernel.dll",
+    "binary_sha256": "62eb9eabdb21dafa0fd4b4705053092fb0f8883e9ded6e4348f5abe7d819f3d9"
+  },
+  "sources_unchanged_during_run": true,
+  "terminal": "completed",
+  "elapsed_seconds": 7.080283900009817
+}

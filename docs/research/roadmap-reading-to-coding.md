@@ -73,14 +73,12 @@ the same-seed frozen control solves none. Type-annotation layout variation
 fails, and an original public-exam diagnostic scores 0/2 with no acquired frames.
 See [measured evidence](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 This is exact positional reading and a learned literal-edit pattern, not the
-general integrated gate. A subsequent frozen-contextual-encoder candidate fails
-all five supported fresh edits at both learning rates: its learned scores favor
-one old answer across queries, and finer spiking alone cannot fix that ranking.
-The [pairwise successor and diagnosis](../../experiments/r4_integrated/contextual_pairwise_result.md)
-also fail (0/8 fresh): its feedback permits a query-independent answer ordering
-and earlier pair margins are forgotten. Next compare actual old-query revisitation
-with and without bounded receipt replay, requiring evidence that the contrasts
-need query dependence. Improve learning inside this loop before provenance revision,
+general integrated gate. The [latest contextual comparison](../../experiments/r4_integrated/contextual_revisit_result.md)
+still fails all eight fresh edits. Its teaching now requires query dependence,
+but weak interaction features, forgetting and collision-driven negative collection
+prevent useful behavior. A bounded gain-16 diagnostic fits the recorded contrasts;
+next test that conditioning against gain 1 inside the same executed teaching and
+replay loop. Constraint fitting is not transfer. Improve this loop before provenance revision,
 multi-hop composition, or the full balanced challenge. The
 [balanced session plan](balanced-evidence-to-action-session-v1.md) owns the next
 bounded comparison and later 24-episode challenge.

@@ -33,40 +33,39 @@ passes its narrow recall, transfer, retention and no-action checks. Detailed
 scores and failures are in [benchmark status](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 The original eight-stage sequence below remains the integration contract.
 
-The one-encoder/two-rate comparison and its pairwise successor both failed.
-The [latest result and receipt diagnosis](../../experiments/r4_integrated/contextual_pairwise_result.md)
-find 0/8 fresh edits for either update rule, a constant old answer, and substantial
-forgetting of pair margins. The sixteen actual corrections also fit a purely
-query-independent value ordering. Counterbalancing question order did not supply
-conditional teaching. The encoder remains a candidate, not an adopted architecture.
+The [executed revisitation and conditioning results](../../experiments/r4_integrated/contextual_revisit_result.md)
+still show 0/8 fresh edits. The teaching now requires conditional ranking, but
+the native learner loses distinctions. A fixed gain of 16 on query-interaction
+features fits all 32 recorded contrasts after two passes; original scaling
+still misranks fifteen after four. This mechanism result earns integration.
 
-Next compare **actual old-query revisitation** against the same schedule plus
-**bounded replay of executed correction pairs**. Keep the encoder, candidate
-family, pairwise features, learning rate, motor and GLIF dynamics fixed. The
-[research review](contextual-learning-review.md) supplies the alternatives,
-receipt requirements and diagnosis branches. Declare one fresh developmental
-cohort and exact schedule before running it: eight teaching entities, both
-properties, revisits after intervening corrections, eight supported fresh queries,
-two unsupported probes, then sixteen retention queries. Previous cohorts remain
-unchanged evidence.
+Next compare **interaction gain 1 versus 16** in the same executed replay loop.
+Keep the encoder, generic candidates, native update rule/learning rate 1, motor
+and GLIF dynamics. Reuse the declared public teaching requests/schedule openly;
+declare fresh transfer cases before outputs. Use 48 autonomous teaching attempts,
+32 actual FAIL/teacher-PASS pairs, and at most four older receipt replays after
+each new correction (128 replay-update offers maximum). Budget two hours for
+implementation/diagnosis; do not tune gain or extend training after transfer.
 
-Only an executed wrong selection followed by an executed teacher PASS creates
-a new contrast. Reconstruct older receipt-backed pairs at the current checkpoint
-for replay. Measure cycles/opposite preferences on identical candidate occurrences
-and a query-independent fit reference: an A/B/A request order alone does not
-establish that experience requires query dependence. Each updater keeps a matched
-frozen arm with its exact feedback; retain conventional learned-score and
-external-only references, and disclose differing on-policy negative examples.
+For both gains, when the neuronal selection STOPs, execute its conventional
+learned-score proposal if available; use external cosine only if that also STOPs.
+This explicitly labeled training exploration addresses the previous fallback's
+failure to challenge its own wrongly ranked winner. It never counts as neuronal
+first-attempt success. Successful attempts need no invented negative; only actual
+executed corrections enter the immutable replay ledger. Preserve occurrence and
+checkpoint custody on rehearsal. Every updater has a same-seed frozen mate with
+identical ingestion and feedback; report differing on-policy negatives between
+updaters and all source/storage/component contributions.
 
-Budget: one learning rate, at most three teaching passes (48 autonomous attempts),
-32 new correction pairs and 128 replay updates per arm, with two hours for
-implementation/diagnosis. Use one fixed cyclic sweep of up to four older pairs
-after each correction. Target at least 6/8 fresh and 12/16 retained executed edits,
-including both properties for three fresh entities; report unsupported behavior
-separately. Pair fitting alone is no capability pass. Keep the exam untuned.
-If cyclic contrasts cannot fit, reconsider representation; if fitting succeeds
-but learning is lost, address retention; if retained success lacks fresh transfer,
-address memorization. Annotation layouts and broader challenges remain deferred.
+Evaluate eight supported fresh queries, two unsupported probes and sixteen old
+queries, with updating/frozen neurons, conventional learned-score and external-only
+references. Target at least 6/8 fresh and 12/16 retained executed edits, including
+both properties for three fresh entities; report unsupported behavior separately.
+Keep original exam questions untuned. Inspect margins and actual learned-score
+winners before revisiting spike dynamics. Constraint fitting alone is no capability
+pass; persistent retention without fresh transfer instead motivates representational
+work from the [research review](contextual-learning-review.md). Annotation layouts
+and broader challenges remain deferred. Completed evidence remains unchanged.
 
 Use a small reusable TRAIN workload with the following eight stages. This is a
 capability sequence, not an already materialized or frozen eight-episode cohort;

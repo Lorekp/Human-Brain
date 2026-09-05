@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import replace
+import json
+from dataclasses import asdict, replace
 from hashlib import sha256
 from pathlib import Path
 
@@ -220,3 +221,124 @@ def test_pairwise_rejects_mismatched_query_same_occurrence_and_stop_atomically(e
         memory.observe_comparison(rejected, replace(rejected, emitted=b"changed"))
     assert memory.checkpoint_sha256 == before
     assert memory.feedback_count == memory.update_count == 0
+
+
+def test_revisit_preserves_occurrences_after_updates_and_appended_duplicates(encoder) -> None:
+    update = ContextualEvidenceMemory(encoder)
+    frozen = ContextualEvidenceMemory(encoder, learning_enabled=False)
+    for memory in (update, frozen):
+        memory.ingest((document(),))
+    query = b"How many messages does Cafe receive?"
+    rejected = update.decision_for_span(query, b"23")
+    accepted = update.decision_for_span(query, b"17")
+    original_sha = (rejected.sha256, accepted.sha256)
+    initial_frozen_synapses = frozen.synapse_sha256
+    frozen_pair = tuple(frozen.replay_decision(row) for row in (rejected, accepted))
+    first = update.observe_comparison(rejected, accepted)
+    frozen.observe_comparison(*frozen_pair)
+    assert first["synaptic_update"]
+
+    appended = OpaqueDocument(
+        b"new-source", b"public-test", b"Birch receives 23 messages and sends 31."
+    )
+    for memory in (update, frozen):
+        memory.ingest((appended,))
+    with pytest.raises(ValueError, match="exactly one retained occurrence"):
+        update.decision_for_span(query, b"23")
+    # Exercise another real update after append, before revisiting either side.
+    intervening = update.decision_for_span(b"How many does Birch send?", b"31")
+    yoked = frozen.replay_decision(intervening)
+    assert update.observe_feedback(intervening, 1)["synaptic_update"]
+    frozen.observe_feedback(yoked, 1)
+
+    revisited = []
+    for memory in (update, frozen):
+        before = memory.checkpoint_sha256
+        summary = memory.storage_summary
+        pair = tuple(memory.revisit_decision(row) for row in (rejected, accepted))
+        for old, current in zip((rejected, accepted), pair, strict=True):
+            assert current.candidate_index == old.candidate_index
+            assert current.emitted == old.emitted
+            assert current.query == old.query and current.eligibility == old.eligibility
+            assert current.checkpoint_sha256 == before != old.checkpoint_sha256
+            assert current.storage_sha256 != old.storage_sha256
+            assert current.mode == "revisited_teacher_executed_span"
+            assert current.physical_cell_steps == 0 and current.spike_step is None
+        assert memory.checkpoint_sha256 == before and memory.storage_summary == summary
+        assert summary["storage_ancestry_root_count"] == 3
+        assert summary["storage_ancestry_payload_bytes"] == 3 * (64 + 8)
+        revisited.append(pair)
+    assert (rejected.sha256, accepted.sha256) == original_sha
+    with pytest.raises(ValueError, match="different retained source store"):
+        frozen.replay_decision(rejected)
+    with pytest.raises(ValueError, match="frozen synapses"):
+        update.replay_decision(rejected)
+
+    updated_receipt = update.observe_comparison(*revisited[0])
+    frozen_receipt = frozen.observe_comparison(*revisited[1])
+    assert updated_receipt["eligibility_delta_sha256"] == first["eligibility_delta_sha256"]
+    assert frozen_receipt["eligibility_delta_sha256"] == first["eligibility_delta_sha256"]
+    assert updated_receipt["synaptic_update"] and not frozen_receipt["synaptic_update"]
+    assert frozen.synapse_sha256 == initial_frozen_synapses
+    assert update.feedback_count == frozen.feedback_count == 5
+    assert update.update_count == 3 and frozen.update_count == 0
+
+
+def test_revisit_rejects_forged_stop_and_unrelated_source_identity(encoder) -> None:
+    memory = ContextualEvidenceMemory(encoder)
+    memory.ingest((document(),))
+    query = b"How many messages does Cafe receive?"
+    selected = memory.decision_for_span(query, b"17")
+    before = memory.checkpoint_sha256
+    with pytest.raises(ValueError, match="custody changed"):
+        memory.revisit_decision(replace(selected, emitted=b"23"))
+    with pytest.raises(ValueError, match="STOP has no selected candidate"):
+        memory.revisit_decision(memory.respond(query))
+    for learning_enabled in (True, False):
+        other = ContextualEvidenceMemory(encoder, learning_enabled=learning_enabled)
+        other.ingest((document(b"different-identity-same-content"),))
+        same_text = other.decision_for_span(query, b"17")
+        assert same_text.eligibility == selected.eligibility
+        assert same_text.candidate_index == selected.candidate_index
+        with pytest.raises(ValueError, match="different retained source store"):
+            other.revisit_decision(selected)
+        assert other.feedback_count == other.update_count == 0
+    assert memory.checkpoint_sha256 == before
+
+
+def test_revisit_validates_original_count_and_retained_eligibility_even_with_new_sha(
+    encoder,
+) -> None:
+    memory = ContextualEvidenceMemory(encoder)
+    memory.ingest((document(),))
+    query = b"How many messages does Cafe receive?"
+    selected = memory.decision_for_span(query, b"17")
+    original_count = memory.storage_summary["candidate_count"]
+    memory.ingest((document(b"later-identical-content"),))
+    rows, _ = memory._features(query)
+    duplicate_index = selected.candidate_index + original_count
+    assert memory._candidates[duplicate_index].emitted == selected.emitted
+    assert tuple(rows[duplicate_index]) == selected.eligibility
+
+    for changed in (
+        replace(selected, candidate_index=duplicate_index),
+        replace(selected, candidate_index=-1),
+        replace(selected, candidate_index=1.5),
+        replace(selected, emitted=b"23"),
+        replace(selected, eligibility=(0.0,) * len(selected.eligibility)),
+    ):
+        # A self-consistent checksum alone is not an occurrence validation.
+        record = asdict(changed)
+        record.pop("sha256")
+        record["query"] = changed.query.hex()
+        record["emitted"] = changed.emitted.hex()
+        digest = sha256(json.dumps(record, sort_keys=True, allow_nan=False).encode()).hexdigest()
+        before = memory.checkpoint_sha256
+        with pytest.raises(ValueError, match="eligibility does not match"):
+            memory.revisit_decision(replace(changed, sha256=digest))
+        assert memory.checkpoint_sha256 == before
+    # Retained source context must still produce the original exact eligibility.
+    candidate = memory._candidates[selected.candidate_index]
+    memory._contexts[candidate.window_index] = np.zeros(384)
+    with pytest.raises(ValueError, match="eligibility does not match"):
+        memory.revisit_decision(selected)

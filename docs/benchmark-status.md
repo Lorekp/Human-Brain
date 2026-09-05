@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the pairwise learning comparison and receipt diagnosis.
+Updated 2026-09-05 with executed revisitation and the conditioning diagnosis.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -11,6 +11,23 @@ as complementary evaluation pressure. Hybrid permission does not relabel existin
 cell-only evidence or reopen protected evaluations.
 
 ## Current contextual evidence-to-Python result
+
+The [executed revisitation comparison](../experiments/r4_integrated/contextual_revisit_result.md)
+still solves 0/8 fresh tasks. Revisitation selects `denim` throughout; replay's
+neuronal path STOPs while its conventional readout selects `topaz`. Neither
+retains both properties for any entity. Both ledgers now require query-dependent
+ranking, but weak interaction features and interference prevent useful learning;
+collision-triggered exploration also changes which negatives get taught.
+
+A fixed receipt-only follow-up gives the existing native rule an interaction
+gain of 16: it fits all 32 recorded contrasts after two passes and 42 updates.
+The original scaling still misranks fifteen pairs after four passes. This earns
+integration against gain 1 under matched teaching/exploration policies, not a
+fresh-task claim. The complete executed run takes 97.96 seconds and peaks at
+283.16 MiB parent working set. The result report owns resource scope, exposure,
+formal pending exam marks and diagnostic limitations. Protected gates stay closed.
+
+## Earlier pairwise learning comparison
 
 The [pairwise comparison](../experiments/r4_integrated/contextual_pairwise_result.md)
 also fails: absolute and pairwise updating policies both solve 0/8 fresh edits
