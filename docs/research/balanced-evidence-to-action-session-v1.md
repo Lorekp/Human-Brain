@@ -49,9 +49,10 @@ Conventional pooled old answers improve 5/12 to 9/12 without fresh supported gai
 All saved audits pass, including strict UTF-8 execution; earlier failures remain
 recorded under their original contracts.
 
-**Next integrated priority:** the [acquisition decision review](pooled-reading-failure-review.md)
-selects one bounded primary-source review to define a credible acquisition
-comparison. Source routing alone cannot resolve fresh correct-paragraph failure.
+**Next integrated priority:** prepare the selected
+[token-pointer acquisition comparison](token-pointer-acquisition.md), then return
+its persistent learner to actual actions and feedback under that contract.
+Source routing alone cannot resolve fresh correct-paragraph failure.
 Labeled rehearsal and complete retained paragraphs do not establish source-absent
 memory, autonomous recovery or broader integration success. No automatic optimizer,
 epoch, label, threshold or producer sweep follows.

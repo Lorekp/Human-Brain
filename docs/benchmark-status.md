@@ -34,10 +34,12 @@ The 333 child executions leave 314 authenticated workspaces and 942 files.
 Runner time is 63.792 seconds, outer time 64.029 seconds, peak parent working set
 351.832 MiB. No audit reexecutes the learner or children.
 
-The next [acquisition review](research/pooled-reading-failure-review.md) specifies
-one bounded research activity before another fit. Source routing alone cannot
-solve the fresh correct-paragraph failure. No architecture is adopted, gate
-opened, source-absent memory demonstrated or official exam run.
+The completed [acquisition review](research/token-pointer-acquisition.md) selects
+one token-pointer rate-cell recipe with broader fixed training, a BiLSTM positive
+reference and causal controls. Implementation and measured admission are next;
+no new fit has run. Source routing alone cannot solve the fresh correct-paragraph
+failure. No architecture is adopted, gate opened, source-absent memory demonstrated
+or official exam run.
 
 ## Earlier fixed-budget rehearsal and Python return
 

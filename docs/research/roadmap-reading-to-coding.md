@@ -83,11 +83,13 @@ correct-paragraph retention to 4/12. Conventional pooled old answers improve
 5/12 to 9/12, with no fresh supported transfer. All three saved-evidence audits
 pass; no architecture is adopted or integrated gate passed.
 
-The active [acquisition decision review](pooled-reading-failure-review.md)
-specifies one bounded primary-source review to choose a credible acquisition
-comparison before another fit. Source routing alone cannot repair fresh
-correct-paragraph failure. Do not automatically extend epochs, rates, labels,
-thresholds or solver budgets, or treat declining loss as useful acquisition.
+The completed [decision review](pooled-reading-failure-review.md) selects
+[token-pointer acquisition](token-pointer-acquisition.md), now the active
+preparation contract: generic language features, bidirectional rate-cell reading,
+endpoint/NULL supervision and varied training with strong conventional and causal
+controls, then a return to executed actions. Its new budget requires measured
+admission; no fit has run. Source routing alone cannot repair fresh comprehension.
+Do not treat declining loss or fitted old answers as reusable acquisition.
 
 The closed acquisition diagnostics use explicit answer/STOP supervision over retained
 raw sources and a frozen external encoder. These are not answer-free internalization,

@@ -1,5 +1,10 @@
 # Decision review after pooled-source reading failure
 
+Completed: the prescribed primary-source review selected
+[token-pointer acquisition](token-pointer-acquisition.md) for implementation and
+cost/correctness preparation. The rationale below is historical; it does not
+start another review or reopen the failed session.
+
 2026-09-05. This decision review selects the next research activity; it adds no
 model run. The [completed session](../../experiments/r4_integrated/fresh_source_result.md), frozen at
 `6c2287afff09a1eb5b2265375ee584ea7c3e07a7`, closes without qualification.
