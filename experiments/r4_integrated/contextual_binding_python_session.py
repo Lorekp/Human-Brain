@@ -59,6 +59,36 @@ def load_fixture(path: Path, source_paths=SOURCE_PATHS) -> dict:
     return fixtures
 
 
+def load_teaching_fixtures(fixtures, paths, source_paths, arm_specs) -> dict:
+    """Validate arm renditions against common probes before allocating learners."""
+    if paths is None:
+        return {}
+    if arm_specs is None or set(paths) != {spec[0] for spec in arm_specs}:
+        raise ValueError("teaching fixtures must name every explicit arm exactly once")
+    common = {item["name"]: item for item in fixtures["training"]}
+    result = {}
+    for name, path in paths.items():
+        teaching = load_fixture(path, source_paths)
+        candidate = {
+            **fixtures,
+            "training": teaching["training"],
+            "schedule": teaching["schedule"],
+        }
+        validate_fixture(candidate)
+        if candidate["schedule"] != fixtures["schedule"]:
+            raise ValueError("teaching arms must preserve the common schedule")
+        for item in candidate["training"]:
+            reference = common.get(item["name"])
+            if reference is None or {
+                key: value for key, value in item.items() if key not in ("document", "request")
+            } != {
+                key: value for key, value in reference.items() if key not in ("document", "request")
+            }:
+                raise ValueError("teaching arms may change only document and request text")
+        result[name] = candidate
+    return result
+
+
 def _training_summary(rows) -> dict:
     result = conditioned._training_summary(rows)
     if not any(row.get("exploration_policy") == "raw_candidate" for row in rows):
@@ -161,6 +191,7 @@ def _pair_diagnostics(memory, arm, fixtures) -> dict:
             action = encounter.get("exploration", encounter["first"])
             if (
                 action["edited"]
+                and action["selection"]["query"] == item["request"]
                 and not action["execution"]["passed"]
                 and action["selection"]["candidate_index"] == leader
             ):
@@ -808,6 +839,7 @@ def run(
     allocation_policies: dict[str, str] | None = None,
     protection_policies: dict[str, str] | None = None,
     track_source_competition=False,
+    teaching_fixture_paths: dict[str, Path] | None = None,
 ) -> dict:
     if exploration_policy not in ("thresholded", "raw_candidate"):
         raise ValueError("unknown training exploration policy")
@@ -883,6 +915,9 @@ def run(
         ).strip()
         fixtures = load_fixture(fixture_path, source_paths)
         validate_fixture(fixtures)
+        teaching_fixtures = load_teaching_fixtures(
+            fixtures, teaching_fixture_paths, source_paths, arm_specs
+        )
         native = loaded_build_info()
         report["native"] = {
             "source_digest": native.source_digest,
@@ -942,6 +977,14 @@ def run(
                 "phase_seconds": {},
             }
             report["arms"][name] = arm
+            arm_teaching = teaching_fixtures.get(name, fixtures)
+            if teaching_fixture_paths is not None:
+                arm["teaching_fixture"] = {
+                    "path": teaching_fixture_paths[name].resolve().relative_to(ROOT).as_posix(),
+                    "sha256": sha256(teaching_fixture_paths[name].read_bytes()).hexdigest(),
+                    "common_probe_scope": "same compact requests for both arms; probe document "
+                    "bytes are never ingested in place of the arm's teaching rendition",
+                }
             if arm_specs is not None:
                 arm["comparison_step_policy"] = step_policy
             if protection_policies is not None:
@@ -955,7 +998,7 @@ def run(
                 update,
                 frozen,
                 motor,
-                fixtures,
+                arm_teaching,
                 work,
                 arm,
                 record,
@@ -966,6 +1009,12 @@ def run(
             )
             arm["phase_seconds"]["teaching"] = time.perf_counter() - began
             arm["trained"], arm["frozen_trained"] = _snapshot(update), _snapshot(frozen)
+            if teaching_fixture_paths is not None:
+                arm["teaching_probe_after_training"] = {
+                    **_old_query_scores(update, arm_teaching["training"]),
+                    "scope": "read-only raw selection on this arm's actual TRAIN requests; "
+                    "not executed success or feedback",
+                }
             protected_state = None
             if protection_policies is not None:
                 protected_state = {
@@ -1032,6 +1081,12 @@ def run(
                 competition["ranks_after_fresh"] = arm["rank_diagnostics"]["retention"]
             if track_learning_diagnostics:
                 arm["pair_diagnostics"] = _pair_diagnostics(update, arm, fixtures)
+                if teaching_fixture_paths is not None:
+                    arm["pair_diagnostics"]["scope"] = (
+                        "original actual-TRAIN pair margins; query coverage matches exact "
+                        "common-probe wording only, so zero pairs does not mean the fact "
+                        "was never taught"
+                    )
             if protected_state is not None and protected_state != {
                 "update": update.protection_summary,
                 "frozen": frozen.protection_summary,

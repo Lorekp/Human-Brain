@@ -1,0 +1,116 @@
+{
+  "kind": "Authored public-development shared fresh transfer for compact versus varied teaching; two familiar-form and two broader-form entities, plus two unsupported requests; not independent reading-comprehension evidence.",
+  "training_source": "experiments/r4_integrated/contextual_curriculum_compact_train.json",
+  "transfer": [
+    {
+      "name": "fresh-fyni-transport",
+      "key": "fyni",
+      "value": "sea holly",
+      "module": "curriculum_fresh_0",
+      "stale": "unconfigured",
+      "request": "Configure fyni using its documented transport setting.",
+      "document_id": "curriculum-fyni",
+      "document": "The service fyni uses sea holly for transport and foxglove as its audit label.",
+      "stratum": "familiar"
+    },
+    {
+      "name": "fresh-fyni-audit",
+      "key": "fyni",
+      "value": "foxglove",
+      "module": "curriculum_fresh_0",
+      "stale": "unconfigured",
+      "request": "Apply the documented audit label to fyni.",
+      "document_id": "curriculum-fyni",
+      "document": "The service fyni uses sea holly for transport and foxglove as its audit label.",
+      "stratum": "familiar"
+    },
+    {
+      "name": "fresh-gaxo-audit",
+      "key": "gaxo",
+      "value": "saxifrage",
+      "module": "curriculum_fresh_1",
+      "stale": "unconfigured",
+      "request": "Set the audit label for gaxo from the documentation.",
+      "document_id": "curriculum-gaxo",
+      "document": "For gaxo, saxifrage is the audit label and larkspur is the transport setting.",
+      "stratum": "familiar"
+    },
+    {
+      "name": "fresh-gaxo-transport",
+      "key": "gaxo",
+      "value": "larkspur",
+      "module": "curriculum_fresh_1",
+      "stale": "unconfigured",
+      "request": "Use the transport setting documented for gaxo.",
+      "document_id": "curriculum-gaxo",
+      "document": "For gaxo, saxifrage is the audit label and larkspur is the transport setting.",
+      "stratum": "familiar"
+    },
+    {
+      "name": "fresh-hupi-transport",
+      "key": "hupi",
+      "value": "blue flax",
+      "module": "curriculum_fresh_2",
+      "stale": "unconfigured",
+      "request": "Find the value used for transport between services by hupi and apply it.",
+      "document_id": "curriculum-hupi",
+      "document": "The audit label allocated to hupi is calendula. Its transport remains blue flax while an operator checks the maintenance display.",
+      "stratum": "broader"
+    },
+    {
+      "name": "fresh-hupi-audit",
+      "key": "hupi",
+      "value": "calendula",
+      "module": "curriculum_fresh_2",
+      "stale": "unconfigured",
+      "request": "Which label is allocated to hupi's audit records? Use that label.",
+      "document_id": "curriculum-hupi",
+      "document": "The audit label allocated to hupi is calendula. Its transport remains blue flax while an operator checks the maintenance display.",
+      "stratum": "broader"
+    },
+    {
+      "name": "fresh-ivra-audit",
+      "key": "ivra",
+      "value": "speedwell",
+      "module": "curriculum_fresh_3",
+      "stale": "unconfigured",
+      "request": "Configure ivra with the identifier on its audit records.",
+      "document_id": "curriculum-ivra",
+      "document": "For ivra, records produced during an audit bear speedwell; communication with other services uses lungwort. An operator can restart ivra without altering either configured value.",
+      "stratum": "broader"
+    },
+    {
+      "name": "fresh-ivra-transport",
+      "key": "ivra",
+      "value": "lungwort",
+      "module": "curriculum_fresh_3",
+      "stale": "unconfigured",
+      "request": "Set ivra to the documented choice that carries its communication with other services.",
+      "document_id": "curriculum-ivra",
+      "document": "For ivra, records produced during an audit bear speedwell; communication with other services uses lungwort. An operator can restart ivra without altering either configured value.",
+      "stratum": "broader"
+    },
+    {
+      "name": "unsupported-jomu-transport",
+      "key": "jomu",
+      "value": null,
+      "module": "curriculum_fresh_4",
+      "stale": "unconfigured",
+      "request": "Configure jomu using its documented transport setting.",
+      "document_id": "curriculum-jomu",
+      "document": "The audit label configured for jomu is campion. Its transport setting is not stated in these notes.",
+      "stratum": "unsupported"
+    },
+    {
+      "name": "unsupported-kefi-audit",
+      "key": "kefi",
+      "value": null,
+      "module": "curriculum_fresh_5",
+      "stale": "unconfigured",
+      "request": "Which label identifies kefi's audit records? Apply it.",
+      "document_id": "curriculum-kefi",
+      "document": "The kefi service uses cowslip for transport. A description of its audit timetable names no label for the audit records.",
+      "stratum": "unsupported"
+    }
+  ]
+}

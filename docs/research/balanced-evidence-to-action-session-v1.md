@@ -44,35 +44,24 @@ relation/span ranking and competitors absent from successful teaching contrasts.
 Raw-score/affine agreement and one correct two-word edit locate these failures
 upstream of action execution.
 
-**Next integrated priority: one bounded teaching-diversity comparison.** The
-fixed encoder already provides contextual features, but teaching repeatedly uses
-compact facts and a narrow question set. Test whether a more varied teaching
-presentation improves downstream use with the existing RESERVED learner. This
-is a hypothesis, not an established cause or a request for another projection
-variant. The comparison has not been implemented, frozen or run.
+**Next integrated priority:** the [compact-versus-varied teaching protocol](../../experiments/r4_integrated/contextual_curriculum_protocol.md)
+tests the presentation of the same sixteen facts with the existing RESERVED
+learner. The fixed encoder already supplies contextual features; teaching
+diversity is a hypothesis, not an established cause. Both arms keep the 48-encounter
+schedule, 150-offer limit and current motor. Use one source rendition per arm to
+preserve unique teacher-span custody, with common old-fact probes and a new shared
+transfer roster. The protocol owns exact routing, controls and scoring limits.
 
-- Match the fact/entity/property inventory, encounter order, fixed motor,
-  encoder/features, learning rule and maximum feedback budget across compact and
-  varied teaching. Start with sixteen taught fact queries, 48 encounters and 150
-  pair offers. Disclose changed source/candidate counts and on-policy negatives;
-  equal offer limits do not mean identical feedback exposure or compute.
-- Use one source rendition per arm, ingested once. Duplicate paraphrases can
-  violate the existing teacher's unique-span custody; do not silently choose an
-  occurrence or filter candidates. Freeze question forms and common retention
-  probes before outputs, including any variation across repeated encounters.
-- Evaluate both arms on the same untouched transfer roster with familiar and
-  broader language forms, plus old-skill retention and unsupported requests.
-  Preserve matched frozen learners and external references. Record immediate
-  acquisition, later transfer, complete-entity success and resource costs.
-- Allow at most two hours of preparation from the recorded start, then one
-  fixed comparison with at most thirty minutes total model runtime. Freeze the
-  concrete schedule, roster and per-lane decision rule first. Adoption requires
-  improved fresh execution without retained or unsupported regression; report
-  familiar/broader forms separately. Close the test at its budget boundary.
+Preparation is bounded to two hours from **04:57 UTC**, then one comparison
+within thirty minutes of total runtime. Freeze reviewed source and all fixtures
+before outputs. Adoption requires greater fresh execution with no regression
+in familiar forms, broader forms, common retention or unsupported STOPs.
+Report actual taught-query acquisition separately from common query-form transfer;
+equal facts and offer limits do not mean equal candidates, feedback or compute.
 
-If varied teaching gives no useful gain, record that result and compare
-acquisition/feedback coverage with representation limits in a bounded research
-review. Do not launch a rate sweep, extra-epoch search or fresh-label solver.
+Close the comparison at its budget boundary. If varied teaching gives no useful
+gain, compare acquisition/feedback coverage with representation limits in a bounded
+research review; do not launch a rate sweep, extra-epoch search or fresh-label solver.
 The unchanged-policy robustness exercise, [projection trial](../../experiments/r4_integrated/contextual_protected_contrast_result.md)
 and [capped trial](../../experiments/r4_integrated/contextual_capped_update_result.md)
 are closed. The [TRAIN-only feasibility witness](../../experiments/r4_integrated/contextual_representation_feasibility_result.md)
