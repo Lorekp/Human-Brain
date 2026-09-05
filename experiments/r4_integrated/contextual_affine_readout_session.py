@@ -26,6 +26,7 @@ SOURCE_PATHS = (
     "experiments/r4_integrated/contextual_binding_diagnostic.py",
     "experiments/r4_integrated/contextual_affine_readout_session.py",
     "experiments/r4_integrated/contextual_affine_readout_protocol.md",
+    "experiments/r4_integrated/contextual_affine_readout_correction.md",
 )
 CHANGED_SOURCES = {
     "src/humanbrain/contextual_evidence_memory.py",
@@ -156,21 +157,31 @@ def _evaluate(models, motor, fixtures, work, result):
 
 
 def _exam(models, original):
-    # The shared helper ingests the unchanged original passage once per model;
-    # repeated ingestion is a verified no-op when the new policies follow.
-    policies = session.evaluation_policies(*models, binding=original["candidate_interactions"])
-    old = session.prior._exam(
-        [(p.name, p.memory, p.method) for p in policies if p.method is not None]
+    # One helper call gives all policies the same single passage ingestion.
+    old_policies = tuple(
+        p
+        for p in session.evaluation_policies(*models, binding=original["candidate_interactions"])
+        if p.method is not None
     )
+    new_policies = _policies(models)
+    combined = {}
+    for policy in (*old_policies, *new_policies):
+        if policy.name in combined:
+            previous = combined[policy.name]
+            require(
+                previous.memory is policy.memory and previous.method == policy.method,
+                "shared exam policy name has different behavior",
+            )
+        combined[policy.name] = policy
+    answers = session.prior._exam([(p.name, p.memory, p.method) for p in combined.values()])
+    old = {p.name: answers[p.name] for p in old_policies}
     require(old == original["exam"], "original exam decisions or scoring differ")
     require(
         [m.checkpoint_sha256 for m in models]
         == [original[key]["checkpoint_sha256"] for key in ("end", "frozen_end")],
         "post-exam checkpoint differs",
     )
-    parents = [m.checkpoint_sha256 for m in models]
-    result = session.prior._exam([(p.name, p.memory, p.method) for p in _policies(models)])
-    require(parents == [m.checkpoint_sha256 for m in models], "new exam changed checkpoint")
+    result = {p.name: answers[p.name] for p in new_policies}
     return {"original_policies_exactly_matched": len(old), "policies": result}
 
 
