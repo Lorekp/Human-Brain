@@ -1,6 +1,6 @@
 """Fixed paired-entity binding and separately attributed neuronal readout comparison.
 
-All teaching uses the predecessor's discrete readout. Evaluation policy callables
+Default teaching uses the predecessor's discrete readout. Evaluation policy callables
 share trained weights, source storage and the learned motor; none can supply
 feedback. Set CPU and checkout native-cache environment before Python starts.
 """
@@ -88,6 +88,115 @@ def _snapshot(memory) -> dict:
     return result
 
 
+def _score_transitions(before, after) -> dict:
+    """Compare old-query probes only within the same retained source context."""
+    pairs = list(zip(before["rows"], after["rows"], strict=True))
+    if any(
+        a["case"] != b["case"]
+        or a["selection"]["storage_sha256"] != b["selection"]["storage_sha256"]
+        for a, b in pairs
+    ):
+        raise RuntimeError("old-query probes have incomparable source context")
+    return {
+        "scope": "evaluator-only thresholded raw selection changes, including STOP; "
+        "same queries and retained source context",
+        "before_checkpoint_sha256": before["checkpoint_sha256"],
+        "after_checkpoint_sha256": after["checkpoint_sha256"],
+        "compared_queries": len(pairs),
+        "compared_storage_sha256": sorted({a["selection"]["storage_sha256"] for a, _ in pairs}),
+        "correct_to_wrong": [a["case"] for a, b in pairs if a["correct"] and not b["correct"]],
+        "wrong_to_correct": [a["case"] for a, b in pairs if not a["correct"] and b["correct"]],
+        "correct_to_stop": [
+            a["case"]
+            for a, b in pairs
+            if a["correct"] and b["selection"]["candidate_index"] is None
+        ],
+        "stop_to_correct": [
+            a["case"]
+            for a, b in pairs
+            if a["selection"]["candidate_index"] is None and b["correct"]
+        ],
+    }
+
+
+def _pair_diagnostics(memory, arm, fixtures) -> dict:
+    """Final saved-pair fit and realized negative coverage; no feedback decisions."""
+    parent, began = memory.checkpoint_sha256, time.perf_counter()
+    weights = memory.checkpoint_arrays()["readout_synapses_pa"]
+    difference = weights[0] - weights[1]
+    events = [event for row in arm["training"] for event in row["feedback"]]
+    if sha256(replay._json(arm["ledger"]).encode()).hexdigest() != arm["ledger_summary"]["sha256"]:
+        raise RuntimeError("final pair diagnosis ledger hash differs")
+    pairs = []
+    for pair in arm["ledger"]:
+        rejected, accepted = pair["rejected_decision"], pair["accepted_decision"]
+        delta = np.asarray(accepted["eligibility"]) - np.asarray(rejected["eligibility"])
+        offers = [event for event in events if event["pair_id"] == pair["pair_id"]]
+        if not offers:
+            raise RuntimeError("final pair diagnosis lacks original feedback offer")
+        pairs.append(
+            {
+                "pair_id": pair["pair_id"],
+                "query": rejected["query"],
+                "rejected_candidate_index": rejected["candidate_index"],
+                "accepted_candidate_index": accepted["candidate_index"],
+                "final_margin": float(difference @ delta),
+                "first_gap_after": offers[0]["update"]["gap_after"],
+                "last_gap_after": offers[-1]["update"]["gap_after"],
+                "offer_count": len(offers),
+            }
+        )
+    queries = []
+    execution = {
+        row["case"]: row["execution"]["passed"] for row in arm["retention"]["affine"]["rows"]
+    }
+    for item, rank in zip(fixtures["training"], arm["rank_diagnostics"]["retention"], strict=True):
+        matching = [pair for pair in pairs if pair["query"] == item["request"]]
+        negatives = {pair["rejected_candidate_index"] for pair in matching}
+        queries.append(
+            {
+                "case": item["name"],
+                "pair_count": len(matching),
+                "distinct_executed_negative_occurrences": len(negatives),
+                "unique_top_candidate_index": rank["unique_top_candidate_index"],
+                "top_was_executed_negative": rank["unique_top_candidate_index"] in negatives,
+                "all_recorded_pairs_fit": None
+                if not matching
+                else all(pair["final_margin"] >= 1 - 1e-10 for pair in matching),
+                "best_correct_rank": rank["best_correct_rank"],
+                "affine_executed_success": execution[item["name"]],
+                "has_erased_pair": any(
+                    pair["first_gap_after"] > 0 and pair["final_margin"] < 0 for pair in matching
+                ),
+            }
+        )
+    if memory.checkpoint_sha256 != parent:
+        raise RuntimeError("pair diagnosis changed checkpoint")
+    return {
+        "scope": "evaluator-only final trained-pair margins and realized on-policy coverage",
+        "checkpoint_sha256": parent,
+        "pairs": pairs,
+        "negative_pair_margins": sum(pair["final_margin"] < 0 for pair in pairs),
+        "nonnegative_subunit_pair_margins": sum(
+            0 <= pair["final_margin"] < 1 - 1e-10 for pair in pairs
+        ),
+        "satisfied_pair_margins": sum(pair["final_margin"] >= 1 - 1e-10 for pair in pairs),
+        "queries": queries,
+        "queries_without_pairs": sum(row["pair_count"] == 0 for row in queries),
+        "failed_queries_all_pairs_fit": sum(
+            not row["affine_executed_success"] and row["all_recorded_pairs_fit"] is True
+            for row in queries
+        ),
+        "failed_queries_with_erased_pair": sum(
+            not row["affine_executed_success"] and row["has_erased_pair"] for row in queries
+        ),
+        "failed_queries_without_pairs": sum(
+            not row["affine_executed_success"] and row["pair_count"] == 0 for row in queries
+        ),
+        "seconds": time.perf_counter() - began,
+    }
+
+
 def validate_fixture(fixtures: dict) -> None:
     training, transfer, schedule = (fixtures[key] for key in ("training", "transfer", "schedule"))
     names = [item["name"] for item in training]
@@ -128,7 +237,9 @@ class EvaluationPolicy:
         return self.select(query)
 
 
-def evaluation_policies(update, frozen, *, binding: bool) -> tuple[EvaluationPolicy, ...]:
+def evaluation_policies(
+    update, frozen, *, binding: bool, include_affine=False
+) -> tuple[EvaluationPolicy, ...]:
     policies = [
         EvaluationPolicy(name, memory, getattr(memory, method), method)
         for name, memory, method in (
@@ -154,11 +265,30 @@ def evaluation_policies(update, frozen, *, binding: bool) -> tuple[EvaluationPol
                     None,
                 )
             )
+    if include_affine:
+        policies.extend(
+            EvaluationPolicy(
+                name, memory, memory.respond_affine_interpolated, "respond_affine_interpolated"
+            )
+            for name, memory in (("affine", update), ("frozen_affine", frozen))
+        )
     return tuple(policies)
 
 
-def _evaluate(name, update, frozen, motor, fixtures, work, arm, record, *, binding: bool):
-    policies = evaluation_policies(update, frozen, binding=binding)
+def _evaluate(
+    name,
+    update,
+    frozen,
+    motor,
+    fixtures,
+    work,
+    arm,
+    record,
+    *,
+    binding: bool,
+    include_affine=False,
+):
+    policies = evaluation_policies(update, frozen, binding=binding, include_affine=include_affine)
     for phase in ("transfer", "retention"):
         began = time.perf_counter()
         parents = {"update": update.checkpoint_sha256, "frozen": frozen.checkpoint_sha256}
@@ -213,11 +343,31 @@ def _evaluate(name, update, frozen, motor, fixtures, work, arm, record, *, bindi
             ),
         }
         arm["phase_seconds"][phase] = time.perf_counter() - began
+        if include_affine:
+            arm[phase + "_raw_affine_disagreements"] = sum(
+                a["selection"]["candidate_index"] != b["selection"]["candidate_index"]
+                for a, b in zip(
+                    arm[phase]["raw_score_reference"]["rows"],
+                    arm[phase]["affine"]["rows"],
+                    strict=True,
+                )
+            )
     return policies
 
 
 def _teach(
-    name, update, frozen, motor, fixtures, work, arm, record, *, exploration_policy="thresholded"
+    name,
+    update,
+    frozen,
+    motor,
+    fixtures,
+    work,
+    arm,
+    record,
+    *,
+    exploration_policy="thresholded",
+    primary_policy="respond",
+    track_learning_diagnostics=False,
 ):
     if exploration_policy not in ("thresholded", "raw_candidate"):
         raise ValueError("unknown training exploration policy")
@@ -240,8 +390,12 @@ def _teach(
         row["paired_ingestion_seconds"] = time.perf_counter() - began
         row["after_ingestion"] = _snapshot(update)
         folder = work / name / "training" / f"{step:02d}-{case_name}"
-        row["frozen_first"], _ = shared.attempt(frozen, "respond", motor, item, folder / "frozen")
-        row["first"], candidate = shared.attempt(update, "respond", motor, item, folder / "first")
+        row["frozen_first"], _ = shared.attempt(
+            frozen, primary_policy, motor, item, folder / "frozen"
+        )
+        row["first"], candidate = shared.attempt(
+            update, primary_policy, motor, item, folder / "first"
+        )
         began, parent = time.perf_counter(), update.checkpoint_sha256
         conventional = update.conventional(item["request"].encode())
         row["first_score_reference_seconds"] = time.perf_counter() - began
@@ -354,6 +508,10 @@ def _teach(
                         "accepted_decision": shared.decision_record(accepted),
                     }
                 )
+                if track_learning_diagnostics:
+                    row["old_query_scores_before_new"] = _old_query_scores(
+                        update, encountered.values()
+                    )
                 row["feedback"].append(replay._feedback(update, frozen, pair, replay=False))
                 if row["candidate_source"] == "raw_candidate_exploration":
                     receipt = row["feedback"][-1]["update"]
@@ -382,6 +540,15 @@ def _teach(
                         row["old_query_scores_after_rehearsal"] = _old_query_scores(
                             update, encountered.values()
                         )
+                if track_learning_diagnostics:
+                    before = row["old_query_scores_before_new"]
+                    after = row["old_query_scores_after_new"]
+                    row["old_query_transitions"] = {
+                        "new": _score_transitions(before, after),
+                        "rehearsal": _score_transitions(
+                            after, row.get("old_query_scores_after_rehearsal", after)
+                        ),
+                    }
         encountered.setdefault(case_name, item)
         row["after"], row["frozen_after"] = _snapshot(update), _snapshot(frozen)
         row["new_pair_count"], row["replay_count"] = len(ledger), replay_count
@@ -492,9 +659,21 @@ def run(
     source_paths=SOURCE_PATHS,
     report_labels: dict[str, str] | None = None,
     include_rank_diagnostics=False,
+    arm_specs=None,
+    primary_policy="respond",
+    include_affine=False,
+    track_learning_diagnostics=False,
 ) -> dict:
     if exploration_policy not in ("thresholded", "raw_candidate"):
         raise ValueError("unknown training exploration policy")
+    if primary_policy not in ("respond", "respond_affine_interpolated"):
+        raise ValueError("unknown primary neuronal policy")
+    if primary_policy == "respond_affine_interpolated" and not include_affine:
+        raise ValueError("affine teaching requires declared affine evaluation")
+    if track_learning_diagnostics and not (include_rank_diagnostics and include_affine):
+        raise ValueError("pair coverage requires final rank diagnostics and affine evaluation")
+    if track_learning_diagnostics and not include_affine:
+        raise ValueError("pair coverage requires affine executed outcomes")
     fixture_path = HERE / "contextual_binding_cases.json" if fixture_path is None else fixture_path
     output = output.resolve()
     if output.exists() or output.with_suffix(".npz").exists():
@@ -534,6 +713,9 @@ def run(
         report.update(report_labels)
     if exploration_policy != "thresholded":
         report["exploration_policy"] = exploration_policy
+    if primary_policy != "respond":
+        report["primary_teaching_policy"] = primary_policy
+        report["primary_evaluation_policy"] = "affine"
 
     def record(event, **fields):
         row = {"event": event, **fields}
@@ -567,10 +749,20 @@ def run(
             time.perf_counter() - began,
         )
         arrays = {}
-        for name, binding in (("GAIN16", False), ("BINDING", True)):
+        specs = (
+            (("GAIN16", False, "fixed"), ("BINDING", True, "fixed"))
+            if arm_specs is None
+            else arm_specs
+        )
+        for name, binding, step_policy in specs:
             gain = 16.0
+            step_options = {} if arm_specs is None else {"comparison_step_policy": step_policy}
             update = ContextualEvidenceMemory(
-                encoder, learning_rate=1.0, interaction_gain=gain, candidate_interactions=binding
+                encoder,
+                learning_rate=1.0,
+                interaction_gain=gain,
+                candidate_interactions=binding,
+                **step_options,
             )
             frozen = ContextualEvidenceMemory(
                 encoder,
@@ -578,6 +770,7 @@ def run(
                 interaction_gain=gain,
                 learning_enabled=False,
                 candidate_interactions=binding,
+                **step_options,
             )
             if update.checkpoint_sha256 != frozen.checkpoint_sha256:
                 raise RuntimeError("paired initial checkpoints differ")
@@ -593,6 +786,8 @@ def run(
                 "phase_seconds": {},
             }
             report["arms"][name] = arm
+            if arm_specs is not None:
+                arm["comparison_step_policy"] = step_policy
             began = time.perf_counter()
             seen = _teach(
                 name,
@@ -604,6 +799,8 @@ def run(
                 arm,
                 record,
                 exploration_policy=exploration_policy,
+                primary_policy=primary_policy,
+                track_learning_diagnostics=track_learning_diagnostics,
             )
             arm["phase_seconds"]["teaching"] = time.perf_counter() - began
             arm["trained"], arm["frozen_trained"] = _snapshot(update), _snapshot(frozen)
@@ -616,11 +813,22 @@ def run(
             arm["transfer_start"] = _snapshot(update)
             began = time.perf_counter()
             policies = _evaluate(
-                name, update, frozen, motor, fixtures, work, arm, record, binding=binding
+                name,
+                update,
+                frozen,
+                motor,
+                fixtures,
+                work,
+                arm,
+                record,
+                binding=binding,
+                include_affine=include_affine,
             )
             arm["phase_seconds"]["transfer_and_retention"] = time.perf_counter() - began
             if include_rank_diagnostics:
                 arm["rank_diagnostics"] = rank_diagnostics(update, fixtures)
+            if track_learning_diagnostics:
+                arm["pair_diagnostics"] = _pair_diagnostics(update, arm, fixtures)
             if (
                 frozen.synapse_sha256 != arm["seed"]["synapse_sha256"]
                 or update.synapse_sha256 != arm["trained"]["synapse_sha256"]

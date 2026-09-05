@@ -1,0 +1,116 @@
+{
+  "kind": "public development; fixed versus unit-margin-capped updates; linked prior teaching and 48-encounter schedule; fresh transfer substitutions in the same four strata",
+  "training_source": "experiments/r4_integrated/contextual_binding_cases.json",
+  "transfer": [
+    {
+      "name": "fresh-javu-transport",
+      "key": "javu",
+      "value": "birch",
+      "module": "capped_fresh_0",
+      "stale": "unconfigured",
+      "request": "Configure javu using its documented transport setting.",
+      "document_id": "capped-fresh-javu",
+      "document": "The service javu uses birch for transport and cedar as its audit label.",
+      "stratum": "simple"
+    },
+    {
+      "name": "fresh-javu-audit",
+      "key": "javu",
+      "value": "cedar",
+      "module": "capped_fresh_0",
+      "stale": "unconfigured",
+      "request": "Apply the documented audit label to javu.",
+      "document_id": "capped-fresh-javu",
+      "document": "The service javu uses birch for transport and cedar as its audit label.",
+      "stratum": "simple"
+    },
+    {
+      "name": "fresh-zeti-audit",
+      "key": "zeti",
+      "value": "fir",
+      "module": "capped_fresh_1",
+      "stale": "unconfigured",
+      "request": "Set the audit label for zeti from the documentation.",
+      "document_id": "capped-fresh-zeti",
+      "document": "The service kepu uses juniper for transport and pine as its audit label. The service zeti uses elm for transport and fir as its audit label.",
+      "stratum": "neighboring_entity"
+    },
+    {
+      "name": "fresh-zeti-transport",
+      "key": "zeti",
+      "value": "elm",
+      "module": "capped_fresh_1",
+      "stale": "unconfigured",
+      "request": "Use the transport setting documented for zeti.",
+      "document_id": "capped-fresh-zeti",
+      "document": "The service kepu uses juniper for transport and pine as its audit label. The service zeti uses elm for transport and fir as its audit label.",
+      "stratum": "neighboring_entity"
+    },
+    {
+      "name": "fresh-nevo-transport",
+      "key": "nevo",
+      "value": "willow",
+      "module": "capped_fresh_2",
+      "stale": "unconfigured",
+      "request": "Which transport should nevo use according to the documentation? Apply it.",
+      "document_id": "capped-fresh-nevo",
+      "document": "For nevo, willow is the transport setting; its audit label is ash. The unrelated leru service also uses willow for transport.",
+      "stratum": "repeated_value"
+    },
+    {
+      "name": "fresh-nevo-audit",
+      "key": "nevo",
+      "value": "ash",
+      "module": "capped_fresh_2",
+      "stale": "unconfigured",
+      "request": "Configure nevo with its audit label.",
+      "document_id": "capped-fresh-nevo",
+      "document": "For nevo, willow is the transport setting; its audit label is ash. The unrelated leru service also uses willow for transport.",
+      "stratum": "repeated_value"
+    },
+    {
+      "name": "fresh-veju-audit",
+      "key": "veju",
+      "value": "beech",
+      "module": "capped_fresh_3",
+      "stale": "unconfigured",
+      "request": "Which audit marker is recorded for veju? Apply it.",
+      "document_id": "capped-fresh-veju",
+      "document": "The audit marker beech belongs to veju. When messages move between services, veju's configured transport is maple.",
+      "stratum": "paraphrase_order_reversal"
+    },
+    {
+      "name": "fresh-veju-transport",
+      "key": "veju",
+      "value": "maple",
+      "module": "capped_fresh_3",
+      "stale": "unconfigured",
+      "request": "Set veju's transport from the documented connection choice.",
+      "document_id": "capped-fresh-veju",
+      "document": "The audit marker beech belongs to veju. When messages move between services, veju's configured transport is maple.",
+      "stratum": "paraphrase_order_reversal"
+    },
+    {
+      "name": "unsupported-gopu-transport",
+      "key": "gopu",
+      "value": null,
+      "module": "capped_missing_gopu",
+      "stale": "unconfigured",
+      "request": "Configure gopu using its documented transport setting.",
+      "document_id": "capped-missing-gopu",
+      "document": "The service gopu is monitored during startup. Its owner is kepu.",
+      "stratum": "unsupported"
+    },
+    {
+      "name": "unsupported-hyri-audit",
+      "key": "hyri",
+      "value": null,
+      "module": "capped_missing_hyri",
+      "stale": "unconfigured",
+      "request": "Apply the documented audit label to hyri.",
+      "document_id": "capped-missing-hyri",
+      "document": "The transport setting of hyri is larch. No audit label is specified.",
+      "stratum": "unsupported"
+    }
+  ]
+}

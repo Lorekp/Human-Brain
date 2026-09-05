@@ -831,3 +831,139 @@ def test_affine_neuronal_empty_frozen_true_ties_and_floating_aliases_stop(encode
         with pytest.raises(ValueError, match="finite raw drives"):
             memory.respond_affine_interpolated(query)
         assert memory.checkpoint_sha256 == before
+
+
+@pytest.mark.parametrize("learning_rate", (0.001, 1.0))
+@pytest.mark.parametrize("starting_gap", (-2.0, 0.0, 0.75))
+def test_capped_comparison_native_step_matches_margin_arithmetic_and_frozen_exposure(
+    encoder, learning_rate, starting_gap
+) -> None:
+    update = ContextualEvidenceMemory(
+        encoder, learning_rate=learning_rate, candidate_interactions=True,
+        comparison_step_policy="unit_margin_capped",
+    )
+    frozen = ContextualEvidenceMemory(
+        encoder, learning_rate=learning_rate, candidate_interactions=True,
+        comparison_step_policy="unit_margin_capped", learning_enabled=False,
+    )
+    for memory in (update, frozen):
+        memory.ingest((document(),))
+        memory._bias[0] = 0.25  # Persistent bias must not enter the pair calculation.
+    assert update.checkpoint_sha256 == frozen.checkpoint_sha256
+    query = "How many messages does Café receive?".encode()
+    rejected = update.decision_for_span(query, b"23")
+    accepted = update.decision_for_span(query, b"17")
+    delta = np.asarray(accepted.eligibility) - np.asarray(rejected.eligibility)
+    squared_norm = float(delta @ delta)
+    initial_weights = starting_gap * delta / squared_norm
+    for memory in (update, frozen):
+        memory._weights[0] = initial_weights
+    rejected = update.decision_for_span(query, b"23")
+    accepted = update.decision_for_span(query, b"17")
+    measured_gap = float(initial_weights @ delta)
+    expected_rate = min(
+        learning_rate, (1 - measured_gap) * np.sqrt(1 + squared_norm) / (2 * squared_norm)
+    )
+    expected_step = expected_rate / np.sqrt(1 + squared_norm)
+    frozen_pair = tuple(frozen.replay_decision(d) for d in (rejected, accepted))
+    frozen_sha = frozen.synapse_sha256
+    receipt = update.observe_comparison(rejected, accepted)
+    frozen_receipt = frozen.observe_comparison(*frozen_pair)
+    json.dumps(receipt, allow_nan=False)
+    json.dumps(frozen_receipt, allow_nan=False)
+    arrays = update.checkpoint_arrays()
+    np.testing.assert_allclose(
+        arrays["readout_synapses_pa"][0], initial_weights + expected_step * delta, atol=1e-14
+    )
+    np.testing.assert_allclose(arrays["readout_synapses_pa"][1], -expected_step * delta, atol=1e-14)
+    np.testing.assert_array_equal(arrays["pacemaker_synapses_pa"], [0.25, 0])
+    np.testing.assert_array_equal(arrays["readout_synapses_pa"][:, :384], 0)
+    assert receipt["eligibility_delta_norm_squared"] == squared_norm
+    assert receipt["proposed_learning_rate"] == receipt["effective_learning_rate"] == expected_rate
+    assert receipt["cap_active"] == (expected_rate < learning_rate)
+    assert receipt["gap_before"] == pytest.approx(starting_gap, abs=1e-12)
+    assert receipt["gap_after"] == pytest.approx(
+        starting_gap + 2 * expected_step * squared_norm, abs=1e-12
+    )
+    assert receipt["gap_after"] <= 1 + 1e-12
+    assert receipt["native_update_applied"] and receipt["synaptic_update"]
+    assert receipt["comparison_step_policy"] == "unit_margin_capped"
+    assert frozen_receipt["proposed_learning_rate"] == expected_rate
+    assert frozen_receipt["effective_learning_rate"] == 0
+    assert not frozen_receipt["native_update_applied"] and not frozen_receipt["synaptic_update"]
+    assert frozen.synapse_sha256 == frozen_sha
+    assert receipt["eligibility_delta_sha256"] == frozen_receipt["eligibility_delta_sha256"]
+    assert update.feedback_count == frozen.feedback_count == 2
+    assert update.update_count == 1 and frozen.update_count == 0
+    with pytest.raises(ValueError, match="stale parent"):
+        update.observe_comparison(rejected, accepted)
+
+
+def test_comparison_policy_preserves_default_identity_and_absolute_feedback(encoder) -> None:
+    default = ContextualEvidenceMemory(encoder)
+    fixed = ContextualEvidenceMemory(encoder, comparison_step_policy="fixed")
+    capped = ContextualEvidenceMemory(encoder, comparison_step_policy="unit_margin_capped")
+    capped_frozen = ContextualEvidenceMemory(
+        encoder, comparison_step_policy="unit_margin_capped", learning_enabled=False
+    )
+    query = b"How many messages?"
+    for memory in (default, fixed, capped, capped_frozen):
+        memory.ingest((document(),))
+    assert default.checkpoint_sha256 == fixed.checkpoint_sha256 != capped.checkpoint_sha256
+    assert capped.checkpoint_sha256 == capped_frozen.checkpoint_sha256
+    # The fixed checkpoint keeps the exact pre-policy identity dictionary.
+    old_state = {
+        "encoder": encoder.sha256, "representation": default.representation_policy,
+        "readouts": default.readout_policy, "storage": default._storage_root,
+        "synapses": default.synapse_sha256, "feedback": default._feedback_root,
+    }
+    expected = sha256(json.dumps(old_state, sort_keys=True).encode()).hexdigest()
+    assert default.checkpoint_sha256 == expected
+    assert default.decision_for_span(query, b"17") == fixed.decision_for_span(query, b"17")
+    np.testing.assert_array_equal(default._features(query)[0], capped._features(query)[0])
+    assert default.storage_summary == capped.storage_summary
+    with pytest.raises(ValueError, match="different retained source store"):
+        capped_frozen.replay_decision(default.decision_for_span(query, b"17"))
+    for memory in (default, fixed, capped):
+        memory.observe_feedback(memory.decision_for_span(query, b"17"), 1)
+    assert default.synapse_sha256 == fixed.synapse_sha256 == capped.synapse_sha256
+    assert default.update_count == fixed.update_count == capped.update_count == 1
+    with pytest.raises(AttributeError):
+        capped.comparison_step_policy = "fixed"
+    with pytest.raises(ValueError, match="unknown comparison_step_policy"):
+        ContextualEvidenceMemory(encoder, comparison_step_policy="other")
+
+
+def test_capped_comparison_satisfied_and_zero_delta_skip_without_mutation(encoder) -> None:
+    memory = ContextualEvidenceMemory(encoder, comparison_step_policy="unit_margin_capped")
+    memory.ingest((document(),))
+    query = b"How many messages?"
+    a = memory.decision_for_span(query, b"17")
+    b = memory.decision_for_span(query, b"23")
+    delta = np.asarray(a.eligibility) - np.asarray(b.eligibility)
+    memory._weights[0] = 2 * delta / (delta @ delta)
+    pair = [memory.decision_for_span(query, value) for value in (b"23", b"17")]
+    before = memory.synapse_sha256
+    receipt = memory.observe_comparison(*pair)
+    assert receipt["gap_before"] == pytest.approx(2)
+    assert receipt["step_skipped_reason"] == "satisfied_margin"
+    assert receipt["effective_learning_rate"] == receipt["proposed_learning_rate"] == 0
+    assert not receipt["native_update_applied"] and memory.synapse_sha256 == before
+    assert memory.feedback_count == 2 and memory.update_count == 0
+
+    # Different source occurrences may have identical features. Their zero
+    # contrast cannot be learned; it must not produce a scratch-bias-only update.
+    memory = ContextualEvidenceMemory(encoder, comparison_step_policy="unit_margin_capped")
+    memory.ingest((
+        OpaqueDocument(b"a", b"public", b"ready"), OpaqueDocument(b"b", b"public", b"ready")
+    ))
+    rows, _ = memory._features(query)
+    pair = [memory._decision(query, rows, i, "teacher_executed_span") for i in (0, 1)]
+    before = memory.synapse_sha256
+    receipt = memory.observe_comparison(*pair)
+    assert receipt["step_skipped_reason"] == "zero_delta"
+    assert receipt["eligibility_delta_norm_squared"] == 0
+    assert receipt["effective_learning_rate"] == receipt["proposed_learning_rate"] == 0
+    assert not receipt["native_update_applied"] and not receipt["synaptic_update"]
+    assert memory.synapse_sha256 == before and memory.update_count == 0
+    assert memory.feedback_count == 2

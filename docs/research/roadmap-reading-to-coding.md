@@ -79,8 +79,9 @@ neuronal readout at unchanged weights. Saturation is resolved on these reused
 cases, but ranking and retention remain weak; no fresh entity has both properties
 correct. Later feedback can erase previously correct margins, while many failed
 queries already satisfy every recorded contrast. Next test bounded corrective
-steps in the integrated loop, keeping competitor coverage and exposure budgets
-fixed. Improve this loop before provenance revision,
+steps in the integrated loop, keeping the candidate inventory and exposure
+budgets fixed; on-policy errors can still produce different negative coverage.
+Improve this loop before provenance revision,
 multi-hop composition, or the full balanced challenge. The
 [balanced session plan](balanced-evidence-to-action-session-v1.md) owns the next
 bounded comparison and later 24-episode challenge.

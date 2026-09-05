@@ -66,9 +66,10 @@ ranking changes, unsupported actions, final rank/STOP diagnostics and cost.
 Budget one step policy and one integrated comparison, with two hours for
 implementation/diagnosis. Do not add epochs, filter candidates, change thresholds
 or choose an ablation from spent scores. The earlier margin-deficit conditioning
-study left 23 subunit margins despite zero wrong pairs; smaller steps may lose
-protective margins or learn too slowly. Judge executed capability and retention,
-not numerical margin fit. If it fails, compare stability against competitor
+study left 23 subunit margins despite zero wrong pairs; all its applied rates
+were below one, so this cap would not have changed that trajectory. Smaller
+steps may lose protective margins or learn too slowly. Judge executed capability
+and retention, not numerical margin fit. If it fails, compare stability against competitor
 coverage before another mechanism. All references share the learned motor and
 isolate evidence selection rather than the whole neuronal system.
 

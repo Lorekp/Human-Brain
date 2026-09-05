@@ -168,6 +168,7 @@ class ContextualEvidenceMemory:
         learning_enabled: bool = True,
         interaction_gain: float = 1.0,
         candidate_interactions: bool = False,
+        comparison_step_policy: str = "fixed",
     ) -> None:
         if not np.isfinite(learning_rate) or learning_rate <= 0:
             raise ValueError("learning_rate must be finite and positive")
@@ -175,17 +176,24 @@ class ContextualEvidenceMemory:
             raise ValueError("interaction_gain must be finite and positive")
         if type(candidate_interactions) is not bool:
             raise ValueError("candidate_interactions must be a bool")
+        if comparison_step_policy not in ("fixed", "unit_margin_capped"):
+            raise ValueError("unknown comparison_step_policy")
         self.encoder = encoder
         self.learning_rate = float(learning_rate)
         self.learning_enabled = learning_enabled
         self._interaction_gain = float(interaction_gain)
         self._candidate_interactions = candidate_interactions
+        self._comparison_step_policy = comparison_step_policy
         self._interaction_windows: list[_InteractionWindow] = []
         self._documents: list[OpaqueDocument] = []
         self._candidates: list[_Candidate] = []
         self._vectors = np.empty((0, _DIMENSION), dtype=np.float64)
         self._contexts: list[np.ndarray] = []
-        self._storage_root = _digest({"representation": self.representation_policy})
+        storage_identity = {"representation": self.representation_policy}
+        if self.comparison_step_policy != "fixed":
+            storage_identity["comparison_step_policy"] = self.comparison_step_policy
+            storage_identity["maximum_learning_rate"] = self.learning_rate
+        self._storage_root = _digest(storage_identity)
         self._storage_ancestry = {self._storage_root: 0}
         feature_count = _FEATURES + _CANDIDATE_FEATURES * candidate_interactions
         self._weights = np.zeros((2, feature_count), dtype=np.float64)
@@ -210,6 +218,10 @@ class ContextualEvidenceMemory:
     @property
     def candidate_interactions(self) -> bool:
         return self._candidate_interactions
+
+    @property
+    def comparison_step_policy(self) -> str:
+        return self._comparison_step_policy
 
     @property
     def representation_policy(self) -> dict:
@@ -242,16 +254,18 @@ class ContextualEvidenceMemory:
 
     @property
     def checkpoint_sha256(self) -> str:
-        return _digest(
-            {
-                "encoder": self.encoder.sha256,
-                "representation": self.representation_policy,
-                "readouts": self.readout_policy,
-                "storage": self._storage_root,
-                "synapses": self.synapse_sha256,
-                "feedback": self._feedback_root,
-            }
-        )
+        state = {
+            "encoder": self.encoder.sha256,
+            "representation": self.representation_policy,
+            "readouts": self.readout_policy,
+            "storage": self._storage_root,
+            "synapses": self.synapse_sha256,
+            "feedback": self._feedback_root,
+        }
+        if self.comparison_step_policy != "fixed":
+            state["comparison_step_policy"] = self.comparison_step_policy
+            state["maximum_learning_rate"] = self.learning_rate
+        return _digest(state)
 
     @property
     def synapse_sha256(self) -> str:
@@ -740,9 +754,23 @@ class ContextualEvidenceMemory:
             raise ValueError("comparison requires two different candidate occurrences")
         delta = np.asarray(accepted.eligibility) - np.asarray(rejected.eligibility)
         gap_before = float((self._weights[0] - self._weights[1]) @ delta)
+        norm_squared = float(delta @ delta)
+        proposed_rate = self.learning_rate
+        skip_reason = None
+        cap_active = False
+        if self.comparison_step_policy == "unit_margin_capped":
+            if norm_squared == 0.0 or gap_before >= 1.0:
+                proposed_rate = 0.0
+                skip_reason = "zero_delta" if norm_squared == 0.0 else "satisfied_margin"
+            else:
+                proposed_rate = min(
+                    self.learning_rate,
+                    (1.0 - gap_before) * np.sqrt(1.0 + norm_squared) / (2.0 * norm_squared),
+                )
+                cap_active = bool(proposed_rate < self.learning_rate)
         synapses_before = self.synapse_sha256
         applied = False
-        if self.learning_enabled:
+        if self.learning_enabled and proposed_rate > 0.0:
             # The native learner also updates its bias. A fresh scratch bias
             # excludes the persistent bias from the ranking margin and discards
             # that non-ranking update; only shared dendritic weights survive.
@@ -755,13 +783,16 @@ class ContextualEvidenceMemory:
             )
             self._eligibility[:] = delta
             try:
-                applied = pair_learner.update(0, self.learning_rate, 1.0) is not None
+                applied = pair_learner.update(0, proposed_rate, 1.0) is not None
             finally:
                 self._eligibility.fill(0.0)
         self.feedback_count += 2
         self.update_count += int(applied)
         for decision, reward in ((rejected, -1), (accepted, 1)):
             self._feedback_root = _digest([self._feedback_root, decision.sha256, reward])
+        changed = self.synapse_sha256 != synapses_before
+        if not changed and skip_reason is None:
+            skip_reason = "learning_disabled" if not self.learning_enabled else "native_no_mutation"
         return {
             "before": before,
             "after": self.checkpoint_sha256,
@@ -770,8 +801,15 @@ class ContextualEvidenceMemory:
             "eligibility_delta_sha256": sha256(delta.tobytes()).hexdigest(),
             "gap_before": gap_before,
             "gap_after": float((self._weights[0] - self._weights[1]) @ delta),
+            "comparison_step_policy": self.comparison_step_policy,
+            "eligibility_delta_norm_squared": norm_squared,
+            "proposed_learning_rate": float(proposed_rate),
+            "effective_learning_rate": float(proposed_rate) if changed else 0.0,
+            "cap_active": cap_active,
+            "step_skipped_reason": skip_reason,
+            "learning_enabled": self.learning_enabled,
             "native_update_applied": applied,
-            "synaptic_update": self.synapse_sha256 != synapses_before,
+            "synaptic_update": changed,
             "bias_policy": "zero scratch pair bias; persistent bias excluded and unchanged",
             "feedback_events": 2,
             "mode": "same_query_pairwise",
