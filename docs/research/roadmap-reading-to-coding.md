@@ -70,30 +70,23 @@ learner successes or autonomous recovery.
 The first [narrow executed slice](../../experiments/r4_integrated/neutral_document_python_session.md)
 remains limited positional-reading and literal-edit evidence. The adopted
 AROW/BINDING baseline and all earlier frozen results retain their contracts.
-The [full-choice acquisition attempt](../../experiments/r4_integrated/contextual_full_choice_result.md)
-now fails: after 256 encounters and 511 supervised offers, it executes 2/48
-supported taught requests and 5/48 alternate forms, with 0/16 unsupported STOPs.
-Every final selection is one word. Growth changes no choices. Audits pass;
-raw and neuronal choices agree. Supported lesson loss improves while STOP loss
-worsens, despite each update improving its own lesson. Complete competitor
-coverage alone did not establish acquisition.
+The [rate-cell acquisition preflight](../../experiments/r4_integrated/contextual_rate_cell_result.md)
+is closed without adoption: it solves 0/48 supported requests in every phase,
+and no correct whole answer wins its conditional span ranking. Its 16/16 correct
+unsupported STOPs match the fully frozen learner. Numerical replay passes;
+the original learner-payload counter is invalid and must be corrected before
+a successor run. The [failed full-choice attempt](../../experiments/r4_integrated/contextual_full_choice_result.md)
+and [inconclusive joint-ranking diagnostic](../../experiments/r4_integrated/contextual_full_choice_feasibility_result.md)
+remain closed; neither establishes fixed-feature impossibility.
 
-The [joint-ranking feasibility diagnostic](../../experiments/r4_integrated/contextual_full_choice_feasibility_result.md)
-is closed as inconclusive: its fourth LP timed out and its partial solution fails
-the complete constraint set. Fixed-feature feasibility remains unresolved;
-host weights remain outside the learner. Saved learning increments do establish
-supported lessons overwhelming STOP corrections through relative-token features.
-The completed [design review and preflight plan](contextual-rate-cell-preflight-plan.md)
-selects a small trainable rate-cell sequence learner with separate span and
-answerability objectives. Test it against matched frozen-cell/trainable-readout
-and cell-bypass controls in the persistent executed loop. This is a candidate,
-not an adoption or a conclusion that the old features are impossible. Do not
-extend the exhausted solver budget.
-The [interface review](contextual-trainable-interface-review.md) supplies the
-implemented design and conditional producer sketch; neither this failed attempt
-nor its small synthetic fit establishes that a new representation is necessary.
-Require the new plan's representative numerical/acquisition preflight before
-another comparison. Do not automatically add epochs or tune rates/labels.
+The [completed failure review](rate-cell-failure-review.md) selects one
+comparison of direct query access for preparation. Poor conditional ranking
+rules out adjusting the gate threshold as a sufficient repair of this checkpoint. Test
+direct query access during document processing against matched fixed computations;
+do not assume that prefix memory loss or shared-producer interference is proved.
+Return to executed behavior with matched learning controls after a reviewed
+design and representative correctness/cost checks. No automatic epoch, rate,
+label, threshold or solver extension follows a failed candidate.
 
 This acquisition diagnostic uses explicit answer/STOP supervision over retained
 raw sources and a frozen external encoder. It is not answer-free internalization,

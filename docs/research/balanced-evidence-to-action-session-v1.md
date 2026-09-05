@@ -49,18 +49,24 @@ certificate. The entire preparation/solve/verification effort ended within its
 30-minute deadline; the run itself used 900.123 seconds against 900 configured.
 Do not extend this solver run or deploy its host weights.
 
-**Next integrated priority:** prepare the [rate-cell acquisition preflight](contextual-rate-cell-preflight-plan.md)
-selected by the completed bounded design review. It tests learned sequence/span
-computation with separate answerability credit against matched frozen-cell and
-cell-bypass learners with trainable heads. The motivation is whole-span failure
-and observed STOP interference: later updates erase the latest own correction
-for 15/16 unsupported queries. This does not establish fixed-feature incapacity.
-Allow two hours of preparation, then 15 minutes of numerical/cost checks and
-30 minutes of acquisition. Freeze the implementation and resource contract before
-target-scored preflight; the linked plan owns thresholds and contribution controls.
-No automatic optimizer, epoch, label or producer sweep or fresh comparison follows.
-The [acquisition result](../../experiments/r4_integrated/contextual_full_choice_result.md)
-and feasibility result own exact outcomes, attribution, costs and custody.
+The [rate-cell preflight](../../experiments/r4_integrated/contextual_rate_cell_result.md)
+is also closed without adoption. One 299.067-second acquisition produces 0/48
+supported executions in every phase and 16/16 correct unsupported STOPs, matching
+the fully frozen learner's abstentions. No correct answer wins the conditional
+span ranking, so a different STOP threshold alone cannot repair this checkpoint.
+Independent numerical replay passes. The original object-based learner-payload
+counter omitted the runner's `__main__` reader objects; its byte total is invalid.
+Preserve the original receipt and use the separate resource correction.
+
+**Next integrated priority:** prepare the comparison of direct query access selected
+by the [completed failure review](rate-cell-failure-review.md), testing useful
+query-conditioned answer selection in the executed loop. Direct query access
+during document processing is a candidate, not a demonstrated missing capability
+or an adopted implementation. Correct payload accounting before any successor.
+No automatic optimizer, epoch, label,
+threshold or producer sweep, fresh comparison or protected evaluation follows.
+The original [rate-cell plan](contextual-rate-cell-preflight-plan.md) and frozen
+protocol retain authority over the closed experiment's evidence.
 
 The diagnostic's exact-answer/STOP supervision is a declared stronger teaching
 contract. It does not pass the answer-free acquisition stages of the broader

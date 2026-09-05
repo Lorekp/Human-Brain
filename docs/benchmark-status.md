@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the inconclusive joint TRAIN ranking diagnostic.
+Updated 2026-09-05 with the failed rate-cell acquisition preflight.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -11,6 +11,28 @@ as complementary evaluation pressure. Hybrid permission does not relabel existin
 cell-only evidence or reopen protected evaluations.
 
 ## Current contextual evidence-to-Python result
+
+The [rate-cell acquisition preflight](../experiments/r4_integrated/contextual_rate_cell_result.md)
+is **closed without adoption**. After 256 encounters and 511 offers per arm,
+trainable cells solve 0/48 supported actual and alternate requests, both before
+and after growth. Correct unsupported STOPs are 16/16 in every phase, matching
+fully frozen evidence. Frozen cells with trained heads solve 0/48; a fixed
+query-conditioned bypass solves 1/48 by emitting the same word everywhere.
+
+The treatment stops on 255/256 final probes and has zero correct conditional
+span winners in every phase. Improving span loss does not establish acquisition;
+adjusting the STOP threshold alone cannot rescue these selections. Numerical
+replay passes the frozen tolerance, and all 2,818 saved execution workspaces
+match selected payloads or unchanged baselines. Runtime is 299.067 seconds through
+checkpoint export, with 277.289 MiB peak parent working set. The original learner-
+payload counter skips the runner's `__main__` objects and is invalid; the result
+owns the separate resource correction and precise audit limits.
+
+The [bounded failure review](research/rate-cell-failure-review.md) owns the next
+design question. This failed candidate opens no fresh, official-exam, integrated
+or protected gate. All earlier results below retain their original contracts.
+
+## Earlier full-choice acquisition and feasibility
 
 The [full-choice acquisition attempt](../experiments/r4_integrated/contextual_full_choice_result.md)
 **fails its acquisition gate**. A single four-pass stream supplies 256 teacher
@@ -55,10 +77,8 @@ This is neither a feasibility nor an infeasibility certificate. Runtime is
 900.123 seconds against 900 configured; peak parent working set is 1,476.54 MiB
 with a 1.21 GB disk-backed feature payload. Verification finished within the
 overall 30-minute deadline. No host weights are deployed and no learner changes.
-The completed [design review](research/contextual-rate-cell-preflight-plan.md)
-selects a trainable rate-cell reader with separated answerability/span credit
-for a bounded preflight against learned-head controls. It is not implemented
-or adopted. The solver diagnostic remains closed.
+The subsequent [rate-cell plan](research/contextual-rate-cell-preflight-plan.md)
+led to the failed preflight reported above. The solver diagnostic remains closed.
 
 The earlier [projected comparison](../experiments/r4_integrated/contextual_projected_binding_result.md)
 rejects PROJECTED (4/8 versus 1/8 fresh and 8/16 versus 4/16 common retained).
