@@ -1,0 +1,116 @@
+{
+  "kind": "Authored public-development shared fresh evaluator for compact versus varied teaching under AROW; two familiar-form and two broader-form entities plus two unsupported requests; expectations are evaluator-only; not independent reading-comprehension evidence.",
+  "training_source": "experiments/r4_integrated/contextual_curriculum_compact_train.json",
+  "transfer": [
+    {
+      "name": "fresh-ruxi-transport",
+      "key": "ruxi",
+      "value": "silver fir",
+      "module": "covariance_curriculum_fresh_0",
+      "stale": "unconfigured",
+      "request": "Configure ruxi using its documented transport setting.",
+      "document_id": "covariance-curriculum-ruxi",
+      "document": "The service ruxi uses silver fir for transport and gentian as its audit label. A later checklist repeats the words audit and transport without changing either setting.",
+      "stratum": "familiar"
+    },
+    {
+      "name": "fresh-ruxi-audit",
+      "key": "ruxi",
+      "value": "gentian",
+      "module": "covariance_curriculum_fresh_0",
+      "stale": "unconfigured",
+      "request": "Apply the documented audit label to ruxi.",
+      "document_id": "covariance-curriculum-ruxi",
+      "document": "The service ruxi uses silver fir for transport and gentian as its audit label. A later checklist repeats the words audit and transport without changing either setting.",
+      "stratum": "familiar"
+    },
+    {
+      "name": "fresh-syma-audit",
+      "key": "syma",
+      "value": "yarrow",
+      "module": "covariance_curriculum_fresh_1",
+      "stale": "unconfigured",
+      "request": "Set the audit label for syma from the documentation.",
+      "document_id": "covariance-curriculum-syma",
+      "document": "For syma, yarrow is the audit label and tansy is the transport setting. The audit timetable also names syma, but only to record a maintenance date.",
+      "stratum": "familiar"
+    },
+    {
+      "name": "fresh-syma-transport",
+      "key": "syma",
+      "value": "tansy",
+      "module": "covariance_curriculum_fresh_1",
+      "stale": "unconfigured",
+      "request": "Use the transport setting documented for syma.",
+      "document_id": "covariance-curriculum-syma",
+      "document": "For syma, yarrow is the audit label and tansy is the transport setting. The audit timetable also names syma, but only to record a maintenance date.",
+      "stratum": "familiar"
+    },
+    {
+      "name": "fresh-tovi-transport",
+      "key": "tovi",
+      "value": "rock rose",
+      "module": "covariance_curriculum_fresh_2",
+      "stale": "unconfigured",
+      "request": "Find the value tovi uses for communication between services and configure it.",
+      "document_id": "covariance-curriculum-tovi",
+      "document": "Audit records from tovi carry marigold. Even during a scheduled restart, communication between services uses rock rose for tovi. An operator's audit checklist concerns timing, not another label.",
+      "stratum": "broader"
+    },
+    {
+      "name": "fresh-tovi-audit",
+      "key": "tovi",
+      "value": "marigold",
+      "module": "covariance_curriculum_fresh_2",
+      "stale": "unconfigured",
+      "request": "What label identifies the audit records produced by tovi? Apply it.",
+      "document_id": "covariance-curriculum-tovi",
+      "document": "Audit records from tovi carry marigold. Even during a scheduled restart, communication between services uses rock rose for tovi. An operator's audit checklist concerns timing, not another label.",
+      "stratum": "broader"
+    },
+    {
+      "name": "fresh-uzel-audit",
+      "key": "uzel",
+      "value": "zinnia",
+      "module": "covariance_curriculum_fresh_3",
+      "stale": "unconfigured",
+      "request": "Configure uzel with the identifier stamped on its audit records.",
+      "document_id": "covariance-curriculum-uzel",
+      "document": "The freesia choice carries uzel's traffic between services. The label stamped on uzel's audit records is zinnia; a status note mentions uzel again without naming any replacement setting.",
+      "stratum": "broader"
+    },
+    {
+      "name": "fresh-uzel-transport",
+      "key": "uzel",
+      "value": "freesia",
+      "module": "covariance_curriculum_fresh_3",
+      "stale": "unconfigured",
+      "request": "Which documented choice carries traffic between services for uzel? Apply that transport value.",
+      "document_id": "covariance-curriculum-uzel",
+      "document": "The freesia choice carries uzel's traffic between services. The label stamped on uzel's audit records is zinnia; a status note mentions uzel again without naming any replacement setting.",
+      "stratum": "broader"
+    },
+    {
+      "name": "unsupported-vyni-transport",
+      "key": "vyni",
+      "value": null,
+      "module": "covariance_curriculum_fresh_4",
+      "stale": "unconfigured",
+      "request": "Configure vyni using its documented transport setting.",
+      "document_id": "covariance-curriculum-vyni",
+      "document": "The audit label configured for vyni is pansy. The phrase transport setting appears as an empty heading in vyni's checklist, with no value supplied.",
+      "stratum": "unsupported"
+    },
+    {
+      "name": "unsupported-wexo-audit",
+      "key": "wexo",
+      "value": null,
+      "module": "covariance_curriculum_fresh_5",
+      "stale": "unconfigured",
+      "request": "Which label identifies wexo's audit records? Apply it.",
+      "document_id": "covariance-curriculum-wexo",
+      "document": "The wexo service uses verbena for transport. An audit review mentions wexo repeatedly but does not state a label for its audit records.",
+      "stratum": "unsupported"
+    }
+  ]
+}
