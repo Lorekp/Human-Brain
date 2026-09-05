@@ -34,46 +34,39 @@ scores and failures are in [benchmark status](../benchmark-status.md#current-neu
 The original eight-stage sequence below remains the integration contract.
 
 The [covariance-aware comparison](../../experiments/r4_integrated/contextual_covariance_result.md)
-**passes relative adoption**: retained execution improves from 5/16 to 14/16,
-with fresh execution tied at 2/8 and no stratum/unsupported regression. Adopt
-compact teaching, RESERVED allocation, the AROW pairwise update, fixed BINDING
-features and affine actions. Six retained entities have both properties correct;
-no fresh entity does. The result owns paired outcomes, exact numerical audits,
-source/feedback custody and the 20.05 MiB covariance allocation per learner.
+adopted AROW with compact teaching, RESERVED allocation, fixed BINDING features
+and affine actions. Its subsequent [curriculum comparison](../../experiments/r4_integrated/contextual_covariance_curriculum_result.md)
+**rejects VARIED**: COMPACT/VARIED execute 1/8 versus 0/8 fresh tasks and 11/16
+versus 5/16 common old tasks. Both fail unsupported STOPs and complete no fresh
+entity. The frozen 48-encounter, 48-teacher, 150-offer comparison completed once;
+all numerical, execution, custody and checkpoint-reproduction audits pass.
 
-All 36 admitted AROW comparisons remain positive at the final checkpoint, while
-FIXED loses twelve previously acquired comparisons. Two residual old failures
-involve unencountered exact-query competitors. Fresh relation/span binding,
-multiword values and unsupported abstention remain weak. The identical actual
-and common query probes add no independent question-form evidence.
+VARIED acquires 13/16 taught forms but changing questions at unchanged weights
+leaves 5/16 correct. All 28 admitted comparisons remain positive. Its fresh
+answers select the correct source but wrong spans or relations. COMPACT's new
+sources displace three correct old answers without changing learned state.
+These observations separate question/span transfer and source competition from
+final erasure of admitted comparisons. They do not establish representational
+impossibility or absence of intermediate interference.
 
-**Next integrated priority:** follow the [transfer design review](contextual-transfer-design.md)
-with one COMPACT-versus-VARIED teaching comparison under AROW. Reuse the existing
-sixteen-fact teaching renditions openly, holding the 48 encounters, exactly 48
-teacher executions, 150-offer limit, encoder/features, motor and allocation fixed.
-Freeze a new common familiar/broader fresh roster, common original old queries,
-source exposure and scoring before outputs. Track actual taught-form acquisition
-separately from common-query transfer and exact-query competitor coverage.
+**Next integrated priority:** prepare the single projected-bilinear comparison
+selected in the [learned-binding review](contextual-learned-binding-review.md).
+Keep AROW and existing features; add one fixed 32-by-32 association block. Both
+arms receive identical prospectively declared mixed-length/role TRAIN under
+48 encounters, 48 teachers and at most 150 offers. Freeze construction, custody,
+cost checks and a fresh cohort first; bound preparation to two hours and the one
+run to thirty minutes. Require strict fresh improvement without common-retention,
+form-stratum or unsupported regression. This tests a representation benefit under
+matched new supervision, not a claim to learned boundary/role parsing. The curriculum
+question is closed. No wording, value-length, teacher-dose, epoch or regularization
+sweep follows it, and no spent cohort becomes fresh. The earlier
+[transfer review](contextual-transfer-design.md) records why this one interaction
+test preceded representation work. A full bilinear map with the existing dense
+covariance would need 164.73 GiB per learner; cheaper structured alternatives
+require their own declared learning rules.
 
-This changes the earlier conditional plan to proceed directly to a bilinear map.
-AROW has materially improved acquisition since the failed fixed-rule diversity
-trial, making learning-rule-by-curriculum interaction worth one bounded test.
-A full bilinear replacement would also require 164.73 GiB for just one dense
-covariance, so it is not a routine extension of the adopted learner. The old
-fixed-rule verdict stays closed and no old cohort becomes fresh evidence.
-
-Require strictly better fresh executed total with no common-retention, familiar,
-broader or correct unsupported STOP regression. Report paired gains/losses and
-complete entities as well as the small-cohort totals; relative adoption remains
-separate from the absolute targets and integrated gate. Count retained source,
-ledger, covariance and runtime costs. Bound preparation to two hours and one
-comparison to thirty minutes. No extra teacher dose, curriculum variants,
-regularization sweep or post-output cohort adjustment.
-
-If the new comparison does not produce useful transfer, close it and return to
-representation design with explicit training-state costs and a learning/custody
-contract. Do not add practice merely to remove the last two old errors or open
-another stability-parameter search. The [fixed-rule curriculum](../../experiments/r4_integrated/contextual_curriculum_result.md),
+Do not add practice merely to remove old unencountered competitors while fresh
+transfer remains weak. The [fixed-rule curriculum](../../experiments/r4_integrated/contextual_curriculum_result.md),
 [robustness](../../experiments/r4_integrated/contextual_robustness_result.md),
 [projection](../../experiments/r4_integrated/contextual_protected_contrast_result.md)
 and [capped](../../experiments/r4_integrated/contextual_capped_update_result.md)

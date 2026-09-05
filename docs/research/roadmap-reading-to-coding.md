@@ -73,26 +73,27 @@ the same-seed frozen control solves none. Type-annotation layout variation
 fails, and an original public-exam diagnostic scores 0/2 with no acquired frames.
 See [measured evidence](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 This is exact positional reading and a learned literal-edit pattern, not the
-general integrated gate. The [covariance-aware comparison](../../experiments/r4_integrated/contextual_covariance_result.md)
-now improves retained execution from 5/16 to 14/16, with fresh execution tied at
-2/8 and unsupported behavior still failing. Adopt its AROW update with compact
-teaching, RESERVED allocation, BINDING features and affine actions. All admitted
-comparisons end positively ordered; remaining old errors involve unencountered
-competitors, while fresh relation/span transfer remains weak. Numerical, custody
-and execution audits pass. Count the additional 20.05 MiB covariance per learner;
-this dense training state is not a scaling result.
+general integrated gate. Keep the adopted AROW update with compact teaching,
+RESERVED allocation, BINDING features and affine actions. The subsequent
+[varied-teaching comparison](../../experiments/r4_integrated/contextual_covariance_curriculum_result.md)
+fails: fresh execution is 1/8 COMPACT versus 0/8 VARIED, common retention 11/16
+versus 5/16, and unsupported behavior fails in both. VARIED answers 13/16 taught
+forms correctly but only 5/16 common forms at unchanged weights; all its admitted
+comparisons remain positive. Fresh answers find the correct source yet select
+wrong spans or relations. COMPACT also loses three old answers through new
+source competition, without weight changes. Audits and checkpoint reproduction pass.
 
-The [balanced session plan](balanced-evidence-to-action-session-v1.md) follows the
-[transfer design review](contextual-transfer-design.md): test one openly reused
-COMPACT-versus-VARIED teaching comparison under the adopted, more stable AROW rule,
-with the same exposure budgets and a new common fresh cohort. Earlier varied
-teaching was tested while substantial comparison erasure persisted; its
-fixed-rule rejection remains closed. This tests whether stable acquisition makes teaching diversity useful,
-before an expensive representation change. The review records why this replaces
-the earlier immediate bilinear-map suggestion. Improve fresh useful behavior
-before extra old-task practice, provenance revision, composition or the full
-challenge. Existing capped/protected verdicts and the excluded TRAIN-only host
-witness remain unchanged.
+The [balanced session plan](balanced-evidence-to-action-session-v1.md) now follows
+the [learned-binding review](contextual-learned-binding-review.md): one fixed
+projected-bilinear block comparison under unchanged AROW, with identical newly
+declared mixed-length/role teaching in both arms and fresh evaluation. This tests
+learned associations beyond newly supplied demonstrations, not learned parsing.
+Close the curriculum-under-AROW question; no further wording, value-length,
+teaching-dose or stability sweep follows this result. Improve fresh useful
+behavior before extra old-task practice, provenance revision, composition or
+the full challenge. Representation changes need explicit learning/custody and
+total-state costs; the current 20.05 MiB covariance per learner is not a scaling
+result. Earlier verdicts and the excluded TRAIN-only host witness remain unchanged.
 
 Alongside integration, apply two inexpensive sources of pressure:
 

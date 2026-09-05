@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the completed covariance-aware learning comparison.
+Updated 2026-09-05 with the completed curriculum-under-AROW comparison.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -12,48 +12,44 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current contextual evidence-to-Python result
 
-The [covariance comparison](../experiments/r4_integrated/contextual_covariance_result.md)
-**adopts COVARIANCE**: executed retention improves with no fresh total, stratum
-or unsupported regression. Keep compact teaching, RESERVED allocation, gain-16
-BINDING features and affine neuronal actions, using the declared AROW update.
-Both arms receive 48 encounters, 48 teacher executions and 150 pair offers.
+The [curriculum-under-AROW comparison](../experiments/r4_integrated/contextual_covariance_curriculum_result.md)
+**rejects VARIED**. Keep COMPACT teaching, RESERVED allocation, gain-16 BINDING
+features and affine neuronal actions with the adopted AROW update. Both arms
+receive 48 encounters, 48 teacher executions and 150 offers.
 
-| Measure | FIXED | COVARIANCE |
-| --- | --- | --- |
-| Fresh executed edits | 2/8 | 2/8 |
-| Familiar / broader fresh edits | 1/4 / 1/4 | 1/4 / 1/4 |
-| Retained edits | 5/16 | 14/16 |
-| Complete retained entities | 1/8 | 6/8 |
+| Measure | COMPACT | VARIED |
+| --- | ---: | ---: |
+| Fresh executed edits | 1/8 | 0/8 |
+| Familiar / broader fresh edits | 0/4 / 1/4 | 0/4 / 0/4 |
+| Common retained edits | 11/16 | 5/16 |
+| Complete fresh / retained entities | 0/4 / 3/8 | 0/4 / 0/8 |
 | Correct unsupported STOPs | 0/2 | 0/2 |
+| Actual taught-form selections | 14/16 | 13/16 |
 
-Retention gains nine tasks with no losses; fresh behavior trades one gain for
-one loss. Both have zero complete fresh entities. COVARIANCE ends with all 36
-admitted comparisons positively ordered, versus twelve erased comparisons in
-FIXED. Actual/common post-teaching selections agree at 5/16 versus 14/16 correct;
-those correct-selection counts remain unchanged after fresh ingestion. Two old
-errors involve unencountered exact-query competitors; fresh relation/span binding
-and abstention still fail.
+VARIED loses nine correct selections and gains one when switching to common
+questions at the same checkpoint. Its fresh selections all find the correct
+source but choose wrong spans or relations. Both arms finish with every admitted
+comparison positively ordered. COMPACT loses three old answers after fresh
+source ingestion without any learned-state change; its trained arrays exactly
+reproduce the [prior adopted AROW checkpoint](../experiments/r4_integrated/contextual_covariance_result.md).
+These distinguish form transfer and new candidate competition from final erasure
+of admitted comparisons; they do not establish representational impossibility.
 
 All 600 updater/frozen offers and final weight/covariance bytes reconstruct
 exactly. All 52 updating raw/affine choices agree; 572 executions preserve decoys
-and their selected edits. Frozen affine and external references solve no supported
-task; shared learned motors and internally retained sources limit attribution.
-Official repeated exam items remain pending human scoring. This adopts a narrow
-development baseline, without passing the integrated or protected gates.
+and selected edits. Frozen affine and external controls solve no supported task.
+Shared learned motors and internally retained raw sources limit attribution.
+Repeated official exam items remain pending human scoring. No integrated or
+protected gate passes.
 
-The comparison completes without retry in 377.99 seconds; parent peak working
-set is 425.28 MiB, excluding child memory. AROW allocates a 20.05 MiB covariance
-plus 12,968-byte scratch per learner, including its frozen mate. Inference uses
-only the existing weights. Full costs, native/encoder identities and evidence
-hashes belong to the result report.
-
-The [transfer design review](research/contextual-transfer-design.md) selects one
-COMPACT-versus-VARIED comparison under this now more stable learning rule, with
-matched teaching budgets and a fresh common cohort. The prior
-[fixed-rule curriculum failure](../experiments/r4_integrated/contextual_curriculum_result.md)
-remains closed; this tests a newly motivated interaction, not a repair of that
-verdict. Full bilinear features would make dense covariance impractical before
-any frozen mate, motivating this cheaper discriminating step first.
+The single run finishes without retry in 373.69 seconds; parent peak working
+set is 470.61 MiB, excluding children. Every updater and frozen mate allocates
+20.05 MiB covariance plus 12,968-byte scratch; inference does not use covariance.
+The result report owns full costs, identities, paired outcomes and immutable
+artifacts. Close this curriculum question and follow the
+[learned-binding review](research/contextual-learned-binding-review.md): one fixed
+association-block comparison under matched prospectively declared teaching. No further
+wording, value-length, teacher-dose or stability sweep follows this result.
 
 Earlier [robustness](../experiments/r4_integrated/contextual_robustness_result.md),
 [protection and reporting recovery](../experiments/r4_integrated/contextual_protected_contrast_result.md),
