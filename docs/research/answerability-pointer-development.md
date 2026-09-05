@@ -1,5 +1,9 @@
 # Separate answerability: one public-development comparison
 
+Closed 2026-09-06 local time: [result and saved-evidence audit](../../experiments/r4_integrated/answerability_pointer_result.md).
+Mechanical completion passes; acquisition and integration qualification fail.
+The recipe below remains the contract run at source `0c1261be`; no rerun follows.
+
 Selected 2026-09-05 after the [bounded primary-source review](token-pointer-followup-review.md).
 Preparation started 21:20 UTC, with a two-hour budget ending 23:20 UTC, and
 completed within that budget. The [full-run admission](../../benchmarks/answerability_pointer_acquisition_v1.admission.json)

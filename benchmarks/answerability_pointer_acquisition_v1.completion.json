@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "qualified": false,
+  "report_sha256": "07ed7192bcded0739d18697b250ab26f07bf61e637d9a4a9f495b3f2a2379c62",
+  "source_revision": "0c1261be7280a7616562d17521d6670fa34f8f01",
+  "elapsed_seconds": 3184.9046669000018,
+  "final_memory": {
+    "label": "report_written",
+    "working_set_mib": 1814.3046875,
+    "peak_working_set_mib": 2036.1484375,
+    "private_memory_mib": 1337.40625
+  },
+  "free_disk_bytes": 44644200448
+}

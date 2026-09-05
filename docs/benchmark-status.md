@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the completed token-pointer comparison and exam-scorer QA.
+Updated 2026-09-06 with the completed separate-answerability comparison.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -10,7 +10,29 @@ with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. Hybrid permission does not relabel existing
 cell-only evidence or reopen protected evaluations.
 
-## Current token-pointer acquisition and action result
+## Current separate-answerability result
+
+The [completed comparison](../experiments/r4_integrated/answerability_pointer_result.md)
+fails acquisition and integration qualification. Development supported/STOP scores
+are cells 25/192 + 8/64, frozen producer 0/192 + 0/64, bypass 15/192 + 9/64, and
+BiLSTM 23/192 + 3/64. Cells gain seven supported answers over the previous recipe
+but lose eighteen correct STOPs, and fit only 28/96 TRAIN supported probes against
+BiLSTM's 56/96. The separate objective/readout does not yield balanced improvement.
+
+During continuation, cells lose both initially correct supported old actions;
+their final 1/12 is a different item. BiLSTM loses all nine initial supported old
+actions to STOP. Frozen mates retain theirs. No updating policy gains fresh
+supported successes over its mate, and no late supported task succeeds. The
+saved-only audit passes, covering 493 child executions and the fixed evidence
+contracts. Runtime is 3,184.905 seconds at 2,036.148 MiB peak parent memory,
+reusing the existing encoded cache. No architecture is adopted or gate passed.
+
+Independent [memory/output/integration development](research/persistent-memory-byte-development.md)
+is now proceeding in parallel. Its memory and decoder pass 19 focused numerical
+and state tests; joint learned behavior remains untested. The official-exam
+scorer remains ready, with genuine structured learner output still pending.
+
+## Earlier token-pointer acquisition and action result
 
 The [full comparison](../experiments/r4_integrated/token_pointer_result.md) completes
 all prescribed work but fails acquisition and integration qualification. After

@@ -1,6 +1,6 @@
 # Roadmap: a general learner for language, knowledge, and software
 
-Status: living decision document. Updated 2026-09-05.
+Status: living decision document. Updated 2026-09-06.
 Owner: orchestrator. This document owns current priorities and architecture policy;
 frozen experiment protocols retain authority over their own evidence.
 
@@ -75,22 +75,22 @@ The [fixed-rehearsal comparison](../../experiments/r4_integrated/fixed_rehearsal
 establishes retention and execution of all sixteen taught questions when their
 correct paragraphs are supplied. Conventional rehearsal also passes and fits sooner.
 
-The [fresh-source failure](../../experiments/r4_integrated/fresh_source_result.md)
-led to the now-completed
-[token-pointer comparison](../../experiments/r4_integrated/token_pointer_result.md).
-It also fails qualification: cells answer 18/192 untaught supported questions and
-26/64 STOPs; the conventional reader reaches 23/192 and 28/64, missing its STOP
-floor too. Cells retain initially correct old actions and improve old supported
-execution 5/12 to 7/12, but gain no fresh supported success over their frozen mate
-and lose one fresh STOP. The full saved-evidence audit passes. No architecture
-is adopted or integrated gate passed.
+The completed [separate-answerability comparison](../../experiments/r4_integrated/answerability_pointer_result.md)
+also fails qualification. Cells answer 25/192 supported development questions and
+8/64 STOPs; BiLSTM reaches 23/192 and 3/64. Cells lose both initially correct old
+actions during feedback; BiLSTM loses all nine. No updating policy gains fresh
+supported success over its frozen mate. The saved-evidence audit passes. These
+are exposed development results, not grounds for another automatic loss or
+threshold sweep, architecture adoption or gate advancement.
 
-The completed [decision review](token-pointer-followup-review.md) selects one
-[separate-answerability development comparison](answerability-pointer-development.md).
-It keeps producers, data and the action return fixed while testing separate
-answerability credit and supported-only span learning. Source routing alone
-cannot repair fresh comprehension; fitted old answers and declining loss do not
-establish reusable acquisition. The reused probe is exposed development evidence.
+At the user's request, [persistent memory, learned byte output and their action
+integration](persistent-memory-byte-development.md) now advance in parallel.
+These have independent gaps: the current reader needs supplied source positions,
+while older assembly mechanisms depend on retained lexical fragments or supplied
+live values. Develop the components
+against shared interfaces and return them promptly to one persistent workload.
+Their focused checks do not establish prose learning, source-absent transfer or
+stable learning from action feedback.
 
 The closed acquisition diagnostics use explicit answer/STOP supervision over retained
 raw sources and a frozen external encoder. These are not answer-free internalization,
