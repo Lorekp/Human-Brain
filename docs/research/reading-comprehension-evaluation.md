@@ -7,6 +7,11 @@ unevaluated. [Source manifest, official rubric, runner and measured limits](../.
 record the selected passage's OGL attribution and excluded photography.
 Reserved material and adjudication thresholds remain unselected.
 
+[KS2 2026 Amelia Earhart](official-reading-next-candidate.md) is the next
+metadata-only candidate, with four original closed-response items proposed.
+The whole 2026 paper is developer-exposed. Download/extraction custody and a
+structured-output contract remain unfinished; no new exam has run.
+
 ## Purpose and sequencing
 
 Use existing public exams authored by assessment authorities to test reading

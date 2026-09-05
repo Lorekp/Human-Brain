@@ -73,27 +73,28 @@ the same-seed frozen control solves none. Type-annotation layout variation
 fails, and an original public-exam diagnostic scores 0/2 with no acquired frames.
 See [measured evidence](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 This is exact positional reading and a learned literal-edit pattern, not the
-general integrated gate. Keep the adopted AROW update with compact teaching,
-RESERVED allocation, BINDING features and affine actions. The subsequent
-[varied-teaching comparison](../../experiments/r4_integrated/contextual_covariance_curriculum_result.md)
-fails: fresh execution is 1/8 COMPACT versus 0/8 VARIED, common retention 11/16
-versus 5/16, and unsupported behavior fails in both. VARIED answers 13/16 taught
-forms correctly but only 5/16 common forms at unchanged weights; all its admitted
-comparisons remain positive. Fresh answers find the correct source yet select
-wrong spans or relations. COMPACT also loses three old answers through new
-source competition, without weight changes. Audits and checkpoint reproduction pass.
+general integrated gate. Keep the adopted AROW update, RESERVED allocation,
+BINDING features and affine actions. The [projected-bilinear comparison](../../experiments/r4_integrated/contextual_projected_binding_result.md)
+fails: BASELINE/PROJECTED execute 4/8 versus 1/8 fresh tasks and 8/16 versus 4/16
+common retained tasks. Both fail unsupported STOPs. Actual taught-form selections
+are only 9/16 versus 7/16. All wrong leaders were available candidates but were
+not previously executed as failures or admitted as negatives for those exact
+queries. Positive admitted pair margins do not establish complete acquisition.
+Audits pass; learned state stays fixed during evaluation.
 
-The [balanced session plan](balanced-evidence-to-action-session-v1.md) now follows
-the [learned-binding review](contextual-learned-binding-review.md): one fixed
-projected-bilinear block comparison under unchanged AROW, with identical newly
-declared mixed-length/role teaching in both arms and fresh evaluation. This tests
-learned associations beyond newly supplied demonstrations, not learned parsing.
-Close the curriculum-under-AROW question; no further wording, value-length,
-teaching-dose or stability sweep follows this result. Improve fresh useful
-behavior before extra old-task practice, provenance revision, composition or
-the full challenge. Representation changes need explicit learning/custody and
-total-state costs; the current 20.05 MiB covariance per learner is not a scaling
-result. Earlier verdicts and the excluded TRAIN-only host witness remain unchanged.
+The [balanced session plan](balanced-evidence-to-action-session-v1.md) follows the
+[completed interface review](contextual-trainable-interface-review.md): implement
+one acquisition loop using existing fixed features and supervised learning over
+all TRAIN candidates plus STOP. Declare exact-answer labels, current-gradient
+replay and full state cost. Use a new 64-request development package with a
+bounded schedule; establish acquisition in the executed loop before freezing
+fresh evidence. A trainable token/role producer is conditional on what this shows.
+This failed projection candidate and earlier curriculum questions are closed;
+no rank, projection, wording, value-length or extra-epoch sweep follows. AROMA is
+not an automatic successor. The failure does not prove representational
+impossibility. Keep earlier evidence immutable and the TRAIN-only host witness
+outside the learner. Provenance revision, composition, full challenge and scaling
+remain deferred until useful fresh behavior improves.
 
 Alongside integration, apply two inexpensive sources of pressure:
 

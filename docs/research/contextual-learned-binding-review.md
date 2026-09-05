@@ -4,6 +4,11 @@ Decision review, 2026-09-05. The orchestrator selects the bounded projected-bili
 comparison below. No implementation, model calls or new fixtures belong to this
 review; the successor protocol must be frozen before execution.
 
+**Closed:** the [frozen comparison](../../experiments/r4_integrated/contextual_projected_binding_result.md)
+rejects PROJECTED (fresh 4/8 to 1/8; retention 8/16 to 4/16). Neither arm fully
+acquires taught forms. The recommendation below records the original decision,
+not a repeat authorization; the roadmap owns the next interface review.
+
 ## Failure identified, without claiming impossibility
 
 In the [completed comparison](../../benchmarks/contextual_covariance_curriculum_v1.json),

@@ -34,44 +34,36 @@ scores and failures are in [benchmark status](../benchmark-status.md#current-neu
 The original eight-stage sequence below remains the integration contract.
 
 The [covariance-aware comparison](../../experiments/r4_integrated/contextual_covariance_result.md)
-adopted AROW with compact teaching, RESERVED allocation, fixed BINDING features
-and affine actions. Its subsequent [curriculum comparison](../../experiments/r4_integrated/contextual_covariance_curriculum_result.md)
-**rejects VARIED**: COMPACT/VARIED execute 1/8 versus 0/8 fresh tasks and 11/16
-versus 5/16 common old tasks. Both fail unsupported STOPs and complete no fresh
-entity. The frozen 48-encounter, 48-teacher, 150-offer comparison completed once;
-all numerical, execution, custody and checkpoint-reproduction audits pass.
+adopted AROW with compact teaching, RESERVED allocation, BINDING features and
+affine actions. The [curriculum comparison](../../experiments/r4_integrated/contextual_covariance_curriculum_result.md)
+subsequently rejected VARIED. The [projected-bilinear comparison](../../experiments/r4_integrated/contextual_projected_binding_result.md)
+now rejects the fixed association block: BASELINE/PROJECTED execute 4/8 versus
+1/8 fresh and 8/16 versus 4/16 common retained edits under identical new teaching.
+Both fail unsupported STOPs and complete no fresh entity. All audits pass.
 
-VARIED acquires 13/16 taught forms but changing questions at unchanged weights
-leaves 5/16 correct. All 28 admitted comparisons remain positive. Its fresh
-answers select the correct source but wrong spans or relations. COMPACT's new
-sources displace three correct old answers without changing learned state.
-These observations separate question/span transfer and source competition from
-final erasure of admitted comparisons. They do not establish representational
-impossibility or absence of intermediate interference.
+Neither fully acquires actual taught forms (9/16 versus 7/16). All seven/nine
+wrong actual-form leaders are previously unexecuted exact competitors despite
+mostly positive admitted margins. This exposes a coverage/learning-objective
+alternative as well as question/span sensitivity; it does not prove a general
+representation limit. Fresh ingestion changes only already-wrong leaders here.
+Detailed diagnostics and controls belong in the immutable result report.
 
-**Next integrated priority:** prepare the single projected-bilinear comparison
-selected in the [learned-binding review](contextual-learned-binding-review.md).
-Keep AROW and existing features; add one fixed 32-by-32 association block. Both
-arms receive identical prospectively declared mixed-length/role TRAIN under
-48 encounters, 48 teachers and at most 150 offers. Freeze construction, custody,
-cost checks and a fresh cohort first; bound preparation to two hours and the one
-run to thirty minutes. Require strict fresh improvement without common-retention,
-form-stratum or unsupported regression. This tests a representation benefit under
-matched new supervision, not a claim to learned boundary/role parsing. The curriculum
-question is closed. No wording, value-length, teacher-dose, epoch or regularization
-sweep follows it, and no spent cohort becomes fresh. The earlier
-[transfer review](contextual-transfer-design.md) records why this one interaction
-test preceded representation work. A full bilinear map with the existing dense
-covariance would need 164.73 GiB per learner; cheaper structured alternatives
-require their own declared learning rules.
+**Next integrated priority:** implement the acquisition loop selected in the
+[completed interface review](contextual-trainable-interface-review.md). Use existing
+fixed features with a supervised distribution over every TRAIN candidate and
+STOP, explicit teacher answer labels and current-gradient replay. The review
+owns the new 64-request development package, bounded schedule, acquisition and
+retention thresholds. This is a new credit contract, not extra pair replay on
+spent cases. A learned token/role producer is conditional, with an identical
+frozen-producer control and output family if later selected. Establish useful
+TRAIN acquisition and executed edits before a separately frozen fresh comparison.
 
-Do not add practice merely to remove old unencountered competitors while fresh
-transfer remains weak. The [fixed-rule curriculum](../../experiments/r4_integrated/contextual_curriculum_result.md),
-[robustness](../../experiments/r4_integrated/contextual_robustness_result.md),
-[projection](../../experiments/r4_integrated/contextual_protected_contrast_result.md)
-and [capped](../../experiments/r4_integrated/contextual_capped_update_result.md)
-trials retain their original results. The [TRAIN-only witness](../../experiments/r4_integrated/contextual_representation_feasibility_result.md)
-stays outside the learner.
+The [earlier binding review](contextual-learned-binding-review.md) and all frozen
+experiments retain their evidence. Close the projected candidate without rank,
+projection, wording, length or extra-epoch search; no automatic AROMA successor.
+Do not add practice solely to repair spent cases. The TRAIN-only host witness
+stays outside the learner. A proposed new objective must distinguish surrogate
+competition gradients from actually executed failures.
 
 Authentic official-exam development remains complementary pressure under the
 [reading plan](reading-comprehension-evaluation.md). The repeated KS2 Q6a/b items

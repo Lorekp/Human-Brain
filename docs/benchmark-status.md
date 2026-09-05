@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with the completed curriculum-under-AROW comparison.
+Updated 2026-09-05 with the completed projected-bilinear comparison.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -12,44 +12,43 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current contextual evidence-to-Python result
 
-The [curriculum-under-AROW comparison](../experiments/r4_integrated/contextual_covariance_curriculum_result.md)
-**rejects VARIED**. Keep COMPACT teaching, RESERVED allocation, gain-16 BINDING
-features and affine neuronal actions with the adopted AROW update. Both arms
-receive 48 encounters, 48 teacher executions and 150 offers.
+The [projected-bilinear comparison](../experiments/r4_integrated/contextual_projected_binding_result.md)
+**rejects PROJECTED**. Keep the existing AROW/BINDING architecture, RESERVED
+allocation and affine actions. Both arms receive identical new mixed-length
+teaching: 48 encounters, 48 teacher executions and 150 offers.
 
-| Measure | COMPACT | VARIED |
+| Measure | BASELINE | PROJECTED |
 | --- | ---: | ---: |
-| Fresh executed edits | 1/8 | 0/8 |
-| Familiar / broader fresh edits | 0/4 / 1/4 | 0/4 / 0/4 |
-| Common retained edits | 11/16 | 5/16 |
-| Complete fresh / retained entities | 0/4 / 3/8 | 0/4 / 0/8 |
+| Fresh executed edits | 4/8 | 1/8 |
+| Familiar / broader fresh edits | 2/4 / 2/4 | 1/4 / 0/4 |
+| Common retained edits | 8/16 | 4/16 |
+| Complete fresh / retained entities | 0/4 / 2/8 | 0/4 / 1/8 |
 | Correct unsupported STOPs | 0/2 | 0/2 |
-| Actual taught-form selections | 14/16 | 13/16 |
+| Actual taught-form selections | 9/16 | 7/16 |
 
-VARIED loses nine correct selections and gains one when switching to common
-questions at the same checkpoint. Its fresh selections all find the correct
-source but choose wrong spans or relations. Both arms finish with every admitted
-comparison positively ordered. COMPACT loses three old answers after fresh
-source ingestion without any learned-state change; its trained arrays exactly
-reproduce the [prior adopted AROW checkpoint](../experiments/r4_integrated/contextual_covariance_result.md).
-These distinguish form transfer and new candidate competition from final erasure
-of admitted comparisons; they do not establish representational impossibility.
+PROJECTED gains no fresh task and loses three. Neither learner fully acquires
+its taught forms. All seven/nine wrong actual-form leaders were previously
+unexecuted and unadmitted exact competitors. PROJECTED preserves all 32 admitted
+pair orderings; BASELINE erases one of 38. Question-form changes reduce accuracy,
+but fresh ingestion displaces no correct answer in this run. This does not
+establish a general representation limit. New fixtures prevent causal comparison
+with historical scores; the [earlier curriculum rejection](../experiments/r4_integrated/contextual_covariance_curriculum_result.md)
+and [AROW adoption](../experiments/r4_integrated/contextual_covariance_result.md) stand.
 
-All 600 updater/frozen offers and final weight/covariance bytes reconstruct
-exactly. All 52 updating raw/affine choices agree; 572 executions preserve decoys
-and selected edits. Frozen affine and external controls solve no supported task.
-Shared learned motors and internally retained raw sources limit attribution.
-Repeated official exam items remain pending human scoring. No integrated or
+All 600 updater/frozen offers, sixteen exported arrays and 64 projected original
+eligibilities reconstruct exactly. All 52 primary raw/affine choices agree;
+624 executions preserve selected edits and decoys. Frozen affine and external
+controls solve no supported task. Shared learned motors and retained raw sources
+limit attribution. Official exam judgments remain pending. No integrated or
 protected gate passes.
 
-The single run finishes without retry in 373.69 seconds; parent peak working
-set is 470.61 MiB, excluding children. Every updater and frozen mate allocates
-20.05 MiB covariance plus 12,968-byte scratch; inference does not use covariance.
-The result report owns full costs, identities, paired outcomes and immutable
-artifacts. Close this curriculum question and follow the
-[learned-binding review](research/contextual-learned-binding-review.md): one fixed
-association-block comparison under matched prospectively declared teaching. No further
-wording, value-length, teacher-dose or stability sweep follows this result.
+The one run completes in 537.15 seconds; parent peak working set is 668.65 MiB,
+excluding children. Covariance per updater or frozen mate grows from 20.05 to
+53.38 MiB, plus fixed projections and other retained state. The result report
+owns full costs, identities and artifacts. Close this candidate without a
+projection sweep or automatic AROMA successor. The [completed interface review](research/contextual-trainable-interface-review.md)
+selects a new supervised full-choice acquisition loop before any conditional
+trainable token/role comparison.
 
 Earlier [robustness](../experiments/r4_integrated/contextual_robustness_result.md),
 [protection and reporting recovery](../experiments/r4_integrated/contextual_protected_contrast_result.md),
