@@ -85,10 +85,12 @@ execution 5/12 to 7/12, but gain no fresh supported success over their frozen ma
 and lose one fresh STOP. The full saved-evidence audit passes. No architecture
 is adopted or integrated gate passed.
 
-The active [post-comparison decision review](token-pointer-acquisition.md#active-next-step-bounded-decision-review)
-must distinguish acquisition, answerability and continuation before the next
-bounded change. Source routing alone cannot repair fresh comprehension; fitted
-old answers and declining loss do not establish reusable acquisition.
+The completed [decision review](token-pointer-followup-review.md) selects one
+[separate-answerability development comparison](answerability-pointer-development.md).
+It keeps producers, data and the action return fixed while testing separate
+answerability credit and supported-only span learning. Source routing alone
+cannot repair fresh comprehension; fitted old answers and declining loss do not
+establish reusable acquisition. The reused probe is exposed development evidence.
 
 The closed acquisition diagnostics use explicit answer/STOP supervision over retained
 raw sources and a frozen external encoder. These are not answer-free internalization,

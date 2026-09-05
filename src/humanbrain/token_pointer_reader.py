@@ -1,8 +1,10 @@
 """Batched token-pointer acquisition readers; no tokenizer, labels or actions inside forward.
 
 All positions are original word positions; masks are right-padded. Endpoint
-normalization includes one shared NULL, while decoding permits only ordered
-within-source pairs. Dropout uses PyTorch's caller-owned RNG: resetting its state
+normalization defaults to one shared NULL. The opt-in separate-answerability
+objective uses a pooled binary head and supported-only endpoint normalization.
+Decoding permits only ordered within-source pairs. Dropout uses the caller's RNG:
+resetting its state
 before matched forwards supplies identical masks across the three producer kinds.
 """
 
@@ -124,13 +126,23 @@ class TokenPointerReader(nn.Module):
     are caller-owned policy state, not encoded in a parameter checkpoint.
     """
 
-    def __init__(self, kind: str = "cell", seed: int = 20260905, dropout: float = 0.2):
+    def __init__(
+        self,
+        kind: str = "cell",
+        seed: int = 20260905,
+        dropout: float = 0.2,
+        *,
+        objective: str = "joint_null",
+    ):
         super().__init__()
         if kind not in {"cell", "bypass", "lstm"}:
             raise ValueError("kind must be cell, bypass or lstm")
         if not 0 <= dropout < 1:
             raise ValueError("dropout must be in [0,1)")
+        if objective not in ("joint_null", "separate_answerability"):
+            raise ValueError("objective must be joint_null or separate_answerability")
         self.kind, self.seed, self.dropout = kind, seed, dropout
+        self.objective = objective
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(seed)
             self.encoder = _SequenceStage(kind, 384, dropout)
@@ -148,12 +160,26 @@ class TokenPointerReader(nn.Module):
             for head in (self.start_head, self.end_head):
                 nn.init.xavier_uniform_(head.weight)
                 nn.init.zeros_(head.bias)
+        if objective == "separate_answerability":
+            # Keep every original parameter and caller/dropout RNG byte intact.
+            # NULL remains an inert compatibility parameter in this mode.
+            self.null_bias.requires_grad_(False)
+            with torch.random.fork_rng(devices=[]):
+                torch.manual_seed(seed + 2)
+                self.answerability_attention = nn.Parameter(torch.zeros(128))
+                self.answerability_head = nn.Linear(128, 1)
+                torch.manual_seed(seed + 2)
+                nn.init.xavier_uniform_(self.answerability_head.weight)
+                nn.init.zeros_(self.answerability_head.bias)
 
     def freeze_producer(self) -> None:
         """Freeze both sequence stages and attention; retain training-time dropout."""
         for name, parameter in self.named_parameters():
             parameter.requires_grad_(
-                name == "null_bias" or name.startswith(("start_head.", "end_head."))
+                (name == "null_bias" and self.objective == "joint_null")
+                or name.startswith(("start_head.", "end_head."))
+                or name == "answerability_attention"
+                or name.startswith("answerability_head.")
             )
 
     def forward(
@@ -163,6 +189,12 @@ class TokenPointerReader(nn.Module):
         context: Tensor,
         context_mask: Tensor,
     ) -> tuple[Tensor, Tensor]:
+        modeled = self._modeled(query, query_mask, context, context_mask)
+        return self._endpoint_scores(modeled, context_mask)
+
+    def _modeled(
+        self, query: Tensor, query_mask: Tensor, context: Tensor, context_mask: Tensor
+    ) -> Tensor:
         for values, mask in ((query, query_mask), (context, context_mask)):
             if values.ndim != 3 or values.shape[-1] != 384 or not values.is_floating_point():
                 raise ValueError("word inputs must be floating [batch,tokens,384]")
@@ -194,11 +226,50 @@ class TokenPointerReader(nn.Module):
             summary = (weights[:, None, :] @ h).expand_as(h)
             summary = summary * has_query[:, None, None]
         fused = torch.cat((h, attended, h * attended, h * summary), -1)
-        modeled = self.modeling(fused, context_mask)
+        return self.modeling(fused, context_mask)
+
+    def _endpoint_scores(self, modeled: Tensor, context_mask: Tensor) -> tuple[Tensor, Tensor]:
         return tuple(
             head(modeled).squeeze(-1).masked_fill(~context_mask, -torch.inf)
             for head in (self.start_head, self.end_head)
         )
+
+    def answerability(self, modeled: Tensor, mask: Tensor, *, pooled: bool = False) -> Tensor:
+        """One binary logit per row, or one over all valid original-source words.
+
+        Empty inventories pool to zero (the scalar head bias); decoding still
+        stops because there is no legal span. Padding contributes no state.
+        """
+        if self.objective != "separate_answerability":
+            raise ValueError("answerability head requires separate_answerability objective")
+        if modeled.ndim != 3 or modeled.shape[-1] != 128 or not modeled.is_floating_point():
+            raise ValueError("modeled states must be floating [batch,tokens,128]")
+        _mask(mask, tuple(modeled.shape[:2]))
+        if modeled.device != mask.device or not bool(torch.isfinite(modeled[mask]).all()):
+            raise ValueError("valid modeled states must be finite and colocated with mask")
+        if pooled:
+            modeled = modeled[mask][None, :, :]
+            mask = torch.ones(modeled.shape[:2], dtype=torch.bool, device=modeled.device)
+        safe = modeled.masked_fill(~mask[..., None], 0)
+        weights = _masked_softmax(safe @ self.answerability_attention, mask, -1)
+        summary = (weights[..., None] * safe).sum(1)
+        return self.answerability_head(summary).squeeze(-1)
+
+    def forward_with_answerability(
+        self,
+        query: Tensor,
+        query_mask: Tensor,
+        context: Tensor,
+        context_mask: Tensor,
+        *,
+        pooled: bool = False,
+    ) -> tuple[Tensor, Tensor, Tensor]:
+        """Reuse one producer pass; pooled heads do not merge producer sequences."""
+        if self.objective != "separate_answerability":
+            raise ValueError("answerability forward requires separate_answerability objective")
+        modeled = self._modeled(query, query_mask, context, context_mask)
+        start, end = self._endpoint_scores(modeled, context_mask)
+        return start, end, self.answerability(modeled, context_mask, pooled=pooled)
 
 
 def _endpoints(start: Tensor, end: Tensor, mask: Tensor, null_bias: Tensor) -> Tensor:
@@ -260,6 +331,58 @@ def pointer_loss(
     return torch.stack(losses).mean()
 
 
+def separate_answerability_loss(
+    start: Tensor,
+    end: Tensor,
+    mask: Tensor,
+    gold_pairs: Sequence[Sequence[tuple[int, int]] | None],
+    answerability_logits: Tensor,
+) -> Tensor:
+    """Mean BCE plus supported-only accepted-pair endpoint NLL without NULL.
+
+    An all-STOP batch never connects endpoint logits to the loss graph. Endpoint
+    gradients stay None, so Adam leaves their warmed moments/counters untouched.
+    Mixed batches average both components over all examples, with zero span
+    contribution for unsupported rows.
+    """
+    _endpoints(start, end, mask, start.new_zeros(()))
+    if len(gold_pairs) != start.shape[0] or not len(gold_pairs):
+        raise ValueError("one target per nonempty batch row is required")
+    if (
+        answerability_logits.shape != start.shape[:1]
+        or answerability_logits.dtype != start.dtype
+        or answerability_logits.device != start.device
+        or not bool(torch.isfinite(answerability_logits).all())
+    ):
+        raise ValueError("one finite matching answerability logit per batch row is required")
+    supported = [alternatives is not None for alternatives in gold_pairs]
+    targets = answerability_logits.new_tensor(supported)
+    loss = F.binary_cross_entropy_with_logits(answerability_logits, targets)
+    span_losses = []
+    for row, alternatives in enumerate(gold_pairs):
+        if alternatives is None:
+            continue
+        pairs = sorted(set(tuple(pair) for pair in alternatives))
+        if not pairs:
+            raise ValueError("supported targets require at least one accepted pair")
+        for pair in pairs:
+            if len(pair) != 2 or any(type(index) is not int for index in pair):
+                raise ValueError("gold endpoints must be integer pairs")
+            left, right = pair
+            if not 0 <= left <= right < start.shape[1] or not bool(
+                mask[row, left] & mask[row, right]
+            ):
+                raise ValueError("gold pair is outside valid ordered word positions")
+        log_start = F.log_softmax(start[row].masked_fill(~mask[row], -torch.inf), -1)
+        log_end = F.log_softmax(end[row].masked_fill(~mask[row], -torch.inf), -1)
+        left, right = zip(*pairs, strict=True)
+        joint = log_start[list(left)] + log_end[list(right)]
+        span_losses.append(-torch.logsumexp(joint, 0))
+    if span_losses:
+        loss = loss + torch.stack(span_losses).sum() / len(gold_pairs)
+    return loss
+
+
 def decode_pointer(
     start: Tensor,
     end: Tensor,
@@ -273,7 +396,22 @@ def decode_pointer(
     occurrences STOP even if their eventual emitted byte strings are identical.
     """
     null = _endpoints(start, end, mask, null_bias)
-    best = 2 * float(null.detach())
+    return _best_pointer(start, end, mask, 2 * float(null.detach()))
+
+
+def decode_answerable_pointer(
+    start: Tensor, end: Tensor, mask: Tensor, answerability_logit: Tensor
+) -> tuple[int, int, int] | None:
+    """STOP at z<=0; otherwise unique legal span maximum without NULL competition."""
+    z = _endpoints(start, end, mask, answerability_logit)
+    if float(z.detach()) <= 0:
+        return None
+    return _best_pointer(start, end, mask, -math.inf)
+
+
+def _best_pointer(
+    start: Tensor, end: Tensor, mask: Tensor, best: float
+) -> tuple[int, int, int] | None:
     winner, tied = None, True
     for document, (starts, ends, valid) in enumerate(
         zip(

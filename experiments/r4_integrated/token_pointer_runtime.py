@@ -14,7 +14,13 @@ from hashlib import sha256
 
 import torch
 
-from humanbrain.token_pointer_reader import TokenPointerReader, decode_pointer, pointer_loss
+from humanbrain.token_pointer_reader import (
+    TokenPointerReader,
+    decode_answerable_pointer,
+    decode_pointer,
+    pointer_loss,
+    separate_answerability_loss,
+)
 
 SEED = 20260905
 
@@ -66,8 +72,10 @@ def batch_inputs(words):
 
 
 class PointerPolicy:
-    def __init__(self, kind="cell", *, frozen_producer=False, seed=SEED):
-        self.reader = TokenPointerReader(kind, seed=seed).eval()
+    def __init__(
+        self, kind="cell", *, frozen_producer=False, seed=SEED, objective="joint_null"
+    ):
+        self.reader = TokenPointerReader(kind, seed=seed, objective=objective).eval()
         self.frozen_producer = frozen_producer
         if frozen_producer:
             self.reader.freeze_producer()
@@ -81,6 +89,10 @@ class PointerPolicy:
         self.rng = torch.Generator().manual_seed(seed + 1).get_state()
         self.steps = self.presentations = 0
         self.updating = True
+
+    @property
+    def objective(self):
+        return self.reader.objective
 
     def checkpoint(self, *, copy_tensors=True):
         """Return an independent restorable snapshot; hash-only callers may borrow views."""
@@ -98,6 +110,9 @@ class PointerPolicy:
             "presentations": self.presentations,
             "updating": self.updating,
         }
+        # Historical joint-NULL checkpoints retain their exact original preimage.
+        if self.objective != "joint_null":
+            state["objective"] = self.objective
         return copy.deepcopy(state) if copy_tensors else state
 
     @property
@@ -106,7 +121,12 @@ class PointerPolicy:
 
     @classmethod
     def restore(cls, state):
-        policy = cls(state["kind"], frozen_producer=state["frozen_producer"], seed=state["seed"])
+        policy = cls(
+            state["kind"],
+            frozen_producer=state["frozen_producer"],
+            seed=state["seed"],
+            objective=state.get("objective", "joint_null"),
+        )
         if state["dropout"] != policy.reader.dropout or state["requires_grad"] != {
             n: p.requires_grad for n, p in policy.reader.named_parameters()
         }:
@@ -135,11 +155,19 @@ class PointerPolicy:
         try:
             with torch.random.fork_rng(devices=[]):
                 torch.random.set_rng_state(self.rng)
-                start, end = self.reader(query, qm, context, cm)
+                if self.objective == "separate_answerability":
+                    start, end, answerability = self.reader.forward_with_answerability(
+                        query, qm, context, cm, pooled=pooled
+                    )
+                else:
+                    start, end = self.reader(query, qm, context, cm)
                 if pooled:
                     start, end = start[cm][None, :], end[cm][None, :]
                     cm = torch.ones_like(start, dtype=torch.bool)
-                loss = pointer_loss(start, end, cm, gold, self.reader.null_bias)
+                if self.objective == "separate_answerability":
+                    loss = separate_answerability_loss(start, end, cm, gold, answerability)
+                else:
+                    loss = pointer_loss(start, end, cm, gold, self.reader.null_bias)
                 if not bool(torch.isfinite(loss)):
                     raise FloatingPointError("nonfinite training loss")
                 loss.backward()
@@ -185,6 +213,9 @@ class PointerPolicy:
         documents = tuple(documents)
         q, qm = batch_inputs([query] * len(documents))
         c, cm = batch_inputs([d.tokens for d in documents])
+        if self.objective == "separate_answerability":
+            start, end, z = self.reader.forward_with_answerability(q, qm, c, cm, pooled=True)
+            return decode_answerable_pointer(start, end, cm, z)
         return decode_pointer(*self.reader(q, qm, c, cm), cm, self.reader.null_bias)
 
     @torch.no_grad()
@@ -193,6 +224,14 @@ class PointerPolicy:
             raise ValueError("prediction requires dropout disabled")
         q, qm = batch_inputs(queries)
         c, cm = batch_inputs(contexts)
+        if self.objective == "separate_answerability":
+            start, end, z = self.reader.forward_with_answerability(q, qm, c, cm)
+            return [
+                decode_answerable_pointer(
+                    start[i : i + 1], end[i : i + 1], cm[i : i + 1], z[i]
+                )
+                for i in range(len(queries))
+            ]
         start, end = self.reader(q, qm, c, cm)
         return [
             decode_pointer(start[i : i + 1], end[i : i + 1], cm[i : i + 1], self.reader.null_bias)

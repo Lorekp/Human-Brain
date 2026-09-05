@@ -330,12 +330,11 @@ Source-absent knowledge, answer-free acquisition, genuine structured Amelia
 responses and autonomous multi-step software recovery remain open. This reader
 is a component aimed at the shared persistent workload, not its completion.
 
-## Active next step: bounded decision review
+## Completed follow-up decision review
 
-Spend at most 30 minutes comparing the saved failure distributions and relevant
-primary research before selecting another scored fit. Separate weak supported
-acquisition, answerability, and continuation transfer; the unqualified positive
-control does not isolate a cell-equation failure. Compare alternatives against
-the source-absent integration target, name the next observed failure and one
-reusable hypothesis, and fix a concrete work/resource budget. Preserve this run;
-no automatic extra epochs, selected checkpoint or retrospective threshold repair.
+The bounded [review](token-pointer-followup-review.md) selected a separate learned
+answerability head with supported-only span loss. The active
+[development plan](answerability-pointer-development.md) fixes its controls,
+readiness criteria and resource budget. The unqualified positive control did not
+isolate a cell-equation failure. Preserve this run; no automatic extra epochs,
+selected checkpoint or retrospective threshold repair applies to its evidence.

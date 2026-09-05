@@ -1,13 +1,13 @@
-"""One admitted token-pointer acquisition run and exposed persistent-action regression.
+"""One separate-answerability development comparison and exposed action regression.
 
-Importing this module never builds the cache, constructs a reader or evaluates a
-target. The admission and all executable sources must match the frozen revision.
+Importing this module never loads a cache, constructs a reader or evaluates a
+target. Reuse the completed comparison's authenticated inputs and saved results;
+do not refit its old objective. The admission freezes this successor's sources.
 """
 
 from __future__ import annotations
 
 import argparse
-import gc
 import json
 import os
 import shutil
@@ -20,18 +20,12 @@ import torch
 
 from benchmarks.native_scaling import _process_memory
 from experiments.r4_integrated.token_pointer_data import (
-    ARCHIVE,
-    ENCODER_SHA256,
-    INTEGRATION,
-    PINS,
-    RAW,
-    REPORT,
     SELECTION,
     WordCache,
-    build_cache,
     load_selection,
 )
 from experiments.r4_integrated.token_pointer_preflight import (
+    OBJECTIVE,
     ROOT,
     THREADS,
     environment,
@@ -48,10 +42,14 @@ from experiments.r4_integrated.token_pointer_runtime import (
 )
 from experiments.r4_integrated.token_pointer_session import UPDATING, run_session
 
-OUTPUT = ROOT / "benchmarks/token_pointer_acquisition_v1.json"
-ADMISSION = ROOT / "benchmarks/token_pointer_acquisition_v1.admission.json"
+OUTPUT = ROOT / "benchmarks/answerability_pointer_acquisition_v1.json"
+ADMISSION = ROOT / "benchmarks/answerability_pointer_acquisition_v1.admission.json"
+REFERENCE = ROOT / "benchmarks/token_pointer_acquisition_v1.json"
+REFERENCE_SHA256 = "d4080dde3a8b7326d02d96a5255337ca99de972ad06594b37303cecd56d9a82d"
+CACHE = ROOT / ".runtime/token-pointer-acquisition-v1/word-cache"
+CACHE_SHA256 = "2205484fa3c1b048456784bcd4a274abc6d844915beda98f47e66ffa0bd09c75"
 LIMITS = {
-    "cache_byte_budget": 1_079_773_324,
+    "cache_byte_budget": 0,
     "seconds": 14_400,
     "peak_parent_mib": 4096,
     "reserve_bytes": 2**30,
@@ -122,8 +120,10 @@ def acquisition_decision(arms):
         "bypass": comparison(final["cell"], final["bypass"]),
     }
     conventional = comparison(final["lstm"], initial["lstm"])
-    cell_pass = final["cell"]["STOP"] >= 48 and all(
-        c["supported_gain_passed"] and c["balanced_gain_passed"] for c in cell.values()
+    cell_pass = (
+        final["cell"]["STOP"] >= 48
+        and trained["cell"]["supported"] >= 48
+        and all(c["supported_gain_passed"] and c["balanced_gain_passed"] for c in cell.values())
     )
     reference_pass = (
         conventional["supported_gain_passed"]
@@ -142,8 +142,11 @@ def acquisition_decision(arms):
         "cell_comparisons": cell,
         "conventional_vs_initial": conventional,
         "cell_STOP_floor_passed": final["cell"]["STOP"] >= 48,
+        "cell_TRAIN_floor_passed": trained["cell"]["supported"] >= 48,
         "conventional_STOP_floor_passed": final["lstm"]["STOP"] >= 48,
-        "scope": "One-seed prospective recipe evidence; not independent adjudication or adoption",
+        "scope": (
+            "One-seed exposed public-development readiness; not fresh adjudication or adoption"
+        ),
     }
 
 
@@ -155,77 +158,39 @@ def _write_json(path, record):
         stream.write(payload)
 
 
-def _retained_input_dependencies(encoder_metadata, source):
-    """Unique retained file costs, separately from incremental run artifacts.
-
-    Call only after build_cache succeeds: that path authenticates the old archive,
-    report and original integration fixture. Reuse those verified pins and the
-    encoder constructor's checks instead of rereading large payloads again.
-    """
-    model = ROOT / ".models/all-MiniLM-L6-v2"
-    selected = SELECTION.relative_to(ROOT).as_posix()
-    declared = [
-        (ARCHIVE, "inherited_word_vector_archive", PINS[ARCHIVE], "cache_build_pin_check"),
-        (REPORT, "inherited_input_manifest_report", PINS[REPORT], "cache_build_pin_check"),
-        (RAW, "official_original_QA_dataset", PINS[RAW], "streamed_now"),
-        (
-            SELECTION,
-            "selected_question_manifest",
-            source["files"][selected],
-            "frozen_source_admission",
-        ),
-        (INTEGRATION, "original_integration_fixture", PINS[INTEGRATION], "cache_build_pin_check"),
-        (model / "manifest.json", "encoder_manifest", None, "streamed_now"),
-    ]
-    declared.extend(
-        (model / name, "encoder_file", record["sha256"], "encoder_constructor_check")
-        for name, record in encoder_metadata["files"].items()
-    )
-    unique = {}
-    for path, role, expected, verification in declared:
-        path = path.resolve()
-        if verification == "streamed_now":
-            actual = file_hash(path)
-            if expected is not None and actual != expected:
-                raise ValueError("retained original input differs: " + str(path))
-            expected = actual
-        key = os.path.normcase(str(path))
-        if key in unique:
-            if unique[key]["sha256"] != expected:
-                raise ValueError("conflicting hashes for one retained input file")
-            unique[key]["roles"].append(role)
-            unique[key]["verification"].append(verification)
-            continue
-        unique[key] = {
-            "path": path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else str(path),
-            "absolute_path": str(path),
-            "bytes": path.stat().st_size,
-            "sha256": expected,
-            "roles": [role],
-            "verification": [verification],
-        }
-    records = sorted(unique.values(), key=lambda row: row["absolute_path"])
-    return {
-        "files": records,
-        "unique_file_count": len(records),
-        "unique_file_bytes": sum(row["bytes"] for row in records),
-        "scope": (
-            "Entire retained input dependency files, including unused portions of the old archive; "
-            "not resident arrays or newly learned weights. Paths counted once across roles."
-        ),
-        "separate_scopes": (
-            "New cache and checkpoint/action/report artifacts are accounted separately. "
-            "Interpreter/package installation, native runtime and source checkout are environment/"
-            "source dependencies, not included in this input-file total."
-        ),
-    }
+def _reference_evidence():
+    """Authenticate saved old-objective results and inputs; perform no inference."""
+    if file_hash(REFERENCE) != REFERENCE_SHA256:
+        raise ValueError("completed old-objective reference report differs")
+    reference = json.loads(REFERENCE.read_bytes())
+    completion = REFERENCE.with_suffix(".completion.json")
+    receipt = json.loads(completion.read_bytes())
+    if (
+        reference["status"] != "completed"
+        or receipt["status"] != "passed"
+        or receipt["report_sha256"] != REFERENCE_SHA256
+    ):
+        raise ValueError("completed reference custody is missing")
+    for row in reference["retained_input_dependencies"]["files"]:
+        if file_hash(ROOT / row["path"]) != row["sha256"]:
+            raise ValueError("retained input dependency differs: " + row["path"])
+    if reference["cache"]["index_sha256"] != CACHE_SHA256:
+        raise ValueError("reference cache identity differs")
+    checkpoint = reference["checkpoint_archive"]
+    if file_hash(ROOT / checkpoint["path"]) != checkpoint["sha256"]:
+        raise ValueError("saved old-objective checkpoint archive differs")
+    return reference
 
 
 def _verify_admission(revision, digest):
     if file_hash(ADMISSION) != digest:
         raise ValueError("exact frozen broad-run admission required")
     admission = json.loads(ADMISSION.read_bytes())
-    if admission["status"] != "admitted" or any(admission[k] != v for k, v in LIMITS.items()):
+    if (
+        admission["status"] != "admitted"
+        or admission["objective"] != OBJECTIVE
+        or any(admission[k] != v for k, v in LIMITS.items())
+    ):
         raise ValueError("fixed acquisition limits/admission differ")
     required = {
         "src/humanbrain/token_pointer_reader.py",
@@ -235,7 +200,8 @@ def _verify_admission(revision, digest):
         "experiments/r4_integrated/token_pointer_session.py",
         "experiments/r4_integrated/token_pointer_preflight.py",
         "experiments/r4_integrated/token_pointer_acquisition.py",
-        "docs/research/token-pointer-acquisition.md",
+        "docs/research/answerability-pointer-development.md",
+        "docs/research/token-pointer-followup-review.md",
     }
     if not required <= set(admission["source_files"]):
         raise ValueError("admission omits a required reader/driver source")
@@ -256,6 +222,7 @@ def _verify_admission(revision, digest):
     if (
         small["report"]["status"] != "completed"
         or not small["report"].get("qualified")
+        or small["report"].get("objective") != OBJECTIVE
         or small["completion"]["status"] != "passed"
         or not small["completion"].get("qualified")
         or small["completion"]["report_sha256"] != admission["small_fit"]["report"]["sha256"]
@@ -278,6 +245,17 @@ def _verify_admission(revision, digest):
     )
     if shutil.disk_usage(ROOT).free < needed:
         raise OSError("cache/artifacts would breach disk reserve")
+    for path, digest in admission["qa_receipts"].items():
+        if file_hash(ROOT / path) != digest:
+            raise ValueError("admitted QA receipt differs")
+    cost = admission["resource_projection"]
+    if file_hash(ROOT / cost["path"]) != cost["sha256"]:
+        raise ValueError("measured cost receipt differs")
+    if (
+        admission["reference_sha256"] != REFERENCE_SHA256
+        or admission["cache_index_sha256"] != CACHE_SHA256
+    ):
+        raise ValueError("fixed saved reference or cache admission differs")
     return admission, source, env
 
 
@@ -297,6 +275,7 @@ def run(output, revision, admission_sha256):
         "started_unix": began_unix,
         "source": source,
         "admission_sha256": admission_sha256,
+        "objective": OBJECTIVE,
         "environment": env,
         "limits": LIMITS,
         "selection_sha256": admission["selection_sha256"],
@@ -306,14 +285,14 @@ def run(output, revision, admission_sha256):
         "events": [],
         "counters": {"optimizer_steps": 0, "presentations": 0, "local_predictions": 0},
         "exposure": (
-            "Broad local original-paragraph QA; separate exposed 28-question pooled regression"
+            "Same 8192 TRAIN and already-exposed 256 public-development probes; "
+            "separate exposed 28-question pooled regression. No fresh adjudication."
         ),
         "frozen_initial_reference": (
             "Reuse initial cell scores and retained initial checkpoint; no extra forward"
         ),
     }
     policies, checkpoints, cache = {}, {}, None
-    cache_dir = work / "word-cache"
 
     def guard(label):
         memory = _process_memory()
@@ -353,56 +332,51 @@ def run(output, revision, admission_sha256):
             "cache_plan": data["cache_plan"],
             "overlap_checks": data["overlap_checks"],
         }
-        if data["cache_plan"]["new_disk_bytes"] != admission["cache_byte_budget"]:
-            raise ValueError("fixed cache byte plan differs")
-        from humanbrain.frozen_context_encoder import FrozenContextEncoder
-
-        encoder = FrozenContextEncoder(ROOT / ".models/all-MiniLM-L6-v2", max_tokens=256, threads=1)
-        if encoder.sha256 != ENCODER_SHA256:
-            raise ValueError("qualified generic encoder identity differs")
-        result["encoding"] = {
-            "encoder_sha256": encoder.sha256,
-            "metadata": encoder.metadata,
-            "new_calls": 0,
-            "seconds": 0.0,
-        }
-
-        def encode(raw):
-            guard("encode_input")
-            tick = time.perf_counter()
-            encoded = encoder.encode(raw)
-            result["encoding"]["new_calls"] += 1
-            result["encoding"]["seconds"] += time.perf_counter() - tick
-            guard("encoded_input")
-            return encoded
-
+        reference = _reference_evidence()
         tick = time.perf_counter()
-        result["cache"] = build_cache(
-            data,
-            cache_dir,
-            encode=encode,
-            byte_budget=admission["cache_byte_budget"],
-            deadline_unix=began_unix + admission["seconds"],
-            minimum_free_bytes=admission["reserve_bytes"] + admission["artifact_allowance_bytes"],
+        cache = WordCache(CACHE, CACHE_SHA256)
+        result["cache"] = {
+            "path": CACHE.relative_to(ROOT).as_posix(),
+            "index_sha256": CACHE_SHA256,
+            "new_encoder_calls": 0,
+            "new_disk_bytes": 0,
+            "load_seconds": time.perf_counter() - tick,
+            "retained_disk_bytes": sum(p.stat().st_size for p in CACHE.iterdir() if p.is_file()),
+            "vector_sha256": cache.index["vector_sha256"],
+        }
+        result["retained_input_dependencies"] = {
+            **reference["retained_input_dependencies"],
+            "current_verification": "Every listed file rehashed against authenticated old report",
+        }
+        result["saved_reference"] = {
+            "path": REFERENCE.relative_to(ROOT).as_posix(),
+            "sha256": REFERENCE_SHA256,
+            "source_revision": reference["source"]["revision"],
+            "checkpoint_archive": reference["checkpoint_archive"],
+            "new_fits": 0,
+            "new_predictions": 0,
+            "final_counts": reference["acquisition_decision"]["final_counts"],
+        }
+        old_checkpoints = torch.load(
+            ROOT / reference["checkpoint_archive"]["path"], map_location="cpu", weights_only=True
         )
-        result["cache"]["seconds"] = time.perf_counter() - tick
-        result["cache"]["path"] = cache_dir.relative_to(ROOT).as_posix()
-        if result["encoding"]["new_calls"] != result["cache"]["new_encoder_calls"]:
-            raise RuntimeError("encoder call accounting differs")
-        result["retained_input_dependencies"] = _retained_input_dependencies(
-            result["encoding"]["metadata"], source
-        )
-        encoder = None
-        gc.collect()
-        cache = WordCache(cache_dir, result["cache"]["index_sha256"])
         guard("cache_loaded")
-        event("cache_complete", new_encoder_calls=result["encoding"]["new_calls"])
+        event("cache_loaded", new_encoder_calls=0)
         for arm in UPDATING:
             policies[arm] = PointerPolicy(
                 "cell" if arm == "frozen_producer" else arm,
                 frozen_producer=arm == "frozen_producer",
+                objective=OBJECTIVE,
             )
             policy = policies[arm]
+            original = old_checkpoints[arm + "_initial"]
+            if any(
+                not torch.equal(value, policy.reader.state_dict()[name])
+                for name, value in original["model"].items()
+            ) or not torch.equal(original["rng"], policy.rng):
+                raise ValueError(
+                    "new objective must preserve old producer/endpoints and dropout initialization"
+                )
             result["arms"][arm] = {
                 "initial": [],
                 "final": [],
@@ -417,6 +391,7 @@ def run(output, revision, admission_sha256):
             }
             checkpoints[arm + "_initial"] = policy.checkpoint()
             probe(policy, data["probe"], result["arms"][arm]["initial"])
+        del old_checkpoints
         if state_hash(checkpoints["cell_initial"]["model"]) != state_hash(
             checkpoints["frozen_producer_initial"]["model"]
         ):
@@ -484,6 +459,27 @@ def run(output, revision, admission_sha256):
         result["acquisition_decision"] = acquisition_decision(result["arms"])
         if not result["acquisition_decision"]["complete"]:
             raise RuntimeError("acquisition evidence incomplete")
+        result["objective_comparison"] = {}
+        for arm, rows in result["arms"].items():
+            old = reference["arms"][arm]["final"]
+            new = rows["final"]
+            if [(r["id"], r["supported"]) for r in old] != [(r["id"], r["supported"]) for r in new]:
+                raise ValueError("saved objective reference uses a different probe roster")
+            result["objective_comparison"][arm] = {
+                lane: {
+                    "newly_correct": sum(
+                        b["correct"] and not a["correct"]
+                        for a, b in zip(old, new, strict=True)
+                        if b["supported"] == supported
+                    ),
+                    "lost_correct": sum(
+                        a["correct"] and not b["correct"]
+                        for a, b in zip(old, new, strict=True)
+                        if b["supported"] == supported
+                    ),
+                }
+                for lane, supported in (("supported", True), ("STOP", False))
+            }
         event("acquisition_complete", qualified=result["acquisition_decision"]["qualified"])
         result["integration"] = run_session(policies, cache.get, work / "integration", guard, event)
         if (
@@ -540,20 +536,10 @@ def run(output, revision, admission_sha256):
             result["journals"] = {
                 p.relative_to(ROOT).as_posix(): file_hash(p) for p in work.glob("*.jsonl")
             }
-            cache_bytes = (
-                sum(p.stat().st_size for p in cache_dir.rglob("*") if p.is_file())
-                if cache_dir.exists()
-                else 0
-            )
-            artifact_bytes = (
-                sum(p.stat().st_size for p in work.rglob("*") if p.is_file()) - cache_bytes
-            )
+            artifact_bytes = sum(p.stat().st_size for p in work.rglob("*") if p.is_file())
             result["artifact_bytes_before_report"] = artifact_bytes
-            if (
-                cache_bytes > admission["cache_byte_budget"]
-                or artifact_bytes > admission["artifact_allowance_bytes"]
-            ):
-                raise OSError("cache or artifact allowance exceeded")
+            if artifact_bytes > admission["artifact_allowance_bytes"]:
+                raise OSError("new artifact allowance exceeded")
             guard("archive_written_and_restored")
         except BaseException:
             result["finalization_errors"].append(traceback.format_exc())

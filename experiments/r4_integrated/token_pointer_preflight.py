@@ -1,4 +1,8 @@
-"""One frozen disposable 16-question fit; it never initializes the broad run."""
+"""Disposable fit readiness for the separate-answerability development comparison.
+
+The earlier joint-NULL preflight and its artifacts remain frozen at their source
+revision. This entry point now prepares the selected successor recipe only.
+"""
 
 from __future__ import annotations
 
@@ -28,10 +32,11 @@ from experiments.r4_integrated.token_pointer_runtime import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-OUTPUT = ROOT / "benchmarks/token_pointer_small_fit_v1.json"
-COMPLETION = ROOT / "benchmarks/token_pointer_small_fit_v1.completion.json"
-ADMISSION = ROOT / "benchmarks/token_pointer_small_fit_v1.admission.json"
-WORK = ROOT / ".runtime/token-pointer-small-fit-v1"
+OBJECTIVE = "separate_answerability"
+OUTPUT = ROOT / "benchmarks/answerability_pointer_small_fit_v1.json"
+COMPLETION = ROOT / "benchmarks/answerability_pointer_small_fit_v1.completion.json"
+ADMISSION = ROOT / "benchmarks/answerability_pointer_small_fit_v1.admission.json"
+WORK = ROOT / ".runtime/answerability-pointer-small-fit-v1"
 THREADS = ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS")
 SOURCES = (
     "src/humanbrain/token_pointer_reader.py",
@@ -42,19 +47,11 @@ SOURCES = (
     "experiments/r4_integrated/real_input_qualification_cases_v1.json",
     "tests/test_token_pointer_reader.py",
     "benchmarks/native_scaling.py",
-    "docs/research/token-pointer-acquisition.md",
+    "docs/research/token-pointer-followup-review.md",
+    "docs/research/answerability-pointer-development.md",
     "pyproject.toml",
 )
-QA_RECEIPTS = (
-    ".pytest-tmp/token-pointer-core-handoff.json",
-    ".pytest-tmp/token-pointer-runtime-handoff.json",
-    ".pytest-tmp/token-pointer-optional-dependency.json",
-    ".pytest-tmp/token-pointer-action-qa.json",
-    ".pytest-tmp/token-pointer-data-qa.json",
-    ".pytest-tmp/dev/doctor-y3fqy06n/receipt.json",
-    ".pytest-tmp/dev/qa-yjmt9qgd/receipt.json",
-    ".pytest-tmp/token-pointer-dependency-bytes.json",
-)
+QA_RECEIPTS = (".pytest-tmp/answerability-pointer-qa.json",)
 
 
 def file_hash(path):
@@ -106,6 +103,7 @@ def prepare():
         raise ValueError("original 12-supported/4-STOP roster required")
     admission = {
         "status": "prepared_without_fit",
+        "objective": OBJECTIVE,
         "fixture_sha256": file_hash(OLD),
         "ids": [r["id"] for r in cases],
         "inputs": {key: word.sha256 for key, word in sorted(inputs.items())},
@@ -140,6 +138,8 @@ def run(revision, admission_sha256):
     if file_hash(ADMISSION) != admission_sha256:
         raise ValueError("exact frozen admission required")
     admission = json.loads(ADMISSION.read_bytes())
+    if admission["objective"] != OBJECTIVE:
+        raise ValueError("separate-answerability fit admission required")
     source = source_identity(revision, (*SOURCES, ADMISSION.relative_to(ROOT).as_posix()))
     if any(source["files"][name] != value for name, value in admission["source_files"].items()):
         raise ValueError("source differs from numerical preflight admission")
@@ -160,6 +160,7 @@ def run(revision, admission_sha256):
         "started_unix": time.time(),
         "source": source,
         "admission_sha256": admission_sha256,
+        "objective": OBJECTIVE,
         "environment": env,
         "branches": {},
     }
@@ -183,7 +184,7 @@ def run(revision, admission_sha256):
         queries, contexts, gold = local_examples(cases, documents, inputs.__getitem__)
         for kind in ("cell", "lstm"):
             guard(kind + ":initial")
-            policy = PointerPolicy(kind)
+            policy = PointerPolicy(kind, objective=OBJECTIVE)
             branch = result["branches"][kind] = {
                 "initial_state_sha256": policy.checkpoint_sha256,
                 "parameter_count": sum(p.numel() for p in policy.reader.parameters()),

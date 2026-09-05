@@ -17,8 +17,10 @@ from experiments.r4_integrated.token_pointer_runtime import (  # noqa: E402
 from humanbrain.token_pointer_reader import (  # noqa: E402
     TokenPointerReader,
     _SequenceStage,
+    decode_answerable_pointer,
     decode_pointer,
     pointer_loss,
+    separate_answerability_loss,
 )
 
 
@@ -459,3 +461,305 @@ def test_pooled_unpadding_gold_offsets_and_source_boundary_rejection(monkeypatch
     assert receipt["gradient_norm_before_clip"] == pytest.approx(float(expected_norm), rel=1e-6)
     check_gradients_and_exact_adam(policy, reference, expected_gradients, captured)
     assert policy.steps == policy.presentations == 1  # one inventory, not two lessons
+
+
+def test_separate_loss_analytic_gradients_mean_and_stop_mask():
+    start = torch.tensor(
+        [[0.2, 0.4, -0.1], [0.3, -0.8, math.nan]], dtype=torch.float64, requires_grad=True
+    )
+    end = torch.tensor(
+        [[0.1, -0.3, 0.7], [0.1, 0.2, math.nan]], dtype=torch.float64, requires_grad=True
+    )
+    mask = torch.tensor([[1, 1, 1], [1, 1, 0]], dtype=torch.bool)
+    z = torch.tensor([0.25, -0.4], dtype=torch.float64, requires_grad=True)
+    gold = [[(0, 1), (1, 2), (0, 1)], None]
+    loss = separate_answerability_loss(start, end, mask, gold, z)
+    ps, pe = start[0].detach().softmax(0), end[0].detach().softmax(0)
+    masses = torch.stack((ps[0] * pe[1], ps[1] * pe[2]))
+    expected = (
+        math.log1p(math.exp(-0.25)) + math.log1p(math.exp(-0.4)) - float(masses.sum().log())
+    ) / 2
+    assert float(loss.detach()) == pytest.approx(expected, abs=1e-14)
+    loss.backward()
+    posterior = masses / masses.sum()
+    gs, ge = ps.clone(), pe.clone()
+    gs[:2] -= posterior
+    ge[1:3] -= posterior
+    torch.testing.assert_close(start.grad[0], gs / 2, atol=1e-14, rtol=1e-14)
+    torch.testing.assert_close(end.grad[0], ge / 2, atol=1e-14, rtol=1e-14)
+    torch.testing.assert_close(z.grad, (z.detach().sigmoid() - torch.tensor([1, 0])) / 2)
+    assert not start.grad[1].count_nonzero() and not end.grad[1].count_nonzero()
+    start.grad = end.grad = z.grad = None
+    separate_answerability_loss(start, end, mask, [None, None], z).backward()
+    assert start.grad is None and end.grad is None  # Adam must skip these parameters.
+    torch.testing.assert_close(z.grad, z.detach().sigmoid() / 2)
+    with pytest.raises(ValueError):
+        separate_answerability_loss(start, end, mask, [[], None], z)
+    with pytest.raises(ValueError):
+        separate_answerability_loss(start, end, mask, [[(2, 1)], None], z)
+
+
+def test_answerability_pool_attention_analytic_derivatives_and_padding():
+    reader = TokenPointerReader(objective="separate_answerability").double().eval()
+    generator = torch.Generator().manual_seed(187)
+    modeled = torch.randn(2, 3, 128, generator=generator, dtype=torch.float64)
+    mask = torch.tensor([[1, 0, 0], [1, 1, 1]], dtype=torch.bool)
+    modeled[~mask] = math.nan
+    modeled.requires_grad_()
+    with torch.no_grad():
+        reader.answerability_attention.copy_(torch.linspace(-0.1, 0.1, 128))
+        reader.answerability_head.weight.copy_(torch.linspace(0.3, -0.2, 128)[None])
+        reader.answerability_head.bias.fill_(0.7)
+    x = modeled.detach()[mask]
+    wa = reader.answerability_attention.detach()
+    wz = reader.answerability_head.weight.detach()[0]
+    attention = (x @ wa).softmax(0)
+    values = x @ wz
+    center = (attention * values).sum()
+    result = reader.answerability(modeled, mask, pooled=True)
+    torch.testing.assert_close(result, (center + 0.7)[None], atol=1e-13, rtol=1e-13)
+    result.sum().backward()
+    expected_input = attention[:, None] * (wz + (values - center)[:, None] * wa)
+    torch.testing.assert_close(modeled.grad[mask], expected_input, atol=1e-13, rtol=1e-12)
+    assert not modeled.grad[~mask].count_nonzero()
+    torch.testing.assert_close(
+        reader.answerability_attention.grad,
+        (attention[:, None] * (values - center)[:, None] * x).sum(0),
+    )
+    torch.testing.assert_close(
+        reader.answerability_head.weight.grad[0], (attention[:, None] * x).sum(0)
+    )
+    assert reader.answerability_head.bias.grad == 1
+    local = reader.answerability(modeled.detach(), mask)
+    assert local.shape == (2,)
+    # Unequal source lengths distinguish one pooled token softmax from averaging documents.
+    assert not torch.isclose(local.mean(), result[0])
+    for row in range(2):
+        words = modeled.detach()[row, mask[row]]
+        expected = ((words @ wa).softmax(0) * (words @ wz)).sum() + 0.7
+        torch.testing.assert_close(local[row], expected)
+
+
+@pytest.mark.parametrize("kind", ["cell", "bypass", "lstm"])
+def test_separate_initialization_and_whole_parameter_directional_derivatives(kind):
+    outer_rng = torch.random.get_rng_state().clone()
+    baseline = TokenPointerReader(kind, dropout=0).double().eval()
+    reader = TokenPointerReader(kind, dropout=0, objective="separate_answerability").double().eval()
+    assert torch.equal(outer_rng, torch.random.get_rng_state())
+    for name, value in baseline.state_dict().items():
+        assert torch.equal(value, reader.state_dict()[name])
+    assert not reader.null_bias.requires_grad
+    assert not reader.answerability_attention.count_nonzero()
+    assert not reader.answerability_head.bias.count_nonzero()
+    q, qm, c, cm = inputs()
+    start, end, _ = reader.forward_with_answerability(q, qm, c, cm)
+    assert all(torch.equal(a, b) for a, b in zip((start, end), baseline(q, qm, c, cm), strict=True))
+    outputs = reader.forward_with_answerability(q, qm, c, cm)
+    padded_q, padded_c = q.clone(), c.clone()
+    padded_q[~qm] = padded_c[~cm] = math.nan
+    assert all(
+        torch.equal(a, b)
+        for a, b in zip(
+            outputs, reader.forward_with_answerability(padded_q, qm, padded_c, cm), strict=True
+        )
+    )
+    alone = reader.forward_with_answerability(q[1:, :1], qm[1:, :1], c[1:, :2], cm[1:, :2])
+    for batch_values, single_values in zip(outputs[:2], alone[:2], strict=True):
+        torch.testing.assert_close(batch_values[1, :2], single_values[0], atol=1e-12, rtol=1e-12)
+    torch.testing.assert_close(outputs[2][1], alone[2][0], atol=1e-12, rtol=1e-12)
+    gold = [[(1, 2), (2, 3)], None]
+
+    def objective():
+        start, end, z = reader.forward_with_answerability(q, qm, c, cm)
+        return separate_answerability_loss(start, end, cm, gold, z)
+
+    objective().backward()
+    generator = torch.Generator().manual_seed(193)
+    families = [
+        "encoder",
+        "modeling",
+        "similarity",
+        "start_head",
+        "end_head",
+        "answerability_attention",
+        "answerability_head",
+    ]
+    step = 1e-5
+    for family in families:
+        parameters = [p for n, p in reader.named_parameters() if n.startswith(family)]
+        directions = [torch.randn(p.shape, generator=generator, dtype=p.dtype) for p in parameters]
+        norm = torch.sqrt(sum(d.square().sum() for d in directions))
+        directions = [d / norm for d in directions]
+        analytic = sum((p.grad * d).sum() for p, d in zip(parameters, directions, strict=True))
+        originals = [p.detach().clone() for p in parameters]
+        losses = []
+        with torch.no_grad():
+            for sign in (1, -1):
+                for p, original, direction in zip(parameters, originals, directions, strict=True):
+                    p.copy_(original + sign * step * direction)
+                losses.append(objective())
+            for p, original in zip(parameters, originals, strict=True):
+                p.copy_(original)
+        numerical = (losses[0] - losses[1]) / (2 * step)
+        torch.testing.assert_close(analytic, numerical, atol=1e-7, rtol=1e-4)
+
+
+@pytest.mark.parametrize(
+    "kind,frozen_producer", [("cell", False), ("cell", True), ("bypass", False), ("lstm", False)]
+)
+def test_separate_stop_preserves_warmed_endpoints_and_restores_all_state(kind, frozen_producer):
+    policy = PointerPolicy(
+        kind, frozen_producer=frozen_producer, objective="separate_answerability"
+    )
+    initial = policy.checkpoint()
+    queries = [word_inputs(2, 201), word_inputs(1, 202)]
+    contexts = [word_inputs(4, 203), word_inputs(2, 204)]
+    policy.update_batch(queries, contexts, [[(1, 3)], [(0, 1)]])
+    parameters = dict(policy.reader.named_parameters())
+    endpoints = {n: p for n, p in parameters.items() if n.startswith(("start_head.", "end_head."))}
+    before = {n: state_hash((p, policy.optimizer.state[p])) for n, p in endpoints.items()}
+    assert any(policy.optimizer.state[p]["exp_avg"].abs().sum() > 0 for p in endpoints.values())
+    warmed = policy.checkpoint()
+    outer_rng = torch.random.get_rng_state().clone()
+    receipt = policy.update_batch(queries, contexts, [None, None])
+    assert torch.equal(outer_rng, torch.random.get_rng_state())
+    assert math.isfinite(receipt["loss"])
+    assert all(
+        before[n] == state_hash((p, policy.optimizer.state[p])) for n, p in endpoints.items()
+    )
+    assert parameters["null_bias"] not in policy.optimizer.state
+    assert not torch.equal(
+        parameters["answerability_head.bias"], warmed["model"]["answerability_head.bias"]
+    )
+    for name, p in parameters.items():
+        if not p.requires_grad:
+            assert torch.equal(p, initial["model"][name])
+    if not frozen_producer:
+        assert any(
+            not torch.equal(p, warmed["model"][n])
+            for n, p in parameters.items()
+            if n.startswith(("encoder", "modeling"))
+        )
+    snapshot = policy.checkpoint()
+    saved_hash = state_hash(snapshot)
+    restored, clone, frozen = (
+        PointerPolicy.restore(snapshot),
+        policy.clone(),
+        policy.clone(frozen=True),
+    )
+    assert restored.checkpoint_sha256 == clone.checkpoint_sha256 == saved_hash
+    for p, other in zip(policy.reader.parameters(), restored.reader.parameters(), strict=True):
+        assert p.data_ptr() != other.data_ptr()
+    frozen_hash = frozen.checkpoint_sha256
+    docs = [PointerDocument(b"one", b"source", contexts[0])]
+    prediction = policy.predict(queries[0], docs)
+    assert policy.predict_local_batch(queries[:1], contexts[:1])[0] == prediction
+    assert policy.checkpoint_sha256 == saved_hash
+    assert frozen.predict(queries[0], docs) == prediction
+    with pytest.raises(ValueError, match="enabled"):
+        frozen.update_batch(queries, contexts, [None, None])
+    receipts = [
+        p.update_batch(queries, contexts, [[(0, 2)], None]) for p in (policy, restored, clone)
+    ]
+    assert receipts[0] == receipts[1] == receipts[2]
+    assert policy.checkpoint_sha256 == restored.checkpoint_sha256 == clone.checkpoint_sha256
+    assert state_hash(snapshot) == saved_hash and frozen.checkpoint_sha256 == frozen_hash
+    assert policy.steps == 3 and policy.presentations == 6
+
+
+def test_separate_decode_gate_legal_boundaries_and_ties():
+    # The illegal cross-document pair has score 20; each valid best pair has score -1.
+    start = torch.tensor([[10.0, -30.0], [-11.0, -30.0]])
+    end = torch.tensor([[-11.0, -30.0], [10.0, -30.0]])
+    mask = torch.ones_like(start, dtype=torch.bool)
+    assert decode_answerable_pointer(start, end, mask, torch.tensor(1.0)) is None
+    end[0, 0] = -10.5
+    assert decode_answerable_pointer(start, end, mask, torch.tensor(1.0)) == (0, 0, 0)
+    for value in (0.0, -0.1):
+        assert decode_answerable_pointer(start, end, mask, torch.tensor(value)) is None
+    assert decode_answerable_pointer(start, end, torch.zeros_like(mask), torch.tensor(1.0)) is None
+    with pytest.raises(ValueError, match="finite"):
+        decode_answerable_pointer(start, end, mask, torch.tensor(math.nan))
+
+
+@pytest.mark.parametrize("pooled", [False, True])
+def test_separate_runtime_global_mean_clipping_and_pool_source_custody(monkeypatch, pooled):
+    policy = PointerPolicy(objective="separate_answerability")
+    reference = policy.clone()
+    queries = [word_inputs(2, 231), word_inputs(1, 232), word_inputs(2, 233)]
+    contexts = [word_inputs(2, 234), word_inputs(4, 235), word_inputs(3, 236)]
+    docs = [PointerDocument(str(i).encode(), b"original", c) for i, c in enumerate(contexts)]
+    if pooled:
+        before = policy.checkpoint_sha256
+        with pytest.raises(ValueError, match="original source"):
+            policy.update_pool(queries[0], docs, [(0, 1, 2)])
+        assert policy.checkpoint_sha256 == before
+        queries = [queries[0]] * 3
+        # Second source's inclusive positions 1..3 offset by two prior words.
+        targets = [[(3, 5), (6, 7)]]
+    else:
+        targets = [[(0, 1)], None, [(0, 1), (1, 2), (0, 1)]]
+    q, qm = batch_inputs(queries)
+    c, cm = batch_inputs(contexts)
+    reference.reader.train()
+    with torch.random.fork_rng(devices=[]):
+        torch.random.set_rng_state(reference.rng)
+        s, e, z = reference.reader.forward_with_answerability(q, qm, c, cm, pooled=pooled)
+        if pooled:
+            s, e = s[cm][None], e[cm][None]
+            cm = torch.ones_like(s, dtype=torch.bool)
+        losses = []
+        for row, target in enumerate(targets):
+            # Independent stable binary logistic expression and scalar normalizers.
+            loss = torch.logaddexp(torch.zeros_like(z[row]), -z[row] if target else z[row])
+            if target is not None:
+                valid_s, valid_e = s[row, cm[row]], e[row, cm[row]]
+                mass = torch.logsumexp(
+                    torch.stack([valid_s[a] + valid_e[b] for a, b in sorted(set(target))]), 0
+                )
+                loss = loss + torch.logsumexp(valid_s, 0) + torch.logsumexp(valid_e, 0) - mass
+            losses.append(loss)
+        expected_loss = torch.stack(losses).mean()
+        expected_loss.backward()
+        expected_norm = torch.nn.utils.clip_grad_norm_(
+            reference.reader.parameters(), 1, error_if_nonfinite=True
+        )
+        expected = {
+            n: None if p.grad is None else p.grad.detach().clone()
+            for n, p in reference.reader.named_parameters()
+        }
+        reference.rng = torch.random.get_rng_state().clone()
+    reference.reader.eval()
+    captured = {}
+    original_step = policy.optimizer.step
+
+    def capture():
+        captured.update(
+            {
+                n: None if p.grad is None else p.grad.detach().clone()
+                for n, p in policy.reader.named_parameters()
+            }
+        )
+        return original_step()
+
+    monkeypatch.setattr(policy.optimizer, "step", capture)
+    if pooled:
+        receipt = policy.update_pool(queries[0], docs, [(1, 1, 3), (2, 0, 1)])
+    else:
+        receipt = policy.update_batch(queries, contexts, targets)
+    assert receipt["loss"] == pytest.approx(float(expected_loss.detach()), abs=1e-6)
+    assert receipt["gradient_norm_before_clip"] == pytest.approx(float(expected_norm), rel=1e-6)
+    for name, parameter in reference.reader.named_parameters():
+        if expected[name] is None:
+            assert captured[name] is None
+        else:
+            torch.testing.assert_close(captured[name], expected[name], atol=1e-7, rtol=1e-5)
+        # Separate exact optimizer application check, not an independent rounding trajectory claim.
+        parameter.grad = captured[name]
+    reference.optimizer.step()
+    assert all(
+        torch.equal(p, dict(reference.reader.named_parameters())[n])
+        for n, p in policy.reader.named_parameters()
+    )
+    assert torch.equal(policy.rng, reference.rng)
+    assert policy.steps == 1 and policy.presentations == (1 if pooled else 3)
