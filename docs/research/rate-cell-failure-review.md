@@ -133,3 +133,6 @@ A failure, timeout or missing learned-cell advantage closes this candidate;
 partial loss/rank gains do not authorize another alignment variant automatically.
 A pass earns review for a genuinely broader persistent reading/action workload,
 not continued optimization of these 64 questions or a general coding claim.
+
+The [prepared comparison protocol](../../experiments/r4_integrated/query_aligned_rate_cell_protocol.md)
+fixes the implementation, six arms, receipts and admission checks before its run.

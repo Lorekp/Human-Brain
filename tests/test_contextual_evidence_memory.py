@@ -1944,3 +1944,134 @@ def test_rate_cell_executed_adapter_custody_replay_and_all_controls(tmp_path):
         )
         with pytest.raises(ValueError, match="sealed TRAIN inventory"):
             reader.observe(lesson)
+
+
+def test_query_aligned_rate_cell_attention_and_prefix_bptt_finite_differences():
+    from humanbrain.query_aligned_rate_cell_reader import QueryAlignedRateCellReader
+
+    query, inventory = _rate_cell_synthetic_inputs()
+    model = QueryAlignedRateCellReader()
+    rng = np.random.default_rng(882)
+    for name in ("attention_weights", "query_context_weights"):
+        model._weights[name] += 0.1 * rng.standard_normal((64, 64))
+    model._weights["span_heads"] *= 30
+    model._weights["stop_head"] *= 30
+    checks = {
+        "input_weights": [(4, 19), (7, 384), (5, 385)],
+        "recurrent_weights": [(3, 8), (11, 11)],
+        "cell_bias": [(9,)],
+        "attention_weights": [(2, 7), (7, 2), (15, 15)],
+        "query_context_weights": [(3, 8), (8, 3), (12, 12)],
+        "span_heads": [(0, 6), (1, 12), (2, 19)],
+        "stop_head": [(13,)], "stop_bias": [(0,)],
+    }
+    epsilon = 1e-6
+    for gold in (inventory.gold_indices(b"quiet silver river"), None):
+        _, gradients, _ = model.loss_and_gradients(query, inventory, gold)
+        assert np.linalg.norm(gradients["attention_weights"]) > 1e-7
+        for name, indices in checks.items():
+            for index in indices:
+                original = model._weights[name][index]
+                model._weights[name][index] = original + epsilon
+                plus = model.loss_and_gradients(query, inventory, gold)[0]
+                model._weights[name][index] = original - epsilon
+                minus = model.loss_and_gradients(query, inventory, gold)[0]
+                model._weights[name][index] = original
+                assert gradients[name][index] == pytest.approx(
+                    (plus - minus) / (2 * epsilon), abs=2e-7, rel=2e-5
+                )
+
+
+def test_query_aligned_zero_context_recovers_unchanged_prefix_and_initial_state():
+    from humanbrain.query_aligned_rate_cell_reader import QueryAlignedRateCellReader
+    from humanbrain.rate_cell_reader import PARAMETER_NAMES, RateCellReader
+
+    query, inventory = _rate_cell_synthetic_inputs()
+    prefix, model = RateCellReader(), QueryAlignedRateCellReader()
+    for name in PARAMETER_NAMES:
+        np.testing.assert_array_equal(model._weights[name], prefix._weights[name])
+    assert model.checkpoint_sha256 != prefix.checkpoint_sha256
+    assert len(model.checkpoint_arrays()) == 25
+    assert model.checkpoint_arrays()["adam_steps"].shape == (8,)
+    assert model.snapshot()["allocated_parameter_bytes"] == 298504
+    assert model.snapshot()["allocated_optimizer_bytes"] == 597072
+    model._weights["query_context_weights"][:] = 0
+    a, b = prefix._forward(query, inventory), model._forward(query, inventory)
+    for key in ("states", "scores", "pooled", "p_stop"):
+        np.testing.assert_array_equal(a[key], b[key])
+    gold = inventory.gold_indices(b"quiet silver river")
+    _, old_gradients, _ = prefix.loss_and_gradients(query, inventory, gold)
+    _, gradients, _ = model.loss_and_gradients(query, inventory, gold)
+    for name in PARAMETER_NAMES:
+        np.testing.assert_array_equal(gradients[name], old_gradients[name])
+    assert not np.any(gradients["attention_weights"])
+    assert np.any(gradients["query_context_weights"])
+
+
+def test_query_aligned_control_masks_stop_momentum_and_recomputed_replay():
+    from humanbrain.query_aligned_rate_cell_reader import PRODUCER_NAMES, QueryAlignedRateCellReader
+
+    query, inventory = _rate_cell_synthetic_inputs()
+    gold = inventory.gold_indices(b"quiet silver river")
+    for mode in ("trainable", "frozen_producer", "bypass", "frozen"):
+        model = QueryAlignedRateCellReader(mode=mode)
+        initial = model.checkpoint_arrays()
+        first = model.observe(query, inventory, gold)
+        warmed = model.checkpoint_arrays()
+        second = model.observe(query, inventory, None)
+        after = model.checkpoint_arrays()
+        assert second["before"] == first["after"]
+        assert second["adam_steps_after"]["span_heads"] == first["adam_steps_after"]["span_heads"]
+        for prefix in ("weight_", "adam_first_", "adam_second_"):
+            np.testing.assert_array_equal(
+                after[prefix + "span_heads"], warmed[prefix + "span_heads"]
+            )
+        if mode != "trainable":
+            for name in PRODUCER_NAMES:
+                for prefix in ("weight_", "adam_first_", "adam_second_"):
+                    np.testing.assert_array_equal(after[prefix + name], initial[prefix + name])
+                assert second["adam_steps_after"][name] == 0
+        else:
+            for name in PRODUCER_NAMES:
+                assert second["adam_steps_after"][name] == 2
+            replay = model.observe(query, inventory, gold)
+            assert replay["gradient_sha256"] != first["gradient_sha256"]
+        if mode == "frozen":
+            for key in initial:
+                np.testing.assert_array_equal(after[key], initial[key])
+        parent = model.checkpoint_sha256
+        prediction = model.predict(query, inventory)
+        assert model.checkpoint_sha256 == parent
+        with pytest.raises(ValueError):
+            prediction.span_scores.setflags(write=True)
+
+
+def test_query_aligned_attention_formula_window_reset_bypass_and_empty_query():
+    from humanbrain.query_aligned_rate_cell_reader import QueryAlignedRateCellReader
+    from humanbrain.rate_cell_reader import SpanInventory, TokenInput
+
+    query, original = _rate_cell_synthetic_inputs()
+    inventory = SpanInventory(original.documents, window_words=5)
+    for mode in ("trainable", "bypass"):
+        model = QueryAlignedRateCellReader(mode=mode)
+        f = model._forward(query, inventory)
+        q = len(query.vectors)
+        for i, window in enumerate(inventory.windows):
+            u = f["states"][i, 1:q + 1]
+            for t in range(len(window.vectors)):
+                r = f["drive"][i, q + t]
+                scores = np.array([r @ model._weights["attention_weights"] @ v / 8 for v in u])
+                probabilities = np.exp(scores - scores.max())
+                probabilities /= probabilities.sum()
+                np.testing.assert_allclose(f["attention"][i, t], probabilities, atol=1e-15)
+                np.testing.assert_allclose(f["context"][i, t], probabilities @ u, atol=1e-15)
+            np.testing.assert_array_equal(f["states"][i, :q + 1], f["states"][0, :q + 1])
+        alternate = TokenInput(query.raw, query.byte_spans, -query.vectors, query.encoder_sha256)
+        assert not np.array_equal(model.predict(query, inventory).span_scores,
+                                  model.predict(alternate, inventory).span_scores)
+        empty = TokenInput(b"", (), np.zeros((0, 384)), "synthetic")
+        _, gradients, audit = model.loss_and_gradients(empty, inventory, None)
+        assert audit["attention_entries"] == 0
+        assert not np.any(gradients["attention_weights"])
+        assert not np.any(gradients["query_context_weights"])
+        assert model.predict(query, SpanInventory(())).stop_reason == "empty_inventory"
