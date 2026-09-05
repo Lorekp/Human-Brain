@@ -1062,6 +1062,112 @@ pub unsafe extern "C" fn humanbrain_three_factor_update(
     winner
 }
 
+/// Apply competitive plasticity orthogonal to caller-certified contrasts.
+///
+/// This disclosed global projection operator allocates no workspace. Scoring,
+/// margin gating and normalization use the original trace; only synaptic
+/// mutation uses the twice-projected trace. Pacemaker behavior matches the
+/// original rule for a non-exhausted update (callers may use disposable bias).
+///
+/// # Safety
+/// Array lengths match the original entry point plus a row-major
+/// `protected_count * cell_count` basis and `cell_count` writable scratch.
+/// The basis must be orthonormal. All mutable arrays must be mutually disjoint
+/// and must not alias any input. Pointers must be valid even for empty arrays.
+#[no_mangle]
+pub unsafe extern "C" fn humanbrain_three_factor_update_projected(
+    cell_count: usize,
+    output_count: usize,
+    target: usize,
+    learning_rate_pa: f64,
+    competitive_margin_pa: f64,
+    eligibility: *const f64,
+    output_heterogeneity_pa: *const f64,
+    readout_synapses_pa: *mut f64,
+    pacemaker_synapses_pa: *mut f64,
+    protected_count: usize,
+    protected_basis: *const f64,
+    projected_eligibility: *mut f64,
+    residual_tolerance: f64,
+) -> usize {
+    if cell_count == 0 || output_count < 2 || target >= output_count {
+        return output_count;
+    }
+    let eligibility = slice::from_raw_parts(eligibility, cell_count);
+    let heterogeneity = slice::from_raw_parts(output_heterogeneity_pa, output_count);
+    let readout = slice::from_raw_parts_mut(readout_synapses_pa, output_count * cell_count);
+    let pacemaker = slice::from_raw_parts_mut(pacemaker_synapses_pa, output_count);
+
+    let basis = slice::from_raw_parts(protected_basis, protected_count * cell_count);
+    let projected = slice::from_raw_parts_mut(projected_eligibility, cell_count);
+    projected.copy_from_slice(eligibility);
+    // The caller certifies orthonormal rows. Two MGS sweeps reduce residuals.
+    for _ in 0..2 {
+        for direction in basis.chunks_exact(cell_count) {
+            let mut component = 0.0;
+            for cell in 0..cell_count {
+                component += projected[cell] * direction[cell];
+            }
+            for cell in 0..cell_count {
+                projected[cell] -= component * direction[cell];
+            }
+        }
+    }
+    let mut projected_norm_squared = 0.0;
+    for &trace in projected.iter() {
+        projected_norm_squared += trace * trace;
+    }
+    let exhausted = projected_norm_squared.sqrt() <= residual_tolerance;
+    if exhausted {
+        projected.fill(0.0);
+    }
+
+    let output_current = |output: usize, readout: &[f64], pacemaker: &[f64]| {
+        let offset = output * cell_count;
+        let mut current = pacemaker[output] + heterogeneity[output];
+        for cell in 0..cell_count {
+            current += readout[offset + cell] * eligibility[cell];
+        }
+        current
+    };
+    let target_current = output_current(target, readout, pacemaker);
+    let mut winner = usize::from(target == 0);
+    let mut winner_current = output_current(winner, readout, pacemaker);
+    for output in 0..output_count {
+        if output == target {
+            continue;
+        }
+        let current = output_current(output, readout, pacemaker);
+        if current > winner_current {
+            winner = output;
+            winner_current = current;
+        }
+    }
+    if target_current >= winner_current + competitive_margin_pa {
+        return output_count;
+    }
+
+    // Original competitive gate has priority; exhaustion must not mutate bias.
+    if exhausted {
+        return output_count;
+    }
+    let mut squared_trace_norm = 1.0f64;
+    for &trace in eligibility {
+        squared_trace_norm += trace * trace;
+    }
+    let step = learning_rate_pa / squared_trace_norm.sqrt();
+    let target_offset = target * cell_count;
+    let winner_offset = winner * cell_count;
+    for cell in 0..cell_count {
+        let change = step * projected[cell];
+        readout[target_offset + cell] += change;
+        readout[winner_offset + cell] -= change;
+    }
+    pacemaker[target] += step;
+    pacemaker[winner] -= step;
+    winner
+}
+
 /// Sum currents from a bounded set of explicit output-cell contacts.
 ///
 /// # Safety

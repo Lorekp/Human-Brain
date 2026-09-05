@@ -1,0 +1,116 @@
+{
+  "kind": "public development; reserved feedback with and without certified-contrast protection; linked sixteen teaching requests/48 encounters; fresh transfer substitutions preserve existing strata",
+  "training_source": "experiments/r4_integrated/contextual_binding_cases.json",
+  "transfer": [
+    {
+      "name": "fresh-baxo-transport",
+      "key": "baxo",
+      "value": "anise",
+      "module": "protected_fresh_0",
+      "stale": "unconfigured",
+      "request": "Configure baxo using its documented transport setting.",
+      "document_id": "protected-fresh-baxo",
+      "document": "The service baxo uses anise for transport and basil as its audit label.",
+      "stratum": "simple"
+    },
+    {
+      "name": "fresh-baxo-audit",
+      "key": "baxo",
+      "value": "basil",
+      "module": "protected_fresh_0",
+      "stale": "unconfigured",
+      "request": "Apply the documented audit label to baxo.",
+      "document_id": "protected-fresh-baxo",
+      "document": "The service baxo uses anise for transport and basil as its audit label.",
+      "stratum": "simple"
+    },
+    {
+      "name": "fresh-cumi-audit",
+      "key": "cumi",
+      "value": "dill",
+      "module": "protected_fresh_1",
+      "stale": "unconfigured",
+      "request": "Set the audit label for cumi from the documentation.",
+      "document_id": "protected-fresh-cumi",
+      "document": "The service kavi uses rosemary for transport and saffron as its audit label. The service cumi uses cumin for transport and dill as its audit label.",
+      "stratum": "neighboring_entity"
+    },
+    {
+      "name": "fresh-cumi-transport",
+      "key": "cumi",
+      "value": "cumin",
+      "module": "protected_fresh_1",
+      "stale": "unconfigured",
+      "request": "Use the transport setting documented for cumi.",
+      "document_id": "protected-fresh-cumi",
+      "document": "The service kavi uses rosemary for transport and saffron as its audit label. The service cumi uses cumin for transport and dill as its audit label.",
+      "stratum": "neighboring_entity"
+    },
+    {
+      "name": "fresh-dapu-transport",
+      "key": "dapu",
+      "value": "fennel",
+      "module": "protected_fresh_2",
+      "stale": "unconfigured",
+      "request": "Which transport should dapu use according to the documentation? Apply it.",
+      "document_id": "protected-fresh-dapu",
+      "document": "For dapu, fennel is the transport setting; its audit label is mint. The unrelated luzo service also uses fennel for transport.",
+      "stratum": "repeated_value"
+    },
+    {
+      "name": "fresh-dapu-audit",
+      "key": "dapu",
+      "value": "mint",
+      "module": "protected_fresh_2",
+      "stale": "unconfigured",
+      "request": "Configure dapu with its audit label.",
+      "document_id": "protected-fresh-dapu",
+      "document": "For dapu, fennel is the transport setting; its audit label is mint. The unrelated luzo service also uses fennel for transport.",
+      "stratum": "repeated_value"
+    },
+    {
+      "name": "fresh-efro-audit",
+      "key": "efro",
+      "value": "thyme",
+      "module": "protected_fresh_3",
+      "stale": "unconfigured",
+      "request": "Which audit marker is recorded for efro? Apply it.",
+      "document_id": "protected-fresh-efro",
+      "document": "The audit marker thyme belongs to efro. When messages move between services, efro's configured transport is oregano.",
+      "stratum": "paraphrase_order_reversal"
+    },
+    {
+      "name": "fresh-efro-transport",
+      "key": "efro",
+      "value": "oregano",
+      "module": "protected_fresh_3",
+      "stale": "unconfigured",
+      "request": "Set efro's transport from the documented connection choice.",
+      "document_id": "protected-fresh-efro",
+      "document": "The audit marker thyme belongs to efro. When messages move between services, efro's configured transport is oregano.",
+      "stratum": "paraphrase_order_reversal"
+    },
+    {
+      "name": "unsupported-gixa-transport",
+      "key": "gixa",
+      "value": null,
+      "module": "protected_missing_gixa",
+      "stale": "unconfigured",
+      "request": "Configure gixa using its documented transport setting.",
+      "document_id": "protected-missing-gixa",
+      "document": "The service gixa is monitored during startup. Its owner is kavi.",
+      "stratum": "unsupported"
+    },
+    {
+      "name": "unsupported-hupo-audit",
+      "key": "hupo",
+      "value": null,
+      "module": "protected_missing_hupo",
+      "stale": "unconfigured",
+      "request": "Apply the documented audit label to hupo.",
+      "document_id": "protected-missing-hupo",
+      "document": "The transport setting of hupo is tarragon. No audit label is specified.",
+      "stratum": "unsupported"
+    }
+  ]
+}

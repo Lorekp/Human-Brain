@@ -967,3 +967,219 @@ def test_capped_comparison_satisfied_and_zero_delta_skip_without_mutation(encode
     assert not receipt["native_update_applied"] and not receipt["synaptic_update"]
     assert memory.synapse_sha256 == before and memory.update_count == 0
     assert memory.feedback_count == 2
+
+
+class _SyntheticSpanEncoding:
+    """Orthogonal word vectors for native plasticity tests; no pretrained model."""
+
+    def __init__(self, raw: bytes):
+        self.raw = raw
+        self.sentence_vector = self.pool_spans(((0, len(raw)),))[0]
+
+    def pool_spans(self, spans):
+        vectors = np.zeros((len(spans), 384))
+        vocabulary = {b"alpha": 0, b"beta": 1, b"gamma": 2, b"request": 3, b"another": 4}
+        for row, (start, end) in zip(vectors, spans, strict=True):
+            for word in self.raw[start:end].split():
+                index = vocabulary.get(word, 5 + int.from_bytes(sha256(word).digest()[:2]) % 379)
+                row[index] += 1.0
+        return vectors
+
+
+class _SyntheticProtectionEncoder:
+    sha256 = sha256(b"synthetic-orthogonal-word-encoder-v1").hexdigest()
+
+    def encode(self, raw):
+        return _SyntheticSpanEncoding(raw)
+
+
+def _protection_memory(**options):
+    memory = ContextualEvidenceMemory(
+        _SyntheticProtectionEncoder(),
+        comparison_protection_policy="orthogonal_certified",
+        **options,
+    )
+    memory.ingest((OpaqueDocument(b"synthetic", b"public-test", b"alpha beta gamma"),))
+    return memory
+
+
+def _protection_pair(memory, rejected=b"alpha", accepted=b"beta", query=b"request"):
+    return tuple(memory.decision_for_span(query, word) for word in (rejected, accepted))
+
+
+def test_protected_comparisons_preserve_raw_margins_and_original_normalizer() -> None:
+    memory = _protection_memory()
+    original_pair = _protection_pair(memory)
+    first = memory.observe_comparison(*original_pair)
+    d1 = np.asarray(original_pair[1].eligibility) - np.asarray(original_pair[0].eligibility)
+    assert first["protection"]["consolidated"]
+    assert first["protection"]["basis_after_rank"] == 1
+    first_margin = first["gap_after"]
+    pair = _protection_pair(memory, b"beta", b"gamma")
+    d2 = np.asarray(pair[1].eligibility) - np.asarray(pair[0].eligibility)
+    p = d2 - d1 * ((d1 @ d2) / (d1 @ d1))
+    weights_before = memory._weights.copy()
+    receipt = memory.observe_comparison(*pair)
+    expected = p / np.sqrt(1 + d2 @ d2)
+    np.testing.assert_allclose(memory._weights - weights_before, [expected, -expected], atol=1e-14)
+    assert receipt["gap_after"] == pytest.approx(
+        receipt["gap_before"] + 2 * (d2 @ p) / np.sqrt(1 + d2 @ d2), abs=1e-14
+    )
+    assert receipt["protection"]["original_dot_projected"] == pytest.approx(d2 @ p)
+    assert receipt["protection"]["projected_delta_norm"] == pytest.approx(np.linalg.norm(p))
+    assert receipt["eligibility_delta_sha256"] == sha256(d2.tobytes()).hexdigest()
+    assert receipt["gap_after"] < 1  # No consolidation before its own unit certification.
+    assert not receipt["protection"]["consolidated"]
+    assert memory.protection_summary["protected_count"] == 1
+    assert float((memory._weights[0] - memory._weights[1]) @ d1) == pytest.approx(first_margin)
+    # The second authentic offer reaches the margin and alone can add direction two.
+    next_receipt = memory.observe_comparison(*_protection_pair(memory, b"beta", b"gamma"))
+    assert next_receipt["gap_after"] >= 1
+    assert next_receipt["protection"]["basis_after_rank"] == 2
+    assert next_receipt["protection"]["protected_margin_violations"] == 0
+    np.testing.assert_allclose(
+        memory._protection_basis @ memory._protection_basis.T, np.eye(2), atol=1e-14
+    )
+    np.testing.assert_array_equal(memory._weights[:, :384], 0)
+    np.testing.assert_array_equal(memory._bias, 0)
+    np.testing.assert_array_equal(memory._eligibility, 0)
+    np.testing.assert_array_equal(memory._projected_eligibility, 0)
+
+
+def test_protected_revisit_deduplicates_after_append_with_zero_frozen_growth() -> None:
+    update, frozen = _protection_memory(), _protection_memory(learning_enabled=False)
+    assert update.checkpoint_sha256 == frozen.checkpoint_sha256
+    pair = _protection_pair(update)
+    frozen_pair = tuple(frozen.replay_decision(value) for value in pair)
+    update_receipt = update.observe_comparison(*pair)
+    frozen_receipt = frozen.observe_comparison(*frozen_pair)
+    assert update_receipt["eligibility_delta_sha256"] == frozen_receipt["eligibility_delta_sha256"]
+    assert not frozen_receipt["protection"]["consolidated"]
+    assert frozen.protection_summary["learned_payload_bytes"] == 0
+    assert frozen.protection_summary["basis_rank"] == 0
+    before = update.protection_summary
+    arrays = update.checkpoint_arrays()
+    records = json.loads(arrays["protection_certification"].tobytes())
+    assert len(records) == 1 and records[0]["certification_margin"] == update_receipt["gap_after"]
+    learned_bytes = sum(arrays[name].nbytes for name in (
+        "protection_basis", "protected_contrast_deltas", "protection_certification"
+    ))
+    assert before["learned_payload_bytes"] == learned_bytes
+    added = OpaqueDocument(b"appended", b"public-test", b"alpha beta gamma")
+    for memory in (update, frozen):
+        memory.ingest((added,))
+    assert update.protection_summary == before
+    rebound = tuple(update.revisit_decision(value) for value in pair)
+    for old, new in zip(pair, rebound, strict=True):
+        assert (old.candidate_index, old.eligibility) == (new.candidate_index, new.eligibility)
+    frozen_pair = tuple(frozen.replay_decision(value) for value in rebound)
+    repeat = update.observe_comparison(*rebound)
+    frozen.observe_comparison(*frozen_pair)
+    assert repeat["protection"]["contrast_id"] == update_receipt["protection"]["contrast_id"]
+    assert repeat["protection"]["already_certified"]
+    assert repeat["step_skipped_reason"] == "satisfied_margin"
+    assert update.protection_summary == before
+    assert frozen.protection_summary["learned_payload_bytes"] == 0
+    assert frozen.update_count == 0 and frozen.feedback_count == update.feedback_count == 4
+    parent = update.checkpoint_sha256
+    for select in (
+        update.respond_affine_interpolated, update.raw_score_reference, update.external_only
+    ):
+        select(b"request")
+    assert update.checkpoint_sha256 == parent and update.protection_summary == before
+    for array in arrays.values():
+        array.fill(0)
+    assert update.protection_summary == before  # Exported arrays own their memory.
+
+
+def test_protected_dependent_certification_and_conflicting_projection_stall_are_bounded() -> None:
+    memory = _protection_memory()
+    memory.observe_comparison(*_protection_pair(memory))
+    # A new query has the same contrast, already fitted: record its first
+    # certification despite the native gate no-op, without adding a basis row.
+    receipt = memory.observe_comparison(*_protection_pair(memory, query=b"another"))
+    assert receipt["gap_before"] >= 1 and not receipt["native_update_applied"]
+    assert receipt["protection"]["consolidated"]
+    assert not receipt["protection"]["independent_direction_added"]
+    assert memory.protection_summary["basis_rank"] == 1
+    assert memory.protection_summary["protected_count"] == 2
+    before = memory.protection_summary
+    weights = memory.synapse_sha256
+    receipt = memory.observe_comparison(*_protection_pair(memory, b"beta", b"alpha"))
+    assert receipt["gap_before"] < 0
+    assert receipt["step_skipped_reason"] == "projection_exhausted"
+    assert receipt["protection"]["projection_stalled"]
+    assert not receipt["native_update_applied"] and not receipt["protection"]["consolidated"]
+    assert memory.synapse_sha256 == weights and memory.protection_summary == before
+    assert memory.feedback_count == 6 and memory.update_count == 1
+
+
+def test_protected_custody_policy_and_capacity_fail_explicitly() -> None:
+    memory = _protection_memory(protection_capacity=1)
+    pair = _protection_pair(memory)
+    parent = memory.checkpoint_sha256
+    with pytest.raises(ValueError, match="pairwise comparison"):
+        memory.observe_feedback(pair[1], 1)
+    with pytest.raises(ValueError, match="custody changed"):
+        memory.observe_comparison(replace(pair[0], emitted=b"gamma"), pair[1])
+    assert memory.checkpoint_sha256 == parent and memory.feedback_count == 0
+    memory.observe_comparison(*pair)
+    with pytest.raises(ValueError, match="stale parent"):
+        memory.observe_comparison(*pair)
+    with pytest.raises(RuntimeError, match="capacity exceeded"):
+        memory.observe_comparison(*_protection_pair(memory, query=b"another"))
+    assert memory.protection_summary["protected_count"] == 1
+    assert memory.feedback_count == 2
+    different = _protection_memory(protection_capacity=2, learning_enabled=False)
+    with pytest.raises(ValueError, match="different retained source store"):
+        different.replay_decision(pair[0])
+    for options in (
+        {"comparison_protection_policy": "invalid"},
+        {"protection_capacity": True},
+        {"protection_capacity": 0},
+        {"comparison_protection_policy": "orthogonal_certified",
+         "comparison_step_policy": "unit_margin_capped"},
+    ):
+        with pytest.raises(ValueError):
+            ContextualEvidenceMemory(_SyntheticProtectionEncoder(), **options)
+
+
+def test_protected_distinct_ingested_occurrences_do_not_share_certification() -> None:
+    memory = _protection_memory()
+    first = memory.observe_comparison(*_protection_pair(memory))
+    # Repeating even the same document identity creates separate retained
+    # occurrences. Equal bytes and deltas alone must not merge their custody.
+    memory.ingest((OpaqueDocument(b"synthetic", b"public-test", b"alpha beta gamma"),))
+    rows, _ = memory._features(b"request")
+    indices = [next(
+        i for i, c in enumerate(memory._candidates)
+        if c.document_index == 1 and c.emitted == word
+    ) for word in (b"alpha", b"beta")]
+    pair = [memory._decision(b"request", rows, i, "teacher_executed_span") for i in indices]
+    second = memory.observe_comparison(*pair)
+    assert second["eligibility_delta_sha256"] == first["eligibility_delta_sha256"]
+    assert second["protection"]["contrast_id"] != first["protection"]["contrast_id"]
+    assert second["protection"]["consolidated"]
+    assert memory.protection_summary["protected_count"] == 2
+    assert memory.protection_summary["basis_rank"] == 1
+
+
+def test_protected_validation_rejects_native_raw_contrast_erasure(monkeypatch) -> None:
+    from humanbrain.native import NativeThreeFactorLearner
+
+    memory = _protection_memory()
+    memory.observe_comparison(*_protection_pair(memory))
+    before_count = memory.feedback_count
+    real_update = NativeThreeFactorLearner.update_projected
+
+    def corrupt_update(learner, *args, **kwargs):
+        result = real_update(learner, *args, **kwargs)
+        memory._weights[0] += memory._protected_deltas[0]
+        return result
+
+    monkeypatch.setattr(NativeThreeFactorLearner, "update_projected", corrupt_update)
+    with pytest.raises(RuntimeError, match="margin preservation failed"):
+        memory.observe_comparison(*_protection_pair(memory, b"beta", b"gamma"))
+    assert memory.feedback_count == before_count  # A failed check is not a passed receipt.
+    np.testing.assert_array_equal(memory._eligibility, 0)
+    np.testing.assert_array_equal(memory._projected_eligibility, 0)

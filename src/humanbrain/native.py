@@ -985,6 +985,14 @@ def _load_library() -> ctypes.CDLL:
             _F64_POINTER,
         ]
         library.humanbrain_three_factor_update.restype = ctypes.c_size_t
+        library.humanbrain_three_factor_update_projected.argtypes = [
+            *library.humanbrain_three_factor_update.argtypes,
+            ctypes.c_size_t,
+            _F64_POINTER,
+            _F64_POINTER,
+            ctypes.c_double,
+        ]
+        library.humanbrain_three_factor_update_projected.restype = ctypes.c_size_t
         library.humanbrain_sparse_readout_current.argtypes = [
             ctypes.c_size_t,
             ctypes.c_size_t,
@@ -1469,6 +1477,83 @@ class NativeThreeFactorLearner:
             return None
         if winner > self._output_cells:
             raise RuntimeError("native local learner rejected its array dimensions")
+        return winner
+
+    def update_projected(
+        self,
+        target: int,
+        learning_rate: float,
+        margin: float,
+        protected_basis: np.ndarray,
+        projected_eligibility: np.ndarray,
+        residual_tolerance: float,
+    ) -> int | None:
+        """Project plasticity, retaining the original eligibility gate and norm.
+
+        Rows of ``protected_basis`` must already be orthonormal. The caller owns
+        basis certification and protected-margin validation. Scratch receives
+        the twice-projected trace even when the original margin is satisfied.
+        An exhausted projection leaves both readout and pacemaker untouched.
+        """
+        target = int(target)
+        if not 0 <= target < self._output_cells:
+            raise ValueError("target token outside output-cell population")
+        learning_rate = _positive_scalar("local learning rate", learning_rate)
+        margin = _positive_scalar("competitive margin", margin)
+        residual_tolerance = _finite_scalar("residual tolerance", residual_tolerance)
+        if residual_tolerance < 0.0:
+            raise ValueError("residual tolerance must be nonnegative")
+        if protected_basis.ndim != 2:
+            raise ValueError("protected basis must be a matrix")
+        _require_native_array(
+            protected_basis,
+            dtype=np.dtype(np.float64),
+            shape=(protected_basis.shape[0], self._reservoir_cells),
+            name="protected basis",
+        )
+        _require_native_array(
+            projected_eligibility,
+            dtype=np.dtype(np.float64),
+            shape=(self._reservoir_cells,),
+            name="projected eligibility",
+        )
+        if not projected_eligibility.flags.writeable:
+            raise ValueError("projected eligibility must be writable")
+        for array in (
+            self._eligibility,
+            self._output_heterogeneity_pa,
+            self._readout_synapses_pa,
+            self._pacemaker_synapses_pa,
+            protected_basis,
+        ):
+            if np.shares_memory(projected_eligibility, array):
+                raise ValueError("projected eligibility must not alias learner arrays")
+        for array in (self._readout_synapses_pa, self._pacemaker_synapses_pa):
+            if np.shares_memory(protected_basis, array):
+                raise ValueError("protected basis must not alias mutable synapses")
+        if not np.isfinite(protected_basis).all() or not np.isfinite(self._eligibility).all():
+            raise ValueError("basis and original eligibility must be finite")
+        winner = int(
+            self._library.humanbrain_three_factor_update_projected(
+                self._reservoir_cells,
+                self._output_cells,
+                target,
+                learning_rate,
+                margin,
+                _f64(self._eligibility),
+                _f64(self._output_heterogeneity_pa),
+                _f64(self._readout_synapses_pa),
+                _f64(self._pacemaker_synapses_pa),
+                protected_basis.shape[0],
+                _f64(protected_basis),
+                _f64(projected_eligibility),
+                residual_tolerance,
+            )
+        )
+        if winner == self._output_cells:
+            return None
+        if winner > self._output_cells:
+            raise RuntimeError("native projected learner rejected its array dimensions")
         return winner
 
 

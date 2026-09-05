@@ -169,6 +169,8 @@ class ContextualEvidenceMemory:
         interaction_gain: float = 1.0,
         candidate_interactions: bool = False,
         comparison_step_policy: str = "fixed",
+        comparison_protection_policy: str = "none",
+        protection_capacity: int = 48,
     ) -> None:
         if not np.isfinite(learning_rate) or learning_rate <= 0:
             raise ValueError("learning_rate must be finite and positive")
@@ -178,12 +180,20 @@ class ContextualEvidenceMemory:
             raise ValueError("candidate_interactions must be a bool")
         if comparison_step_policy not in ("fixed", "unit_margin_capped"):
             raise ValueError("unknown comparison_step_policy")
+        if comparison_protection_policy not in ("none", "orthogonal_certified"):
+            raise ValueError("unknown comparison_protection_policy")
+        if type(protection_capacity) is not int or protection_capacity <= 0:
+            raise ValueError("protection_capacity must be a positive integer")
+        if comparison_protection_policy != "none" and comparison_step_policy != "fixed":
+            raise ValueError("orthogonal protection requires fixed comparison steps")
         self.encoder = encoder
         self.learning_rate = float(learning_rate)
         self.learning_enabled = learning_enabled
         self._interaction_gain = float(interaction_gain)
         self._candidate_interactions = candidate_interactions
         self._comparison_step_policy = comparison_step_policy
+        self._comparison_protection_policy = comparison_protection_policy
+        self._protection_capacity = protection_capacity
         self._interaction_windows: list[_InteractionWindow] = []
         self._documents: list[OpaqueDocument] = []
         self._candidates: list[_Candidate] = []
@@ -193,6 +203,8 @@ class ContextualEvidenceMemory:
         if self.comparison_step_policy != "fixed":
             storage_identity["comparison_step_policy"] = self.comparison_step_policy
             storage_identity["maximum_learning_rate"] = self.learning_rate
+        if self.comparison_protection_policy != "none":
+            storage_identity["comparison_protection"] = self.protection_policy
         self._storage_root = _digest(storage_identity)
         self._storage_ancestry = {self._storage_root: 0}
         feature_count = _FEATURES + _CANDIDATE_FEATURES * candidate_interactions
@@ -200,6 +212,11 @@ class ContextualEvidenceMemory:
         self._bias = np.zeros(2, dtype=np.float64)
         self._heterogeneity = np.zeros(2, dtype=np.float64)
         self._eligibility = np.zeros(feature_count, dtype=np.float64)
+        if self.comparison_protection_policy != "none":
+            self._protection_basis = np.empty((0, feature_count), dtype=np.float64)
+            self._protected_deltas = np.empty((0, feature_count), dtype=np.float64)
+            self._protection_records: list[dict] = []
+            self._projected_eligibility = np.zeros(feature_count, dtype=np.float64)
         self._native = NativeThreeFactorLearner(
             eligibility=self._eligibility,
             output_heterogeneity_pa=self._heterogeneity,
@@ -222,6 +239,62 @@ class ContextualEvidenceMemory:
     @property
     def comparison_step_policy(self) -> str:
         return self._comparison_step_policy
+
+    @property
+    def comparison_protection_policy(self) -> str:
+        return self._comparison_protection_policy
+
+    @property
+    def protection_capacity(self) -> int:
+        return self._protection_capacity
+
+    @property
+    def protection_policy(self) -> dict:
+        return {
+            "kind": self.comparison_protection_policy,
+            "capacity": self.protection_capacity,
+            "learning_rate": self.learning_rate,
+            "projection": "two_native_modified_gram_schmidt_sweeps_v1",
+            "gate_and_normalizer": "original_delta; unit_margin; sqrt(1+d_dot_d)",
+            "certification": "own_final_margin_ge_1; first_identity_only; no_eviction",
+            "exhaustion": "64*eps*D*max(1,norm_d)",
+            "raw_residual": "64*eps*D*max(1,norm_di*norm_p)",
+            "margin_tolerance": "128*eps*D*max(1,abs(before),norm_v_before*norm_di,"
+            "norm_v_after*norm_di)",
+        }
+
+    def _protection_record_bytes(self) -> bytes:
+        if not self._protection_records:
+            return b""
+        return json.dumps(self._protection_records, sort_keys=True, allow_nan=False).encode()
+
+    @property
+    def protection_summary(self) -> dict:
+        """Disclosed learned training state; never consulted to select a candidate."""
+        if self.comparison_protection_policy == "none":
+            return {"policy": "none"}
+        basis_hash = sha256(self._protection_basis.tobytes()).hexdigest()
+        deltas_hash = sha256(self._protected_deltas.tobytes()).hexdigest()
+        records = self._protection_record_bytes()
+        state = {
+            "policy": self.protection_policy,
+            "basis_sha256": basis_hash,
+            "protected_deltas_sha256": deltas_hash,
+            "certification_sha256": sha256(records).hexdigest(),
+            "basis_rank": len(self._protection_basis),
+            "protected_count": len(self._protected_deltas),
+        }
+        return {
+            **state,
+            "state_sha256": _digest(state),
+            "basis_array_bytes": self._protection_basis.nbytes,
+            "protected_delta_array_bytes": self._protected_deltas.nbytes,
+            "certification_payload_bytes": len(records),
+            "learned_payload_bytes": self._protection_basis.nbytes
+            + self._protected_deltas.nbytes
+            + len(records),
+            "scratch_array_bytes": self._projected_eligibility.nbytes,
+        }
 
     @property
     def representation_policy(self) -> dict:
@@ -265,6 +338,8 @@ class ContextualEvidenceMemory:
         if self.comparison_step_policy != "fixed":
             state["comparison_step_policy"] = self.comparison_step_policy
             state["maximum_learning_rate"] = self.learning_rate
+        if self.comparison_protection_policy != "none":
+            state["comparison_protection"] = self.protection_summary["state_sha256"]
         return _digest(state)
 
     @property
@@ -273,10 +348,19 @@ class ContextualEvidenceMemory:
 
     def checkpoint_arrays(self) -> dict[str, np.ndarray]:
         """Return independent copies for recording the learned synaptic state."""
-        return {
+        arrays = {
             "readout_synapses_pa": self._weights.copy(),
             "pacemaker_synapses_pa": self._bias.copy(),
         }
+        if self.comparison_protection_policy != "none":
+            arrays.update(
+                protection_basis=self._protection_basis.copy(),
+                protected_contrast_deltas=self._protected_deltas.copy(),
+                protection_certification=np.frombuffer(
+                    self._protection_record_bytes(), dtype=np.uint8
+                ).copy(),
+            )
+        return arrays
 
     @property
     def storage_summary(self) -> dict:
@@ -298,7 +382,7 @@ class ContextualEvidenceMemory:
         )
         compiled_race = self._race._unit_voltage.nbytes + self._race._unit_voltage_threshold.nbytes
         interactions = sum(window.payload_bytes for window in self._interaction_windows)
-        return {
+        summary = {
             "interaction_gain": self.interaction_gain,
             "candidate_interactions": self.candidate_interactions,
             "candidate_interaction_payload_bytes": interactions,
@@ -334,6 +418,14 @@ class ContextualEvidenceMemory:
             "feedback_count": self.feedback_count,
             "update_count": self.update_count,
         }
+        if self.comparison_protection_policy != "none":
+            protection = self.protection_summary
+            summary["comparison_protection"] = protection
+            summary["payload_bytes"] += protection["learned_payload_bytes"]
+            summary["retained_array_and_byte_payload_bytes"] += (
+                protection["learned_payload_bytes"] + protection["scratch_array_bytes"]
+            )
+        return summary
 
     def ingest(self, documents: tuple[OpaqueDocument, ...]) -> None:
         """Retain every word candidate; fail explicitly instead of truncating encoding."""
@@ -515,7 +607,12 @@ class ContextualEvidenceMemory:
             result = self._race.race_many(currents[None, :], require_unique=True)[0]
         except RestingGlifRaceFailure as error:
             return self._decision(
-                query, rows, None, "neuronal", str(error), _RACE_STEPS * len(currents),
+                query,
+                rows,
+                None,
+                "neuronal",
+                str(error),
+                _RACE_STEPS * len(currents),
                 readout_policy=self.readout_policy["default"],
             )
         index = result.winner_cell if result.winner_cell < len(self._candidates) else None
@@ -561,14 +658,23 @@ class ContextualEvidenceMemory:
             result = self._race.race_many_interpolated(currents[None, :])[0]
         except RestingGlifRaceFailure as error:
             return self._decision(
-                query, rows, None, mode, str(error),
-                _RACE_STEPS * len(currents), readout_policy=policy,
+                query,
+                rows,
+                None,
+                mode,
+                str(error),
+                _RACE_STEPS * len(currents),
+                readout_policy=policy,
             )
         index = result.winner_cell if result.winner_cell < len(self._candidates) else None
         return self._decision(
-            query, rows, index, mode,
+            query,
+            rows,
+            index,
+            mode,
             "tonic_stop" if index is None else None,
-            (result.spike_step + 1) * len(currents), result.spike_step,
+            (result.spike_step + 1) * len(currents),
+            result.spike_step,
             readout_policy=policy,
             estimated_crossing_time_ms=result.estimated_crossing_time_ms,
             coarse_spike_candidates=result.coarse_spike_candidates,
@@ -708,6 +814,8 @@ class ContextualEvidenceMemory:
 
     def observe_feedback(self, decision: ContextualEvidenceDecision, reward: int) -> dict:
         """Apply exactly one consequence at this parent; wrapper authenticates execution."""
+        if self.comparison_protection_policy != "none":
+            raise ValueError("orthogonal protection requires pairwise comparison feedback")
         if reward not in (-1, 1) or type(reward) is not int:
             raise ValueError("reward must be exactly -1 or +1")
         if decision.checkpoint_sha256 != self.checkpoint_sha256:
@@ -753,6 +861,8 @@ class ContextualEvidenceMemory:
         if rejected.candidate_index == accepted.candidate_index:
             raise ValueError("comparison requires two different candidate occurrences")
         delta = np.asarray(accepted.eligibility) - np.asarray(rejected.eligibility)
+        if self.comparison_protection_policy != "none":
+            return self._observe_protected_comparison(rejected, accepted, delta, before)
         gap_before = float((self._weights[0] - self._weights[1]) @ delta)
         norm_squared = float(delta @ delta)
         proposed_rate = self.learning_rate
@@ -813,4 +923,223 @@ class ContextualEvidenceMemory:
             "bias_policy": "zero scratch pair bias; persistent bias excluded and unchanged",
             "feedback_events": 2,
             "mode": "same_query_pairwise",
+        }
+
+    def _contrast_identity(self, rejected, accepted, delta_hash: str) -> str:
+        occurrences = []
+        for decision in (rejected, accepted):
+            candidate = self._candidates[decision.candidate_index]
+            source = self._documents[candidate.document_index]
+            occurrences.append(
+                [
+                    candidate.document_index,
+                    source.document_id.hex(),
+                    source.provenance_id.hex(),
+                    sha256(source.content).hexdigest(),
+                    candidate.start,
+                    candidate.end,
+                ]
+            )
+        return _digest([rejected.query.hex(), occurrences, delta_hash])
+
+    def _observe_protected_comparison(self, rejected, accepted, delta, before) -> dict:
+        """Conventional native projection, followed by bounded own-offer consolidation.
+
+        Execution certification remains the caller's responsibility, as for the
+        original pair API. Only these two authenticated decisions may add state;
+        no other ledger entry, task label or candidate score enters consolidation.
+        """
+        state_before = self.protection_summary
+        v_before = self._weights[0] - self._weights[1]
+        norm_squared = float(delta @ delta)
+        norm = float(np.sqrt(norm_squared))
+        gap_before = float(v_before @ delta)
+        if not np.isfinite(v_before).all() or not np.isfinite([norm, gap_before]).all():
+            raise ValueError("protected comparison requires finite weights and eligibility")
+        dimension = len(delta)
+        numerical_scale = np.finfo(np.float64).eps * dimension
+        exhausted_tolerance = 64 * numerical_scale * max(1.0, norm)
+        delta_hash = sha256(delta.tobytes()).hexdigest()
+        identity = self._contrast_identity(rejected, accepted, delta_hash)
+        protected_before = self._protected_deltas @ v_before
+        synapses_before = self.synapse_sha256
+        applied = False
+        p = self._projected_eligibility
+        try:
+            if self.learning_enabled:
+                pair_bias = np.zeros_like(self._bias)
+                pair_learner = NativeThreeFactorLearner(
+                    eligibility=self._eligibility,
+                    output_heterogeneity_pa=self._heterogeneity,
+                    readout_synapses_pa=self._weights,
+                    pacemaker_synapses_pa=pair_bias,
+                )
+                self._eligibility[:] = delta
+                applied = (
+                    pair_learner.update_projected(
+                        target=0,
+                        learning_rate=self.learning_rate,
+                        margin=1.0,
+                        protected_basis=self._protection_basis,
+                        projected_eligibility=p,
+                        residual_tolerance=exhausted_tolerance,
+                    )
+                    is not None
+                )
+            else:
+                # Frozen mates have no learned directions and never call a
+                # mutating native entry point, even with temporary weights.
+                if len(self._protection_records) or len(self._protection_basis):
+                    raise RuntimeError("frozen comparison has learned protection state")
+                p[:] = delta
+                if norm <= exhausted_tolerance:
+                    p.fill(0.0)
+            v_after = self._weights[0] - self._weights[1]
+            projected_norm = float(np.linalg.norm(p))
+            if not np.isfinite(p).all() or not np.isfinite(v_after).all():
+                raise RuntimeError("protected comparison produced nonfinite state")
+            exhausted = projected_norm <= exhausted_tolerance
+            residuals = self._protected_deltas @ p
+            protected_after = self._protected_deltas @ v_after
+            protected_norms = np.linalg.norm(self._protected_deltas, axis=1)
+            residual_limits = (
+                64 * numerical_scale * np.maximum(1.0, protected_norms * projected_norm)
+            )
+            preservation_limits = (
+                128
+                * numerical_scale
+                * np.maximum.reduce(
+                    [
+                        np.ones(len(protected_before)),
+                        np.abs(protected_before),
+                        np.linalg.norm(v_before) * protected_norms,
+                        np.linalg.norm(v_after) * protected_norms,
+                    ]
+                )
+            )
+            margin_changes = np.abs(protected_after - protected_before)
+            if (
+                not np.isfinite(residuals).all()
+                or not np.isfinite(protected_after).all()
+                or not np.isfinite(residual_limits).all()
+                or not np.isfinite(preservation_limits).all()
+                or np.any(np.abs(residuals) > residual_limits)
+                or np.any(margin_changes > preservation_limits)
+            ):
+                raise RuntimeError("protected raw contrast residual or margin preservation failed")
+            gap_after = float(v_after @ delta)
+            if not np.isfinite(gap_after):
+                raise RuntimeError("protected comparison produced a nonfinite margin")
+            changed = self.synapse_sha256 != synapses_before
+            consolidated = False
+            independent = False
+            basis_orthogonality_error = 0.0
+            basis_orthogonality_tolerance = 64 * numerical_scale
+            known = any(record["contrast_id"] == identity for record in self._protection_records)
+            if self.learning_enabled and gap_after >= 1.0 and not known:
+                if len(self._protection_records) >= self.protection_capacity:
+                    raise RuntimeError("protected contrast capacity exceeded; eviction is disabled")
+                independent = not exhausted
+                basis_row = len(self._protection_basis) if independent else None
+                if independent:
+                    direction = p / projected_norm
+                    basis_orthogonality_error = max(
+                        abs(float(direction @ direction) - 1.0),
+                        float(np.max(np.abs(self._protection_basis @ direction), initial=0.0)),
+                    )
+                    if basis_orthogonality_error > basis_orthogonality_tolerance:
+                        raise RuntimeError("protected normalized basis orthogonality failed")
+                    # Existing rows were checked at insertion and never change;
+                    # checking this new row against them keeps work O(KD).
+                    self._protection_basis = np.ascontiguousarray(
+                        np.vstack((self._protection_basis, direction))
+                    )
+                self._protected_deltas = np.ascontiguousarray(
+                    np.vstack((self._protected_deltas, delta))
+                )
+                self._protection_records.append(
+                    {
+                        "contrast_id": identity,
+                        "eligibility_delta_sha256": delta_hash,
+                        "rejected_decision_sha256": rejected.sha256,
+                        "accepted_decision_sha256": accepted.sha256,
+                        "certification_parent_sha256": before,
+                        "certification_margin": gap_after,
+                        "basis_row": basis_row,
+                    }
+                )
+                consolidated = True
+            projection = {
+                "policy": self.comparison_protection_policy,
+                "contrast_id": identity,
+                "original_delta_sha256": delta_hash,
+                "original_delta_norm": norm,
+                "projected_delta_sha256": sha256(p.tobytes()).hexdigest(),
+                "projected_delta_norm": projected_norm,
+                "original_dot_projected": float(delta @ p),
+                "projection_exhausted": exhausted,
+                "projection_stalled": self.learning_enabled and gap_before < 1.0 and exhausted,
+                "exhaustion_tolerance": exhausted_tolerance,
+                "protected_residual_max": float(np.max(np.abs(residuals), initial=0.0)),
+                "protected_margin_change_max": float(np.max(margin_changes, initial=0.0)),
+                "protected_margin_checks": len(protected_before),
+                "protected_margin_violations": 0,
+                "protected_margins_before": protected_before.tolist(),
+                "protected_margins_after": protected_after.tolist(),
+                "protected_residual_tolerances": residual_limits.tolist(),
+                "protected_margin_tolerances": preservation_limits.tolist(),
+                "consolidated": consolidated,
+                "independent_direction_added": independent,
+                "basis_insertion_orthogonality_error": basis_orthogonality_error,
+                "basis_orthogonality_tolerance": basis_orthogonality_tolerance,
+                "already_certified": known,
+                "basis_before_sha256": state_before["basis_sha256"],
+                "basis_before_rank": state_before["basis_rank"],
+                "protected_before_count": state_before["protected_count"],
+                "state_before_sha256": state_before["state_sha256"],
+            }
+        finally:
+            self._eligibility.fill(0.0)
+            self._projected_eligibility.fill(0.0)
+        self.feedback_count += 2
+        self.update_count += int(applied)
+        for decision, reward in ((rejected, -1), (accepted, 1)):
+            self._feedback_root = _digest([self._feedback_root, decision.sha256, reward])
+        state_after = self.protection_summary
+        projection.update(
+            basis_after_sha256=state_after["basis_sha256"],
+            basis_after_rank=state_after["basis_rank"],
+            protected_after_count=state_after["protected_count"],
+            state_after_sha256=state_after["state_sha256"],
+        )
+        skip_reason = None
+        if not self.learning_enabled:
+            skip_reason = "learning_disabled"
+        elif gap_before >= 1.0:
+            skip_reason = "satisfied_margin"
+        elif exhausted:
+            skip_reason = "projection_exhausted"
+        elif not changed:
+            skip_reason = "native_no_mutation"
+        return {
+            "before": before,
+            "after": self.checkpoint_sha256,
+            "rejected_decision_sha256": rejected.sha256,
+            "accepted_decision_sha256": accepted.sha256,
+            "eligibility_delta_sha256": delta_hash,
+            "gap_before": gap_before,
+            "gap_after": gap_after,
+            "comparison_step_policy": self.comparison_step_policy,
+            "eligibility_delta_norm_squared": norm_squared,
+            "proposed_learning_rate": self.learning_rate,
+            "effective_learning_rate": self.learning_rate if changed else 0.0,
+            "cap_active": False,
+            "step_skipped_reason": skip_reason,
+            "learning_enabled": self.learning_enabled,
+            "native_update_applied": applied,
+            "synaptic_update": changed,
+            "bias_policy": "zero scratch pair bias; persistent bias excluded and unchanged",
+            "feedback_events": 2,
+            "mode": "same_query_pairwise",
+            "protection": projection,
         }

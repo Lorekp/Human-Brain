@@ -540,13 +540,21 @@ def _teach(
                 row["feedback"].append(replay._feedback(update, frozen, pair, replay=False))
                 if row["candidate_source"] == "raw_candidate_exploration":
                     receipt = row["feedback"][-1]["update"]
-                    if not receipt["native_update_applied"] or not np.isclose(
+                    protected_noop = (
+                        arm.get("comparison_protection_policy") == "orthogonal_certified"
+                        and receipt["protection"]["projection_exhausted"]
+                    )
+                    if (
+                        not receipt["native_update_applied"] and not protected_noop
+                    ) or not np.isclose(
                         receipt["gap_before"],
                         row["actual_wrong_leader_gap_before"],
                         rtol=1e-10,
                         atol=1e-10,
                     ):
-                        raise RuntimeError("wrong-leader correction was inert or its gap changed")
+                        raise RuntimeError(
+                            "wrong-leader correction was unexpectedly inert or its gap changed"
+                        )
                 ledger.append(pair)
                 arm["ledger"].append(pair.record())
                 row["correction_status"] = "applied"
@@ -570,6 +578,9 @@ def _teach(
         for offset in range(count):
             previous = ledger[(replay_cursor + offset) % older]
             row["feedback"].append(replay._feedback(update, frozen, previous, replay=True))
+        if arm.get("comparison_protection_policy") == "orthogonal_certified":
+            for event in row["feedback"]:
+                _verify_protected_feedback(event)
         replay_count += count
         if older and (admitted or count):
             replay_cursor = (replay_cursor + count) % older
@@ -634,6 +645,37 @@ def _teach(
         "fifo_policy": "append in admission order; cap 32; final correction rehearsal "
         "completes before updates stop",
     }
+    if arm.get("comparison_protection_policy") == "orthogonal_certified":
+        arm["protection_feedback_summary"] = {
+            "offers": len(events),
+            "projection_exhausted_offers": sum(
+                event["update"]["protection"]["projection_exhausted"] for event in events
+            ),
+            "projection_stalled_offers": sum(
+                event["update"]["protection"]["projection_stalled"] for event in events
+            ),
+            "new_consolidations": sum(
+                event["update"]["protection"]["consolidated"] for event in events
+            ),
+            "new_basis_directions": sum(
+                event["update"]["protection"]["independent_direction_added"] for event in events
+            ),
+            "protected_margin_checks": sum(
+                event["update"]["protection"]["protected_margin_checks"] for event in events
+            ),
+            "protected_margin_violations": sum(
+                event["update"]["protection"]["protected_margin_violations"] for event in events
+            ),
+            "no_op_reasons": dict(
+                Counter(
+                    event["update"]["step_skipped_reason"]
+                    for event in events
+                    if not event["update"]["synaptic_update"]
+                )
+            ),
+            "scope": "original competitive gate and normalization; projected native direction; "
+            "exhausted projections consume offers without a synaptic update",
+        }
     if allocation_policy != "baseline":
         arm["ledger_summary"].update(
             allocation_policy=allocation_policy,
@@ -651,6 +693,28 @@ def _teach(
     if len(seen) != 4 or len(ledger) > pair_limit or invalid_replays:
         raise RuntimeError("teaching exposure or feedback budget differs from protocol")
     return seen
+
+
+def _verify_protected_feedback(event) -> None:
+    """Validate recorded own-gap arithmetic without reconstructing or choosing an update."""
+    for mode in ("update", "frozen"):
+        receipt = event[mode]
+        protection = receipt["protection"]
+        eta = receipt["effective_learning_rate"]
+        norm = receipt["eligibility_delta_norm_squared"]
+        change = 2 * eta * protection["original_dot_projected"] / np.sqrt(1 + norm)
+        if not np.isclose(
+            receipt["gap_after"], receipt["gap_before"] + change, rtol=1e-10, atol=1e-10
+        ):
+            raise RuntimeError("projected update violated the original-margin arithmetic")
+        if protection["projection_exhausted"] and (
+            receipt["synaptic_update"] or receipt["native_update_applied"] or eta != 0
+        ):
+            raise RuntimeError("exhausted projection reported a synaptic update")
+        if mode == "frozen" and (
+            receipt["synaptic_update"] or receipt["native_update_applied"] or eta != 0
+        ):
+            raise RuntimeError("frozen projection control changed synapses")
 
 
 def _reserved_replay_allowance(step, pair_count, replay_count, admitted) -> dict:
@@ -736,6 +800,8 @@ def run(
     include_affine=False,
     track_learning_diagnostics=False,
     allocation_policies: dict[str, str] | None = None,
+    protection_policies: dict[str, str] | None = None,
+    track_source_competition=False,
 ) -> dict:
     if exploration_policy not in ("thresholded", "raw_candidate"):
         raise ValueError("unknown training exploration policy")
@@ -747,6 +813,13 @@ def run(
         raise ValueError("pair coverage requires final rank diagnostics and affine evaluation")
     if track_learning_diagnostics and not include_affine:
         raise ValueError("pair coverage requires affine executed outcomes")
+    if track_source_competition and not include_rank_diagnostics:
+        raise ValueError("source competition requires final raw rank diagnostics")
+    if protection_policies is not None:
+        if arm_specs is None or set(protection_policies) != {spec[0] for spec in arm_specs}:
+            raise ValueError("protection policies must name every explicit arm exactly once")
+        if set(protection_policies.values()) - {"none", "orthogonal_certified"}:
+            raise ValueError("unknown comparison protection policy")
     fixture_path = HERE / "contextual_binding_cases.json" if fixture_path is None else fixture_path
     output = output.resolve()
     if output.exists() or output.with_suffix(".npz").exists():
@@ -830,6 +903,10 @@ def run(
         for name, binding, step_policy in specs:
             gain = 16.0
             step_options = {} if arm_specs is None else {"comparison_step_policy": step_policy}
+            if protection_policies is not None:
+                step_options["comparison_protection_policy"] = protection_policies[name]
+                if protection_policies[name] != "none":
+                    step_options["protection_capacity"] = 48
             update = ContextualEvidenceMemory(
                 encoder,
                 learning_rate=1.0,
@@ -861,6 +938,8 @@ def run(
             report["arms"][name] = arm
             if arm_specs is not None:
                 arm["comparison_step_policy"] = step_policy
+            if protection_policies is not None:
+                arm["comparison_protection_policy"] = protection_policies[name]
             allocation = "baseline" if allocation_policies is None else allocation_policies[name]
             if allocation_policies is not None:
                 arm["allocation_policy"] = allocation
@@ -881,6 +960,32 @@ def run(
             )
             arm["phase_seconds"]["teaching"] = time.perf_counter() - began
             arm["trained"], arm["frozen_trained"] = _snapshot(update), _snapshot(frozen)
+            protected_state = None
+            if protection_policies is not None:
+                protected_state = {
+                    "update": update.protection_summary,
+                    "frozen": frozen.protection_summary,
+                }
+                if protection_policies[name] != "none" and (
+                    protected_state["frozen"]["basis_rank"] != 0
+                    or protected_state["frozen"]["protected_count"] != 0
+                ):
+                    raise RuntimeError("frozen control acquired learned protection state")
+                arm["protection_after_teaching"] = protected_state
+            if track_source_competition:
+                began = time.perf_counter()
+                arm["source_competition"] = {
+                    "scope": "evaluator-only same-weight retention before/after fresh ingestion; "
+                    "no action or feedback; fresh competitors remain visible",
+                    "synapse_sha256_before": update.synapse_sha256,
+                    "before_fresh": _old_query_scores(update, fixtures["training"]),
+                    "ranks_before_fresh": rank_diagnostics(
+                        update, {"training": fixtures["training"], "transfer": []}
+                    )["retention"],
+                }
+                arm["phase_seconds"]["source_competition_before_fresh"] = (
+                    time.perf_counter() - began
+                )
             began = time.perf_counter()
             for item in fixtures["transfer"]:
                 prior._ingest_once(item, (update, frozen), seen)
@@ -888,6 +993,19 @@ def run(
             if len(seen) != 10:
                 raise RuntimeError("fresh source exposure differs from protocol")
             arm["transfer_start"] = _snapshot(update)
+            if protected_state is not None and protected_state != {
+                "update": update.protection_summary,
+                "frozen": frozen.protection_summary,
+            }:
+                raise RuntimeError("fresh ingestion changed learned protection state")
+            if track_source_competition:
+                began = time.perf_counter()
+                competition = arm["source_competition"]
+                competition["after_fresh"] = _old_query_scores(update, fixtures["training"])
+                competition["synapse_sha256_after"] = update.synapse_sha256
+                if competition["synapse_sha256_before"] != competition["synapse_sha256_after"]:
+                    raise RuntimeError("fresh ingestion changed the trained synapses")
+                arm["phase_seconds"]["source_competition_after_fresh"] = time.perf_counter() - began
             began = time.perf_counter()
             policies = _evaluate(
                 name,
@@ -904,8 +1022,15 @@ def run(
             arm["phase_seconds"]["transfer_and_retention"] = time.perf_counter() - began
             if include_rank_diagnostics:
                 arm["rank_diagnostics"] = rank_diagnostics(update, fixtures)
+            if track_source_competition:
+                competition["ranks_after_fresh"] = arm["rank_diagnostics"]["retention"]
             if track_learning_diagnostics:
                 arm["pair_diagnostics"] = _pair_diagnostics(update, arm, fixtures)
+            if protected_state is not None and protected_state != {
+                "update": update.protection_summary,
+                "frozen": frozen.protection_summary,
+            }:
+                raise RuntimeError("evaluation changed learned protection state")
             if (
                 frozen.synapse_sha256 != arm["seed"]["synapse_sha256"]
                 or update.synapse_sha256 != arm["trained"]["synapse_sha256"]
@@ -928,6 +1053,13 @@ def run(
             arm["exam"] = prior._exam(
                 [(p.name, p.memory, p.method) for p in policies if p.method is not None]
             )
+            if protected_state is not None:
+                arm["protection_after_exam"] = {
+                    "update": update.protection_summary,
+                    "frozen": frozen.protection_summary,
+                }
+                if protected_state != arm["protection_after_exam"]:
+                    raise RuntimeError("exam changed learned protection state")
             arm["phase_seconds"]["exam"] = time.perf_counter() - began
             arm["end"], arm["frozen_end"] = _snapshot(update), _snapshot(frozen)
             record(

@@ -68,8 +68,10 @@ retain zero learned basis growth as well as zero synaptic updates. The review
 owns the algebra, cost bound, native seam and limits: protection can obstruct
 new learning and does not cover unrecorded competitors or STOP clearance.
 
-Budget one implementation and one integrated two-arm comparison, with at most
-**two hours for implementation/diagnosis**. Compare RESERVED against RESERVED
+The [protected-contrast protocol](../../experiments/r4_integrated/contextual_protected_contrast_protocol.md)
+owns this comparison. Budget one implementation and one integrated two-arm
+comparison, with at most **two hours for implementation/diagnosis**, starting
+03:21 UTC on 2026-09-05. Compare RESERVED against RESERVED
 plus projection, preserving BINDING features, fixed rate one, 16 teaching queries,
 48 encounters, 150 offers and the current motor. First preregister numerical
 residual/no-op semantics and authenticate auxiliary-state custody. Use focused

@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-
+from humanbrain.native import NativeThreeFactorLearner
 from humanbrain.recurrent import RecurrentCellCircuit, RecurrentCircuitConfig
 
 
@@ -13,6 +13,102 @@ def small_circuit() -> RecurrentCellCircuit:
             recurrent_fanout=4,
         ),
     )
+
+
+@pytest.mark.parametrize("satisfied", [False, True])
+def test_projected_three_factor_empty_basis_matches_original_exactly(satisfied) -> None:
+    trace = np.array([3.0, -4.0, 0.5])
+    heterogeneity = np.array([0.1, -0.2, 0.3])
+    weights = np.zeros((3, 3))
+    if satisfied:
+        weights[1] = trace
+    bias = np.array([0.3, -0.1, 0.2])
+    projected_weights, projected_bias = weights.copy(), bias.copy()
+    original = NativeThreeFactorLearner(
+        eligibility=trace,
+        output_heterogeneity_pa=heterogeneity,
+        readout_synapses_pa=weights,
+        pacemaker_synapses_pa=bias,
+    )
+    projected = NativeThreeFactorLearner(
+        eligibility=trace,
+        output_heterogeneity_pa=heterogeneity,
+        readout_synapses_pa=projected_weights,
+        pacemaker_synapses_pa=projected_bias,
+    )
+    scratch = np.full(3, np.nan)
+    assert projected.update_projected(1, 1.0, 1.0, np.empty((0, 3)), scratch, 1e-13) == (
+        original.update(1, 1.0, 1.0)
+    )
+    np.testing.assert_array_equal(scratch, trace)
+    np.testing.assert_array_equal(projected_weights, weights)
+    np.testing.assert_array_equal(projected_bias, bias)
+
+
+@pytest.mark.parametrize("satisfied", [False, True])
+def test_projected_three_factor_uses_original_gate_and_normalizer(satisfied) -> None:
+    trace = np.array([3.0, 4.0])
+    basis = np.array([[1.0, 0.0]])
+    # The original and projected gates disagree in both directions.
+    weights = np.array([[1.0, 0.0] if satisfied else [-1.0, 1.0], [0.0, 0.0]])
+    before = weights.copy()
+    bias = np.zeros(2)
+    scratch = np.full(2, np.nan)
+    learner = NativeThreeFactorLearner(
+        eligibility=trace,
+        output_heterogeneity_pa=np.zeros(2),
+        readout_synapses_pa=weights,
+        pacemaker_synapses_pa=bias,
+    )
+    result = learner.update_projected(0, 1.0, 2.0, basis, scratch, 1e-13)
+    np.testing.assert_array_equal(scratch, [0.0, 4.0])
+    np.testing.assert_array_equal(weights[:, 0], before[:, 0])
+    if satisfied:
+        assert result is None
+        np.testing.assert_array_equal(weights, before)
+        np.testing.assert_array_equal(bias, [0.0, 0.0])
+    else:
+        assert result == 1
+        step = 1.0 / np.sqrt(26.0)
+        np.testing.assert_allclose(weights - before, [[0.0, 4 * step], [0.0, -4 * step]])
+        np.testing.assert_array_equal(bias, [step, -step])
+
+
+@pytest.mark.parametrize("small_residual", [0.0, 1e-15])
+def test_projected_three_factor_exhaustion_preserves_synapses_and_bias(small_residual) -> None:
+    direction = np.array([1.0, 1.0, 0.0]) / np.sqrt(2.0)
+    basis = direction.reshape(1, 3)
+    trace = direction * 3.0 + np.array([0.0, 0.0, small_residual])
+    weights, bias = np.zeros((2, 3)), np.zeros(2)
+    scratch = np.full(3, np.nan)
+    learner = NativeThreeFactorLearner(
+        eligibility=trace,
+        output_heterogeneity_pa=np.zeros(2),
+        readout_synapses_pa=weights,
+        pacemaker_synapses_pa=bias,
+    )
+    assert learner.update_projected(0, 1.0, 1.0, basis, scratch, 1e-13) is None
+    np.testing.assert_array_equal(scratch, np.zeros(3))
+    assert not weights.any()
+    assert not bias.any()
+    # The old path still learns this trace: the opt-in no-op did not replace it.
+    assert learner.update(0, 1.0, 1.0) == 1
+    assert weights.any() and bias.any()
+
+
+def test_projected_three_factor_rejects_scratch_alias_before_mutation() -> None:
+    trace = np.array([3.0, 4.0])
+    weights, bias = np.zeros((2, 2)), np.zeros(2)
+    learner = NativeThreeFactorLearner(
+        eligibility=trace,
+        output_heterogeneity_pa=np.zeros(2),
+        readout_synapses_pa=weights,
+        pacemaker_synapses_pa=bias,
+    )
+    with pytest.raises(ValueError, match="must not alias"):
+        learner.update_projected(0, 1.0, 1.0, np.empty((0, 2)), trace, 1e-13)
+    np.testing.assert_array_equal(trace, [3.0, 4.0])
+    assert not weights.any() and not bias.any()
 
 
 def test_observation_changes_only_cell_and_synapse_state() -> None:
