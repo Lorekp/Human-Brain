@@ -33,41 +33,44 @@ passes its narrow recall, transfer, retention and no-action checks. Detailed
 scores and failures are in [benchmark status](../benchmark-status.md#current-neutral-reading-to-python-development-result).
 The original eight-stage sequence below remains the integration contract.
 
-The [completed own-error exploration comparison](../../experiments/r4_integrated/contextual_exploration_result.md)
-gives BINDING 80 effective native updates and raw-score execution of 4/8 fresh
-and 2/16 retained edits. Its neuronal policies STOP throughout because positive
-`tanh` saturation maps distinct scores to identical currents. All correct scores
-are above STOP; lowering the threshold is not the remedy. GAIN16 retains 9/16
-through interpolation but solves no fresh tasks. Neither arm handles both
-properties for a fresh entity. Collapsing position preserves BINDING's fresh
-total and improves old selection, limiting claims about its geometry.
+The [completed affine readout comparison](../../experiments/r4_integrated/contextual_affine_readout_result.md)
+matches all saved raw selections through neuronal execution. BINDING now executes
+4/8 fresh and 2/16 retained edits at unchanged weights; GAIN16 remains at 0/8 and
+9/16. Neither handles both properties for a fresh entity. Both updating policies
+wrongly act on unsupported probes. This resolves saturation on the reused cases,
+not the remaining relation-selection, retention or uncertainty failures.
 
-Next integrate **the existing learned ranking into neuronal execution**. Test
-one opt-in STOP-centered affine current map with the existing interpolated race:
-for raw drives `s`, use `d=s-tau`, `R=max(1,max(abs(d)))`, and
-`I=600.1+200*d/R`, with `tau=atanh((600.1-600)/200)` and tonic STOP at 600.1.
-This common positive scaling preserves mathematical ordering and the existing
-STOP boundary; finite-precision aliases and true ties remain explicit STOPs.
-Keep all candidates, existing defaults, old policy identities and spent evidence
-unchanged; bind the new mapping to its own decision/readout identity.
+Next test **whether limiting update overshoot stabilizes useful learned skills**.
+Six BINDING recorded pair margins became negative again; one moved from +17.218
+to -8.665 within the final replay block. Nine failed old queries nevertheless fit
+every recorded contrast, so stability alone may not repair global ranking.
 
-First reproduce saved old-policy decisions, then execute this one new policy at
-the same saved numerical weights, with matched frozen controls, unchanged motor,
-source exposure and requests. No training, added cases, threshold tuning, feature
-changes or learning-rule changes. Validate empty/zero states, ties including STOP,
-candidate permutation, large finite drives, nonfinite rejection and read-only
-state. Report raw-to-neuronal agreement, actual edits, unsupported actions and
-resources. This is openly reused development and readout recovery, not new
-generalization. Budget one map, one saved-checkpoint comparison and two hours
-implementation/diagnosis; preserve results in a new artifact.
+Compare two BINDING learners using the existing versus a unit-margin-capped
+native update. For eligibility difference `d`, `n=d·d` and gap `g`, the current
+rule changes the gap by `2*eta*n/sqrt(1+n)`. When `g<1` and `n>0`, test
+`eta_eff=min(eta_0,(1-g)*sqrt(1+n)/(2*n))`; otherwise skip. Keep `eta_0=1`,
+scratch bias discarded and native synapse mutation intact. Bind the step policy
+to state/receipts, preserve default behavior, and record effective rate, norm,
+gap, cap activation and actual updates. No new native ABI is needed.
 
-Then return to entity/property ranking and retention. A readout fix cannot repair
-the four wrong fresh and fourteen wrong old raw selections, and will expose the
-raw scorer's unsupported false positives. Keep the existing
-[exploration/feedback contract](../../experiments/r4_integrated/contextual_exploration_protocol.md)
-for later training comparisons. Do not extend training or select an ablation
-because it scores better on this spent cohort. All references share the learned
-motor and isolate evidence selection rather than the whole neuronal system.
+Use the validated affine neuronal policy for both arms' primary training and
+evaluation, with the same full-candidate raw exploration after STOP. Each updater
+has a matching frozen mate with identical certified exposure. Keep representation,
+gain, motor, sixteen teaching requests, 48 encounters, 32 actual FAIL/PASS pairs,
+four older replays per correction and 128 replay offers fixed under the
+[existing feedback contract](../../experiments/r4_integrated/contextual_exploration_protocol.md).
+Declare openly reused teaching and new transfer instances before model outputs.
+Report divergent on-policy ledgers, fresh/retained execution, correct-to-wrong
+ranking changes, unsupported actions, final rank/STOP diagnostics and cost.
+
+Budget one step policy and one integrated comparison, with two hours for
+implementation/diagnosis. Do not add epochs, filter candidates, change thresholds
+or choose an ablation from spent scores. The earlier margin-deficit conditioning
+study left 23 subunit margins despite zero wrong pairs; smaller steps may lose
+protective margins or learn too slowly. Judge executed capability and retention,
+not numerical margin fit. If it fails, compare stability against competitor
+coverage before another mechanism. All references share the learned motor and
+isolate evidence selection rather than the whole neuronal system.
 
 Targets remain at least 6/8 fresh and 12/16 retained neuronal executed edits,
 including both properties for three fresh entities; report unsupported behavior

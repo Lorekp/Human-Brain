@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-05 with executed own-error exploration and current-map diagnosis.
+Updated 2026-09-05 with affine neuronal readout recovery and retention diagnosis.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -12,24 +12,26 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current contextual evidence-to-Python result
 
-The [own-error exploration comparison](../experiments/r4_integrated/contextual_exploration_result.md)
-supplies effective feedback on actual learned mistakes. BINDING applies 80 native
-updates and its raw-score reference executes 4/8 fresh and 2/16 retained edits.
-Its mapped and neuronal policies still STOP on every request: positive current-map
-saturation destroys unique raw rankings before the race. No fresh entity has both
-properties correct. Collapsing positional features preserves the fresh total and
-improves old selection, so no positional-benefit claim is established.
+The [affine readout comparison](../experiments/r4_integrated/contextual_affine_readout_result.md)
+recovers BINDING neuronal execution of 4/8 fresh and 2/16 retained edits at the
+saved exploration weights. GAIN16 remains at 0/8 and 9/16. Affine matches all
+52 updating raw selections and 52 frozen STOPs; all 416 archived decisions
+reproduce. Neither arm handles both properties for a fresh entity, and both
+updaters wrongly act on unsupported probes. No generalization gate passes.
 
-GAIN16 remains at 0/8 fresh and 9/16 retained with interpolation/raw/mapped
-readouts, or 4/16 retained with discrete neurons. Frozen mates receive matched
-feedback and solve nothing; raw policies wrongly act on both unsupported probes.
-References share the fixed learned motor and isolate evidence selection rather
-than the entire neuronal system. No generalization gate passes.
+The completed run takes 77.65 seconds and peaks at 301.10 MiB parent working
+set; 39 focused core tests pass. An earlier 66.82-second attempt remains recorded
+with its exam-ingestion harness error. The corrected run reproduces its completed
+BINDING actions exactly. Exam marks remain pending; the result report owns
+resource and claim details. References share the fixed learned motor and isolate
+evidence selection rather than the entire neuronal system.
 
-The run takes 232.46 seconds and peaks at 330.34 MiB parent working set;
-33 focused core tests pass. The result report owns resource, diagnostic and
-pending exam-scoring details. Next compare one bounded current map at saved
-weights, then return to ranking and retention. Protected gates stay closed.
+Next compare bounded corrective steps to reduce measured update interference,
+keeping competitor coverage and exposure budgets fixed. Six BINDING certified
+contrasts became negative again, but nine failed old queries fit every recorded
+contrast: stability is only part of the ranking problem. Protected gates stay closed.
+The preceding [exploration result](../experiments/r4_integrated/contextual_exploration_result.md)
+records the 80 BINDING native updates that acquired the recovered selections.
 The earlier [binding/readout result](../experiments/r4_integrated/contextual_binding_result.md)
 preserves the initial feedback-coverage failure and interpolation validation. The
 [conditioning result](../experiments/r4_integrated/contextual_conditioned_result.md)
