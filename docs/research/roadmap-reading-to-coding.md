@@ -215,9 +215,16 @@ reference exactly reproduces 5/8, 1/4, 1/4 and zero. One fresh case and its dela
 mate improve, but neither assignment-swap pair is jointly correct. The frozen
 writer matches every tagged correctness decision, so the changed dynamics show
 a modest prior benefit without learned-writing qualification. Preserve this
-result and close the fixed fit. Reassess reusable binding representations and
-local learning against primary sources before selecting one next bounded step;
-do not extend epochs or sweep leaks, broadcasts or seeds. No special identifier
+result and close the fixed fit. The [binding-architecture review](local-token-event-binding-review.md)
+selects one [token-to-neuron event interface](local-token-event-interface.md):
+generic byte runs capped at 16 bytes and a fixed 32-neuron recurrent encoder
+shared by documents and queries. This shortens writer sequences while preserving
+source bytes in the segmentation contract; neuronal codes remain lossy priors.
+First qualify streaming preservation and event counts on TRAIN-only text within
+60 seconds, then integrate and validate the fixed encoder before fresh complete
+cost admission. No encoder learning or output-only diagnostic is added. Segmentation must not
+supply identifier/value roles or answer factors. Do not extend epochs or sweep
+leaks, broadcasts or seeds. No special identifier
 detector, supplied address, answer factors or protected gate follows.
 These byte learners use no pretrained encoder or LLM. The
 [action-path review](local-memory-byte-preflight-review.md) identifies host-computed

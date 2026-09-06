@@ -9,9 +9,14 @@ also preserves its prior common-state and output trajectory. The fresh gain is
 one case and its delayed mate, with no jointly correct assignment-swap pair.
 Changing dynamics helps this narrow endpoint, but the frozen writer matches
 all tagged correctness decisions: learned writing remains unqualified. Close
-the fixed fit. The next work is one bounded primary-source binding-architecture
-review, considering reusable representation and local learning rather than
-another automatic leak, feedback or epoch tweak. No new acquisition or protected
+the fixed fit. The [binding-architecture review](local-token-event-binding-review.md)
+selects a [concrete token-to-neuron interface](local-token-event-interface.md):
+generic byte runs capped at 16 and a fixed 32-neuron recurrent encoder. Qualify
+exact streaming preservation and counts on TRAIN-only strings within 60 seconds,
+then integrate and verify source removal, reference parity and complete cost.
+No identifier/value roles or answer factors may be
+supplied. This is a reusable representation question rather than another
+automatic leak, feedback or epoch tweak. No new acquisition or protected
 gate is opened by this result. The auditor tuple-counting correction and failed
 receipt remain explicit; the model workload was not rerun.
 
