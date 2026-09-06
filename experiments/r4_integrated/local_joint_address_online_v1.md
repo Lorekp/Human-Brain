@@ -229,6 +229,48 @@ cap, fresh source-free transport and pure timer/streaming/audit algebra. No old
 backpropagating reference execution, long acquisition or endpoint probe is QA.
 Count every authored prediction, teacher position and action separately.
 
+The reviewed implementation QA passed 20 distinct authored cases, with no failed
+or skipped cases and no broad historical-suite execution:
+
+| Receipt in `.pytest-tmp/` | Cases | Pytest seconds |
+| --- | ---: | ---: |
+| `joint-online-e2e-v1.xml` | 1 | 4.360 |
+| `joint-online-math-v1.xml` | 7 | 1.987 |
+| `joint-online-remaining-v1.xml` | 11 | 6.86 |
+| `joint-online-atomicity-v1.xml` | 1 | 1.90 |
+
+The initial end-to-end case executed a generated period through the actual motor
+before three teacher offers on the same learner and memory. The two motor
+demonstrations and this one acquisition action are the only real action receipts
+in QA. Nine free predictions made 20 output decisions: two in that first case,
+12 across four disposable cap clones and six in the four-mode fresh worker.
+The empty writes-disabled worker correctly generates two zero bytes and reaches
+the limit; the other three empty-document modes emit EOS. This expectation was
+corrected during source review before the fixture ran.
+
+Across these cases, there were 21 learner constructions and four disposable
+clones, 17 ingestions comprising 534 raw document bytes plus 17 EOS symbols,
+and 18 successful query traversals comprising 114 raw query bytes plus 18 EOS
+symbols. Eight corrective teaching calls offered 24 byte/EOS targets; one
+deliberate late proposal-validation rejection completed its three offers but
+published neither parameter group. Three invalid-autograd queries and one
+invalid learning-flag call were rejected before activity. Pure grading,
+streaming and projection cases add no neuronal or action exposure; their 16
+synthetic row pairs are accounting fixtures. The independent auditors passed
+72 authored standard-library helper cases without models or real artifact audits.
+
+The selected checkout doctor passed before QA at
+`.pytest-tmp/dev/doctor-u7ybrb5l/receipt.json`; the separately executed atomicity
+case used `.pytest-tmp/dev/doctor-g2dekjc5/receipt.json`. Native action/worker
+fixtures used the prepared cache recorded in
+`.pytest-tmp/joint-address-native-preparation.json`. The first passing test
+reported a pytest cache-access warning; its receipt is preserved. Later tests
+disabled that optional cache. After the first end-to-end test, the only harness
+edit added its actually imported `local_lag_query_v1.py` to the source manifest;
+the final fresh-worker test verified the resulting source binding. Ruff and
+whitespace checks passed. These QA exposures are separate from prospective
+cost and acquisition budgets and do not constitute an admitted experiment.
+
 Report `compliant_executed_learning_preserved` only if actual source/local-rule
 review passes, all acquisition attempts execute before same-instance teaching,
 learned achieves 8/8 taught, 4/4 novel, 4/4 delayed and at least 2/4 interference,
