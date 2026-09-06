@@ -222,3 +222,21 @@ new feature architecture or successful recovery mechanism. No further operation
 microbenchmark, toy cohort or standalone fit is a prerequisite. Unsupported challenge outcomes and failed recovery are visible results. Preserve
 them, complete the bounded supported stream, and use its failures to choose any
 later generic change; do not return to another byte-only perfection queue.
+
+## Implementation verification
+
+The 512-slot append-only memory and reader are committed at `a509798`, with the
+ordinary regression corrected at `c82c6e5`. The test checks parity with the old
+reader on the same small tape, preservation across append boundaries, full
+512-address competition, capacity rejection without mutation, and a full-memory
+teacher call with learning disabled. The fixed 128-slot implementation is unchanged.
+One test passed in 3.78 seconds; the monitored process took 4.99 seconds and
+234.86 MiB peak. This is storage/forward QA, not an acquired-skill gate.
+
+The initial test invocation omitted the required learning-rate argument and
+failed before entering the teacher. Its receipts remain under
+`.pytest-tmp/persistent-capacity-qa-v1`; the corrected run uses
+`.pytest-tmp/persistent-capacity-qa-v1-repaired`, with doctor receipt
+`.pytest-tmp/dev/doctor-wedcc7f_/receipt.json`. No model acquisition or task
+execution occurred in either test. These receipts do not establish the broader
+session's results, which must be measured separately.
