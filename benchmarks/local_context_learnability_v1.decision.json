@@ -1,0 +1,2007 @@
+{
+  "schema": "local-context-learnability-v1-result",
+  "status": "closed_certificate_passed_useful_composition_failed",
+  "revision": "30fe85c2417ba87902cd4466f79ff9c7932fffd4",
+  "recipe": "experiments/r4_integrated/local_context_learnability_v1.md",
+  "evidence": {
+    "report": {
+      "path": ".pytest-tmp/local-context-learnability-v1-run/report.json",
+      "sha256": "f9b3adf00e847b2cd9e8018856ebeee2d7c890e70ed93901fff9b4655c0cb321"
+    },
+    "completion": {
+      "path": ".pytest-tmp/local-context-learnability-v1-run/completion.json",
+      "sha256": "a301f2d3323498aeea5de3e68b1306a16a3bd7f2c13d24862f4490d607e547eb"
+    },
+    "launcher": {
+      "path": ".pytest-tmp/local-context-learnability-v1-run.launch.json",
+      "sha256": "fbf0e2ac251a46c326065435b550508fab2840e18e73f9004e0434adaeb2f553"
+    },
+    "audit": {
+      "path": ".pytest-tmp/local-context-learnability-v1-independent-audit.json",
+      "sha256": "18464f915fa37d0755bb548bc80f19c11c11eed7f569e242f541a8f03b57e0e9"
+    },
+    "saved_margin_decomposition": {
+      "path": ".pytest-tmp/local-context-learnability-v1-margins.json",
+      "sha256": "333b2c0bd41c35532fca1c5b3eead75d2daf6fa5c809ee3267f470971b534c88"
+    }
+  },
+  "checkpoint_scores": {
+    "384": {
+      "decoder_lexical": {
+        "heldout": 0,
+        "train": 4
+      },
+      "decoder_permuted": {
+        "heldout": 0,
+        "train": 4
+      },
+      "reference_frozen": {
+        "heldout": 0,
+        "train": 0
+      },
+      "reference_lexical": {
+        "heldout": 2,
+        "train": 12
+      },
+      "reference_permuted": {
+        "heldout": 3,
+        "train": 12
+      },
+      "reference_zero": {
+        "heldout": 0,
+        "train": 1
+      }
+    },
+    "768": {
+      "decoder_lexical": {
+        "heldout": 0,
+        "train": 5
+      },
+      "decoder_permuted": {
+        "heldout": 0,
+        "train": 5
+      },
+      "reference_frozen": {
+        "heldout": 0,
+        "train": 0
+      },
+      "reference_lexical": {
+        "heldout": 2,
+        "train": 12
+      },
+      "reference_permuted": {
+        "heldout": 3,
+        "train": 12
+      },
+      "reference_zero": {
+        "heldout": 0,
+        "train": 1
+      }
+    }
+  },
+  "failed_outputs": {
+    "384": [
+      {
+        "arm": "decoder_lexical",
+        "target": "ac",
+        "group": "train",
+        "hex": "6363",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "ad",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "ba",
+        "group": "train",
+        "hex": "64",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "bb",
+        "group": "train",
+        "hex": "64",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "bd",
+        "group": "train",
+        "hex": "64",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "ca",
+        "group": "train",
+        "hex": "64",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "cb",
+        "group": "train",
+        "hex": "64",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "db",
+        "group": "train",
+        "hex": "64",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "ab",
+        "group": "heldout",
+        "hex": "64",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "bc",
+        "group": "heldout",
+        "hex": "6463",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "cd",
+        "group": "heldout",
+        "hex": "6463",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "da",
+        "group": "heldout",
+        "hex": "64",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "ac",
+        "group": "train",
+        "hex": "6363",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "ad",
+        "group": "train",
+        "hex": "6462",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "bd",
+        "group": "train",
+        "hex": "6462",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "ca",
+        "group": "train",
+        "hex": "61",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "cb",
+        "group": "train",
+        "hex": "6262",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "db",
+        "group": "train",
+        "hex": "6262",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "dc",
+        "group": "train",
+        "hex": "6363",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "dd",
+        "group": "train",
+        "hex": "64",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "ab",
+        "group": "heldout",
+        "hex": "6261",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "bc",
+        "group": "heldout",
+        "hex": "6363",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "cd",
+        "group": "heldout",
+        "hex": "6463",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "da",
+        "group": "heldout",
+        "hex": "64",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_lexical",
+        "target": "ab",
+        "group": "heldout",
+        "hex": "6163",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_lexical",
+        "target": "da",
+        "group": "heldout",
+        "hex": "6361",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_permuted",
+        "target": "ab",
+        "group": "heldout",
+        "hex": "6164",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "aa",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "ac",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "ad",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "ba",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "bb",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "bd",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "ca",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "cb",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "cc",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "db",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "dc",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "ab",
+        "group": "heldout",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "bc",
+        "group": "heldout",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "cd",
+        "group": "heldout",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "da",
+        "group": "heldout",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "aa",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "ac",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "ad",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "ba",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "bb",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "bd",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "ca",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "cb",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "cc",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "db",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "dc",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "dd",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "ab",
+        "group": "heldout",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "bc",
+        "group": "heldout",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "cd",
+        "group": "heldout",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "da",
+        "group": "heldout",
+        "hex": "0000",
+        "stop_reason": "limit"
+      }
+    ],
+    "768": [
+      {
+        "arm": "decoder_lexical",
+        "target": "ac",
+        "group": "train",
+        "hex": "6363",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "ad",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "ba",
+        "group": "train",
+        "hex": "6164",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "bd",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "ca",
+        "group": "train",
+        "hex": "6163",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "cb",
+        "group": "train",
+        "hex": "6262",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "dc",
+        "group": "train",
+        "hex": "6363",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "ab",
+        "group": "heldout",
+        "hex": "6261",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "bc",
+        "group": "heldout",
+        "hex": "6363",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "cd",
+        "group": "heldout",
+        "hex": "6463",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_lexical",
+        "target": "da",
+        "group": "heldout",
+        "hex": "6462",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "ac",
+        "group": "train",
+        "hex": "6361",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "ba",
+        "group": "train",
+        "hex": "6161",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "bd",
+        "group": "train",
+        "hex": "6462",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "ca",
+        "group": "train",
+        "hex": "6161",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "cb",
+        "group": "train",
+        "hex": "6262",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "db",
+        "group": "train",
+        "hex": "6264",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "dc",
+        "group": "train",
+        "hex": "6363",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "ab",
+        "group": "heldout",
+        "hex": "6261",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "bc",
+        "group": "heldout",
+        "hex": "6363",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "cd",
+        "group": "heldout",
+        "hex": "6463",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "decoder_permuted",
+        "target": "da",
+        "group": "heldout",
+        "hex": "6164",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_lexical",
+        "target": "ab",
+        "group": "heldout",
+        "hex": "6163",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_lexical",
+        "target": "da",
+        "group": "heldout",
+        "hex": "6361",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_permuted",
+        "target": "ab",
+        "group": "heldout",
+        "hex": "6164",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "aa",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "ac",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "ad",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "ba",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "bb",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "bd",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "ca",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "cb",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "cc",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "db",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "dc",
+        "group": "train",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "ab",
+        "group": "heldout",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "bc",
+        "group": "heldout",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "cd",
+        "group": "heldout",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_zero",
+        "target": "da",
+        "group": "heldout",
+        "hex": "6464",
+        "stop_reason": "eos"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "aa",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "ac",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "ad",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "ba",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "bb",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "bd",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "ca",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "cb",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "cc",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "db",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "dc",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "dd",
+        "group": "train",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "ab",
+        "group": "heldout",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "bc",
+        "group": "heldout",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "cd",
+        "group": "heldout",
+        "hex": "0000",
+        "stop_reason": "limit"
+      },
+      {
+        "arm": "reference_frozen",
+        "target": "da",
+        "group": "heldout",
+        "hex": "0000",
+        "stop_reason": "limit"
+      }
+    ]
+  },
+  "useful_endpoint": {
+    "decoder_lexical": false,
+    "decoder_permuted": false,
+    "reference_lexical": false,
+    "reference_permuted": false
+  },
+  "certificates": {
+    "reference_lexical": {
+      "first_zero_mistake_cycle": 4,
+      "mistakes_per_cycle": [
+        10,
+        4,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "passed": true,
+      "teacher_mistakes": 16
+    },
+    "reference_permuted": {
+      "first_zero_mistake_cycle": 2,
+      "mistakes_per_cycle": [
+        15,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "passed": true,
+      "teacher_mistakes": 15
+    }
+  },
+  "counts": {
+    "byte_offers": 13824,
+    "changed_steps": 5664,
+    "checkpoint_probes": 192,
+    "enabled_steps": 11520,
+    "first_attempts": 4608,
+    "generation_decisions": 13481
+  },
+  "acquisition": {
+    "decoder_lexical": {
+      "all": {
+        "first_exact": 189,
+        "first_stop_reasons": {
+          "eos": 756,
+          "limit": 12
+        },
+        "lessons": 768,
+        "loss_kind": "decoder_cross_entropy",
+        "mean_loss_by_byte1_byte2_eos": [
+          1.989220187223206,
+          1.8530440150449674,
+          0.5659022130712401
+        ],
+        "mean_teacher_loss": 1.4693888051131394
+      },
+      "byte_offers": 2304,
+      "changed_steps": 2304,
+      "enabled_steps": 2304,
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 116,
+          "limit": 12
+        },
+        "lessons": 128,
+        "loss_kind": "decoder_cross_entropy",
+        "mean_loss_by_byte1_byte2_eos": [
+          4.1580831333994865,
+          4.109873082488775,
+          2.1819067287724465
+        ],
+        "mean_teacher_loss": 3.483287648220235
+      },
+      "last128": {
+        "first_exact": 54,
+        "first_stop_reasons": {
+          "eos": 128
+        },
+        "lessons": 128,
+        "loss_kind": "decoder_cross_entropy",
+        "mean_loss_by_byte1_byte2_eos": [
+          1.3095573969185352,
+          1.020807547494769,
+          0.11381297098705545
+        ],
+        "mean_teacher_loss": 0.81472597180012
+      }
+    },
+    "decoder_permuted": {
+      "all": {
+        "first_exact": 186,
+        "first_stop_reasons": {
+          "eos": 756,
+          "limit": 12
+        },
+        "lessons": 768,
+        "loss_kind": "decoder_cross_entropy",
+        "mean_loss_by_byte1_byte2_eos": [
+          1.9765918610307078,
+          1.8629234690840046,
+          0.5669258964189794
+        ],
+        "mean_teacher_loss": 1.4688137421779002
+      },
+      "byte_offers": 2304,
+      "changed_steps": 2304,
+      "enabled_steps": 2304,
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 116,
+          "limit": 12
+        },
+        "lessons": 128,
+        "loss_kind": "decoder_cross_entropy",
+        "mean_loss_by_byte1_byte2_eos": [
+          4.143502093851566,
+          4.124394627287984,
+          2.187186148483306
+        ],
+        "mean_teacher_loss": 3.485027623207619
+      },
+      "last128": {
+        "first_exact": 58,
+        "first_stop_reasons": {
+          "eos": 128
+        },
+        "lessons": 128,
+        "loss_kind": "decoder_cross_entropy",
+        "mean_loss_by_byte1_byte2_eos": [
+          1.2949534989893436,
+          1.0243473630398512,
+          0.11409266421105713
+        ],
+        "mean_teacher_loss": 0.8111311754134177
+      }
+    },
+    "reference_frozen": {
+      "all": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "limit": 768
+        },
+        "lessons": 768,
+        "loss_kind": "reference_teacher_mistake",
+        "mean_loss_by_byte1_byte2_eos": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "mean_teacher_loss": 1.0
+      },
+      "byte_offers": 2304,
+      "changed_steps": 0,
+      "enabled_steps": 0,
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "limit": 128
+        },
+        "lessons": 128,
+        "loss_kind": "reference_teacher_mistake",
+        "mean_loss_by_byte1_byte2_eos": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "mean_teacher_loss": 1.0
+      },
+      "last128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "limit": 128
+        },
+        "lessons": 128,
+        "loss_kind": "reference_teacher_mistake",
+        "mean_loss_by_byte1_byte2_eos": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "mean_teacher_loss": 1.0
+      }
+    },
+    "reference_lexical": {
+      "all": {
+        "first_exact": 754,
+        "first_stop_reasons": {
+          "eos": 767,
+          "limit": 1
+        },
+        "lessons": 768,
+        "loss_kind": "reference_teacher_mistake",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.010416666666666666,
+          0.009114583333333334,
+          0.0013020833333333333
+        ],
+        "mean_teacher_loss": 0.006944444444444443
+      },
+      "byte_offers": 2304,
+      "changed_steps": 16,
+      "enabled_steps": 2304,
+      "first128": {
+        "first_exact": 114,
+        "first_stop_reasons": {
+          "eos": 127,
+          "limit": 1
+        },
+        "lessons": 128,
+        "loss_kind": "reference_teacher_mistake",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.0625,
+          0.0546875,
+          0.0078125
+        ],
+        "mean_teacher_loss": 0.04166666666666666
+      },
+      "last128": {
+        "first_exact": 128,
+        "first_stop_reasons": {
+          "eos": 128
+        },
+        "lessons": 128,
+        "loss_kind": "reference_teacher_mistake",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "mean_teacher_loss": 0.0
+      }
+    },
+    "reference_permuted": {
+      "all": {
+        "first_exact": 758,
+        "first_stop_reasons": {
+          "eos": 767,
+          "limit": 1
+        },
+        "lessons": 768,
+        "loss_kind": "reference_teacher_mistake",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.010416666666666666,
+          0.0078125,
+          0.0013020833333333333
+        ],
+        "mean_teacher_loss": 0.006510416666666665
+      },
+      "byte_offers": 2304,
+      "changed_steps": 15,
+      "enabled_steps": 2304,
+      "first128": {
+        "first_exact": 118,
+        "first_stop_reasons": {
+          "eos": 127,
+          "limit": 1
+        },
+        "lessons": 128,
+        "loss_kind": "reference_teacher_mistake",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.0625,
+          0.046875,
+          0.0078125
+        ],
+        "mean_teacher_loss": 0.03906249999999999
+      },
+      "last128": {
+        "first_exact": 128,
+        "first_stop_reasons": {
+          "eos": 128
+        },
+        "lessons": 128,
+        "loss_kind": "reference_teacher_mistake",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "mean_teacher_loss": 0.0
+      }
+    },
+    "reference_zero": {
+      "all": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 767,
+          "limit": 1
+        },
+        "lessons": 768,
+        "loss_kind": "reference_teacher_mistake",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.3333333333333333,
+          1.0,
+          0.0013020833333333333
+        ],
+        "mean_teacher_loss": 0.4448784722222215
+      },
+      "byte_offers": 2304,
+      "changed_steps": 1025,
+      "enabled_steps": 2304,
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 127,
+          "limit": 1
+        },
+        "lessons": 128,
+        "loss_kind": "reference_teacher_mistake",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.3359375,
+          1.0,
+          0.0078125
+        ],
+        "mean_teacher_loss": 0.4479166666666669
+      },
+      "last128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 128
+        },
+        "lessons": 128,
+        "loss_kind": "reference_teacher_mistake",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.328125,
+          1.0,
+          0.0
+        ],
+        "mean_teacher_loss": 0.4427083333333336
+      }
+    }
+  },
+  "first_attempt_curves": {
+    "decoder_lexical": {
+      "lessons_per_cycle": 12,
+      "first_exact_by_cycle": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        2,
+        3,
+        3,
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "first_exact_by_128_lesson_block": [
+        0,
+        0,
+        13,
+        57,
+        65,
+        54
+      ]
+    },
+    "decoder_permuted": {
+      "lessons_per_cycle": 12,
+      "first_exact_by_cycle": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        2,
+        2,
+        0,
+        4,
+        5,
+        3,
+        4,
+        6,
+        5,
+        2,
+        4,
+        6,
+        5,
+        6,
+        6,
+        6,
+        5,
+        5,
+        7,
+        6,
+        6,
+        5,
+        5,
+        7,
+        5,
+        6,
+        4,
+        4,
+        6,
+        4,
+        6,
+        7,
+        5,
+        5,
+        6,
+        5,
+        5,
+        5
+      ],
+      "first_exact_by_128_lesson_block": [
+        0,
+        0,
+        17,
+        54,
+        57,
+        58
+      ]
+    },
+    "reference_lexical": {
+      "lessons_per_cycle": 12,
+      "first_exact_by_cycle": [
+        4,
+        8,
+        10,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12
+      ],
+      "first_exact_by_128_lesson_block": [
+        114,
+        128,
+        128,
+        128,
+        128,
+        128
+      ]
+    },
+    "reference_permuted": {
+      "lessons_per_cycle": 12,
+      "first_exact_by_cycle": [
+        2,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12
+      ],
+      "first_exact_by_128_lesson_block": [
+        118,
+        128,
+        128,
+        128,
+        128,
+        128
+      ]
+    },
+    "reference_zero": {
+      "lessons_per_cycle": 12,
+      "first_exact_by_cycle": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "first_exact_by_128_lesson_block": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "reference_frozen": {
+      "lessons_per_cycle": 12,
+      "first_exact_by_cycle": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "first_exact_by_128_lesson_block": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "resources": {
+    "seconds_limit_including_audit": 120,
+    "memory_limit_mib": 2048,
+    "run_outer_seconds": 18.777891,
+    "audit_internal_seconds": 1.461756400000013,
+    "run_plus_audit_internal_seconds": 20.2396474,
+    "conservative_run_plus_audit_process_seconds": 20.6008779,
+    "audit_time_scope": "Internal saved-audit timer excludes process import/startup. Conservative combined duration includes separately observed audit-process startup.",
+    "run_observed_tree_peak_mib": 305.8046875,
+    "audit_peak_mib": null,
+    "audit_memory_scope": "No independently measured audit peak is claimed.",
+    "model_tensor_bytes_per_arm": {
+      "decoder_lexical": 313732,
+      "decoder_permuted": 313732,
+      "reference_frozen": 302652,
+      "reference_lexical": 302652,
+      "reference_permuted": 302652,
+      "reference_zero": 302652
+    },
+    "reference_accounting": {
+      "clock_initial_values": 3,
+      "fixed_allocated_synapses": 585,
+      "fixed_nonzero_synapses": 578,
+      "fixed_thresholds": 288,
+      "learned_output_synapses": 74787,
+      "neurons": {
+        "clock": 3,
+        "conjunction": 288,
+        "output": 257,
+        "supplied_context": 96
+      },
+      "serialized_tensor_bytes": 302652,
+      "state_tensor_bytes": 12,
+      "step_tensor_bytes": 3232,
+      "supplied_float32_context_bytes": 384,
+      "total_neurons": 644
+    },
+    "artifact_bytes": {
+      "admission.json": 2701,
+      "checkpoint-384.json": 38938,
+      "checkpoint-384.pt": 1850269,
+      "checkpoint-768.json": 38958,
+      "checkpoint-768.pt": 1850269,
+      "initial.pt": 1849399,
+      "lessons.jsonl": 4090977,
+      "schedule.json": 112774
+    },
+    "reference_transient_accounting_scope": "The 3,232-byte step includes its 12-byte next-clock state; do not add state_tensor_bytes again for that same step. A separately retained standalone state costs 12 bytes."
+  },
+  "audit": {
+    "status": "passed",
+    "source_hashes_verified": 12,
+    "artifact_hashes_verified": 8,
+    "decoder_384_exact_v2_random_correct": true,
+    "reference_correction_reconstruction_matches_all_saved_checkpoints": true,
+    "scope": "Saved targets/winners/features reconstruct integer correction sums and match reference snapshots. No potentials or winners recomputed, no model import/inference/teaching call. Locality and first-before-teacher combine source review with saved hashes."
+  },
+  "source_sha256": {
+    "docs/research/local-decoder-learnability-review.md": "1d5c0cdb7d1a4d61f766bab20a8dee61284d7e3953a1db382a38cc3869eb204e",
+    "experiments/r4_integrated/__init__.py": "7456726a8fbf66eed6ea1000d14fd05ae0081a893954a489af4188ab6de8daec",
+    "experiments/r4_integrated/local_context_learnability_v1.md": "887440ae039974f9a290c489bd8cc8d1d4ca6605307db8a1c5ce9bf9561e649d",
+    "experiments/r4_integrated/local_context_learnability_v1.py": "19f0e5ccd91c8a5ef95067d7978f151c3b7638a1038c444ac7f6c2a876e7a4f5",
+    "experiments/r4_integrated/local_context_use_v1.md": "18d92d8d1994959cdc555918c949ad34b851ae0b3e5a3c2ba232322ae83dfa11",
+    "experiments/r4_integrated/local_context_use_v1.py": "5b8d26297554fb0ef73ab8d75b17df316c08af6ebc1ba5ccc432c37914526cfa",
+    "experiments/r4_integrated/run_source_absent_memory_byte_v1.ps1": "4f26b669442a596cf3023c8d066ef49ff6231732baa575b8c503ad4ae3d198dd",
+    "src/humanbrain/__init__.py": "b327d4b0b4c8784f3e2f92a87afb763a77f11a9dd34524d2700d3b191f14b9a4",
+    "src/humanbrain/byte_sequence_decoder.py": "a9e3ba4d50f8936b9e87ce7199b0f31ba2308213788815ad0bcd5b44d04d005c",
+    "src/humanbrain/local_memory_learner.py": "24e2f57072e90309d4ae51822b0b20f084cc9013e01355bc0a393be332462e35",
+    "src/humanbrain/phase_context_perceptron.py": "9a4cde4d4a5fe0c66e135ff97101fdd4bb836205ed8c2efaca641340f8b60717",
+    "src/humanbrain/plastic_memory.py": "d2df1e57d3fda87a70fc662d536cc83472e56d3576f9604914a9a87d0f075d30"
+  },
+  "artifact_sha256": {
+    "admission.json": "2b1a02196d6fc9f5177495ff9fbaeb3b0ec760f2bf206e5b015227dff6edfb66",
+    "checkpoint-384.json": "57337477dae5776d832c8d306f6e18de81252874de2153b3ee690bde73fcdf13",
+    "checkpoint-384.pt": "e780871c7a9145c8c1ffb5bdf56b8d5e171c54dca20c1b86f7b6e838c18c61b6",
+    "checkpoint-768.json": "61839cb3bf79a13431324915ec2725d97138be18ca5f06cd5d3cc97663354857",
+    "checkpoint-768.pt": "4add97133ad1eb3a83c9fec88c8660014a2772d4488e1fa65ccf311153d7f90b",
+    "initial.pt": "24f45f32f188f84fa8d5fe5743b9094019aa859c017256fafcbd1f170f956006",
+    "lessons.jsonl": "4c3ead9c2de2a2562189539b8a7eee1bf112876ea249706d354ec1210809393e",
+    "schedule.json": "71e53454a195179d07aed7a3fcc596eb6bf15bc85da0aacea496522c543d1c28"
+  },
+  "interpretation": {
+    "certificate": "Both informative references establish TRAIN learnability within the declared 54-mistake bound; supplied phase/conjunction structure remains explicit.",
+    "decoder": "Neither longer exposure nor the fixed permutation meets the useful criterion. This practical failure versus a learnable reference does not establish convergence, RNN impossibility or isolate expressivity from credit.",
+    "composition": "All useful endpoints fail; reference lexical solves 2/4 and permuted 3/4 previously exposed withheld combinations, below required 4/4.",
+    "loss_types": "Decoder losses are cross-entropy; reference losses are 0/1 teacher-position mistakes. Do not compare their numerical magnitude across architectures.",
+    "next": "Close this bracket with no automatic fit, endpoint, seed, phase or threshold variant. A separately reviewed next scoped return must preserve these failures; no architecture/gate advancement follows."
+  },
+  "claim_limits": [
+    "Authored context directly supplies answer factors; fixed neuronal clock/conjunctions are supplied priors.",
+    "ab/bc/cd/da are previously exposed development probes excluded from TRAIN, not fresh evaluation.",
+    "Teacher corrections are counted exposure, not genuine first-attempt successes.",
+    "No document reading, source-absent acquisition, variable-length output, actual-action learning, general coding or protected gate claim."
+  ],
+  "saved_margin_analysis": {
+    "scope": "Derived arithmetic on authenticated saved integer synapses and saved context/probe identities only; no model import, model instantiation, forward evaluation, fitting, or new evaluation count.",
+    "score_unit": "one integer tick; physical synaptic scale 0.01 does not change winner or margins",
+    "component_order": [
+      "phase neuron",
+      "phase times first-factor coordinate",
+      "phase times second-factor coordinate"
+    ],
+    "failure_decompositions": [
+      {
+        "active_feature_indices": [
+          1,
+          99,
+          104
+        ],
+        "all_top_tied_bytes": [
+          99
+        ],
+        "arm": "reference_lexical",
+        "saved_generated_hex": "6163",
+        "saved_stop_reason": "eos",
+        "target_byte": 98,
+        "target_components": [
+          0,
+          0,
+          1
+        ],
+        "target_minus_best_other": -1,
+        "target_pair": "ab",
+        "target_score": 1,
+        "winner_byte": 99,
+        "winner_components": [
+          1,
+          1,
+          0
+        ],
+        "winner_score": 2,
+        "zero_based_phase": 1
+      },
+      {
+        "active_feature_indices": [
+          0,
+          6,
+          7
+        ],
+        "all_top_tied_bytes": [
+          99,
+          100
+        ],
+        "arm": "reference_lexical",
+        "saved_generated_hex": "6361",
+        "saved_stop_reason": "eos",
+        "target_byte": 100,
+        "target_components": [
+          0,
+          1,
+          0
+        ],
+        "target_minus_best_other": 0,
+        "target_pair": "da",
+        "target_score": 1,
+        "winner_byte": 99,
+        "winner_components": [
+          1,
+          -1,
+          1
+        ],
+        "winner_score": 1,
+        "zero_based_phase": 0
+      },
+      {
+        "active_feature_indices": [
+          1,
+          99,
+          104
+        ],
+        "all_top_tied_bytes": [
+          100
+        ],
+        "arm": "reference_permuted",
+        "saved_generated_hex": "6164",
+        "saved_stop_reason": "eos",
+        "target_byte": 98,
+        "target_components": [
+          0,
+          -1,
+          1
+        ],
+        "target_minus_best_other": -2,
+        "target_pair": "ab",
+        "target_score": 0,
+        "winner_byte": 100,
+        "winner_components": [
+          1,
+          1,
+          0
+        ],
+        "winner_score": 2,
+        "zero_based_phase": 1
+      }
+    ],
+    "model_state_equal_384_768": {
+      "reference_lexical": true,
+      "reference_permuted": true
+    },
+    "interpretation": [
+      "Wrong bytes are supported by phase baselines and coactive opposite-factor connections in TRAIN-valid separators. This identifies the saved linear scoring mechanism, not a new intervention.",
+      "After a complete zero-mistake TRAIN cycle, no later replay or permutation of identical TRAIN inputs can alter this mistake-only model; supplied features and weights remain fixed.",
+      "TRAIN separability and the verified mistake certificate do not require the correct withheld separator."
+    ]
+  }
+}

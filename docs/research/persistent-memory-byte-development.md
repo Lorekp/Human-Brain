@@ -213,6 +213,21 @@ witness weights enter the learner, and the supplied temporal/factor structure
 remains engineering scaffolding. One 120-second run must resolve the declared
 budget/order/reference comparisons before any further integrated fit.
 
+The [completed learnability comparison](../../experiments/r4_integrated/local_context_learnability_v1_result.md)
+takes 18.778 seconds at 305.805 MiB; the saved-only audit passes, including exact
+decoder parity at 384 and integer correction reconstruction at both checkpoints.
+At 768, both decoder orders reach 5/12 TRAIN and no withheld success. Both local
+references fit 12/12 TRAIN, using only 16 or 15 teacher mistakes and reaching
+their first zero-mistake cycles at 4 or 2. Their 2/4 lexical and 3/4 permuted
+withheld outputs fail the required 4/4; zero/frozen controls get none. The
+reference certificate passes, but useful composition and integration do not.
+This establishes practical acquisition inefficiency of the current recurrent
+decoder relative to a learnable local reference, not recurrent impossibility.
+Close the run and retire further tuning of this decoder candidate. A bounded
+saved-failure and primary-source review must resolve the learning objective and
+actual-memory interface before selecting the next integrated return; more
+identical no-mistake perceptron lessons cannot change its learned synapses.
+
 The [independent preflight review](local-memory-byte-preflight-review.md) records
 two learning risks: averaging byte feedback weakens explicit order credit, and
 correlated write keys may overwrite useful information. These are hypotheses

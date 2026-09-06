@@ -124,13 +124,18 @@ and primary-source review before returning to the integrated workload. The
 fits only 4/12 taught pairs and no withheld combination despite answer-revealing
 inputs. The [symmetric-feedback comparison](../../experiments/r4_integrated/local_context_use_v2_result.md)
 also fails: 3/12 taught and no withheld success versus random's 4/12 and zero.
-Lower teacher loss and corrected EOS do not earn adoption. The current next
-step follows the [bounded learnability review](local-decoder-learnability-review.md):
-compare the unchanged decoder with a certified local phase/context reference,
-under lexical and fixed permuted streams, at one analytically motivated
-768-lesson endpoint. Zero/frozen reference controls and the old 384-lesson
-checkpoint remain explicit; no automatic epoch or feedback sweep. Its byte
-learner uses no pretrained encoder or LLM. The
+Lower teacher loss and corrected EOS do not earn adoption. The
+[learnability comparison](../../experiments/r4_integrated/local_context_learnability_v1_result.md)
+now fits all twelve TRAIN pairs in the local phase/context reference, with
+16 lexical or 15 permuted teacher mistakes, while the unchanged decoder reaches
+only 5/12 under either order at 768 lessons. The reference transfers to only
+2/4 or 3/4 withheld compositions, so neither architecture meets the useful
+endpoint. Exact old-checkpoint parity and the reference certificate pass.
+Retire further tuning of this decoder candidate. Review the distinction between
+fitting winner inequalities and learning a reusable compositional mapping before
+selecting one scoped return toward actual document memory and actions. Do not
+silently teach the probes, add epochs or wire factor selection into the model.
+These byte learners use no pretrained encoder or LLM. The
 [action-path review](local-memory-byte-preflight-review.md) identifies host-computed
 matching in the legacy edit motor, however. Keep neuron-generated answer bytes
 and that supplied action schema separate in claims. The exclusive-neuron goal

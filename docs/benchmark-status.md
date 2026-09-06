@@ -65,6 +65,15 @@ likewise fails its criterion: correct-context symmetric feedback scores 3/12
 taught and 0/4 withheld, versus random's reproduced 4/12 and zero. It removes
 premature EOS but does not improve exact endpoint answers. The eight-arm run
 and parity/audit pass in 13.965 seconds at 295.367 MiB; no rule is adopted.
+The [learnability bracket](../experiments/r4_integrated/local_context_learnability_v1_result.md)
+completes in 18.778 seconds at 305.805 MiB. Its local phase/context references
+fit all twelve TRAIN pairs with 16 lexical or 15 permuted teacher mistakes,
+passing the 54-mistake certificate. The unchanged decoder reaches only 5/12
+under either order at 768 lessons. Reference withheld scores of 2/4 and 3/4
+still fail the useful 4/4 criterion; both reference controls and both decoder
+orders score zero withheld. The saved audit passes exact old-checkpoint parity
+and reference update reconstruction. This is supplied-context local acquisition
+evidence, not a learned reader or integration pass; no automatic extra fit follows.
 The official-exam scorer remains ready, with genuine structured learner output
 still pending.
 
