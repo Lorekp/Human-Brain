@@ -148,6 +148,14 @@ does not promise the old rejection of overflow in traces it no longer constructs
 Require exact finite-forward predictions and teacher trajectories, then a fresh
 complete cost return; keep the main local learning rule and margins fixed.
 
+The [forward-only prediction candidate](local-prediction-context-development.md)
+now passes 89 combined tests and ninety paired complete-lesson comparisons;
+all records and learned weights match except timing on the finite-forward
+fixtures. Summed five-arm median time improves 1.101x. The declared omission
+of unused eligibility-overflow errors is tested separately. The
+[v5 return](../../experiments/r4_integrated/local_memory_byte_v5.md) keeps the
+same workload and precise clock; its complete cost admission is pending.
+
 The [independent preflight review](local-memory-byte-preflight-review.md) records
 two learning risks: averaging byte feedback weakens explicit order credit, and
 correlated write keys may overwrite useful information. These are hypotheses

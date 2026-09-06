@@ -21,6 +21,7 @@ from humanbrain.plastic_memory import (
     PlasticMemory,
     PlasticMemoryState,
     StreamingRateCell,
+    _all_finite,
 )
 
 
@@ -195,9 +196,40 @@ class LocalMemoryLearner(nn.Module):
         return torch.cat((activity.activity, event.value), -1), activity, event
 
     @torch.no_grad()
+    def _prediction_context(self, query: bytes, state: LocalMemoryState) -> Tensor:
+        """Read-only forward context without unused teaching eligibility.
+
+        Validate supplied state and every actual forward activity/read. Overflow
+        solely in omitted query eligibility is no longer a prediction error;
+        teaching still constructs and validates its original local traces.
+        """
+        self._check_state_mode(state)
+        values = self._encoded(query)
+        self.memory._check_local_state(state)
+        if values.ndim != 3 or values.shape[0] != 1 or values.shape[2] != self.query_cell.input_size:
+            raise ValueError("encoded query must be [1, tokens, query input size]")
+        if (
+            values.dtype != self.query_cell.weight.dtype
+            or values.device != self.query_cell.weight.device
+        ):
+            raise ValueError("inputs dtype/device must match parameters")
+        if not _all_finite(values):
+            raise ValueError("active inputs must be finite")
+        activity = self.query_cell.initial_state(1)
+        for inputs in values.unbind(1):
+            activity, _ = self.query_cell._step(inputs, activity)
+            if not _all_finite(activity):
+                raise ValueError("prediction activity must be finite")
+        value = self.memory.read(activity, PlasticMemoryState(state.synapses, state.cell.activity))
+        context = torch.cat((activity, value), -1)
+        if not _all_finite(context):
+            raise ValueError("context must be finite")
+        return context
+
+    @torch.no_grad()
     def predict(self, query: bytes, state: LocalMemoryState, max_bytes: int) -> ByteGeneration:
         """A genuine read-only attempt: no teacher input, traces or state retained."""
-        context, _, _ = self._query(query, state)
+        context = self._prediction_context(query, state)
         return self.decoder.generate(context, max_bytes)[0]
 
     @torch.no_grad()

@@ -498,7 +498,7 @@ def test_local_composition_source_free_transport_and_disabled_empty_teacher():
         wrong_mode.restore_snapshot(snapshot)
 
 
-@pytest.fixture(params=(2, 3, 4))
+@pytest.fixture(params=(2, 3, 4, 5))
 def local_cost_runner(request):
     if request.param == 2:
         from experiments.r4_integrated import local_memory_byte_v2 as runner
@@ -510,8 +510,10 @@ def local_cost_runner(request):
     from experiments.r4_integrated import local_memory_byte_harness as harness
     if request.param == 3:
         from experiments.r4_integrated.local_memory_byte_v3 import SPEC
-    else:
+    elif request.param == 4:
         from experiments.r4_integrated.local_memory_byte_v4 import SPEC
+    else:
+        from experiments.r4_integrated.local_memory_byte_v5 import SPEC
 
     return SimpleNamespace(
         ROOT=harness.ROOT, ARMS=harness.ARMS, CONFIG=SPEC.config,
@@ -600,12 +602,14 @@ def test_local_successor_cost_binds_redirector_to_observed_owned_tree(tmp_path, 
         runner.validate_cost_launch(launch, report)
 
 
-def test_local_harness_spec_binds_source_and_preserves_fixed_workload():
+@pytest.mark.parametrize("version", [4, 5])
+def test_local_harness_spec_binds_source_and_preserves_fixed_workload(version):
     from dataclasses import FrozenInstanceError, replace
+    from importlib import import_module
 
     from experiments.r4_integrated import local_memory_byte_harness as harness
     from experiments.r4_integrated import local_memory_byte_v2 as previous
-    from experiments.r4_integrated.local_memory_byte_v4 import SPEC
+    SPEC = import_module(f"experiments.r4_integrated.local_memory_byte_v{version}").SPEC
 
     assert {**SPEC.config, "schema": previous.CONFIG["schema"]} == previous.CONFIG
     modified = SPEC.config
@@ -621,8 +625,8 @@ def test_local_harness_spec_binds_source_and_preserves_fixed_workload():
         "experiments/r4_integrated/local_memory_byte_harness.py",
         "experiments/r4_integrated/local_memory_byte_v3.py",
         "experiments/r4_integrated/local_memory_byte_v3.md",
-        "experiments/r4_integrated/local_memory_byte_v4.py",
-        "experiments/r4_integrated/local_memory_byte_v4.md",
+        f"experiments/r4_integrated/local_memory_byte_v{version}.py",
+        f"experiments/r4_integrated/local_memory_byte_v{version}.md",
         "experiments/r4_integrated/local_memory_byte_v2.py",
         "src/humanbrain/plastic_memory.py",
         "src/humanbrain/byte_sequence_decoder.py",
@@ -667,6 +671,130 @@ def test_local_harness_export_uses_same_high_resolution_clock(tmp_path, monkeypa
     assert report["final_ingestion_seconds"] == pytest.approx(0.004)
     assert report["source_free_serialization_seconds"] == pytest.approx(0.001)
     assert (tmp_path / "source_free.pt").is_file()
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+@pytest.mark.parametrize(
+    "mode", ["tagged", "aggregate", "writer_maps_frozen", "frozen", "writes_disabled"]
+)
+def test_local_forward_prediction_matches_full_query_and_subsequent_teaching(dtype, mode):
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    candidate = LocalMemoryLearner(
+        mode=mode, embedding_size=2, hidden_size=3, key_size=2, value_size=3, seed=19
+    ).to(dtype)
+    reference = copy.deepcopy(candidate)
+    for documents, query, target in (([b"x=a", b"y=b"], b"x?", b"a"),
+                                     ([b"x=b", b"y=a"], b"y?", b"a!")):
+        state = candidate.ingest(documents)
+        baseline = reference.ingest(documents)
+        before = candidate.snapshot(state)
+        with patch.object(
+            candidate.query_cell, "local_step", side_effect=AssertionError("no traces")
+        ):
+            actual_context = candidate._prediction_context(query, state)
+            actual = candidate.predict(query, state, 3)
+        with torch.no_grad():
+            context, _, _ = reference._query(query, baseline)
+            expected = reference.decoder.generate(context, 3)[0]
+        assert torch.equal(actual_context, context)
+        assert actual == expected
+        _assert_nested_equal(before, candidate.snapshot(state))
+        feedback = candidate.teach(query, target, state, 0.001)
+        expected_feedback = reference.teach(query, target, baseline, 0.001)
+        assert feedback.teacher_count == expected_feedback.teacher_count
+        assert feedback.mean_loss == expected_feedback.mean_loss
+        assert (feedback.decoder_updated, feedback.query_updated, feedback.memory_updated) == (
+            expected_feedback.decoder_updated, expected_feedback.query_updated,
+            expected_feedback.memory_updated
+        )
+        assert torch.equal(feedback.mean_context_signal, expected_feedback.mean_context_signal)
+        _assert_nested_equal(candidate.snapshot(feedback.state),
+                             reference.snapshot(expected_feedback.state))
+
+
+def test_local_forward_prediction_uses_supplied_memory_and_preserves_it():
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    # Authored transport witness: this tests causal routing, not learned capability.
+    learner = LocalMemoryLearner(embedding_size=1, hidden_size=1, key_size=1, value_size=1)
+    with torch.no_grad():
+        learner.query_cell.weight.zero_()
+        learner.query_cell.recurrent.zero_()
+        learner.query_cell.bias.fill_(1)
+        learner.memory.query_weight.fill_(1)
+        learner.memory.query_bias.zero_()
+        learner.decoder.embedding.weight.zero_()
+        learner.decoder.cell.weight.zero_()
+        learner.decoder.cell.weight[0, 1] = 1
+        learner.decoder.cell.recurrent.zero_()
+        learner.decoder.cell.bias.zero_()
+        learner.decoder.output.weight.zero_()
+        learner.decoder.output.bias.fill_(-10)
+        learner.decoder.output.bias[65:67] = 0
+        learner.decoder.output.weight[65, 0] = 1
+        learner.decoder.output.weight[66, 0] = -1
+    positive = learner.memory.initial_local_state(1)
+    negative = learner.memory.initial_local_state(1)
+    positive.synapses.fill_(1)
+    negative.synapses.fill_(-1)
+    for state, expected in ((positive, b"A"), (negative, b"B")):
+        before = learner.snapshot(state)
+        assert learner.predict(b"same question", state, 1) == ByteGeneration(expected, "limit")
+        _assert_nested_equal(before, learner.snapshot(state))
+
+
+@pytest.mark.parametrize(
+    "corrupt", ["synapses", "credit", "cell", "input", "activity", "read", "logits"]
+)
+def test_local_forward_prediction_rejects_actual_nonfinite_state_and_computation(corrupt):
+    from experiments.r4_integrated.local_memory_byte_harness import digest
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    learner = LocalMemoryLearner(embedding_size=1, hidden_size=1, key_size=1, value_size=1)
+    state = learner.memory.initial_local_state(1)
+    with torch.no_grad():
+        if corrupt == "synapses":
+            state.synapses.fill_(torch.nan)
+        elif corrupt == "credit":
+            next(iter(state.credit.values())).fill_(torch.nan)
+        elif corrupt == "cell":
+            state.cell.activity.fill_(torch.nan)
+        elif corrupt == "input":
+            learner.decoder.embedding.weight[ord("q")].fill_(torch.nan)
+        elif corrupt == "activity":
+            learner.query_cell.bias.fill_(torch.nan)
+        elif corrupt == "read":
+            learner.memory.query_weight.fill_(torch.nan)
+        else:
+            learner.decoder.output.bias.fill_(torch.nan)
+    before = digest(learner.snapshot(state))
+    with pytest.raises(ValueError, match="finite"):
+        learner.predict(b"q", state, 1)
+    assert digest(learner.snapshot(state)) == before
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_local_forward_prediction_omits_unused_eligibility_overflow_but_teaching_rejects_it(dtype):
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    learner = LocalMemoryLearner(
+        embedding_size=1, hidden_size=1, key_size=1, value_size=1
+    ).to(dtype)
+    with torch.no_grad():
+        learner.decoder.embedding.weight.zero_()
+        learner.query_cell.weight.zero_()
+        learner.query_cell.bias.zero_()
+        learner.query_cell.recurrent.fill_(3)
+    state = learner.memory.initial_local_state(1)
+    before = learner.snapshot(state)
+    # h stays zero while unused bias eligibility doubles per step and overflows.
+    query = b"x" * (130 if dtype == torch.float32 else 1030)
+    assert isinstance(learner.predict(query, state, 1), ByteGeneration)
+    _assert_nested_equal(before, learner.snapshot(state))
+    with pytest.raises(ValueError, match="finite"):
+        learner.teach(query, b"a", state, 0.001)
+    _assert_nested_equal(before, learner.snapshot(state))
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
