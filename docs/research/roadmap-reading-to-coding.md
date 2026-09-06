@@ -4,46 +4,42 @@ Status: living decision document. Updated 2026-09-06.
 Owner: orchestrator. This document owns current priorities and architecture policy;
 frozen experiment protocols retain authority over their own evidence.
 
-Current endpoint: the [completed neuronal splice learner](../../experiments/r4_integrated/neuronal_splice_online_v1_result.md)
-solves 12/32 fresh tasks (nine real edits) and 12/16 retained tasks, versus
-fresh totals 1, 2 and 4 for its matched controls. Neurons select the file, raw
-span, payload and operation; the same persistent system learns locally after
-real execution without backpropagation. It preserves the reader's eighteen old
-successes. The strict selected transfer criterion fails. Full run and independent
-audit total 96.14 seconds, with 1,234.23 MiB observed owned peak, after completed
-admission at 418.10 projected seconds and 1,500.5 MiB.
+Current endpoint: the [completed competitive neuronal splice learner](../../experiments/r4_integrated/neuronal_splice_online_v2_result.md)
+solves 20/32 fresh tasks (19 real edits and one explicit STOP), versus 7/32
+for its freshly trained marginal reference and 1/32 for each of three matched
+controls. It retains 14/16 actions and answers all twenty old reader questions
+correctly before and after acquisition. Neurons select the file, raw span,
+payload and operation; the same persistent system learns locally after actual
+execution without backpropagation. The strict all-fresh/all-retention criterion
+still fails. Full run and independent audit total 135.77 seconds with
+1,522.54 MiB observed owned peak, after completed admission at 583.71 projected
+seconds and 1,879.49 MiB. The [result bank](../../benchmarks/neuronal_splice_online_v2.decision.json)
+preserves the fixed source, complete scope, controls and evidence hashes.
 
-All 28 fresh edited-task locations were correct; nineteen payloads were wrong,
-and one KEEP missed STOP. All eight value-swap tasks emitted empty payloads.
-The active [learning review](neuronal-splice-online-v1-learning-review.md) now
-completes saved prior/EOS attribution and address ranks with no model execution.
-Target starts are uniquely first in all eight value swaps and 22/23 failed
-nonempty edits, but diffuse off-target contributions dominate first EOS. The
-completed source/math and primary-source reviews select
-[initial neuronal address competition](neuronal-address-competition-v1.md) for
-implementation and explicitly scoped ordinary QA. The
-[six-node component verification](neuronal-address-competition-qa-v1-result.md)
-now passes, including real wrong-action-before-correction custody and exact
-local teacher parity. Successor serialization and independent scalar validation
-also pass [three authored receipt checks](neuronal-address-competition-integration-v1.md#completed-receipt-qa-and-next-integration-step).
-Return to the shared workload through the selected
-[five-arm comparison](neuronal-address-competition-comparison-v1.md): its
-worker/prior custody and fresh structural roster data checks now pass, with
-[banked receipts](../../benchmarks/neuronal_address_competition_v1.integration_qa.json).
-Its five-arm parent/auditor and three synthetic cost/custody checks also pass
-source and ordinary QA review. Freeze their exact final source after the two
-declared draft-guard removals, then complete one fresh measured cost and
-independent audit before acquisition.
-The one worker QA chooses STOP and changes no weights; it is not a transfer score.
-Two fixed threshold layers
-commit free recall; the same reader reopens all candidates for its existing
-direct local corrective surrogate after execution. Preserve raw requests and
-the working action heads. No new fit or checkpoint probe is admitted. Any
-successor must declare new withheld cases; v1 endpoints are exposed development
-evidence. Preserve the
-[current implementation speed](neuronal-splice-online-v1-cost-review.md).
-The completed fixed run is closed: no extra epochs, rate/seed sweep, automatic
-recall change, benchmark advancement or further v6 exposure is selected.
+The [five-arm comparison](neuronal-address-competition-comparison-v1.md) is now
+closed. Initial neuronal address competition passes its mechanism-superiority
+component: learned fresh edits exceed all controls and the matched marginal
+reference. Document-order transfer is 6/8, continuation 8/8, value-role transfer
+4/8 and operation/layout 2/8. The delayed value pairs pass; the five-document
+interference pairs do not. These narrow literal-splice tasks do not establish
+general software engineering, language understanding or the integrated gate.
+
+The immediate next work is the bounded, saved-only
+[learning review](neuronal-splice-online-v2-learning-review.md) and
+[resource review](neuronal-splice-online-v2-cost-review.md), returning one selected
+change to the shared workload. Preserve useful neuronal commitment, local
+same-instance learning and complete resource accounting. Do not add rounds,
+sweep rates/seeds, replay endpoints, alter decoding, or load another checkpoint
+while reviewing. The v2 cohort is now exposed development evidence; a successor
+requires new withheld cases and fresh complete cost admission. No benchmark
+advancement is selected by this partial gain.
+
+The preceding [splice-v1 result](../../experiments/r4_integrated/neuronal_splice_online_v1_result.md)
+and its [saved learning review](neuronal-splice-online-v1-learning-review.md)
+remain historical evidence. Its diffuse off-target EOS behavior motivated the
+current fixed threshold competition, but its different cohort is not a matched
+baseline for subtracting v2 scores. Component, receipt, worker, data and synthetic
+cost QA remain banked; their passed nodes are not repeated.
 
 ## Objective
 

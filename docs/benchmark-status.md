@@ -10,7 +10,19 @@ with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. Hybrid permission does not relabel existing
 cell-only evidence or reopen protected evaluations.
 
-The current [neuronal splice result](../experiments/r4_integrated/neuronal_splice_online_v1_result.md)
+The current [competitive neuronal splice result](../experiments/r4_integrated/neuronal_splice_online_v2_result.md)
+solves 20/32 fresh tasks, including 19 edits, versus 7/32 for the matched marginal
+reference and 1/32 for each matched control. It retains 14/16 actions and all
+twenty old reader answers. The same neuronal learner selects and executes each
+action before direct local correction, without backpropagation. Full run and
+independent audit take 135.77 seconds, with 1,522.54 MiB observed owned peak,
+after complete admission at 583.71 projected seconds and 1,879.49 MiB.
+Fresh continuation passes 8/8, document-order transfer 6/8, value-role transfer
+4/8 and operation/layout 2/8. The strict all-fresh/all-retention criterion fails;
+the fixed run is closed. These are narrow authored literal-splice tasks, not a
+SWE benchmark. Saved learning and resource reviews own the next bounded step.
+
+The preceding [neuronal splice result](../experiments/r4_integrated/neuronal_splice_online_v1_result.md)
 has neuron-selected file, byte span, payload and operation, with actual execution
 before local correction on the same persistent system. It solves 12/32 fresh
 tasks (nine edits) and 12/16 retention tasks; matched fresh control totals are
@@ -20,8 +32,8 @@ total 96.14 seconds; these are narrow authored software tasks, not a SWE benchma
 The original eighteen reader successes are retained. Saved address/EOS evidence
 motivates the [competitive reader](research/neuronal-address-competition-v1.md),
 whose [six ordinary component checks](research/neuronal-address-competition-qa-v1-result.md)
-now pass. That component has no new acquired-capability result yet; successor
-integration, fresh transfer and complete cost admission remain outstanding.
+passed before the v2 integrated comparison above. Its different fresh cohort
+does not provide a matched score comparison with v2.
 
 The preceding [joint-address online v6 result](../experiments/r4_integrated/local_joint_address_online_v6_result.md)
 passes its scoped executed-learning criterion: 8/8 fit, 4/4 new values, 4/4 delayed
