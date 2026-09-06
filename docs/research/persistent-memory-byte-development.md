@@ -229,7 +229,8 @@ actual-memory interface before selecting the next integrated return; more
 identical no-mistake perceptron lessons cannot change its learned synapses.
 
 The [composition review](local-composition-return-review.md) now selects one
-local LMS output comparison. All 257 output neurons learn their prescribed
+local [LMS output comparison](../../experiments/r4_integrated/local_context_lms_v1.md).
+All 257 output neurons learn their prescribed
 potentials from local presynaptic activity and neuron-level residuals, including
 when the greedy winner is already correct. The connected TRAIN factor graph
 forces composition at exact potential fit; an independently checked contraction

@@ -1289,3 +1289,185 @@ def test_phase_reference_lesson_receipts_restore_and_read_only_generation():
     assert frozen["before_sha256"] == frozen["after_teacher_sha256"]
     with pytest.raises(ValueError, match="configuration mismatch"):
         restored.set_extra_state({**restored.get_extra_state(), "tick_size": 0.02})
+
+
+
+@pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64])
+def test_phase_lms_signed_features_and_preupdate_all_output_residuals(input_dtype):
+    from humanbrain.phase_context_lms import PhaseContextLMS
+
+    model = PhaseContextLMS()
+    value = torch.zeros(1, 96, dtype=input_dtype)
+    value[0, 13], value[0, 72] = -0.25, 0.5
+    state = None
+    for phase, token in enumerate((BYTE_BOS, 0, 255)):
+        step = model.local_step(value, torch.tensor([token]), state)
+        expected = torch.zeros(1, 291, dtype=torch.float64)
+        expected[0, phase] = 1
+        expected[0, 3 + phase * 96 + 13] = -0.25
+        expected[0, 3 + phase * 96 + 72] = 0.5
+        assert torch.equal(step.features, expected)
+        if state is not None:
+            assert torch.equal(step.features, model.local_step(value, torch.tensor([42]), state).features)
+        state = step.state
+    assert not state.phase.any()
+    with pytest.raises(ValueError, match="exhausted"):
+        model.local_step(value, torch.tensor([1]), state)
+    # A correct winner still learns its nonzero residual; another neuron's
+    # nonzero potential receives its own correction even though it is not target.
+    model.output_weights[65, 0] = 0.8
+    model.output_weights[123, 0] = 0.25
+    step = model.local_step(value, torch.tensor([BYTE_BOS]))
+    before = model.output_weights.clone()
+    saved_scores = step.scores.clone()
+    residual = -saved_scores
+    residual[0, 65] += 1
+    # Independent scalar oracle for the only two nonzero output residuals and
+    # three nonzero input rates. Full equality also checks all untouched entries.
+    expected = before.clone()
+    for output_id, error in ((65, 1.0 - 0.8), (123, -0.25)):
+        for feature_id, rate in ((0, 1.0), (3 + 13, -0.25), (3 + 72, 0.5)):
+            expected[output_id, feature_id] = float(before[output_id, feature_id]) + (0.01 * error) * rate
+    with patch.object(torch.autograd, "backward", side_effect=AssertionError("no backward")), patch.object(
+        torch.autograd, "grad", side_effect=AssertionError("no gradients")
+    ):
+        receipt = model.teach_local(step, torch.tensor([65]), 0.01)
+    assert receipt.winner == receipt.target == 65 and receipt.updated
+    assert receipt.teacher_count == 1 and receipt.phase == 0
+    assert torch.equal(receipt.residual, residual)
+    assert torch.equal(step.scores, saved_scores)
+    assert torch.equal(model.output_weights, expected)
+    assert receipt.loss == pytest.approx(0.5 * math.fsum(float(x)**2 for x in residual[0]), rel=1e-15)
+    assert model.output_weights[123, 0] < before[123, 0]
+    with pytest.raises(ValueError, match="stale step"):
+        model.teach_local(step, torch.tensor([65]), 0.01)
+    current = model.local_step(value, torch.tensor([BYTE_BOS]))
+    frozen_before = copy.deepcopy(model.state_dict())
+    frozen = model.teach_local(current, torch.tensor([66]), 0.01, learning_enabled=False)
+    assert frozen.teacher_count == 1 and not frozen.updated and frozen.residual.shape == (1, 257)
+    _assert_decoder_state_equal(frozen_before, model.state_dict())
+    snapshot = current.snapshot()
+    snapshot["features"].zero_()
+    assert current.features.any()
+    assert current.tensor_bytes == 4396 and current.state.tensor_bytes == 12
+    assert model.accounting()["serialized_tensor_bytes"] == 602952
+    assert not list(model.parameters())
+
+
+def test_phase_lms_nonfinite_input_and_atomic_proposed_overflow_rejection():
+    from humanbrain.phase_context_lms import PhaseContextLMS
+
+    model = PhaseContextLMS()
+    for invalid in (float("nan"), float("inf")):
+        value = torch.zeros(1, 96, dtype=torch.float64)
+        value[0, 13] = invalid
+        with pytest.raises(ValueError, match="finite"):
+            model.generate(value, 2)
+    value = torch.zeros(1, 96, dtype=torch.float64)
+    value[0, 13] = 1e200
+    model.output_weights[0, 0] = 1e154
+    step = model.local_step(value, torch.tensor([BYTE_BOS]))
+    before = copy.deepcopy(model.state_dict())
+    with pytest.raises(ValueError, match="proposed synapses"):
+        model.teach_local(step, torch.tensor([65]), 0.01)
+    _assert_decoder_state_equal(before, model.state_dict())
+    model.gating_synapses[0, 0, 0] = 0
+    with pytest.raises(ValueError, match="remain fixed"):
+        model.generate(torch.zeros(1, 96), 2)
+
+
+def test_lms_runner_saved_free_margins_use_single_call_and_missing_phase_fails():
+    from experiments.r4_integrated import local_context_lms_v1 as runner
+    from humanbrain.phase_context_lms import PhaseContextLMS
+
+    model = PhaseContextLMS()
+    model.output_weights[97, 0] = 0.8
+    model.output_weights[97, 1] = 0.7
+    model.output_weights[BYTE_EOS, 2] = 0.6
+    value = runner.context("aa")
+    before = runner.state_hash(model)
+    with patch.object(model, "local_step", wraps=model.local_step) as steps:
+        emitted = runner.generation(model, value)
+    assert steps.call_count == 3
+    assert emitted["hex"] == b"aa".hex() and emitted["stop_reason"] == "eos"
+    assert model.generate(value, 2)[0] == ByteGeneration(b"aa", "eos")
+    assert runner.state_hash(model) == before
+    assert runner.target_margins(emitted, "aa") == [0.8, 0.7, 0.6]
+    model.output_weights.zero_()
+    model.output_weights[BYTE_EOS, 0] = 1
+    with patch.object(model, "local_step", wraps=model.local_step) as steps:
+        early = runner.generation(model, value)
+        margins = runner.target_margins(early, "aa")
+    assert steps.call_count == 1 and margins == [-1, None, None]
+    assert runner.sparse(torch.tensor([0.0, -0.25, 0.0, 0.5])) == [[1, -0.25], [3, 0.5]]
+    scores = {arm: {"train": 0, "heldout": 0} for arm in runner.ARMS}
+    scores["lexical"] = {"train": 12, "heldout": 4}
+    checks = [{"arm": "lexical", "margin_passed": True} for _ in range(16)]
+    assert runner.qualifies(scores, checks)["lexical"]
+    checks[0]["margin_passed"] = False
+    assert not runner.qualifies(scores, checks)["lexical"]
+    checks[0]["margin_passed"] = True
+    scores["zero"]["heldout"] = 4
+    assert not runner.qualifies(scores, checks)["lexical"]
+
+
+def test_lms_runner_single_disposable_lesson_receipts_restore_and_counts():
+    from experiments.r4_integrated import local_context_lms_v1 as runner
+    from humanbrain.phase_context_lms import PhaseContextLMS
+
+    model = PhaseContextLMS()
+    value = runner.context("aa")
+    with patch.object(model, "local_step", wraps=model.local_step) as steps:
+        record = runner.lesson(model, value, "aa", enabled=True)
+    assert steps.call_count == record["first"]["decisions"] + 3
+    assert record["byte_offers"] == 3 and record["residual_offers"] == 771
+    assert record["enabled_steps"] == 3 and record["enabled_residual_offers"] == 771
+    assert record["nonzero_residual_offers"] == record["enabled_nonzero_residual_offers"] == 3
+    assert record["loss_kind"] == "half_sum_squared_potential_error"
+    assert [row["target"] for row in record["teachers"]] == [97, 97, BYTE_EOS]
+    assert [row["phase"] for row in record["teachers"]] == [0, 1, 2]
+    for receipt in record["teachers"]:
+        scores = dict(receipt["nonzero_scores"])
+        expected = [(index, float(index == receipt["target"]) - scores.get(index, 0.0)) for index in range(257)]
+        assert receipt["nonzero_residuals"] == [[index, value] for index, value in expected if value != 0]
+        assert receipt["loss"] == 0.5 * math.fsum(value**2 for _, value in expected)
+    assert record["before_sha256"] == record["after_first_sha256"]
+    assert record["after_teacher_sha256"] == runner.state_hash(model)
+    buffer = io.BytesIO()
+    torch.save(model.state_dict(), buffer)
+    buffer.seek(0)
+    restored = PhaseContextLMS()
+    restored.load_state_dict(torch.load(buffer, weights_only=True))
+    assert runner.state_hash(restored) == runner.state_hash(model)
+    frozen = runner.lesson(restored, value, "aa", enabled=False)
+    assert frozen["byte_offers"] == 3 and frozen["residual_offers"] == 771
+    assert frozen["enabled_steps"] == frozen["enabled_residual_offers"] == 0
+    assert frozen["before_sha256"] == frozen["after_teacher_sha256"]
+    with pytest.raises(ValueError, match="configuration mismatch"):
+        restored.set_extra_state({**restored.get_extra_state(), "dtype": "float32"})
+
+
+def test_lms_runner_fixed_160_cycle_balanced_schedule_without_training():
+    import random
+
+    from experiments.r4_integrated import local_context_lms_v1 as runner
+
+    assert runner.ARMS == ("lexical", "permuted", "zero", "frozen")
+    assert runner.CONFIG["lessons_per_arm"] == 1920
+    assert runner.CONFIG["minimum_final_margin_exclusive"] == 0.10
+    rows = runner.schedule()
+    assert len(rows) == 1920
+    rng = random.Random(734)
+    for cycle in range(160):
+        permuted = list(runner.TRAIN)
+        rng.shuffle(permuted)
+        group = rows[cycle * 12:(cycle + 1) * 12]
+        assert [row["permuted_target"] for row in group] == permuted
+        assert [row["lexical_target"] for row in group] == list(runner.TRAIN)
+        assert set(permuted).isdisjoint(runner.HELDOUT)
+        for row in group:
+            target, supplied = runner.assignment("zero", row)
+            assert target == row["lexical_target"] and supplied is None
+    assert runner.context("aa").dtype == torch.float64
+    assert "docs/research/local-composition-return-review.md" in runner.sources()
+    assert "src/humanbrain/phase_context_lms.py" in runner.sources()
