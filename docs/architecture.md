@@ -43,6 +43,17 @@ separate from earlier variable-length experiments. The legacy Python
 motor supplies a narrow edit-selection schema; learned neuronal action selection
 and learning from execution feedback remain required work.
 
+The next query-credit candidate replaces the fixed random query broadcast with
+instantaneous transport through the retained read matrix and query map. It
+applies the full normalization error pool once, then uses raw presynaptic
+query-map eligibility and adds the indirect read signal to the query cell's
+direct context signal. All connections used for transport precede the upstream
+updates. Writer broadcasts and recurrent self-path traces retain their local
+approximations; this is not differentiation through document or query history.
+The [integrated comparison](../experiments/r4_integrated/local_memory_query_credit_v1.md)
+keeps an explicit experiment-only copy of the old query rule as a matched arm.
+Implementation and arithmetic QA do not establish useful learning.
+
 ## Existing cell implementations
 
 The computational object in the dendritic lane is a sparse simulation of

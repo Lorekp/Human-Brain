@@ -400,7 +400,7 @@ def test_local_composition_one_lesson_control_groups_and_retired_credit(mode):
     assert receipt.teacher_count == 3 and math.isfinite(receipt.mean_loss)
     assert receipt.decoder_updated == (mode != "frozen")
     assert receipt.query_updated == (mode != "frozen")
-    assert receipt.memory_updated == (mode != "frozen")
+    assert receipt.memory_updated == (mode not in {"frozen", "writes_disabled"})
     _assert_nested_equal(persistent, state.snapshot())  # Caller explicitly adopts returned state.
     assert torch.equal(receipt.state.synapses, state.synapses)
     assert all(torch.count_nonzero(credit) == 0 for credit in receipt.state.credit.values())
@@ -421,7 +421,7 @@ def test_local_composition_one_lesson_control_groups_and_retired_credit(mode):
         assert changed == (mode in {"tagged", "aggregate"}), name
     assert (
         not torch.equal(before["memory.query_weight"], after["memory.query_weight"])
-        if mode != "frozen"
+        if mode not in {"frozen", "writes_disabled"}
         else torch.equal(before["memory.query_weight"], after["memory.query_weight"])
     )
     assert all(parameter.grad is None for parameter in learner.parameters())
@@ -434,9 +434,11 @@ def test_local_composition_before_update_signals_mean_once_and_upstream_last():
 
     learner = LocalMemoryLearner(input_code_size=2, hidden_size=3, key_size=2, value_size=94)
     state = learner.ingest([b"one", b"two"])
+    learner.teach(b"q", b"a!", state, 0.01)
+    state = learner.ingest([b"one", b"two"])
     writer_before = copy.deepcopy(learner.memory.state_dict())
     query_before = copy.deepcopy(learner.query_cell.state_dict())
-    signals, events = [], []
+    signals, events, expected_query = [], [], []
     original_teach = learner.decoder.teach_local
     original_memory = learner.memory.apply_local_feedback
     original_query = learner.query_cell.apply_learning_signal
@@ -452,17 +454,23 @@ def test_local_composition_before_update_signals_mean_once_and_upstream_last():
     def apply_memory(current, read, incoming, rate, **kwargs):
         assert len(signals) == 3
         mean = sum(signals) / 3
+        mean = mean.to(learner.input_codes.dtype)
+        key_error = current.synapses.transpose(1, 2) @ mean[:, 2:, None]
+        key_error = key_error.squeeze(-1)
+        drive_error = (key_error - read.key * (read.key * key_error).sum(-1, keepdim=True))
+        drive_error = drive_error / read.query_norm
         for name in incoming:
-            torch.testing.assert_close(
-                incoming[name],
-                mean.to(learner.input_codes.dtype) @ getattr(learner, name + "_feedback").T,
+            expected = drive_error if name == "query" else (
+                mean @ getattr(learner, name + "_feedback").T
             )
+            torch.testing.assert_close(incoming[name], expected)
+        expected_query.append(mean[:, :2] + drive_error @ writer_before["query_weight"])
         events.append("memory")
         return original_memory(current, read, incoming, rate, **kwargs)
 
     def apply_query(current, incoming, rate, **kwargs):
         torch.testing.assert_close(
-            incoming, (sum(signals) / 3).to(learner.input_codes.dtype)[:, :2]
+            incoming, expected_query[0]
         )
         events.append("query")
         return original_query(current, incoming, rate, **kwargs)
@@ -521,7 +529,7 @@ def test_local_composition_source_free_transport_and_disabled_teacher():
         wrong_mode.restore_snapshot(snapshot)
 
 
-@pytest.fixture(params=(2, 3, 4, 5, 6))
+@pytest.fixture(params=(2, 3, 4, 5, 6, 7))
 def local_cost_runner(request):
     if request.param == 2:
         from experiments.r4_integrated import local_memory_byte_v2 as runner
@@ -531,7 +539,10 @@ def local_cost_runner(request):
     from types import SimpleNamespace
 
     from experiments.r4_integrated import local_memory_byte_harness as harness
-    if request.param == 6:
+    if request.param == 7:
+        from experiments.r4_integrated import local_memory_query_credit_v1 as harness
+        SPEC = harness.SPEC
+    elif request.param == 6:
         from experiments.r4_integrated import local_memory_two_byte_v1 as harness
         SPEC = harness.SPEC
     elif request.param == 3:
@@ -572,12 +583,16 @@ def test_local_successor_cost_keeps_original_margin_and_rejects_bad_samples(loca
             }
             for arm in runner.ARMS
         },
-        "actions": [{}] * 100,
+        "actions": [{}] * (20 * len(runner.ARMS)),
         "motor_demonstrations": [{}, {}],
         "counts": {
-            "first_attempts": 20,
-            "teacher_byte_offers": 60 if runner.CONFIG["max_bytes"] == 2 else 200,
-            "enabled_decoder_step_opportunities": 48 if runner.CONFIG["max_bytes"] == 2 else 160,
+            "first_attempts": 4 * len(runner.ARMS),
+            "teacher_byte_offers": (
+                4 * len(runner.ARMS) * (3 if runner.CONFIG["max_bytes"] == 2 else 10)
+            ),
+            "enabled_decoder_step_opportunities": (
+                4 * (len(runner.ARMS) - 1) * (3 if runner.CONFIG["max_bytes"] == 2 else 10)
+            ),
         },
         "memory": {"peak_working_set_mib": 300},
         "worker": {"memory": {"peak_working_set_mib": 400}},
@@ -586,7 +601,9 @@ def test_local_successor_cost_keeps_original_margin_and_rejects_bad_samples(loca
     if hasattr(runner, "duration_clock"):
         report["duration_clock"] = runner.duration_clock()
     result = runner.project_cost(report, launch)
-    assert result["projected_seconds"] == pytest.approx(2 * 1024 * 5 * 0.03 + 2 * 9.8 + 30)
+    assert result["projected_seconds"] == pytest.approx(
+        2 * 1024 * len(runner.ARMS) * 0.03 + 2 * (10 - 0.04 * len(runner.ARMS)) + 30
+    )
     assert result["peak_upper_mib"] == 750 and result["admissible"]
     report["cap_generation"]["frozen"]["seconds"] = 0.0
     with pytest.raises(AssertionError):
@@ -1683,14 +1700,18 @@ def test_two_byte_lesson_actual_lms_receipts_before_update_and_retirement():
     assert receipt["memory_sha256"] != receipt["retired_memory_sha256"]
 
 
-def test_two_byte_source_free_worker_fresh_process_read_only_checkpoint(tmp_path):
+@pytest.mark.parametrize(
+    "runner_module", ["local_memory_two_byte_v1", "local_memory_query_credit_v1"]
+)
+def test_two_byte_source_free_worker_fresh_process_read_only_checkpoint(tmp_path, runner_module):
+    import importlib
     import json
     import os
     import subprocess
     import sys
     import time
 
-    from experiments.r4_integrated import local_memory_two_byte_v1 as runner
+    runner = importlib.import_module("experiments.r4_integrated." + runner_module)
 
     saved = {}
     for arm in runner.ARMS:
@@ -1754,8 +1775,8 @@ def test_two_byte_source_free_worker_fresh_process_read_only_checkpoint(tmp_path
         result["status"] == "completed"
         and not result["roster_invoked_or_documents_or_targets_supplied_to_model"]
     )
-    assert result["query_byte_steps"] == 10 * (len(b"same question") + 1)
-    assert len(result["outputs"]) == 10
+    assert result["query_byte_steps"] == 2 * len(runner.ARMS) * (len(b"same question") + 1)
+    assert len(result["outputs"]) == 2 * len(runner.ARMS)
     for row in result["outputs"]:
         assert (
             row["generated_hex"] == "0000"
@@ -1999,3 +2020,163 @@ def test_localization_worker_fresh_process_empty_memory_query_only(tmp_path):
     assert not observations[0]["phase_scores"].count_nonzero()
     assert observations[0]["phase_evaluations"] == 3
     assert hashes == [runner.file_hash(path) for path in (checkpoint, requests)]
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_query_credit_reference_matches_frozen_git_source_and_trajectories(dtype):
+    """The experiment adapter must reproduce the old dependency, not only its caller."""
+    import ast
+    import hashlib
+    import subprocess
+    import sys
+    import types
+    from dataclasses import fields
+    from pathlib import Path
+
+    from experiments.r4_integrated import local_memory_query_credit_reference as reference
+
+    root = Path(__file__).resolve().parents[1]
+    texts = {
+        name: subprocess.check_output(
+            ["git", "show", f"{reference.REFERENCE_REVISION}:src/humanbrain/{name}.py"],
+            cwd=root,
+        ).decode("utf-8")
+        for name in ("plastic_memory", "local_memory_learner")
+    }
+    assert hashlib.sha256(texts["plastic_memory"].encode()).hexdigest() == (
+        reference.REFERENCE_MEMORY_BLOB_SHA256
+    )
+    assert hashlib.sha256(texts["local_memory_learner"].encode()).hexdigest() == (
+        reference.REFERENCE_LEARNER_BLOB_SHA256
+    )
+
+    def definitions(text):
+        return {n.name: n for n in ast.parse(text).body if isinstance(n, ast.ClassDef)}
+
+    archived = definitions(Path(reference.__file__).read_text())
+    old_memory = definitions(texts["plastic_memory"])
+    current_memory = definitions((root / "src/humanbrain/plastic_memory.py").read_text())
+    assert ast.dump(archived["LocalMemoryLearner"]) == ast.dump(
+        definitions(texts["local_memory_learner"])["LocalMemoryLearner"]
+    )
+    assert ast.dump(archived["LocalMemoryRead"]) == ast.dump(old_memory["LocalMemoryRead"])
+    old_methods = {
+        n.name: n for n in old_memory["PlasticMemory"].body if isinstance(n, ast.FunctionDef)
+    }
+    new_methods = {
+        n.name: n for n in current_memory["PlasticMemory"].body if isinstance(n, ast.FunctionDef)
+    }
+    overrides = {
+        n.name: n for n in archived["PlasticMemory"].body if isinstance(n, ast.FunctionDef)
+    }
+    assert set(overrides) == {"read_local", "_check_local_read", "restore_local_read"}
+    for name, node in old_methods.items():
+        assert ast.dump(node) == ast.dump(overrides.get(name, new_methods[name])), name
+    for name in old_memory.keys() - {"PlasticMemory", "LocalMemoryRead"}:
+        assert ast.dump(old_memory[name]) == ast.dump(current_memory[name]), name
+    for node in ast.parse(texts["plastic_memory"]).body:
+        if isinstance(node, ast.FunctionDef):
+            current = next(
+                n for n in ast.parse((root / "src/humanbrain/plastic_memory.py").read_text()).body
+                if isinstance(n, ast.FunctionDef) and n.name == node.name
+            )
+            assert ast.dump(node) == ast.dump(current), node.name
+
+    # Loading old source is QA-only. The experiment itself uses its declared archive.
+    old_module = types.ModuleType("_query_credit_old_memory_fixture")
+    old_learner = types.ModuleType("_query_credit_old_learner_fixture")
+    modules = {old_module.__name__: old_module, old_learner.__name__: old_learner}
+    with patch.dict(sys.modules, modules):
+        exec(compile(texts["plastic_memory"], "<frozen-memory-QA>", "exec"), old_module.__dict__)
+        source = texts["local_memory_learner"].replace(
+            "from humanbrain.plastic_memory import", f"from {old_module.__name__} import"
+        )
+        exec(compile(source, "<frozen-learner-QA>", "exec"), old_learner.__dict__)
+        config = dict(input_code_size=2, value_size=94, hidden_size=3, key_size=2, seed=733)
+        expected = old_learner.LocalMemoryLearner(**config)
+        actual = reference.LocalMemoryLearner(**config)
+        for model in (actual, expected):
+            _set_upstream_dtype(model, dtype)
+        _assert_nested_equal(actual.state_dict(), expected.state_dict())
+        with patch.object(torch.autograd, "backward", side_effect=AssertionError("no backward")):
+            for target in (b"aa", b"bc", b"ab"):
+                states = [model.ingest([b"x=a", b"y=b"]) for model in (actual, expected)]
+                _assert_nested_equal(states[0].snapshot(), states[1].snapshot())
+                reads = [
+                    model._query(b"x?", state)
+                    for model, state in zip((actual, expected), states, strict=True)
+                ]
+                assert torch.equal(reads[0][0], reads[1][0])
+                assert actual.predict(b"x?", states[0], 2) == expected.predict(b"x?", states[1], 2)
+                receipts = [
+                    model.teach(b"x?", target, state, 0.01)
+                    for model, state in zip((actual, expected), states, strict=True)
+                ]
+                for field in fields(receipts[0]):
+                    x, y = (getattr(receipt, field.name) for receipt in receipts)
+                    _assert_nested_equal(x.snapshot() if field.name == "state" else x,
+                                         y.snapshot() if field.name == "state" else y)
+                _assert_nested_equal(actual.state_dict(), expected.state_dict())
+
+
+def test_query_credit_fixed_roster_factory_source_and_strict_endpoint():
+    from experiments.r4_integrated import local_memory_query_credit_v1 as runner
+    from experiments.r4_integrated import local_memory_two_byte_v1 as previous
+
+    assert (*previous.ARMS, "current_tagged") == runner.ARMS
+    train, checks = runner.roster()
+    assert (train, checks) == previous.roster()
+    assert runner.teaching_schedule(train) == previous.teaching_schedule(train)
+    assert len({c["memory_id"] for c in checks}) == 12
+    config = runner.SPEC.config
+    config["arms"].clear()
+    config["query_credit"].clear()
+    assert len(runner.SPEC.config["arms"]) == len(runner.SPEC.config["query_credit"]) == 6
+    manifest = runner.sources()
+    for name in ("local_memory_query_credit_v1.py", "local_memory_query_credit_v1.md",
+                 "local_memory_query_credit_reference.py", "local_memory_two_byte_v1.py"):
+        path = runner.ROOT / "experiments/r4_integrated" / name
+        assert manifest[path.relative_to(runner.ROOT).as_posix()] == runner.file_hash(path)
+    models = {arm: runner.new_model(runner.SPEC, arm) for arm in runner.ARMS}
+    base = {k: v for k, v in models["tagged"].state_dict().items() if torch.is_tensor(v)}
+    for arm, model in models.items():
+        tensors = {k: v for k, v in model.state_dict().items() if torch.is_tensor(v)}
+        extra = {"query_feedback"} if arm == "current_tagged" else set()
+        assert set(tensors) == set(base) | extra
+        for key, value in base.items():
+            assert tensors[key].dtype == value.dtype and torch.equal(tensors[key], value)
+    assert models["current_tagged"].mode == "tagged"
+    assert models["current_tagged"].get_extra_state() != models["tagged"].get_extra_state()
+    with pytest.raises(ValueError, match="configuration mismatch"):
+        models["tagged"].set_extra_state(models["current_tagged"].get_extra_state())
+    scores = {arm: dict(fit=0, unseen_value=0, delayed=0, interference=0) for arm in runner.ARMS}
+    scores["tagged"] = dict(fit=8, unseen_value=4, delayed=4, interference=4)
+    assert runner.qualifies(scores)
+    scores["current_tagged"]["unseen_value"] = 4
+    assert not runner.qualifies(scores)
+    scores["current_tagged"]["unseen_value"] = 3
+    scores["tagged"]["interference"] = 3
+    assert not runner.qualifies(scores)
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_query_credit_forward_matches_current_reference_before_teaching(dtype):
+    from experiments.r4_integrated.local_memory_query_credit_reference import (
+        LocalMemoryLearner as CurrentLearner,
+    )
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    config = dict(input_code_size=2, value_size=94, hidden_size=3, key_size=2, seed=733)
+    repaired, current = LocalMemoryLearner(**config), CurrentLearner(**config)
+    for model in (repaired, current):
+        _set_upstream_dtype(model, dtype)
+    states = [model.ingest([b"ab", b"cd"]) for model in (repaired, current)]
+    _assert_nested_equal(states[0].snapshot(), states[1].snapshot())
+    weights = [copy.deepcopy(model.state_dict()) for model in (repaired, current)]
+    for query in (b"x?", b"y?"):
+        reads = [
+            model._query(query, state)
+            for model, state in zip((repaired, current), states, strict=True)
+        ]
+        assert torch.equal(reads[0][0], reads[1][0])
+        assert repaired.predict(query, states[0], 2) == current.predict(query, states[1], 2)
+    for before, model in zip(weights, (repaired, current), strict=True):
+        _assert_nested_equal(before, model.state_dict())

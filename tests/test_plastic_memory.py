@@ -30,7 +30,7 @@ def test_all_finite_cpu_views_are_exact_read_only_detached_and_do_not_mutate(dty
             before = view.detach().clone()
             expected = bool(torch.isfinite(view).all())
 
-            def checked_array(array):
+            def checked_array(array, view=view):
                 assert not array.flags.writeable
                 if view.numel():
                     assert array.ctypes.data == view.data_ptr()
@@ -731,3 +731,126 @@ def test_empty_invalid_inputs_and_frozen_parameters():
     assert x.grad is not None
     assert all(p.grad is None for p in model.parameters())
     assert all(torch.equal(before[name], value) for name, value in model.state_dict().items())
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_read_path_signals_scalar_chain_and_raw_map_update(dtype):
+    model = PlasticMemory(2, 3, 2, 2, seed=9).to(dtype=dtype)
+    with torch.no_grad():
+        model.query_weight.copy_(torch.tensor([[0.7, -0.2], [0.4, 0.8]], dtype=dtype))
+        model.query_bias.copy_(torch.tensor([0.1, -0.3], dtype=dtype))
+    state = model.initial_local_state(2)
+    state.synapses[0].copy_(torch.tensor([[0.3, -0.6], [0.2, 0.8]], dtype=dtype))
+    query = torch.tensor([[0.6, -0.4], [torch.nan, torch.nan]], dtype=dtype)
+    read_error = torch.tensor([[0.8, -0.5], [torch.inf, torch.nan]], dtype=dtype)
+    event = model.read_local(query, state, mask=torch.tensor([True, False]))
+    before = copy.deepcopy(model.state_dict())
+    state_before = state.snapshot()
+    error, indirect = model.read_learning_signals(state, event, read_error)
+    # Independent scalar chain for one active stream; no autodiff or local helper.
+    qweight = before["query_weight"].double().numpy()
+    bias, u = before["query_bias"].double().numpy(), query[0].double().numpy()
+    drive = np.array([sum(qweight[j, i] * u[i] for i in range(2)) + bias[j] for j in range(2)])
+    magnitude = np.sqrt(sum(x*x for x in drive))
+    key = drive / magnitude
+    matrix, signal = state.synapses[0].double().numpy(), read_error[0].double().numpy()
+    key_error = np.array([sum(matrix[i, j] * signal[i] for i in range(2)) for j in range(2)])
+    expected = (key_error - key * sum(key[j] * key_error[j] for j in range(2))) / magnitude
+    expected_indirect = np.array([
+        sum(qweight[j, i] * expected[j] for j in range(2)) for i in range(2)
+    ])
+    tol = 2e-6 if dtype == torch.float32 else 1e-12
+    np.testing.assert_allclose(error[0], expected, atol=tol, rtol=tol)
+    np.testing.assert_allclose(indirect[0], expected_indirect, atol=tol, rtol=tol)
+    assert not error[1].any() and not indirect[1].any()
+    assert torch.equal(event.query_weight_eligibility[0], query[0].expand(2, 2))
+    assert torch.equal(event.query_bias_eligibility[0], torch.ones(2, dtype=dtype))
+    assert not event.query_weight_eligibility[1].any() and not event.query_bias_eligibility[1].any()
+    broadcasts = {name: torch.zeros(2, size, dtype=dtype) for name, size in (
+        ("controller", 3), ("key", 2), ("value", 2), ("strength", 1))}
+    broadcasts["query"] = error
+    assert model.apply_local_feedback(state, event, broadcasts, 0.01)
+    np.testing.assert_allclose(model.query_weight.detach(), qweight - 0.01 * expected[:, None] * u,
+                               atol=tol, rtol=tol)
+    np.testing.assert_allclose(
+        model.query_bias.detach(), bias - 0.01 * expected, atol=tol, rtol=tol
+    )
+    for name, value in before.items():
+        if not name.startswith("query_"):
+            assert torch.equal(value, model.state_dict()[name])
+    assert torch.equal(state.synapses, state_before["synapses"])
+    restored = model.restore_local_read(event.snapshot())
+    assert torch.equal(restored.query_norm, event.query_norm)
+    assert restored.query_norm.data_ptr() != event.query_norm.data_ptr()
+    assert all(p.grad is None for p in model.parameters())
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+@pytest.mark.parametrize("magnitude", [0.0, 0.5e-8, 1e-8, 2e-8])
+def test_read_path_normalization_clamp_and_equality_branch(dtype, magnitude):
+    model = PlasticMemory(2, 2, 2, 2).to(dtype=dtype)
+    with torch.no_grad():
+        model.query_weight.copy_(torch.eye(2, dtype=dtype))
+        model.query_bias.zero_()
+    state = model.initial_local_state(1)
+    state.synapses[0].copy_(torch.eye(2, dtype=dtype))
+    event = model.read_local(torch.tensor([[magnitude, 0.0]], dtype=dtype), state)
+    error, indirect = model.read_learning_signals(
+        state, event, torch.tensor([[1.5, 0.75]], dtype=dtype)
+    )
+    expected = torch.tensor(
+        [[0.0, 0.75 / magnitude]] if magnitude > 1e-8 else [[1.5e8, 0.75e8]], dtype=dtype
+    )
+    torch.testing.assert_close(error, expected)
+    assert torch.equal(indirect, error)
+    assert float(event.query_norm[0, 0]) == pytest.approx(magnitude)
+
+
+@pytest.mark.parametrize("failure", ["read_transport", "normalization", "query_return"])
+def test_read_path_nonfinite_intermediate_rejects_without_mutation(failure):
+    model = PlasticMemory(2, 2, 2, 2)
+    with torch.no_grad():
+        model.query_weight.zero_()
+        model.query_bias.zero_()
+        if failure == "query_return":
+            model.query_weight.fill_(1e32)
+    state = model.initial_local_state(1)
+    state.synapses.fill_(1e20 if failure == "read_transport" else
+                         1e32 if failure == "normalization" else 1.0)
+    event = model.read_local(torch.zeros(1, 2), state)
+    before = copy.deepcopy(model.state_dict())
+    signal = torch.full((1, 2), 1e20 if failure == "read_transport" else 1.0)
+    with pytest.raises(ValueError, match="finite"):
+        model.read_learning_signals(state, event, signal)
+    assert all(torch.equal(before[k], v) for k, v in model.state_dict().items())
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_joined_read_credit_uses_old_query_weights_and_keeps_single_upstream_cast(dtype):
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    learner = LocalMemoryLearner(input_code_size=2, value_size=94, hidden_size=3, key_size=2)
+    if dtype == torch.float64:
+        learner.double()
+    with torch.no_grad():
+        learner.decoder.output_weights.copy_(torch.linspace(
+            -0.1, 0.1, learner.decoder.output_weights.numel(), dtype=torch.float64
+        ).reshape_as(learner.decoder.output_weights))
+    state = learner.ingest([b"x=ab", b"y=bc"])
+    _, query_state, event = learner._query(b"x?", state)
+    before = copy.deepcopy(learner.state_dict())
+    feedback = learner.teach(b"x?", b"ab", state, 0.01)
+    gradient = feedback.mean_context_signal
+    assert gradient.dtype == dtype
+    key_error = torch.bmm(state.synapses.transpose(1, 2), gradient[:, 2:, None]).squeeze(-1)
+    e_a = (key_error - event.key * (event.key * key_error).sum(-1, keepdim=True)) / event.query_norm
+    old_q = before["memory.query_weight"]
+    cell_error = gradient[:, :2] + torch.nn.functional.linear(e_a, old_q.T)
+    expected_map = old_q - 0.01 * (e_a[:, :, None] * event.query_weight_eligibility).sum(0)
+    expected_cell = before["query_cell.weight"] - 0.01 * (
+        cell_error[:, :, None] * query_state.input_eligibility
+    ).sum(0)
+    assert torch.equal(learner.memory.query_weight, expected_map)
+    assert torch.equal(learner.query_cell.weight, expected_cell)
+    assert not hasattr(learner, "query_feedback")
+    assert learner.get_extra_state()["schema"] == "local-memory-phase-lms-v2"

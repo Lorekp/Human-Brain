@@ -361,10 +361,15 @@ class LocalMemoryState:
 
 @dataclass(frozen=True)
 class LocalMemoryRead:
-    """One query's value/key and local query-map traces; caller owns retirement."""
+    """One read with raw query-map presynaptic traces and unclamped drive norm.
+
+    Normalization belongs in the neuron learning signal, once. Writer-map credit
+    retains its separate diagonal approximation. Caller owns read retirement.
+    """
 
     value: Tensor
     key: Tensor
+    query_norm: Tensor
     query_weight_eligibility: Tensor
     query_bias_eligibility: Tensor
     mask: Tensor
@@ -721,21 +726,26 @@ class PlasticMemory(nn.Module):
             or not _all_finite(safe)
         ):
             raise ValueError("active query must be finite and match parameters")
-        key, gain = self._normalized_local_map(F.linear(safe, self.query_weight, self.query_bias))
+        drive = F.linear(safe, self.query_weight, self.query_bias)
+        norm = drive.norm(dim=-1, keepdim=True)
+        key = drive / norm.clamp_min(1e-8)
         key = torch.where(active[:, None], key, 0)
-        gain = torch.where(active[:, None], gain, 0)
-        return LocalMemoryRead(
+        event = LocalMemoryRead(
             torch.bmm(state.synapses, key[:, :, None]).squeeze(-1),
             key,
-            gain[:, :, None] * safe[:, None, :],
-            gain,
+            norm,
+            safe[:, None, :].expand(batch, self.key_size, self.input_size).clone(),
+            active[:, None].expand(batch, self.key_size).to(dtype=safe.dtype),
             active.detach().clone(),
         )
+        self._check_local_read(event, batch)
+        return event
 
     def _check_local_read(self, event: LocalMemoryRead, batch: int) -> None:
         shapes = {
             "value": (batch, self.value_size),
             "key": (batch, self.key_size),
+            "query_norm": (batch, 1),
             "query_weight_eligibility": (batch, self.key_size, self.input_size),
             "query_bias_eligibility": (batch, self.key_size),
         }
@@ -745,11 +755,14 @@ class PlasticMemory(nn.Module):
                 raise ValueError("local read shape mismatch")
             self._check_local_tensor(value)
         self.controller._active_mask(event.mask, batch)
+        if bool((event.query_norm < 0).any()):
+            raise ValueError("query norm must be nonnegative")
 
     def restore_local_read(self, snapshot: dict) -> LocalMemoryRead:
         if set(snapshot) != {
             "value",
             "key",
+            "query_norm",
             "query_weight_eligibility",
             "query_bias_eligibility",
             "mask",
@@ -758,6 +771,35 @@ class PlasticMemory(nn.Module):
         event = LocalMemoryRead(**snapshot)
         self._check_local_read(event, event.value.shape[0])
         return LocalMemoryRead(**event.snapshot())
+
+    @torch.no_grad()
+    def read_learning_signals(
+        self, state: LocalMemoryState, event: LocalMemoryRead, read_signal: Tensor
+    ) -> tuple[Tensor, Tensor]:
+        """Current read-path neuron errors, before any query/map mutation.
+
+        With g at read neurons, e_q=M^T g. The normalization error pool supplies
+        e_a=(e_q-q*(q dot e_q))/norm above epsilon and e_q/epsilon otherwise.
+        At equality the clamped branch is the declared subgradient. Return e_a
+        and Q_pre^T e_a; query-map synapses use raw preactivity, not another gain.
+        This instantaneous weight transport does not differentiate cell history.
+        """
+        batch = self._check_local_state(state)
+        self._check_local_read(event, batch)
+        if read_signal.shape != (batch, self.value_size):
+            raise ValueError("read signal must be per-neuron [batch, value_size]")
+        safe = torch.where(event.mask[:, None], read_signal, 0)
+        self._check_local_tensor(safe)
+        key_signal = torch.bmm(state.synapses.transpose(1, 2), safe[:, :, None]).squeeze(-1)
+        self._check_local_tensor(key_signal)
+        pooled = (event.key * key_signal).sum(-1, keepdim=True)
+        query_signal = torch.where(
+            event.query_norm > 1e-8, key_signal - event.key * pooled, key_signal
+        ) / event.query_norm.clamp_min(1e-8)
+        self._check_local_tensor(query_signal)
+        indirect_signal = F.linear(query_signal, self.query_weight.T)
+        self._check_local_tensor(indirect_signal)
+        return query_signal, indirect_signal
 
     @torch.no_grad()
     def apply_local_feedback(
