@@ -12,6 +12,17 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current separate-answerability result
 
+The [binding diagnostic](../experiments/r4_integrated/local_memory_binding_v1_result.md)
+and saved audit complete in 16.405 seconds with unchanged weights, 32 free
+queries, exact ordinary/traced ingestion parity and no teaching or actions.
+Both checkpoints solve 5/16 questions, including one narrow paired swap.
+All eight identifier-exchange pairs per checkpoint keep their answers unchanged
+when value order is fixed. Identifier activity weakens before value arrival and
+write addresses are much more value-sensitive; source-swap reads respond largely
+in common across questions. This localizes an early binding limitation without
+proving erasure or a sufficient repair. A bounded multiscale writer design review
+precedes another integrated acquisition; no protected gate advances.
+
 The [value-credit return](../experiments/r4_integrated/local_memory_value_credit_v1_result.md)
 completes its fixed six-arm fit and saved audit in 364.919 seconds, below its
 900-second budget, after admission at 850.126 projected seconds. Direct

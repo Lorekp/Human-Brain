@@ -1,6 +1,18 @@
 # Persistent memory and byte output: parallel development
 
-Current execution: the [value-credit comparison](../../experiments/r4_integrated/local_memory_value_credit_v1_result.md)
+Current execution: the [binding diagnostic](../../experiments/r4_integrated/local_memory_binding_v1_result.md)
+completes with independent audit in 16.405 seconds. Identifier activity contrast
+retains about 10% before values arrive; write addresses respond much more to
+values than earlier identifiers, and read changes are largely common across
+queries before the second document. Both checkpoints solve 5/16 questions and
+one narrow paired swap, but all eight identifier-exchange pairs preserve their
+outputs when value order is fixed. These are scoped exposed-development facts,
+not proof of erased information. The next bounded design review concerns generic
+multiscale neuronal writer state, with local eligibility and amplitude/cost
+accounting before a single matched integrated comparison. No more observations
+or training starts merely because this diagnostic is complete.
+
+The preceding [value-credit comparison](../../experiments/r4_integrated/local_memory_value_credit_v1_result.md)
 is complete and independently audited in 364.919 seconds after fresh admission
 at 850.126 projected seconds. Tagged remains 5/8 fit, 1/4 new-value, 1/4 delayed
 and zero interference, matching its predecessor and writer-frozen control;

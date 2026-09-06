@@ -191,6 +191,20 @@ epochs or another automatic error-broadcast change. The next bounded
 survives until the value arrives and influences the write address. Use saved
 evidence first, then one declared frozen-checkpoint localization if necessary;
 no further acquisition or protected gate is opened by this negative result.
+The [completed binding diagnostic](../../experiments/r4_integrated/local_memory_binding_v1_result.md)
+and independent audit take 16.405 seconds. Current identifier-related activity
+contrast retains about 10% by value arrival, and write addresses respond much
+more to the recent value than the earlier identifier. Source-swap read changes
+are largely common across the two questions even during the first document.
+Both checkpoints solve 5/16 diagnostic questions and one narrow paired swap;
+all eight matched identifier-exchange pairs per checkpoint keep their answers
+unchanged when value order is held fixed. This supports an early binding
+weakness without proving information destruction or excluding routing limits.
+Close the diagnostic. The next bounded design review selects a generic bank
+of neuronal timescales for the writer: derive its local eligibility, signal
+scaling, exact predecessor controls and resource cost before one integrated
+comparison. No special identifier detector, supplied address, answer factors
+or additional observation sweep is authorized by this result.
 These byte learners use no pretrained encoder or LLM. The
 [action-path review](local-memory-byte-preflight-review.md) identifies host-computed
 matching in the legacy edit motor, however. Keep neuron-generated answer bytes
