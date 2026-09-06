@@ -32,9 +32,12 @@ next change is [generic neuronal byte coincidence](neuronal-byte-coincidence-rev
 fixed dual-rail AND/match cells before the existing locally learned temporal
 address synapses, with Boolean memory keys. Keep neuronal commitment, codec,
 action heads and the exact same-instance direct local teacher. No error propagates
-backward through the fixed cells. Six reviewed ordinary QA nodes qualify source
-arithmetic, typed storage, controls and actual execution before correction.
-They do not establish acquired skill. The v2 cohort remains closed, exposed
+backward through the fixed cells. All six ordinary QA nodes and independent
+saved review pass: arithmetic, typed storage, controls and actual execution before
+correction, at 11.08 outer seconds and 278.19 MiB observed peak. The
+[fresh five-arm comparison](neuronal-byte-coincidence-comparison-v1.md) now owns
+source development, with the graded competitive reader as its matched reference.
+The QA pass does not establish acquired skill. The v2 cohort remains closed, exposed
 development evidence: no additional rounds, endpoint replay or rate/seed sweep.
 A successor requires newly withheld cases, an explicit transferred parameter
 prior with changed feature meaning, and fresh complete cost admission. No prior

@@ -330,7 +330,19 @@ rejected calls, separately counted from the eight reader query kernels. Any test
 implementation change must reconcile this ledger before execution. No prior load,
 old panel, benchmark task or fitting is included.
 
-Root has selected this one source implementation. Its benefit to longer-pattern
-binding and useful complete edits remains an empirical question; the new withheld
-comparison, shared prior adapter, scientific schema and fresh complete cost
-admission remain separate unexecuted work.
+All six nodes now pass at source revision `1268f14c1bae3a03af2d993d1deb2dba329ebcf1`,
+after clean doctor `doctor-l76qnr0c`. Pytest takes 9.107 seconds; the qualified
+outer monitor takes 11.0799135 seconds at 278.1875 MiB observed owned peak.
+Independent saved-only review verifies all 21 fixture receipts and two unchanged
+workspace files, including the real STOP execution before same-instance local
+correction. The expected late-validation fault is preserved transaction evidence.
+No extra model, checkpoint, feature or action was run during that review.
+The [QA bank](../../benchmarks/neuronal_byte_coincidence_v1.qa.json) has SHA256
+`a49975834b361e43ca0806e325baccf4957d59ef5b9ea8be0215b730f79c9192`.
+These completed nodes are closed and are not repeated for harness qualification.
+
+The [fresh integrated comparison](neuronal-byte-coincidence-comparison-v1.md)
+now owns source development. Benefit to longer-pattern binding and useful edits
+remains an empirical question. New withheld roster construction, prior/worker
+custody, scientific receipts and fresh complete cost remain separately qualified
+work; this mechanics pass establishes neither acquisition nor a speedup.
