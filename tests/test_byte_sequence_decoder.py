@@ -176,8 +176,11 @@ def _assert_decoder_state_equal(first, second):
 
 
 @pytest.mark.parametrize("kind", ["cell", "bypass"])
-def test_local_two_step_rule_matches_independent_scalar_oracle(kind):
-    decoder = ByteSequenceDecoder(2, 3, 2, kind=kind, seed=91, local_learning=True).double()
+@pytest.mark.parametrize("feedback_mode", ["random", "symmetric"])
+def test_local_two_step_rule_matches_independent_scalar_oracle(kind, feedback_mode):
+    decoder = ByteSequenceDecoder(
+        2, 3, 2, kind=kind, seed=91, local_learning=True, hidden_feedback_mode=feedback_mode
+    ).double()
     context = torch.tensor([[0.2, -0.4], [0.3, 0.1]], dtype=torch.float64, requires_grad=True)
     h = torch.zeros(2, 3, dtype=torch.float64)
     ew = torch.zeros(2, 3, 4, dtype=torch.float64)
@@ -220,7 +223,9 @@ def test_local_two_step_rule_matches_independent_scalar_oracle(kind):
         delta = step.logits.softmax(-1)
         delta[0, BYTE_EOS] -= 1
         delta[1, 255] -= 1
-        signal = delta @ decoder.hidden_feedback.T
+        signal = delta @ (
+            decoder.hidden_feedback.T if feedback_mode == "random" else decoder.output.weight
+        )
         expected = copy.deepcopy(decoder.state_dict())
         eta = 0.07
         expected["output.weight"] -= eta * delta.T @ h / 2
@@ -318,7 +323,8 @@ def test_local_initial_identity_private_rng_and_invalid_feedback_atomicity():
     for name, parameter in reference.named_parameters():
         assert torch.equal(parameter, dict(local.named_parameters())[name])
     assert "local_learning" not in reference.get_extra_state()
-    assert local.get_extra_state()["local_learning"] == "fixed-embedding-random-feedback-v1"
+    assert local.get_extra_state()["local_learning"] == "fixed-embedding-local-feedback-v2"
+    assert local.get_extra_state()["hidden_feedback_mode"] == "random"
     context = torch.tensor([[0.1, -0.2]])
     tokens = torch.tensor([[BYTE_BOS, 65]])
     assert torch.equal(reference(context, tokens), local(context, tokens))
@@ -1018,3 +1024,97 @@ def test_direct_context_manifest_binds_seed_rule_and_rejects_wrong_source_before
     ), pytest.raises(ValueError, match="source manifest"):
         runner.run(output, "revision", "wrong")
     assert not output.exists()
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_symmetric_feedback_uses_preupdate_weights_and_same_read_only_forward(dtype):
+    random = ByteSequenceDecoder(2, 3, 2, seed=11, local_learning=True).to(dtype=dtype)
+    symmetric = ByteSequenceDecoder(
+        2, 3, 2, seed=11, local_learning=True, hidden_feedback_mode="symmetric"
+    ).to(dtype=dtype)
+    context = torch.tensor([[0.2, -0.4]], dtype=dtype)
+    inputs = torch.tensor([[BYTE_BOS, 97]])
+    before = copy.deepcopy(symmetric.state_dict())
+    with torch.no_grad():
+        assert torch.equal(random(context, inputs), symmetric(context, inputs))
+    assert random.generate(context, 2) == symmetric.generate(context, 2)
+    _assert_decoder_state_equal(before, symmetric.state_dict())
+    step = symmetric.local_step(context, inputs[:, 0])
+    delta = step.logits.softmax(-1)
+    delta[0, 98] -= 1
+    expected_signal = torch.nn.functional.linear(delta, before["output.weight"].T)
+    expected_context = torch.nn.functional.linear(delta, before["context_feedback"])
+    with patch.object(torch.autograd, "backward", side_effect=AssertionError("no backward")), patch.object(
+        torch.autograd, "grad", side_effect=AssertionError("no reverse gradients")
+    ):
+        receipt = symmetric.teach_local(step, torch.tensor([98]), 0.05)
+    assert torch.equal(receipt.hidden_signal, expected_signal)
+    assert torch.equal(receipt.context_signal, expected_context)
+    assert not torch.equal(
+        receipt.hidden_signal, torch.nn.functional.linear(delta, symmetric.output.weight.T)
+    )
+    for name in ("embedding.weight", "hidden_feedback", "context_feedback"):
+        assert torch.equal(before[name], symmetric.state_dict()[name])
+    assert all(parameter.grad is None for parameter in symmetric.parameters())
+
+
+def test_symmetric_mode_round_trip_and_mismatched_configuration_rejection():
+    decoder = ByteSequenceDecoder(2, 3, 2, local_learning=True, hidden_feedback_mode="symmetric")
+    context = torch.tensor([[0.4, 0.3]])
+    step = decoder.local_step(context, torch.tensor([BYTE_BOS]))
+    decoder.teach_local(step, torch.tensor([65]), 0.01)
+    buffer = io.BytesIO()
+    torch.save(decoder.state_dict(), buffer)
+    buffer.seek(0)
+    saved = torch.load(buffer, weights_only=True)
+    restored = ByteSequenceDecoder(
+        2, 3, 2, seed=99, local_learning=True, hidden_feedback_mode="symmetric"
+    )
+    restored.load_state_dict(saved)
+    _assert_decoder_state_equal(decoder.state_dict(), restored.state_dict())
+    assert decoder.generate(context, 2) == restored.generate(context, 2)
+    random = ByteSequenceDecoder(2, 3, 2, local_learning=True)
+    with pytest.raises(ValueError, match="configuration mismatch"):
+        random.set_extra_state(saved["_extra_state"])
+    old = {**saved["_extra_state"], "local_learning": "fixed-embedding-random-feedback-v1"}
+    old.pop("hidden_feedback_mode")
+    with pytest.raises(ValueError, match="configuration mismatch"):
+        restored.set_extra_state(old)
+    with pytest.raises(ValueError, match="requires local_learning"):
+        ByteSequenceDecoder(2, hidden_feedback_mode="symmetric")
+    with pytest.raises(ValueError, match="must be random or symmetric"):
+        ByteSequenceDecoder(2, local_learning=True, hidden_feedback_mode="invalid")
+
+
+def test_context_feedback_comparison_has_exact_inputs_initial_tensors_and_strict_decision():
+    from experiments.r4_integrated import local_context_use_v1 as previous
+    from experiments.r4_integrated import local_context_use_v2 as runner
+
+    assert runner.ARMS == tuple(f"{mode}_{condition}" for mode in ("random", "symmetric")
+                               for condition in ("correct", "zero", "shuffled", "frozen"))
+    assert runner.schedule() == previous.schedule()
+    assert runner.lesson is previous.lesson and runner.generation is previous.generation
+    for key, value in previous.CONFIG.items():
+        if key != "schema":
+            assert runner.CONFIG[key] == value
+    states = {arm: runner.new_decoder(mode).state_dict()
+              for arm, (mode, _) in runner.ARM_SPECS.items()}
+    assert runner.matched_initial_tensors(states)
+    baseline = previous.new_decoder().state_dict()
+    assert all(torch.equal(value, states["symmetric_correct"][key])
+               for key, value in baseline.items() if isinstance(value, torch.Tensor))
+    assert states["symmetric_correct"]["_extra_state"]["hidden_feedback_mode"] == "symmetric"
+    states["symmetric_correct"]["output.bias"][0] += 1
+    assert not runner.matched_initial_tensors(states)
+    scores = {arm: {"train": 0, "heldout": 0} for arm in runner.ARMS}
+    scores["symmetric_correct"] = {"train": 12, "heldout": 4}
+    assert runner.qualifies(scores)
+    for comparator in ("random_correct", "symmetric_zero", "symmetric_shuffled", "symmetric_frozen"):
+        changed = copy.deepcopy(scores)
+        changed[comparator]["heldout"] = 4
+        assert not runner.qualifies(changed)
+    scores["symmetric_correct"]["train"] = 11
+    assert not runner.qualifies(scores)
+    manifest = runner.sources()
+    assert manifest.items() >= previous.sources().items()
+    assert "experiments/r4_integrated/local_context_use_v2.md" in manifest

@@ -184,8 +184,9 @@ fits 4/12 taught pairs versus zero for all controls, but all arms score 0/4
 withheld combinations. Premature EOS occurs on 8/16 informative-context probes;
 EOS teacher loss is substantially below first/second-byte loss. The unchanged
 decoder has a limitation even with explicit factors. Source review finds no
-implementation defect. Close this diagnostic and compare random versus symmetric
-instantaneous readout feedback using the same local eligibility, rate, schedule
+implementation defect. Close this diagnostic and
+[compare random versus symmetric instantaneous readout feedback](../../experiments/r4_integrated/local_context_use_v2.md)
+using the same local eligibility, rate, schedule
 and exposure. Declare weight transport and the previously exposed development
 combinations; no extra epochs, source-reader repair or gate advancement follows.
 

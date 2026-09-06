@@ -119,7 +119,10 @@ class ByteSequenceDecoder(nn.Module):
     local_learning=True keeps embeddings fixed and adds fixed hidden/context
     feedback buffers. A private seed+2 CPU generator draws them in that order,
     independently of forward parameters, as normal(0,1)/sqrt(257). Their values
-    serialize with the model. Only cell and output parameters learn locally.
+    serialize with the model. Hidden feedback defaults to the fixed random
+    projection; symmetric mode uses current readout weights as a neuronal return
+    path before either layer updates. Its inactive random buffer stays counted.
+    Only cell and output parameters learn locally.
     """
 
     def __init__(
@@ -131,6 +134,7 @@ class ByteSequenceDecoder(nn.Module):
         kind: str = "cell",
         seed: int = 0,
         local_learning: bool = False,
+        hidden_feedback_mode: Literal["random", "symmetric"] = "random",
     ) -> None:
         super().__init__()
         if any(
@@ -146,7 +150,12 @@ class ByteSequenceDecoder(nn.Module):
         self.kind = kind
         if type(local_learning) is not bool:
             raise ValueError("local_learning must be boolean")
+        if hidden_feedback_mode not in ("random", "symmetric"):
+            raise ValueError("hidden_feedback_mode must be random or symmetric")
+        if hidden_feedback_mode != "random" and not local_learning:
+            raise ValueError("symmetric hidden feedback requires local_learning=True")
         self.local_learning = local_learning
+        self.hidden_feedback_mode = hidden_feedback_mode
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(seed)
             self.embedding = nn.Embedding(BYTE_BOS + 1, embedding_size)
@@ -176,7 +185,8 @@ class ByteSequenceDecoder(nn.Module):
             "kind": self.kind,
         }
         if self.local_learning:
-            state["local_learning"] = "fixed-embedding-random-feedback-v1"
+            state["local_learning"] = "fixed-embedding-local-feedback-v2"
+            state["hidden_feedback_mode"] = self.hidden_feedback_mode
         return state
 
     def set_extra_state(self, state: dict) -> None:
@@ -309,9 +319,13 @@ class ByteSequenceDecoder(nn.Module):
         """Apply one explicit teacher byte/EOS per active row, averaged over rows.
 
         Output delta is p-onehot(target); output weights/bias use delta*h/delta.
-        Hidden and context signals are independent fixed projections of delta,
-        not reverse derivatives. Only the hidden signal is applied here through
-        local cell eligibility. Embeddings and feedback matrices stay fixed.
+        Hidden signal uses the selected fixed random projection or current
+        readout transpose, before either current-byte layer update. The latter
+        is the exact instantaneous readout derivative for immediate teaching;
+        recurrent credit still uses approximate self-path eligibility. Delayed
+        teaching pairs the saved delta with current readout weights. Context
+        signal retains its independent fixed projection. Only the hidden signal
+        is applied here. Embeddings and feedback buffers stay fixed.
         No clipping, optimizer, autograd, automatic replay or implicit teacher.
 
         ``teacher_count`` counts active labels even when frozen; the caller must
@@ -342,7 +356,10 @@ class ByteSequenceDecoder(nn.Module):
             errors[torch.arange(count, device=targets.device), selected] -= 1
             delta[step.mask] = errors
             loss = float(F.cross_entropy(scores, selected))
-        hidden = F.linear(delta, self.hidden_feedback)
+        hidden = F.linear(
+            delta,
+            self.hidden_feedback if self.hidden_feedback_mode == "random" else self.output.weight.T,
+        )
         context = F.linear(delta, self.context_feedback)
         if not (_all_finite(hidden) and _all_finite(context)):
             raise ValueError("feedback signals must be finite")
