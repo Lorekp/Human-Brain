@@ -1,0 +1,371 @@
+{
+  "appended_helpers": 5,
+  "artifacts": {
+    ".pytest-tmp/competitive-cost-arithmetic-qa-v1-raw.jsonl": "5454dd45b386c31f80ceeb8a93bc1dc2244eb1b2a9234379b4e72b4182db83c0",
+    ".pytest-tmp/competitive-cost-arithmetic-qa-v1.json": "294a58391107faa26d286d0fb5f7fd44ecc6adcb03f9155ee79549392feb662f",
+    ".pytest-tmp/competitive-cost-decision-qa-v1-raw.jsonl": "53ce567c1250d7ea203e820a04c8ec2eb975efbc5f570ede7ed30ceb7feada18",
+    ".pytest-tmp/competitive-cost-decision-qa-v1.json": "875eb0f09f2067f749ca9c6ce63c03920279c1060b767bf923c7a8eabaa66594",
+    ".pytest-tmp/competitive-cost-qa-saved-review.md": "95998c7ab1ab9083216d7bce6605f4e76ff1bf1a20a4e0c92b7c5455c7d3d52f",
+    ".pytest-tmp/competitive-worker-custody-qa-v1-raw.jsonl": "3c1d1a2893b75751180cda8b59e38397a86aa592f002b3ebf147b5fbe8be5635",
+    ".pytest-tmp/competitive-worker-custody-qa-v1.json": "40046909b754cae64e2f3dc72be1c58266bb2db6226e874d89a021bf1d8eb1b8",
+    ".pytest-tmp/dev/doctor-9fm7gpof/receipt.json": "59d57af3ce54e200ea37e9c275468fb60db1424715f7a24b2801bf200a5bb37f",
+    ".pytest-tmp/neuronal-address-competition-cost-qa-v1.launch.json": "01a4e137cddb708ea4d45842b2e53bd16c89bf76cc828ee8e54c9aba223dbe30",
+    ".pytest-tmp/neuronal-address-competition-cost-qa-v1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".pytest-tmp/neuronal-address-competition-cost-qa-v1.stdout": "6ea52f8c45c7a8303dcd9d34b98e60677f67a5cbb8494607965a67210ff67a73",
+    ".pytest-tmp/neuronal-address-competition-cost-qa-v1.xml": "e31bd3b17f6c80ed81712e9718878bc9a8a8a831d7a4da8aed138167e0835a04"
+  },
+  "direct_validation_calls": 19,
+  "expected_value_errors": 12,
+  "genuine_actions": 0,
+  "genuine_audits": 0,
+  "genuine_workers": 0,
+  "historical_checkpoints": 0,
+  "inadmissible_budget_returns": 2,
+  "models": 0,
+  "next_step": "Remove only draft guards with function-body parity, freeze exact final source, then one complete cost plus independently monitored audit before acquisition.",
+  "observed_owned_peak_mib": 223.375,
+  "outcomes": {
+    "cost-arithmetic:completed": {
+      "label": "completed",
+      "phase": "after",
+      "result": {
+        "admissible": true,
+        "audit_peak_pending": false,
+        "audit_projected_peak_mib": 306.0,
+        "category_action_seconds": 0.025,
+        "per_arm": {
+          "action_frozen": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.03
+          },
+          "learned": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.03
+          },
+          "marginal_reference": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.04
+          },
+          "memory_disabled": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.03
+          },
+          "slow_frozen": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.03
+          }
+        },
+        "projected_audit_seconds": 15.592,
+        "projected_run_seconds": 219.8,
+        "projected_seconds": 235.39200000000002,
+        "projected_tree_mib": 702.0,
+        "run_projected_peak_mib": 702.0
+      }
+    },
+    "cost-arithmetic:failed_monitor": {
+      "exception": "ValueError",
+      "label": "failed_monitor",
+      "message": "monitor did not complete",
+      "phase": "after"
+    },
+    "cost-arithmetic:fifth_incomplete": {
+      "exception": "ValueError",
+      "label": "fifth_incomplete",
+      "message": "incomplete cost learning/cap scope",
+      "phase": "after"
+    },
+    "cost-arithmetic:memory_budget": {
+      "label": "memory_budget",
+      "phase": "after",
+      "result": {
+        "admissible": false,
+        "audit_peak_pending": false,
+        "audit_projected_peak_mib": 2056.0,
+        "category_action_seconds": 0.025,
+        "per_arm": {
+          "action_frozen": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.03
+          },
+          "learned": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.03
+          },
+          "marginal_reference": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.04
+          },
+          "memory_disabled": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.03
+          },
+          "slow_frozen": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.03
+          }
+        },
+        "projected_audit_seconds": 15.592,
+        "projected_run_seconds": 219.8,
+        "projected_seconds": 235.39200000000002,
+        "projected_tree_mib": 2056.0,
+        "run_projected_peak_mib": 702.0
+      }
+    },
+    "cost-arithmetic:missing_monitor": {
+      "exception": "ValueError",
+      "label": "missing_monitor",
+      "message": "unfinished cost-audit monitor",
+      "phase": "after"
+    },
+    "cost-arithmetic:preliminary": {
+      "label": "preliminary",
+      "phase": "after",
+      "result": {
+        "admissible": false,
+        "audit_peak_pending": true,
+        "audit_projected_peak_mib": null,
+        "category_action_seconds": 0.025,
+        "per_arm": {
+          "action_frozen": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.03
+          },
+          "learned": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.03
+          },
+          "marginal_reference": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.04
+          },
+          "memory_disabled": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.03
+          },
+          "slow_frozen": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.03
+          }
+        },
+        "projected_audit_seconds": null,
+        "projected_run_seconds": 219.8,
+        "projected_seconds": 219.8,
+        "projected_tree_mib": 702.0,
+        "run_projected_peak_mib": 702.0
+      }
+    },
+    "cost-arithmetic:time_budget": {
+      "label": "time_budget",
+      "phase": "after",
+      "result": {
+        "admissible": false,
+        "audit_peak_pending": false,
+        "audit_projected_peak_mib": 306.0,
+        "category_action_seconds": 0.5,
+        "per_arm": {
+          "action_frozen": {
+            "action": 0.5,
+            "journal": 0.002,
+            "model": 0.03
+          },
+          "learned": {
+            "action": 0.5,
+            "journal": 0.002,
+            "model": 0.03
+          },
+          "marginal_reference": {
+            "action": 0.5,
+            "journal": 0.002,
+            "model": 0.04
+          },
+          "memory_disabled": {
+            "action": 0.5,
+            "journal": 0.002,
+            "model": 0.03
+          },
+          "slow_frozen": {
+            "action": 0.5,
+            "journal": 0.002,
+            "model": 0.03
+          }
+        },
+        "projected_audit_seconds": 15.592,
+        "projected_run_seconds": 1435.8,
+        "projected_seconds": 1451.392,
+        "projected_tree_mib": 702.0,
+        "run_projected_peak_mib": 702.0
+      }
+    },
+    "cost-decision:command": {
+      "exception": "ValueError",
+      "label": "command",
+      "message": "audit ran a different checker",
+      "phase": "after"
+    },
+    "cost-decision:input": {
+      "exception": "ValueError",
+      "label": "input",
+      "message": "audit did not authenticate selected input",
+      "phase": "after"
+    },
+    "cost-decision:projection": {
+      "exception": "ValueError",
+      "label": "projection",
+      "message": "final admission projection mismatch",
+      "phase": "after"
+    },
+    "cost-decision:source": {
+      "exception": "ValueError",
+      "label": "source",
+      "message": "completed audit checker is not the held source",
+      "phase": "after"
+    },
+    "cost-decision:valid": {
+      "label": "valid",
+      "phase": "after",
+      "result": {
+        "admissible": true,
+        "audit_peak_pending": false,
+        "audit_projected_peak_mib": 306.0,
+        "category_action_seconds": 0.025,
+        "per_arm": {
+          "action_frozen": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.03
+          },
+          "learned": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.03
+          },
+          "marginal_reference": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.04
+          },
+          "memory_disabled": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.03
+          },
+          "slow_frozen": {
+            "action": 0.025,
+            "journal": 0.002,
+            "model": 0.03
+          }
+        },
+        "projected_audit_seconds": 15.592,
+        "projected_run_seconds": 219.8,
+        "projected_seconds": 235.39200000000002,
+        "projected_tree_mib": 702.0,
+        "run_projected_peak_mib": 702.0
+      }
+    },
+    "worker-custody:command": {
+      "exception": "ValueError",
+      "label": "command",
+      "message": "actual worker command differs from selected source/input",
+      "phase": "after"
+    },
+    "worker-custody:creation": {
+      "exception": "ValueError",
+      "label": "creation",
+      "message": "worker creation outside selected launch",
+      "phase": "after"
+    },
+    "worker-custody:direct": {
+      "label": "direct",
+      "phase": "after",
+      "result": null
+    },
+    "worker-custody:fifth": {
+      "exception": "ValueError",
+      "label": "fifth",
+      "message": "worker final state/experience changed",
+      "phase": "after"
+    },
+    "worker-custody:origin": {
+      "exception": "ValueError",
+      "label": "origin",
+      "message": "actual imported module origins differ from isolated package",
+      "phase": "after"
+    },
+    "worker-custody:qa_scope": {
+      "exception": "ValueError",
+      "label": "qa_scope",
+      "message": "QA worker scope cannot admit integrated work",
+      "phase": "after"
+    },
+    "worker-custody:redirector": {
+      "label": "redirector",
+      "phase": "after",
+      "result": null
+    }
+  },
+  "outer_seconds": 4.0094369,
+  "prior_ast_nodes_unchanged": 179,
+  "pytest_seconds": 2.927,
+  "qualification": "Synthetic scalar/file validation; values are authored and are not measured cost admission.",
+  "receipts": {
+    "cost-arithmetic": {
+      "checker_sha256": "d38fc55d0b913c80306eef34552c2fb69cb1c6b8ba168215efbcba3b3fbb3b49",
+      "children": 0,
+      "direct_project_cost_calls": 7,
+      "models": 0,
+      "raw_sha256": "5454dd45b386c31f80ceeb8a93bc1dc2244eb1b2a9234379b4e72b4182db83c0",
+      "status": "passed"
+    },
+    "cost-decision": {
+      "checker_sha256": "d38fc55d0b913c80306eef34552c2fb69cb1c6b8ba168215efbcba3b3fbb3b49",
+      "children": 0,
+      "direct_decision_calls": 5,
+      "models": 0,
+      "raw_sha256": "53ce567c1250d7ea203e820a04c8ec2eb975efbc5f570ede7ed30ceb7feada18",
+      "status": "passed"
+    },
+    "worker-custody": {
+      "checker_sha256": "d38fc55d0b913c80306eef34552c2fb69cb1c6b8ba168215efbcba3b3fbb3b49",
+      "children": 0,
+      "direct_worker_custody_calls": 7,
+      "models": 0,
+      "raw_sha256": "3c1d1a2893b75751180cda8b59e38397a86aa592f002b3ebf147b5fbe8be5635",
+      "status": "passed"
+    }
+  },
+  "roster_constructions": 0,
+  "schema": "neuronal-address-competition-cost-qa-v1",
+  "selection": [
+    "test_competitive_splice_saved_audit_arithmetic",
+    "test_competitive_splice_saved_cost_decision_custody",
+    "test_competitive_splice_worker_saved_custody"
+  ],
+  "source_revision": "2c5a0dd8596034ae61d34addbdc778ba8bb0e994",
+  "source_sha256": {
+    "docs/research/neuronal-address-competition-cost-qa-v1.md": "852faad2133007442041811efa8208c44a1ff23483a93455516ca8ee67882b0c",
+    "experiments/r4_integrated/check_neuronal_address_competition_v1.py": "7be52c3c0f06897d9e8017f2150890a6292553d1fa46645b8820d842aaab1ff8",
+    "experiments/r4_integrated/check_neuronal_splice_online_v2.py": "d38fc55d0b913c80306eef34552c2fb69cb1c6b8ba168215efbcba3b3fbb3b49",
+    "experiments/r4_integrated/neuronal_splice_online_v2.py": "d31426d9cf2a0ed7d302c32e8d93ea6b7f35dd95ab028d820eb23bcee07ad76f",
+    "experiments/r4_integrated/neuronal_splice_receipts_v1.py": "353ceae583c5326a9892c1078d5b771cc86dfbb035d26faebd020d37e2c6f5b5",
+    "tests/test_byte_sequence_decoder.py": "3d47e07d16e07dd82e4744db2d3a0fae4b551888e4a3cf507448d81c43fdb671"
+  },
+  "status": "passed",
+  "teachers": 0,
+  "tensor_constructions": 0,
+  "valid_baselines": 5
+}

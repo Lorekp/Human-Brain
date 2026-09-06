@@ -199,6 +199,24 @@ The [three-node synthetic cost/custody contract](neuronal-address-competition-co
 selects the next ordinary QA. It performs nineteen top-level scalar/file
 validation calls, with no neuronal or genuine audit execution.
 
+All three now pass at `2c5a0dd8596034ae61d34addbdc778ba8bb0e994` after clean
+doctor `doctor-9fm7gpof`. The exact nineteen synthetic calls give five valid
+baselines, two inadmissible budget returns and twelve intended ValueErrors.
+Independent saved review passes. The
+[cost QA bank](../../benchmarks/neuronal_address_competition_v1.cost_qa.json)
+has SHA256 `5e9f6a3538a53259bd52e471797d496f1f46cb3d3b5f3363e9963588769c772f`.
+Pytest takes 2.927 seconds; outer launch takes 4.0094369 seconds with
+223.375 MiB observed owned peak. The 235.392-second/702-MiB synthetic outcome
+is authored validator input, not measured admission.
+
+Root selects only the two draft-guard removals after source review and these
+passes. Verify every qualified function body remains unchanged, commit and
+run doctor. Freeze exact final source/config, the already generated roster,
+four QA banks and the qualified executor/prior lineage. Then run one complete
+cost with its separately monitored independent audit under the scope above.
+Require a completed admissible cost decision before any full acquisition.
+No model ran during the synthetic checks and no passed check is repeated.
+
 Exact roster source/data QA, complete source freeze and fresh measured admission
 remain prerequisites. This is one selected integrated
 milestone, not a queue of alternative experiments or a general SWE claim.

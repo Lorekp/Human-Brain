@@ -30,7 +30,10 @@ Return to the shared workload through the selected
 [five-arm comparison](neuronal-address-competition-comparison-v1.md): its
 worker/prior custody and fresh structural roster data checks now pass, with
 [banked receipts](../../benchmarks/neuronal_address_competition_v1.integration_qa.json).
-Implement and qualify its parent/auditor, then complete cost before acquisition.
+Its five-arm parent/auditor and three synthetic cost/custody checks also pass
+source and ordinary QA review. Freeze their exact final source after the two
+declared draft-guard removals, then complete one fresh measured cost and
+independent audit before acquisition.
 The one worker QA chooses STOP and changes no weights; it is not a transfer score.
 Two fixed threshold layers
 commit free recall; the same reader reopens all candidates for its existing
