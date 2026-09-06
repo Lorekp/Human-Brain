@@ -1,0 +1,118 @@
+# Neuronal splice online v1: integrated local action learning
+
+Selected implementation contract, 2026-09-06. The neuronal action circuit's
+[eleven authored checks](../../benchmarks/neuronal_splice_v1.qa.json) pass; learned
+edit selection is not yet established. This protocol authorizes implementation
+and reviewed ordinary harness QA. Complete source/roster/receipt freeze and
+fresh measured admission must precede any acquisition. No trained prior has
+been loaded for this experiment yet.
+
+## Fixed system and workload
+
+Use the exact [selected topology](../../docs/research/neuronal-byte-splice-topology-v1.md)
+and held learner `bb06e074d44431cf2d09d62f7e98119a2a207ed53e7f6d5796bb6c7b274770ab`,
+raw transport `9a704b4f9527598cbd784f2eaee9472e44a968eb21f97ceabf2ad2dfeb0de13a`.
+Resume only the completed v6 no-backpropagation neuronal reader's tensors,
+identically across four modes: learned, action_frozen, slow_frozen,
+memory_disabled. Fresh action weights use seed 733; all local teaching uses .01.
+No old teacher, backpropagating reference, optimizer or alternative policy runs.
+Both action and reader paths receive the identical raw request. Code generation
+remains literal fragment copying; the host provides no escaping or matching.
+
+The [exact roster](neuronal_splice_online_v1_roster.md) owns byte templates,
+payloads, paths, keys, factor allocation and observation schedule. Freeze its
+generated raw JSON/hash after ordinary data checks and before cost. There are
+32 TRAIN tasks in eight fixed rounds per arm, then 32 fresh paired contrasts
+and sixteen early-task retention actions per arm. T00,T08,T16,T24, in that order,
+are the four ordinary cost lessons per arm. Every proposal gets one real
+verification, including unchanged files after STOP/rejected SPLICE. No substitute
+edit is applied. Full exposure is 1,216 action verifications, 1,920 reader
+teacher offers and 2,560 direct action labels, with enabled counts set by mode.
+
+Sixty-four episode tapes per arm contain the specified 32 TRAIN, twenty fresh
+and twelve old-reader packages. Observe each once at its declared stage; retain
+and reuse the exact state. Memory-disabled keeps the same layout with zero
+keys/content. These are separate literal episodic memories, not a compressed
+global knowledge store. Exact four-model/256-tape tensor storage is 170,705,152
+bytes, excluding snapshots, prior loading and temporaries.
+
+The fixed twenty old-v6 raw reader queries run before and after learning in
+every arm: 160 calls, no actions or teachers, max two bytes. Their old delay
+metadata does not add hidden traversals. Old IDs 12–15 are repeated retention
+observations here; fresh V0/V1 packages supply the explicitly selected delay
+through 256 intervening learning experiences. V2/V3 supply five-document
+interference. The original two reader failures stay visible.
+
+## Success and failure
+
+Require every fresh contrast pair to pass both members: 28/28 edited tasks and
+4/4 explicit STOPs. Require all sixteen retention actions (12 edits, four STOPs)
+and preserve correctness on the eighteen originally correct old-reader cases.
+Report all twenty old cases before/after, including original failures 16 and 18;
+do not relabel this as replaying or passing the old 20/20 protocol. Require
+strict fresh edited-task superiority to each matched control. Report STOP
+separately and require useful edits, not process success alone.
+
+A valid alternative splice is successful when it produces the byte-exact
+required after-files and correct executed output. Canonical teacher-tuple
+accuracy is a separate diagnostic. KEEP requires an explicit neuronal STOP.
+All untouched bytes/files must remain exact; stale output from a successful
+process is not a solved SET. Count rejection, EOS/limit, operation/location/
+payload errors, teacher corrections and acquisition curves separately.
+
+The same persistent model must generate every actual acquisition proposal,
+retain its weights through real execution, then receive local correction.
+External grades are evidence, not numerical teaching signals. No more rounds,
+seed/rate sweep, best checkpoint selection or automatic recall change follows
+failure. This is a narrow development comparison, not general software,
+autonomous recovery, learned escaping or any protected gate.
+
+## Custody, resources and next implementation
+
+Follow the amended [standalone harness design](../../docs/research/neuronal-splice-harness-design-v1.md).
+The endpoint worker imports only the explicit teacher-free library closure and
+new support code. The parent keeps the qualified executor: its old import
+closure contains teacher-bearing experiment constants and must not enter the
+worker. Use binary stdin/stdout JSON lines, one bounded exchange at a time:
+proposal, actual executed envelope, acknowledgement. The worker retains its
+pending prediction and same numerical state; it receives no grade/teacher and
+finishes without teaching. Parent grades saved endpoints. No live pending
+ticket crosses or is recreated in another process.
+
+Extract only the exact small generic journal/guard/read utilities into a clean
+support module; do not import old runners or mutate function globals. Authenticate
+the prior artifact/audit chain and every tensor; permit only the explicitly
+declared mode metadata adaptation. Count the entire prior payload while loaded,
+then release it. Do not import its old tapes. Actual loaded worker module paths
+and package hashes must match the explicit isolated source inventory.
+
+The [cost contract](neuronal_splice_online_v1_cost.md) fixes sixteen regular
+lessons, all 192 endpoints, four disposable maximum-geometry experiences and
+four supplied transport probes: 216 verifications, 96 reader teacher offers and
+52 action labels. Both cost/full include the same 160 old-panel reads and complete
+retained payload. All caps/probes are engineering exposure, excluded from skill.
+The memory-disabled cap honestly reaches LIMIT, not manufactured EOS. The three
+other cap margins were derived with a scalar prospective construction, not an
+executed learner. No mid-call weight change is permitted.
+
+Fix the maximum workspace as main.py plus z0.py,z1.py,z2.py, each 128 bytes.
+main.py is `b"print('cap')\n" + b"#" + b"A"*113 + b"\n"`; other files are
+`b"#" + b"A"*126 + b"\n"`. Cap request is 31 uppercase Q bytes. Start/end
+weights and operation weights are zero; operation bias is [1,0]. The cap teacher
+inserts sixteen A bytes at main.py 0:0. Use the fixed asymmetric codec and
+128-slot document layout in the cost contract. Category probes use its four
+exact raw proposals on this workspace.
+
+Retain full mixture/posterior and head-logit evidence, removing only checked
+redundant priors/cursors. Prospective line/tree guards are 1 MiB with explicit
+bounded metadata/output and a common 12 MiB buffer allowance. An authored
+maximum-width serializer fixture must pass before final freeze. Preserve
+overflow evidence and fail; no post-cost guard enlargement.
+
+Separate M/A/J measurements, completed independent cost-audit allowance, actual
+PID/creation-window binding and equal cost/full tensor scope are mandatory.
+Use the exact formulas in the cost contract: 900 seconds for full run plus
+finished audit, 2,048 MiB owned memory, factor-two margins and 30-second run
+allowance. A preliminary estimate cannot admit a fit. Source/data/serialization
+and bounded IPC QA are the next work; record their exact exposure prospectively.
+No cost or acquisition execution has occurred under this protocol.

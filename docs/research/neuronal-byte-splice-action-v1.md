@@ -163,4 +163,6 @@ action and reader populations unchanged. Payloads remain literal source-copy
 cases. Define exact roster/memory sharing, transferred neuronal reader custody,
 output/receipt bounds, maximum-cost fixtures and independent audit before
 execution. Parallel roster, harness and resource reviews serve this one return.
-No new acquisition, prior checkpoint load or cost probe has run yet.
+The selected [online integration contract](../../experiments/r4_integrated/neuronal_splice_online_v1.md)
+now owns the exact roster, criteria, custody and cost preparations. No new
+acquisition, prior checkpoint load or cost probe has run yet.

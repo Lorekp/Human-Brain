@@ -10,8 +10,11 @@ passes its scoped criterion at 18/20 versus zero for all matched controls;
 248.58 seconds with 620.61 MiB peak owned memory. No backpropagation or separate
 training/execution model is used. Two interference failures and the supplied host
 edit motor keep strict qualification and general software capability unmet.
-The active [neuronal byte-splice action review](neuronal-byte-splice-action-v1.md)
-now develops one concrete local-learning interface to replace that selection.
+The [neuronal byte-splice interface](neuronal-byte-splice-action-v1.md) now passes
+eleven authored mechanics checks, including one unsuccessful real edit followed
+by local correction. The active [online action integration](../../experiments/r4_integrated/neuronal_splice_online_v1.md)
+fixes one 256-lesson-per-arm comparison, fresh contrasts and reading retention.
+Its source/data/transport QA and fresh cost admission precede acquisition.
 No further v6 exposure or alternate recall policy is selected.
 
 ## Objective
