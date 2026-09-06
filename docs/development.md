@@ -103,6 +103,16 @@ set `$env:HUMANBRAIN_NATIVE_CACHE = Join-Path (Get-Location) '.native-cache'` an
 `$env:HUMANBRAIN_DEVICE = 'cpu'` unless deliberately testing another setting.
 Record the loaded library identity from the experiment itself. A doctor receipt
 alone does not prove that a later direct invocation used the same native cache.
+Run native preparation and the experiment in the same execution environment,
+including sandbox/permission context. The attested build key includes `PATH`:
+a sandboxed preparation and an unsandboxed monitored launch can select different
+cache identities even with identical source, compiler and SDK. Preserve a failed
+identity receipt and correct preparation; do not weaken the comparison.
+
+On Windows, `.venv/Scripts/python.exe` may start a redirector before the actual
+Python process. Record both roles and bind the experiment PID to the launcher's
+observed owned process tree; do not require it to equal the initial child PID.
+
 Set these variables **before Python starts**: some existing modules initialize
 native cells during import, so assignments inside an experiment's `run()` can
 occur after the process has already loaded and cached a different library.

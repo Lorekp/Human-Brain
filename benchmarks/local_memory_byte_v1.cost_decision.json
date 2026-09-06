@@ -1,0 +1,92 @@
+{
+  "status": "cost_rejected",
+  "source_revision": "35e2808452cf93e2e8485ea9ce24a32d66de078f",
+  "full_fit_ran": false,
+  "capability_claim": null,
+  "projection_formula": "2 * sum_arm(1024 * (maximum complete sampled lesson seconds + capped prediction seconds)) + 2 * (outer cost elapsed seconds - sum all sampled lesson seconds) + 30 seconds finalization allowance. Capped prediction is an intentionally additional charge; sampled lessons already include their actual first attempt. No projection may exceed900 seconds or2048MiB conservative parent-plus-worker peak sum.",
+  "per_arm": {
+    "tagged": {
+      "max_complete_lesson_seconds": 0.23399999999674037,
+      "additional_capped_prediction_seconds": 0.014999999999417923
+    },
+    "aggregate": {
+      "max_complete_lesson_seconds": 0.0940000000045984,
+      "additional_capped_prediction_seconds": 0.01599999999598367
+    },
+    "writer_maps_frozen": {
+      "max_complete_lesson_seconds": 0.20399999999790452,
+      "additional_capped_prediction_seconds": 0.01600000000325963
+    },
+    "frozen": {
+      "max_complete_lesson_seconds": 0.20300000000133878,
+      "additional_capped_prediction_seconds": 0.014999999999417923
+    },
+    "writes_disabled": {
+      "max_complete_lesson_seconds": 0.125,
+      "additional_capped_prediction_seconds": 0.01600000000325963
+    }
+  },
+  "projected_learning_seconds": 1921.024000003934,
+  "projected_other_seconds": 62.079454199996164,
+  "finalization_allowance_seconds": 30,
+  "projected_seconds": 2013.1034542039301,
+  "seconds_limit": 900,
+  "parent_plus_worker_peak_mib": 805.3984375,
+  "observed_tree_peak_sum_mib": 822.34375,
+  "memory_limit_mib": 2048,
+  "disposable_counts": {
+    "first_attempts": 20,
+    "teacher_byte_offers": 200,
+    "document_byte_steps": 1280,
+    "acquisition_query_byte_steps": 1040,
+    "final_query_byte_steps": 19240,
+    "actions": 100,
+    "motor_demos": 2,
+    "enabled_decoder_step_opportunities": 160,
+    "first_generation_decisions": 484
+  },
+  "cost_execution_seconds": 34.2277271,
+  "original_cost_phase_elapsed_seconds": 411.67372727394104,
+  "native": {
+    "binary_sha256": "1a291bdd7ec2d8c56dcd83de73b3fbf0d3faa799364bd8b6e513c108ba592da1",
+    "binary_size": 656896,
+    "source_digest": "51aa8e09fe7cae08432c386bace65661b06b3f99aab798f629f2a29a62af4544"
+  },
+  "process_roles": {
+    "venv_redirector_pid": 37252,
+    "actual_python_pid": 47428,
+    "source_free_worker_pid": 48868,
+    "binding": "All three appear in the launcher's recorded owned process tree; actual Python differs from the Windows venv redirector.",
+    "unreached_runner_issue": "The frozen runner's full-fit cost-admission equality of actual Python PID with launcher child PID is incompatible with the Windows venv redirector. No full fit was admitted; any successor must use the recorded ancestry binding instead."
+  },
+  "native_preflight_failure": {
+    "path": ".pytest-tmp/local-memory-byte-cost-v1/completion.json",
+    "sha256": "26af4ce1fc98bc1c5637eed28940a99ec1be0106f1ab924b1279b371964680f8",
+    "lessons": 0,
+    "actions": 0,
+    "cause": "Only PATH differed in the hashed build environment; toolchain, SDK, command and source location matched. Preparation was moved into the launcher environment; strict identity comparison then passed."
+  },
+  "evidence": {
+    ".pytest-tmp/local-memory-byte-cost-v2/report.json": "62c56c0a7a41a4b12fddf4b45bb060044887dfaea6a6e1ead52fcdc2aa1b3644",
+    ".pytest-tmp/local-memory-byte-cost-v2/completion.json": "d99be790007bbd31374ea6c002b2ed36f7b99e2cc4bd6afd2dfcc364fe0e61ab",
+    ".pytest-tmp/local-memory-byte-cost-v2.launch.json": "562f5c545f6909c21ac1ddde5357747df89b093a8925c93e2901c82c442f55df",
+    ".pytest-tmp/local-memory-byte-v1.cost-admission-launch-env.json": "8dbe456a976ac5fd41e673e2cd2222b495a91ca33187fe05174d6fcd91de8398"
+  },
+  "decision": "Do not admit the 1024-lesson fit or relax its frozen margin after observing cost. This rejects the implementation/configuration at its declared budget, not local neuronal learning. Profile the measured local hot path before choosing a successor.",
+  "independent_audit": {
+    "status": "passed",
+    "path": ".pytest-tmp/local-memory-byte-cost-v2-independent-audit.json",
+    "sha256": "5fb5fb48bc02177e9245b1835bea23fdc70b6152e06a2e311b7636aed7c9fec9",
+    "scope": "Saved-only source/receipt/state/child audit, no model rerun"
+  },
+  "subsequent_ingestion_profile": {
+    "path": ".pytest-tmp/local-ingestion-profile.result.json",
+    "sha256": "a08c91f0933803e312333d7eda211c20070d42f42fe0e7f3330f76c833a6dc8c",
+    "ingestion_calls": 8,
+    "byte_steps": 512,
+    "teacher_bytes": 0,
+    "elapsed_seconds": 2.427096,
+    "scope": "Separate diagnostic; profiler-instrumented, not a replacement cost admission",
+    "finding": "Tag arithmetic/reductions and finite checks dominate; explicit clone below0.5%. No optimization implemented."
+  }
+}

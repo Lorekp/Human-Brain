@@ -82,7 +82,19 @@ The tagged learner retains 4,264,840 tensor bytes for its weights, fixed feedbac
 and one memory stream, versus 587,404 for aggregate credit; transient query/decoder
 traces and snapshot copies are additional. Tags alone cost 3,735,808 bytes and
 remain counted after source removal. Require useful new-value performance over
-a frozen writer, not just parameter movement. No local fit is admitted yet.
+a frozen writer, not just parameter movement.
+
+The [local cost decision](../../experiments/r4_integrated/local_memory_byte_v1_result.md)
+closes this fixed configuration before its full fit: the prospective estimate
+is 2,013.103 seconds against a 900-second limit. The disposable twenty-lesson,
+hundred-action workload and saved-only audit pass; no acquired-capability claim
+follows. Memory fits the limit, while complete tagged lessons cost substantially
+more than aggregate credit. An ingestion-only profile locates the additional cost
+in tag arithmetic/reductions and repeated finite checks; explicit cloning is less
+than 0.5% of measured tagged time. Next, investigate reusable private arithmetic
+buffers and redundant validation at checked public boundaries. Preserve the local
+rule, state independence, finite-state guarantees and original timing margin;
+verify any changed numerical reduction order before claiming equivalent behavior.
 
 Before the next learning experiment, fix its roster, local rule, feedback,
 update budget, stopping criteria and measured cost ceiling. Return to new-value,

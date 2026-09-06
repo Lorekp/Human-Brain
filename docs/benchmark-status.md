@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-06 with the completed separate-answerability comparison.
+Updated 2026-09-06 with local-learning implementation and cost admission results.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -28,9 +28,12 @@ contracts. Runtime is 3,184.905 seconds at 2,036.148 MiB peak parent memory,
 reusing the existing encoded cache. No architecture is adopted or gate passed.
 
 Independent [memory/output/integration development](research/persistent-memory-byte-development.md)
-is now proceeding in parallel. Its memory and decoder pass 19 focused numerical
-and state tests; joint learned behavior remains untested. The official-exam
-scorer remains ready, with genuine structured learner output still pending.
+now uses local online cell/synapse updates, with 42 focused checks passing.
+Its [disposable cost workload](../experiments/r4_integrated/local_memory_byte_v1_result.md)
+and saved-only audit pass, but the full fit is not admitted: 2,013.103 projected
+seconds exceeds the 900-second ceiling. Useful local acquisition remains unproved.
+The official-exam scorer remains ready, with genuine structured learner output
+still pending.
 
 ## Earlier token-pointer acquisition and action result
 
