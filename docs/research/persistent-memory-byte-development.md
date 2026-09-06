@@ -9,7 +9,16 @@ return their respective correct answers. Useful binding improves; the strict
 completion criterion remains unmet. Close the fixed fit without extra epochs or
 automatic gain changes. A bounded saved-evidence review must distinguish the
 remaining incorrect start ranking from multi-record byte competition before
-one next integrated change is selected. Streamed complete scientific rows cost
+one next integrated change is selected. The completed
+[sharing review](local-shared-temporal-query-review.md) selects a generic 32-by-32
+temporal map reused across 32 code channels, keeping the tape, codec, soft
+competition, rate and exposure. Implement this one replacement with exact
+immediate dense-map reference parity, ordinary QA and fresh five-arm admission.
+Its prospective 20/20 criterion requires novel superiority to matched controls
+and no regression plus overall improvement against the already novel-perfect
+dense reference. Shared circuit reuse and its narrower representational prior
+remain explicit; neither parameter counts nor conditional descent establish
+actual speed or successful learning. Streamed complete scientific rows cost
 8.693 seconds; run/audit peaks of 907.887/988.676 MiB fit the final admission
 estimate, though the run-specific estimate remains 75.406 MiB too low.
 

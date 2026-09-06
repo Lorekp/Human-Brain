@@ -269,6 +269,18 @@ wrong answer. This is a useful query-binding and fresh-value gain, while the
 strict completion criterion still fails on three cases. Close the fixed fit
 without extra epochs or a gain sweep. Review the saved incorrect start ranking
 and multi-record byte competition before selecting one next integrated change.
+The completed [sharing review](local-shared-temporal-query-review.md) selects
+one 32-by-32 temporal map reused across all 32 sensory-code channels. It learns
+generic lag alignment with held local synaptic products, retaining tape, codec,
+soft competition, rate and exposure. This supplies a shared channel-correspondence
+prior; it does not establish the cause of the dense map's failures. Preserve
+the immediate dense-map learner as the exact reference, complete ordinary QA,
+and require fresh five-arm admission. Success requires absolute 20/20, novel
+superiority to the three matched controls and no regression plus overall gain
+over the dense reference, which already solves all four novel cases. This new
+criterion does not change the closed result. No hard-address or gain sweep is
+queued. Shared-address operation and storage counts shrink; actual whole-workload
+time and memory must still be measured.
 Streamed scientific receipts cost 8.693 seconds and remove retained lesson-list
 growth. Run/audit peaks are 907.887/988.676 MiB, below the final 1,617.741-MiB
 admission estimate. The run-specific estimate still understates its peak by
