@@ -35,7 +35,7 @@ from experiments.r4_integrated.neuronal_splice_receipts_v1 import (
     validate_work,
 )
 
-DRAFT = True
+DRAFT = False
 LINE_LIMIT = TREE_LIMIT = 2 << 20
 ROOT = Path(__file__).resolve().parents[2]
 ARMS = ("learned", "action_frozen", "slow_frozen", "memory_disabled", "graded_reference")

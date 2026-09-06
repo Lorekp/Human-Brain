@@ -1,14 +1,27 @@
 # Prospective integrated byte-coincidence comparison
 
-Status: root-selected integrated source development, 2026-09-06. The feature
-implementation is frozen at `1268f14`; all six ordinary QA nodes passed in
-11.0799135 outer seconds at 278.1875 MiB observed owned peak. This is not
-acquisition admission. Implement the successor factory, prior adapter, teacher-free
-worker/endpoint, receipt schema, raw roster constructors, parent and independent
-audit with new v3 identities. Keep frozen sources unchanged. This selection does
-not authorize roster generation, checkpoint loading, model calls, further tests,
-action execution, measured cost or fitting. Freeze each focused QA scope before
-its execution.
+Status: root-selected measured cost and conditional fixed acquisition, 2026-09-06.
+All focused ordinary QA is complete and independently banked: six component
+nodes, one data node, two synthetic receipt nodes, one real prior/worker exchange,
+and one synthetic cost-binding node. Passed nodes stay closed. The final test
+ran at `c083023`, with no neuronal calls, in 5.4443499 outer seconds and
+240.25390625 MiB observed peak. See the component, data, integration and cost QA
+banks under `benchmarks/neuronal_byte_coincidence_v1.*.json`.
+
+Release only the parent and genuine auditor DRAFT guards after these banks;
+the worker guard was already released and tested. Freeze the exact reviewed
+source manifest, roster, original prior, executor qualifications, QA bank hashes,
+clean checkout and doctor in one v3 admission. The frozen roster is
+`.pytest-tmp/neuronal-splice-roster-qa-generated-v3.json`, SHA256
+`9b8f03657c1604b7e8e286e12b7534db750a5ad29ab9c872f3481d58bf2aabd5`.
+No roster regeneration or endpoint-informed changes are selected.
+
+Execute one complete cost workload and its separately monitored independent
+audit under the unchanged limits below. Only the completed six-evidence cost
+decision may authorize one full fixed acquisition followed by its independent
+audit. A rejected projection closes this attempted configuration; preserve all
+outputs and do not repeat it for a more favorable timing sample. QA establishes
+implementation and custody behavior, not acquired skill or cost admission.
 
 Ask one question: **does exact generic byte coincidence before the same learned
 temporal address synapses improve complete neural edits on fresh contrasts while
