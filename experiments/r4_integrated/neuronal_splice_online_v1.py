@@ -426,7 +426,7 @@ def run_experiment(root, output, mode, admission_path, admission_sha, deadline):
         report["ingestion_after"] = ingest_stage(models, states, roster, "after_learning")
         for arm in ARMS:
             before, after = report["ingestion_before"][arm], report["ingestion_after"][arm]
-            if (len(states[arm]) != 64 or before["raw_bytes"] + after["raw_bytes"] != 3490
+            if (len(states[arm]) != 64 or before["raw_bytes"] + after["raw_bytes"] != 3638
                     or before["eos"] + after["eos"] != 152):
                 raise ValueError("actual retained ingestion scope changed")
         retained = sum(tensor_bytes(model.state_dict()) for model in models.values())

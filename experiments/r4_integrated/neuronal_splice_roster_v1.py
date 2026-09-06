@@ -181,7 +181,7 @@ def _new_tasks() -> tuple[dict, dict]:
                     documents = _pair_documents(key, payload, 60 + r, values[1 - member], False)
                     if r >= 2:
                         documents.extend(_document(_key(68 + 3 * (r - 2) + j), value)
-                                         for j, value in enumerate((b"cc", b"cd", b"dd")))
+                                         for j, value in enumerate((b"cc", b"cd", b"d")))
                     _package(packages, memory_id, documents,
                              "before_learning" if r < 2 else "after_learning")
                 else:
@@ -269,7 +269,7 @@ def build_roster(old_roster_path: Path) -> dict:
         "full_reader_teacher_offers": 4 * payload_offers,
         "full_action_teacher_labels": 4 * action_labels,
     }
-    expected = (64, 64, 48, 16, 152, 3490, 124, 480, 640)
+    expected = (64, 64, 48, 16, 152, 3638, 128, 480, 640)
     actual = (len(tasks), len(packages), len(before), len(after), len(document_hex), raw_bytes,
               counts["maximum_memory_slots"], payload_offers, action_labels)
     if actual != expected or set(before + after) != set(packages):

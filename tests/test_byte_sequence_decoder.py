@@ -5372,9 +5372,9 @@ def test_splice_online_roster_data_contract(tmp_path):
         "tasks": 64, "train_tasks": 32, "fresh_tasks": 32, "retention_tasks": 16,
         "lessons_per_arm": 256, "memory_packages_per_arm": 64,
         "before_learning_packages": 48, "after_learning_packages": 16,
-        "documents_per_arm": 152, "document_raw_bytes_per_arm": 3490,
-        "document_eos_per_arm": 152, "ingestion_symbols_per_arm": 3642,
-        "maximum_memory_slots": 124, "reader_teacher_offers_per_arm": 480,
+        "documents_per_arm": 152, "document_raw_bytes_per_arm": 3638,
+        "document_eos_per_arm": 152, "ingestion_symbols_per_arm": 3790,
+        "maximum_memory_slots": 128, "reader_teacher_offers_per_arm": 480,
         "action_teacher_labels_per_arm": 640, "full_action_verifications": 1216,
         "old_panel_reader_calls": 160, "full_reader_teacher_offers": 1920,
         "full_action_teacher_labels": 2560,
@@ -5383,7 +5383,7 @@ def test_splice_online_roster_data_contract(tmp_path):
     tasks, memories = roster["tasks"], roster["memory_packages"]
     documents = [bytes.fromhex(raw) for memory in memories.values()
                  for raw in memory["document_hex"]]
-    assert len(documents) == 152 and sum(map(len, documents)) == 3490
+    assert len(documents) == 152 and sum(map(len, documents)) == 3638
     stage_ids = roster["before_learning_memory_ids"] + roster["after_learning_memory_ids"]
     assert len(set(stage_ids)) == 64
     assert set(roster["before_learning_memory_ids"]) == {

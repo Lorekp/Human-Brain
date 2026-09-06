@@ -119,6 +119,14 @@ No cost or acquisition execution has occurred under this protocol.
 
 ## Harness implementation and first ordinary QA scope
 
+The roster's explicit pre-acquisition arithmetic amendment now takes precedence:
+five-document V2/V3 states use distractors `[cc,cd,d]` and occupy 128 slots;
+ingestion totals are 3,638 raw bytes plus 152 EOS per arm. The first data QA
+stopped at the 129-slot original package before roster publication. A subsequent
+stdlib-only reconstruction checked the amended package/count arithmetic. No
+neural exposure occurred, and the two later nodes had not started. The same
+three-node batch may run against the corrected source with a new JUnit/temp path.
+
 The standalone parent, prior adapter, roster, isolated worker, binary transport,
 compact receipts and independent audit are under implementation. Parent and
 auditor retain explicit DRAFT guards; source publication is not cost admission.

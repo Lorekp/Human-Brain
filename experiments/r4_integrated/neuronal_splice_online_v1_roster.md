@@ -2,6 +2,18 @@
 
 Prospective source specification only, for root's single selected integrated comparison. No roster implementation, model, checkpoint load, forward, action or acquisition has run. Freeze the generated raw roster and its hash before cost. Do not choose examples or add rounds after seeing outputs.
 
+**Pre-acquisition arithmetic correction, 2026-09-06:** the first data-only QA
+stopped before producing a roster because V2/V3 five-document packages actually
+needed 129 slots, not 124. Their third distractor payload is now `d` instead of
+`dd`; the three appended payloads are `[cc,cd,d]`. All five documents, two
+quoted target assignments and paired task requirements remain. The resulting
+maximum is exactly 128 slots. This amendment supersedes those two details in
+the original specification below. Independently rebuilding the raw data gives
+3,638 raw bytes plus 152 EOS per arm, or 14,552 raw bytes plus 608 EOS across
+four arms. The original 3,490-byte estimate omitted one byte per document;
+four shortened distractors then remove four bytes per arm. No model, checkpoint
+or action ran. Preserve the failed first JUnit receipt and use fresh QA paths.
+
 ## Counts, task meaning and common state
 
 Four arms: learned, action-frozen/reader-plastic, all-slow-frozen, retained-memory-disabled. Each starts with the exact completed v6 learned reader's slow tensors and the same fresh action arrays. Mode metadata is explicit; identical numerical initialization does not mean identical publication gates. No old endpoint tape is imported. Each arm constructs its own mode-appropriate raw-document states once and reuses those immutable states; disabled memory has zero keys/content in every state, including reading-retention states.
