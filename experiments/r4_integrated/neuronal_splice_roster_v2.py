@@ -248,7 +248,7 @@ def build_roster(old_roster_path: Path) -> dict:
         "full_reader_teacher_offers": 5 * payload_offers,
         "full_action_teacher_labels": 5 * action_labels,
     }
-    expected = (64, 72, 48, 24, 168, 4022, 128, 480, 640)
+    expected = (64, 72, 48, 24, 168, 4022, 125, 480, 640)
     actual = (len(tasks), len(packages), len(before), len(after), len(documents), raw_bytes,
               counts["maximum_memory_slots"], payload_offers, action_labels)
     if (actual != expected or len(set(before + after)) != len(packages)

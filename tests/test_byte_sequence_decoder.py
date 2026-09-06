@@ -7283,7 +7283,7 @@ def test_competitive_splice_roster_data_contract():
         old_path: "009b42e22976733bba207e46337ec23d5f6de5ab15ab061bc6fd08539e44a2b1",
         previous_path: "245a0d908ded5d4bbf4216028d062a9609597561d4c63c67c50f69fd164de5e9",
         old_source: "b814edae2d3bc0da5d6be85ef1adb36f85b411522b189ee376617c192f194d77",
-        new_source: "de3d672e7e72299a706d2e154c0e426364f72b472086c2f5272fec6939b4ff6b",
+        new_source: "4b7f7fd5203462d039a1867d6c4ab23761431e6c85aa81da898d43fbc1eab413",
     }
     for path, expected in bindings.items():
         assert sha256(path.read_bytes()).hexdigest() == expected
@@ -7331,7 +7331,7 @@ def test_competitive_splice_roster_data_contract():
         "before_learning_packages": 48, "after_learning_packages": 24,
         "documents_per_arm": 168, "document_raw_bytes_per_arm": 4022,
         "document_eos_per_arm": 168, "ingestion_symbols_per_arm": 4190,
-        "maximum_memory_slots": 128, "reader_teacher_offers_per_arm": 480,
+        "maximum_memory_slots": 125, "reader_teacher_offers_per_arm": 480,
         "action_teacher_labels_per_arm": 640, "full_action_verifications": 1520,
         "old_panel_reader_calls": 200, "full_reader_teacher_offers": 2400,
         "full_action_teacher_labels": 3200,

@@ -42,3 +42,25 @@ Bank source/test hashes, doctor, monitor and JUnit after execution.
 Zero models, checkpoint loads, neuronal traversals, teacher calls, workers,
 actions or endpoint predictions are selected. A data pass freezes prospective
 task bytes; it is not evidence of learner success and does not admit acquisition.
+
+## Preserved assertion failure and reviewed correction
+
+The first launch at `0a9bac538cac2d4c992b491a5149ba8a04976e56` fails at the
+constructor's final count assertion. Actual counts are 64 tasks, 72 packages,
+48/24 stage split, 168 documents, 4,022 raw bytes, maximum 125 slots and
+480/640 teaching offers. The expected maximum incorrectly retained 128 from
+excluded splice-v1 fresh interference packages. The saved-only review finds
+retained TRAIN maximum 52, old-panel maximum 125, new document-order maximum
+50, continuation maximum 54, value-role maximum 125 and operation maximum 50.
+The 128-slot tape capacity and maximum-geometry engineering cap are unchanged.
+
+Preserve `.pytest-tmp/neuronal-address-competition-data-qa-v1` monitor, stdout,
+stderr and JUnit. This spends one builder call, zero models/actions/teachers;
+the constructor did not return, so no generated roster or pending/passed JSON
+was published. The launch takes 4.4467717 seconds and 267.125 MiB observed peak.
+Root selects the scalar assertion correction only, with unchanged task bytes,
+and one additional data-only builder call after a new commit and doctor. Reuse
+the never-created output JSON names; use a fresh
+`.pytest-tmp/neuronal-address-competition-data-qa-v2` watchdog/basetemp/JUnit.
+All other exposure and resource limits above remain fixed. The independently
+passed worker check is unaffected and must not be rerun.
