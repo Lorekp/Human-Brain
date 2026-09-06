@@ -39,6 +39,8 @@ supplied accepted probe emits. No full fit ran. Review saved action timing and
 executor source for one bounded speed improvement before any new acquisition.
 The selected [two-child profile](local-action-executor-profile-v1.md) localizes
 actual unchanged execution using authored inputs and no neuronal learning.
+It places 94-95% inside subprocess; one [authored import profile](local-action-import-profile-v1.md)
+now examines the child import path without changing the learner or fitted workload.
 
 Current result: the [shared temporal-map comparison](../../experiments/r4_integrated/local_shared_temporal_query_v1_result.md)
 and independent audit complete in 119.745 seconds. Learned solves 8/8 taught,

@@ -343,6 +343,8 @@ No full acquisition ran. Review saved action cost and executor source to select
 one bounded improvement; retain accepted-path coverage and the fixed workload.
 First execute the [two-child authored executor profile](local-action-executor-profile-v1.md)
 under unchanged transport, with no learner/motor calls or acquisition.
+That profile places 94-95% inside subprocess. One [authored child import profile](local-action-import-profile-v1.md)
+now localizes import subtrees before choosing a regular-source bootstrap change.
 Run/audit peaks of 665.539/432.832 MiB fit the revised admission estimates.
 The shorter aggregate duration includes a changed reference roster and must not
 be presented as an isolated circuit speedup.

@@ -19,6 +19,9 @@ another optimization; no identical timing retry or relaxed workload is authorize
 The selected [two-child executor profile](local-action-executor-profile-v1.md)
 uses actual unchanged execution on authored pending/corrected workspaces to
 distinguish the subprocess boundary from parent work. It runs no learner or motor.
+That profile now passes and localizes 94-95% inside subprocess. The selected
+[single-child import profile](local-action-import-profile-v1.md) distinguishes
+site/import subtrees before any source-execution specialization is chosen.
 
 ## Concrete finding
 

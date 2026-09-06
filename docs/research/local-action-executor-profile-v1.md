@@ -42,3 +42,39 @@ This diagnostic does not alter neuronal rules, frozen runner/checkers, exposure,
 the accepted-action probe or resource ceilings. A selected optimization must
 later pass its affected semantic QA and new complete cost/audit; an identical
 cost retry, output caching or persistent interpreter is not selected.
+
+## Completed parent-side diagnostic
+
+Both authored executions passed, with exactly two subprocess calls and two
+completed execution receipts. Source revision is
+`6bd77f745fcb6cde08e30233366a6e0fee08e56e`; the ignored profiler SHA256 is
+`eed61b48d7bc9e9df78482c9dbe1dfc90364388842e958d3246f6bdcb6c2043a`.
+The actual executor/qualification stayed unchanged. Doctor receipt is
+`.pytest-tmp/dev/doctor-wax1_i90/receipt.json`. The monitored complete diagnostic
+took 2.997574 seconds with a 79.61328125-MiB observed tree peak. No neural model,
+teacher or motor ran, and no cost/full-learning weights were loaded.
+
+| Profile boundary | Pending | Corrected |
+| --- | ---: | ---: |
+| Executor cumulative | 79.3027 ms | 72.0005 ms |
+| Subprocess cumulative | 75.7120 ms | 67.7562 ms |
+| Difference, parent work outside subprocess | 3.5907 ms | 4.2443 ms |
+| CreateProcess exclusive, inside subprocess | 9.6408 ms | 4.4032 ms |
+| Parent lock acquisition exclusive | 64.6406 ms | 61.7294 ms |
+
+Subprocess accounts for about 94-95% of the instrumented executor. Parent file
+path work is too small in these fixtures to be the main next target. Holding
+every other v3 projection term fixed, its 96.224-second shortfall corresponds
+to about 11.746 ms per replicated action; this comparison is only prioritization,
+not a new projection from instrumented timings. Lock waiting does not establish
+lock contention or a Python startup cause: the parent waits for reader threads
+and the child. Child startup, imports, task execution and communication remain
+combined. Select a bounded child import/source review before modifying transport.
+
+Saved directory: `.pytest-tmp/direct-action-profile-v1`. Report SHA256
+`f12228b2b69f595d1976d92aa15a1ff48174d7de7e332f12f30c940f7b8de483`;
+completion `7d7415fb53e604ec92ca669242d039792d2ee857049d1ffe27ea174a55094897`;
+finished monitor `9270bb00f15eba5dc879ee33e591a45648dc34eaf243a641cf1e3c57c7d6d648`.
+Raw profiles, per-function/caller JSON, stdout/stderr and complete execution
+receipts are bound by the report. No independent workload audit or uninstrumented
+performance comparison was executed for these two fixtures.
