@@ -32,6 +32,11 @@ now uses local online cell/synapse updates, with 42 focused checks passing.
 Its [disposable cost workload](../experiments/r4_integrated/local_memory_byte_v1_result.md)
 and saved-only audit pass, but the full fit is not admitted: 2,013.103 projected
 seconds exceeds the 900-second ceiling. Useful local acquisition remains unproved.
+The [optimized v2 return](../experiments/r4_integrated/local_memory_byte_v2_result.md)
+reduces that projection to 1,468.472 seconds with 792.051 MiB conservative peak
+memory, but remains cost-rejected. Its twenty disposable lessons, 100 actions,
+two motor demonstrations and independent saved-only audit pass the engineering
+contract; no full fit runs. Fifty-three focused checks verify the optimizations.
 The official-exam scorer remains ready, with genuine structured learner output
 still pending.
 

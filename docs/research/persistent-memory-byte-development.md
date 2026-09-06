@@ -107,6 +107,14 @@ enabled learning behavior. It requires its own complete-workload cost decision
 under the original ceiling and margin. No acquired capability follows from these
 engineering checks.
 
+The [complete v2 cost return](../../experiments/r4_integrated/local_memory_byte_v2_result.md)
+and independent audit pass, but its 1,468.472-second projection still exceeds
+900 seconds. Memory fits at 792.051 MiB. The full fit remains unstarted and v2
+is closed. A subsequent complete-lesson profile attributes about 36% of time to
+finite checks, selecting one exact CPU finite-predicate optimization using the
+existing NumPy dependency before another measured return. Preserve all checks,
+the local arithmetic, the original timing margin and exposure accounting.
+
 The [independent preflight review](local-memory-byte-preflight-review.md) records
 two learning risks: averaging byte feedback weakens explicit order credit, and
 correlated write keys may overwrite useful information. These are hypotheses
