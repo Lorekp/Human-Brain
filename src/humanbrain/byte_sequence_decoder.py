@@ -16,7 +16,7 @@ import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
-from humanbrain.plastic_memory import RateCellLearningState, StreamingRateCell
+from humanbrain.plastic_memory import RateCellLearningState, StreamingRateCell, _all_finite
 
 BYTE_EOS = 256
 BYTE_BOS = 257
@@ -103,7 +103,7 @@ def byte_sequence_loss(logits: Tensor, targets: Tensor, mask: Tensor) -> Tensor:
     if not torch.equal((targets == BYTE_EOS) & mask, eos_positions):
         raise ValueError("each sequence must end with exactly one active EOS")
     selected = logits[mask]
-    if not bool(torch.isfinite(selected).all()):
+    if not _all_finite(selected):
         raise ValueError("active logits must be finite")
     return F.cross_entropy(selected, active)
 
@@ -191,7 +191,7 @@ class ByteSequenceDecoder(nn.Module):
             or context.device != self.embedding.weight.device
         ):
             raise ValueError("context must match the decoder's floating dtype and device")
-        if not bool(torch.isfinite(context).all()):
+        if not _all_finite(context):
             raise ValueError("context must be finite")
 
     def _step(self, context: Tensor, tokens: Tensor, state: Tensor) -> tuple[Tensor, Tensor]:
@@ -259,7 +259,7 @@ class ByteSequenceDecoder(nn.Module):
         inputs = torch.cat((safe_context, self.embedding(tokens)), -1)
         state = self.cell.local_step(inputs, state, mask=mask)
         logits = self.output(state.activity)
-        if not bool(torch.isfinite(logits).all()):
+        if not _all_finite(logits):
             raise ValueError("local logits must be finite")
         return ByteLearningStep(state, logits, mask.detach().clone())
 
@@ -285,7 +285,7 @@ class ByteSequenceDecoder(nn.Module):
             or step.logits.device != self.output.weight.device
             or step.logits.requires_grad
             or step.logits.grad_fn is not None
-            or not bool(torch.isfinite(step.logits).all())
+            or not _all_finite(step.logits)
         ):
             raise ValueError(
                 "saved logits must be finite and match decoder dimensions/device/dtype"
@@ -344,7 +344,7 @@ class ByteSequenceDecoder(nn.Module):
             loss = float(F.cross_entropy(scores, selected))
         hidden = F.linear(delta, self.hidden_feedback)
         context = F.linear(delta, self.context_feedback)
-        if not bool(torch.isfinite(hidden).all() and torch.isfinite(context).all()):
+        if not (_all_finite(hidden) and _all_finite(context)):
             raise ValueError("feedback signals must be finite")
         changes = []
         if count and learning_enabled and learning_rate:
@@ -354,7 +354,7 @@ class ByteSequenceDecoder(nn.Module):
             ):
                 if parameter.requires_grad:
                     candidate = parameter - learning_rate * direction
-                    if not bool(torch.isfinite(candidate).all()):
+                    if not _all_finite(candidate):
                         raise ValueError("nonfinite proposed byte readout update")
                     changes.append((parameter, candidate))
         # The cell validates its state/update before publishing; validate our output
@@ -385,7 +385,7 @@ class ByteSequenceDecoder(nn.Module):
         reasons: list[Literal["eos", "limit"] | None] = [None] * batch
         for position in range(max_bytes + 1):
             logits, state = self._step(context, tokens, state)
-            if not bool(torch.isfinite(logits).all()):
+            if not _all_finite(logits):
                 raise ValueError("generation logits must be finite")
             tokens = logits.argmax(-1)
             for row, token in enumerate(tokens.tolist()):

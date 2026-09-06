@@ -1,6 +1,7 @@
 """Synthetic state and derivative checks; no prose acquisition qualification."""
 
 import copy
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -12,7 +13,71 @@ from humanbrain.plastic_memory import (  # noqa: E402
     PlasticMemory,
     PlasticMemoryState,
     StreamingRateCell,
+    _all_finite,
 )
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_all_finite_cpu_views_are_exact_read_only_detached_and_do_not_mutate(dtype):
+    base = torch.arange(16, dtype=dtype).reshape(4, 4).requires_grad_()
+    views = [base, base.T, base[:, ::2], base[:1, :1].expand(3, 4),
+             base.as_strided((3, 3), (1, 1)), base[:0]]
+    numpy_finite = np.isfinite
+    for special in (torch.finfo(dtype).max, float("nan"), float("inf"), -float("inf")):
+        with torch.no_grad():
+            base[0, 0] = special
+        for view in views:
+            before = view.detach().clone()
+            expected = bool(torch.isfinite(view).all())
+
+            def checked_array(array):
+                assert not array.flags.writeable
+                if view.numel():
+                    assert array.ctypes.data == view.data_ptr()
+                return numpy_finite(array)
+
+            with patch("humanbrain.plastic_memory.np.isfinite", side_effect=checked_array):
+                assert _all_finite(view) is expected
+            torch.testing.assert_close(view, before, rtol=0, atol=0, equal_nan=True)
+            assert view.requires_grad and base.grad is None
+    # Read-only ndarray flags never freeze or retain the caller's tensor storage.
+    with torch.no_grad():
+        base.fill_(3)
+    assert _all_finite(base)
+
+
+def test_all_finite_unsupported_dtype_layout_device_and_view_use_torch_fallback():
+    tensors = [
+        torch.tensor([1, 2], dtype=dtype)
+        for dtype in (torch.float16, torch.bfloat16, torch.int64, torch.bool, torch.complex64)
+    ]
+    tensors.extend([
+        torch._neg_view(torch.tensor([1.0, float("inf")])),
+        torch.tensor([1.0 + 2.0j, complex(float("inf"), 0)]).conj(),
+        torch.tensor([1.0, 0.0]).to_sparse(),
+        torch.empty(2, device="meta"),
+    ])
+    original = torch.isfinite
+    for value in tensors:
+        try:
+            expected = bool(original(value).all())
+        except (RuntimeError, NotImplementedError) as error:
+            with patch.object(torch, "isfinite", wraps=original) as fallback:
+                with pytest.raises(type(error)) as captured:
+                    _all_finite(value)
+                assert str(captured.value) == str(error)
+        else:
+            with patch.object(torch, "isfinite", wraps=original) as fallback:
+                assert _all_finite(value) is expected
+        fallback.assert_called_once_with(value)
+
+
+@pytest.mark.parametrize("error", [TypeError("unsupported conversion"), RuntimeError("view bits")])
+def test_all_finite_conversion_failure_preserves_original_torch_predicate(error):
+    value = torch.tensor([1.0, float("nan")], requires_grad=True)
+    with patch.object(torch.Tensor, "numpy", side_effect=error):
+        assert not _all_finite(value)
+    assert value.requires_grad and value.grad is None
 
 
 def _unbuffered_tag_reference(model, values, mask, state):
@@ -251,7 +316,7 @@ def test_local_memory_all_groups_feedback_controls_and_retirement(credit_mode):
 def test_local_memory_padding_disabled_writes_and_reference_parity():
     model = PlasticMemory(2, 3, 2, 2, seed=6).double()
     values = torch.tensor(
-        [[[0.2, -0.4], [float("nan"), float("nan")], [0.9, 0.1]]], dtype=torch.float64
+        [[[0.2, -0.4], [float("nan"), float("inf")], [0.9, 0.1]]], dtype=torch.float64
     )
     mask = torch.tensor([[True, False, True]])
     state = model.write_local(values, mask)

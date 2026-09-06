@@ -27,9 +27,32 @@ Offline reference autograd storage grows with sequence length.
 import math
 from dataclasses import dataclass
 
+import numpy as np
 import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
+
+
+def _all_finite(value: Tensor) -> bool:
+    """Exact predicate through a temporary CPU view; never mutate/retain it.
+
+    NumPy avoids Torch's finite-mask overhead on the supported dense CPU types.
+    Detached conversion shares storage, including supported noncontiguous views.
+    Other devices/layouts/dtypes and unsupported view bits retain the Torch path.
+    """
+    if (
+        value.device.type == "cpu"
+        and value.layout == torch.strided
+        and value.dtype in {torch.float32, torch.float64}
+    ):
+        try:
+            array = value.detach().numpy()
+        except (TypeError, RuntimeError):
+            pass
+        else:
+            array.setflags(write=False)
+            return bool(np.isfinite(array).all())
+    return bool(torch.isfinite(value).all())
 
 
 def _size(value: int) -> int:
@@ -140,7 +163,7 @@ class StreamingRateCell(nn.Module):
                 raise ValueError("learning state dtype/device must match parameters")
             if value.requires_grad or value.grad_fn is not None:
                 raise ValueError("local learning state must not retain autograd history")
-            if not bool(torch.isfinite(value).all()):
+            if not _all_finite(value):
                 raise ValueError("learning state must be finite")
         return batch
 
@@ -204,7 +227,7 @@ class StreamingRateCell(nn.Module):
             raise ValueError("inputs and learning state batch must match")
         active = self._active_mask(mask, batch)
         safe = torch.where(active[:, None], inputs, 0)
-        if not bool(torch.isfinite(safe).all()):
+        if not _all_finite(safe):
             raise ValueError("active inputs must be finite")
         return self._local_step_checked_inputs(safe, state, active)
 
@@ -275,7 +298,7 @@ class StreamingRateCell(nn.Module):
             raise ValueError("signal dtype/device must match parameters")
         active = self._active_mask(mask, batch)
         safe = torch.where(active[:, None], signal, 0)
-        if not bool(torch.isfinite(safe).all()):
+        if not _all_finite(safe):
             raise ValueError("active signals must be finite")
         count = int(active.sum())
         if not learning_enabled or learning_rate == 0 or count == 0:
@@ -290,7 +313,7 @@ class StreamingRateCell(nn.Module):
                 factor = safe if trace.ndim == 2 else safe[:, :, None]
                 change = (factor * trace).sum(dim=0) * (learning_rate / count)
                 candidate = parameter - change
-                if not bool(torch.isfinite(candidate).all()):
+                if not _all_finite(candidate):
                     raise ValueError("local update produced nonfinite parameters")
                 proposals.append((parameter, candidate))
         changed = any(not torch.equal(parameter, candidate) for parameter, candidate in proposals)
@@ -414,7 +437,7 @@ class PlasticMemory(nn.Module):
         for tensor in (state.synapses, state.writer):
             if tensor.dtype != self.key_weight.dtype or tensor.device != self.key_weight.device:
                 raise ValueError("state dtype/device must match memory parameters")
-            if not bool(torch.isfinite(tensor).all()):
+            if not _all_finite(tensor):
                 raise ValueError("state must be finite")
 
     def restore_state(self, snapshot: dict[str, Tensor]) -> PlasticMemoryState:
@@ -451,7 +474,7 @@ class PlasticMemory(nn.Module):
         if mask.device != values.device:
             raise ValueError("mask must share the input device")
         clean = values.masked_fill(~mask[..., None], 0)
-        if not bool(torch.isfinite(clean).all()):
+        if not _all_finite(clean):
             raise ValueError("valid inputs must be finite")
         if state is None:
             state = self.initial_state(values.shape[0])
@@ -477,7 +500,7 @@ class PlasticMemory(nn.Module):
             raise ValueError("query must have shape [batch, input_size]")
         if query.dtype != self.query_weight.dtype or query.device != self.query_weight.device:
             raise ValueError("query dtype/device must match memory parameters")
-        if not bool(torch.isfinite(query).all()):
+        if not _all_finite(query):
             raise ValueError("query must be finite")
         self._check_state(state, query.shape[0])
         key = F.normalize(F.linear(query, self.query_weight, self.query_bias), dim=-1, eps=1e-8)
@@ -529,7 +552,7 @@ class PlasticMemory(nn.Module):
             or value.device != self.key_weight.device
             or value.requires_grad
             or value.grad_fn is not None
-            or not bool(torch.isfinite(value).all())
+            or not _all_finite(value)
         ):
             raise ValueError("local tensors must be finite, detached and match parameters")
 
@@ -613,7 +636,7 @@ class PlasticMemory(nn.Module):
         if (
             clean.dtype != self.key_weight.dtype
             or clean.device != self.key_weight.device
-            or not bool(torch.isfinite(clean).all())
+            or not _all_finite(clean)
         ):
             raise ValueError("active inputs must be finite and match parameters")
         if state is None:
@@ -695,7 +718,7 @@ class PlasticMemory(nn.Module):
         if (
             safe.dtype != self.query_weight.dtype
             or safe.device != self.query_weight.device
-            or not bool(torch.isfinite(safe).all())
+            or not _all_finite(safe)
         ):
             raise ValueError("active query must be finite and match parameters")
         key, gain = self._normalized_local_map(F.linear(safe, self.query_weight, self.query_bias))
@@ -802,7 +825,7 @@ class PlasticMemory(nn.Module):
             trace = traces[name]
             signal = clean[group] if parameter.ndim == 1 else clean[group][:, :, None]
             candidate = parameter - (learning_rate / count) * (signal * trace).sum(0)
-            if not bool(torch.isfinite(candidate).all()):
+            if not _all_finite(candidate):
                 raise ValueError("nonfinite proposed local memory update")
             proposals.append((parameter, candidate))
         changed = any(not torch.equal(p, candidate) for p, candidate in proposals)

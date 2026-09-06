@@ -565,6 +565,51 @@ def test_local_successor_cost_binds_redirector_to_observed_owned_tree(tmp_path):
         runner.validate_cost_launch(launch, report)
 
 
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_decoder_finite_validation_rejects_feedback_and_proposal_before_mutation(dtype):
+    decoder = ByteSequenceDecoder(2, hidden_size=3, embedding_size=2, local_learning=True).to(dtype)
+    context = torch.zeros(1, 2, dtype=dtype)
+    step = decoder.local_step(context, torch.tensor([BYTE_BOS]))
+    for name in ("hidden_feedback", "context_feedback"):
+        buffer = getattr(decoder, name)
+        original = buffer.clone()
+        buffer[0, 0] = torch.inf
+        before = copy.deepcopy(decoder.state_dict())
+        with pytest.raises(ValueError, match="feedback signals must be finite"):
+            decoder.teach_local(step, torch.tensor([65]), 0.01)
+        _assert_nested_equal(before, decoder.state_dict())
+        buffer.copy_(original)
+    step.state.activity.fill_(torch.finfo(dtype).max)
+    before = copy.deepcopy(decoder.state_dict())
+    with pytest.raises(ValueError, match="nonfinite proposed byte readout update"):
+        decoder.teach_local(step, torch.tensor([65]), 4.0)
+    _assert_nested_equal(before, decoder.state_dict())
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_decoder_finite_validation_preserves_differentiable_strided_context(dtype):
+    from humanbrain import byte_sequence_decoder as module
+
+    decoder = ByteSequenceDecoder(2, hidden_size=3, embedding_size=2).to(dtype)
+    base = torch.tensor([[0.1, 0.2], [0.3, 0.4]], dtype=dtype, requires_grad=True)
+    context = base.T
+    assert not context.is_contiguous()
+    outputs = [b"a", b"b"]
+    candidate = decoder.loss(context, outputs)
+    candidate.backward()
+    gradients = [base.grad.clone(), *(p.grad.clone() for p in decoder.parameters())]
+    decoder.zero_grad(set_to_none=True)
+    base.grad = None
+    with patch.object(module, "_all_finite", side_effect=lambda x: bool(torch.isfinite(x).all())):
+        reference = decoder.loss(context, outputs)
+        reference.backward()
+    assert torch.equal(candidate, reference)
+    for actual, expected in zip(
+        [base.grad, *(p.grad for p in decoder.parameters())], gradients, strict=True
+    ):
+        assert torch.equal(actual, expected)
+
+
 @pytest.mark.parametrize("mode", ["writer_maps_frozen", "frozen"])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
 def test_frozen_writer_omits_dead_credit_with_exact_forward_and_learning_parity(mode, dtype):
