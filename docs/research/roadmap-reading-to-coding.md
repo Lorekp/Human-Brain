@@ -143,6 +143,18 @@ fresh output weights, explicit input-code ownership and upstream teaching.
 Remove the authored factor inputs and requalify complete-workload cost; no
 additional output diagnostic is queued. The supplied clock and fixed additive
 representation remain priors, not learned reading or general output timing.
+The [two-byte document return](../../experiments/r4_integrated/local_memory_two_byte_v1_result.md)
+now completes its 5,120-lesson fit in 255.179 seconds after valid admission at
+630.795 projected seconds; strict saved audit passes. Tagged, aggregate and
+writer-frozen each solve 2/8 fit, 1/4 new-value, 1/4 delayed and zero interference
+checks. Writes-disabled solves only 1/8 fit. Outputs respond to unrelated
+document writes, but neither key/value assignment swap changes its answer.
+Distinct retained matrices and changed slow weights therefore do not establish
+useful binding or learned writing. Close this fit without more epochs or an
+automatic local-rule tweak. The next bounded review must localize where the
+actual document distinction is lost across writes, query addressing and output,
+using the frozen checkpoint before selecting another acquisition run. No
+additional supplied-factor output diagnostic or protected gate is opened.
 These byte learners use no pretrained encoder or LLM. The
 [action-path review](local-memory-byte-preflight-review.md) identifies host-computed
 matching in the legacy edit motor, however. Keep neuron-generated answer bytes

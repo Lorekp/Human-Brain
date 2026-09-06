@@ -280,6 +280,26 @@ The delayed stratum uses read-only distractor queries, not neuronal decay or
 retention through further teaching; unrelated document writes supply the separate
 interference challenge.
 
+The [completed two-byte return](../../experiments/r4_integrated/local_memory_two_byte_v1_result.md)
+passes complete cost admission at 630.795 projected seconds and finishes in
+255.179 seconds at 957.934 MiB. Its separately monitored saved audit passes in
+3.283 seconds. The two preceding launch mistakes and their discarded weights,
+labels and actions remain recorded; neither supplied admission evidence.
+The full fit solves 2/8 fit, 1/4 new-value, 1/4 delayed and zero interference
+checks in tagged, aggregate and writer-frozen alike. Writes-disabled gets one
+fit and none of the other checks; frozen gets none. All updating outputs have
+genuine EOS. Nuisance writes change an answer, but neither assignment-swap pair
+changes output, and tagged matches writer-frozen on all twenty final answers.
+The required useful behavior and learned-writing advantage remain absent.
+
+Saved-array analysis finds unequal swapped memories whose differences attenuate
+after interference, plus nonzero writer/query parameter changes. It does not
+locate the loss of useful distinction: actual read vectors, phase potentials and
+teaching-signal magnitudes were not saved. Close this fixed fit, preserve its
+evidence and select one bounded frozen-checkpoint document/read/output diagnostic
+before another acquisition. Do not infer saturation from weight magnitudes,
+repeat the qualified factor-input output task or launch another automatic fit.
+
 The [independent preflight review](local-memory-byte-preflight-review.md) records
 two learning risks: averaging byte feedback weakens explicit order credit, and
 correlated write keys may overwrite useful information. These are hypotheses

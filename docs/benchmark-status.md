@@ -82,6 +82,15 @@ at 303.547 MiB. All source, residual, update, output and budget checks pass,
 along with a separate TRAIN-only certificate on the represented weights.
 This earns a limited return to document-derived memory and real Python actions,
 not a reading/coding gate or a claim about arbitrary continuous contexts.
+The [two-byte raw-document return](../experiments/r4_integrated/local_memory_two_byte_v1_result.md)
+now completes 5,120 lessons in 255.179 seconds at 957.934 MiB, after valid
+630.795-second cost admission. The separately monitored saved audit passes in
+3.283 seconds. Tagged, aggregate and writer-frozen each solve 2/8 fit, 1/4
+new-value, 1/4 delayed and zero interference checks; writes-disabled solves only
+one fit, and frozen none. Nuisance writes influence output but key/value swaps
+do not; no useful learned-writing advantage is established. The fit is closed,
+with a bounded checkpoint-level memory/read/output diagnosis next. Its launch
+mistakes and discarded cost exposure remain preserved in the result.
 The official-exam scorer remains ready, with genuine structured learner output
 still pending.
 

@@ -33,10 +33,13 @@ certificate on the learned weights. Clock and representation are explicit priors
 
 The selected document return owns byte input codes independently of the output
 module and connects its pre-update context-neuron teaching signal to the
-writer/query cells' existing local traces. That integration is under development;
-the output result alone establishes neither learned document writing nor useful
-source-absent actions. Its fresh-weight, two-byte workload and cost admission
-remain separate from earlier variable-length experiments. The legacy Python
+writer/query cells' existing local traces. The
+[integrated fit](../experiments/r4_integrated/local_memory_two_byte_v1_result.md)
+now completes with a passing saved audit, but fails useful acquisition and
+learned-writing criteria. Nuisance writes influence output while key/value
+assignment swaps do not; the tagged and frozen-writer arms produce identical
+final answers. Its fresh-weight, two-byte workload and cost admission remain
+separate from earlier variable-length experiments. The legacy Python
 motor supplies a narrow edit-selection schema; learned neuronal action selection
 and learning from execution feedback remain required work.
 
