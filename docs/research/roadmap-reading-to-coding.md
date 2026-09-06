@@ -365,7 +365,11 @@ memory projects 702.879 MiB. No full acquisition ran. The supplied accepted-acti
 probe guards all four action maxima and spends 90.95% of its complete action time
 inside the executor. Select one [current-runtime import diagnostic](local-stdlib-action-import-profile-v1.md)
 to measure the remaining runpy subtree under the qualified no-site runtime.
-No neuronal rule change, identical cost retry or admission relaxation follows.
+That diagnostic found a 17.281-ms runpy subtree. Select the
+[temporary-module bootstrap](local-temporary-module-bootstrap-v1.md), preserving
+the current strict-output and main-module lifecycle with public APIs. Authored
+semantic qualification and a fixed timing comparison must earn integration;
+no neuronal rule change, identical cost retry or admission relaxation follows.
 Run/audit peaks of 665.539/432.832 MiB fit the revised admission estimates.
 The shorter aggregate duration includes a changed reference roster and must not
 be presented as an isolated circuit speedup.

@@ -13,3 +13,18 @@ Save `started.json`, raw `stdout.bin` and `stderr.bin`, every strictly parsed im
 Record `time.get_clock_info('perf_counter')` with measured durations. Fix the decision boundary prospectively: a `runpy` cumulative import time of at least 5 ms merits considering ordinary-script/source design qualification; below 5 ms closes bootstrap tuning. Require exactly one parsed `runpy` row for this decision. This is a diagnostic ranking cutoff, not a saving forecast, performance admission or permission to implement a replacement. All raw evidence remains preserved on failure.
 
 CPython's [documented import timing](https://docs.python.org/3.11/using/cmdline.html#cmdoption-X) changes stderr and `sys._xoptions` and perturbs execution. The supplied fixture starts no threads. Import timing does not isolate all interpreter startup, file work, process creation or communication, and does not predict uninstrumented savings. This diagnostic cannot replace runtime qualification or establish a speed gain, explain the v5 probe outlier, relax the accepted-action guard or admit full acquisition. Root selects any follow-up only after the saved trace is reviewed; a small remaining subtree ends this bootstrap-tuning question.
+
+## Completed diagnostic: design review earned
+
+The single child passed on source revision `d86b15e08d6985551a615faa58d19f0c2978c26d`: one subprocess invocation and one returned execution receipt, stdout exactly `ab\n`, and all three supplied files unchanged. No model, teacher or motor ran. The complete owned-process monitor took 1.9858643 seconds at 78.0078125 MiB, within 60 seconds/512 MiB. The diagnostic subprocess interval was 51.3272 ms; it is not an uninstrumented speed measurement. Doctor receipt: `.pytest-tmp/dev/doctor-3bv8s6fn/receipt.json`.
+
+The 43 retained import rows contain one top-level `runpy` cumulative time of **17.281 ms**, above the prospective 5-ms cutoff. Its nested `importlib.util` subtree is 15.024 ms, including `contextlib` at 11.556 ms and `threading` at 2.242 ms. These nested times are already included in `runpy`; do not add them to 17.281 ms. The separate authored module `qa_config1023` takes 0.402 ms. This evidence earns considering a regular-source execution design that avoids unnecessary import machinery. It does not predict a 17.281-ms saving, explain the earlier accepted probe's duration, select a replacement or admit another cost/full run. Exact main-module lifecycle, stream behavior and existing semantic checks must remain explicit in any subsequent design review.
+
+A saved-only review verified the report, completion and monitor hashes, 42 source/runtime/qualification-evidence/artifact bindings, raw-to-parsed import rows, exact workspace bytes, stdout, the fixed decision cutoff and the actual parent process's monitored identity. No child, profile or model was rerun. Evidence directory: `.pytest-tmp/stdlib-action-import-profile-v1`.
+
+- Report SHA256: `5f01d4ea71e2e4bd8a7e4feaebc131816828240e1f9d1598c0a286f7c97e595a`.
+- Completion SHA256: `54b669a4555ccd141e5c9b5621c17b1b9e09eaeeda094dc240eed1d8298839e0`.
+- Finished monitor SHA256: `d9c9a59b8246e0b21fb11abd0888d824ebec2da1fa99f0a0cf5bd61e1c44dda8`.
+- Executed driver SHA256: `c276a2d1e6a16e7cd90e7b6a2a94cc7266ea52f022604c58516f31bf26ffa876`.
+
+The report binds the prospective plan before this outcome append, SHA256 `fbc8cc752cdea100f516cc0485eb05bbf4ddb41c05dc6054932bc499c275e742`, retained in the recorded source revision. Raw stdout/stderr and all parsed rows remain bound by the report.

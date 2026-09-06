@@ -22,6 +22,9 @@ maximum; its executor consumes 90.95% of complete action time. Neither the
 shorter aggregate duration nor that one sample isolates a causal speed effect.
 The selected [current-runtime import diagnostic](research/local-stdlib-action-import-profile-v1.md)
 examines one authored child before any further execution change or acquisition.
+It found a 17.281-ms cumulative runpy subtree and earned the selected
+[temporary-module bootstrap qualification](research/local-temporary-module-bootstrap-v1.md).
+Instrumented import time is not a removable wall-clock saving.
 
 ## Current separate-answerability result
 

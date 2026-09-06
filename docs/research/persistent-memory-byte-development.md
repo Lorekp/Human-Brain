@@ -61,6 +61,10 @@ pending; no full acquisition ran. The accepted probe sets every arm's action
 maximum, with 90.95% inside its executor. Close v5 and perform the selected
 [single-child no-site import diagnostic](local-stdlib-action-import-profile-v1.md)
 before choosing another execution change. Preserve the learning rule and exposure.
+Its 17.281-ms runpy subtree earns the selected
+[temporary-module bootstrap qualification](local-temporary-module-bootstrap-v1.md).
+Preserve strict output and cleanup semantics; measured authored improvement must
+precede a new integrated cost. No acquisition is admitted yet.
 
 Current result: the [shared temporal-map comparison](../../experiments/r4_integrated/local_shared_temporal_query_v1_result.md)
 and independent audit complete in 119.745 seconds. Learned solves 8/8 taught,
