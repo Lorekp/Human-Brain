@@ -1757,7 +1757,7 @@ def test_two_byte_lesson_actual_lms_receipts_before_update_and_retirement():
 
 
 @pytest.mark.parametrize(
-    "runner_module", ["local_lag_query_v1"]
+    "runner_module", ["local_shared_temporal_query_v1"]
 )
 def test_two_byte_source_free_worker_fresh_process_read_only_checkpoint(tmp_path, runner_module):
     import importlib
@@ -1833,13 +1833,12 @@ def test_two_byte_source_free_worker_fresh_process_read_only_checkpoint(tmp_path
     assert len(result["outputs"]) == 2 * len(runner.ARMS)
     for arm, work in result["work"].items():
         assert work["query_raw_bytes"] == 26 and work["query_eos_symbols"] == 2
-        assert work["query_controller_steps" if arm in {"sequence_reference", "byte_reference"}
-                    else "query_lag_shift_steps"] == 28
+        assert work["query_lag_shift_steps"] == 28
         if arm != "byte_reference":
             assert work["codec_slot_evaluations"] == (6 if arm == "writes_disabled" else 2)
             assert work["teacher_offers"] == 0
     for row in result["outputs"]:
-        capped = row["arm"] in {"byte_reference", "writes_disabled"}
+        capped = row["arm"] == "writes_disabled"
         assert row["generated_hex"] == ("0000" if capped else "")
         assert row["stop_reason"] == ("limit" if capped else "eos")
         assert row["decisions"] == (3 if capped else 1)
@@ -2146,12 +2145,12 @@ def test_local_credit_reference_matches_frozen_git_source_and_trajectories(dtype
                 _assert_nested_equal(actual.state_dict(), expected.state_dict())
 
 
-def test_lag_fixed_roster_factory_source_and_strict_endpoint():
-    from experiments.r4_integrated import local_lag_query_v1 as runner
+def test_shared_temporal_roster_factory_and_criterion():
     from experiments.r4_integrated import local_memory_two_byte_v1 as previous
+    from experiments.r4_integrated import local_shared_temporal_query_v1 as runner
 
     assert runner.ARMS == ("learned", "address_frozen", "slow_frozen",
-                           "writes_disabled", "sequence_reference", "byte_reference")
+                           "writes_disabled", "dense_reference")
     train, checks = runner.roster()
     assert (train, checks) == previous.roster()
     assert runner.teaching_schedule(train) == previous.teaching_schedule(train)
@@ -2159,10 +2158,10 @@ def test_lag_fixed_roster_factory_source_and_strict_endpoint():
     config = runner.SPEC.config
     config["arms"].clear()
     config["loss_kind"].clear()
-    assert len(runner.SPEC.config["arms"]) == len(runner.SPEC.config["loss_kind"]) == 6
+    assert len(runner.SPEC.config["arms"]) == len(runner.SPEC.config["loss_kind"]) == 5
     manifest = runner.sources()
-    for name in ("local_lag_query_v1.py", "local_lag_query_v1.md",
-                 "local_sequence_memory_reference.py",
+    for name in ("local_shared_temporal_query_v1.py", "local_shared_temporal_query_v1.md",
+                 "local_lag_query_reference.py",
                  "local_memory_event_reference.py", "local_memory_two_byte_v1.py"):
         path = runner.ROOT / "experiments/r4_integrated" / name
         assert manifest[path.relative_to(runner.ROOT).as_posix()] == runner.file_hash(path)
@@ -2176,17 +2175,21 @@ def test_lag_fixed_roster_factory_source_and_strict_endpoint():
             assert torch.equal(initial[arm][key], initial["learned"][key])
         assert initial[arm]["_extra_state"]["mode"] == arm
     for key in ("input_codes", "codec.weight", "codec.bias"):
-        assert torch.equal(initial["learned"][key], initial["sequence_reference"][key])
-    assert torch.equal(initial["learned"]["input_codes"], initial["byte_reference"]["input_codes"])
-    assert initial["learned"]["address_weight"].shape == (1024, 1024)
+        assert torch.equal(initial["learned"][key], initial["dense_reference"][key])
+    assert initial["learned"]["address_weight"].shape == (32, 32)
     with pytest.raises(ValueError, match="configuration mismatch"):
         models["learned"].set_extra_state(models["address_frozen"].get_extra_state())
     scores = {arm: dict(fit=0, unseen_value=0, delayed=0, interference=0) for arm in runner.ARMS}
     scores["learned"] = dict(fit=8, unseen_value=4, delayed=4, interference=4)
     assert runner.qualifies(scores)
-    scores["byte_reference"]["unseen_value"] = 4
+    scores["dense_reference"] = dict(fit=7, unseen_value=4, delayed=4, interference=2)
+    assert runner.qualifies(scores) and runner.matched_control_advantage(scores)
+    scores["address_frozen"]["unseen_value"] = 4
+    assert not runner.qualifies(scores) and not runner.matched_control_advantage(scores)
+    scores["address_frozen"]["unseen_value"] = 0
+    scores["dense_reference"] = dict(fit=8, unseen_value=4, delayed=4, interference=4)
     assert not runner.qualifies(scores)
-    scores["byte_reference"]["unseen_value"] = 3
+    scores["dense_reference"] = dict(fit=7, unseen_value=4, delayed=4, interference=2)
     scores["learned"]["interference"] = 3
     assert not runner.qualifies(scores)
 
@@ -2645,7 +2648,7 @@ def test_sequence_complete_lesson_and_full_capacity_cap_accounting(arm):
 
 @pytest.mark.parametrize("query", [b"", b"ab", bytes(range(40))])
 def test_lag_query_normalization_order_truncation_and_read_only_counts(query):
-    from humanbrain.local_memory_learner import LocalMemoryLearner
+    from experiments.r4_integrated.local_lag_query_reference import LocalMemoryLearner
 
     model = LocalMemoryLearner(seed=733)
     state = model.ingest([b"ab."])
@@ -2668,7 +2671,7 @@ def test_lag_query_normalization_order_truncation_and_read_only_counts(query):
 
 
 def test_lag_local_address_scalar_update_held_codec_and_retired_query_credit():
-    from humanbrain.local_memory_learner import LocalMemoryLearner
+    from experiments.r4_integrated.local_lag_query_reference import LocalMemoryLearner
 
     model = LocalMemoryLearner(seed=733)
     state = model.ingest([b"ab."])
@@ -2721,7 +2724,7 @@ def test_lag_local_address_scalar_update_held_codec_and_retired_query_credit():
 
 @pytest.mark.parametrize("mode", ["learned", "address_frozen", "slow_frozen", "writes_disabled"])
 def test_lag_controls_and_source_free_snapshot_preserve_real_groups(mode):
-    from humanbrain.local_memory_learner import LocalMemoryLearner
+    from experiments.r4_integrated.local_lag_query_reference import LocalMemoryLearner
 
     model = LocalMemoryLearner(mode=mode, seed=733)
     state = model.ingest([b"ab."])
@@ -2750,7 +2753,7 @@ def test_lag_controls_and_source_free_snapshot_preserve_real_groups(mode):
 
 
 def test_lag_finite_normalization_and_fixed_metadata_reject_without_publication():
-    from humanbrain.local_memory_learner import LocalMemoryLearner
+    from experiments.r4_integrated.local_lag_query_reference import LocalMemoryLearner
 
     model = LocalMemoryLearner(seed=733)
     state = model.ingest([b"a"])
@@ -2769,15 +2772,19 @@ def test_lag_finite_normalization_and_fixed_metadata_reject_without_publication(
         model.set_extra_state(bad)
 
 
-def test_lag_sequence_archive_exact_source_and_three_lesson_trajectory():
+@pytest.mark.parametrize(
+    "reference_module", ["local_sequence_memory_reference", "local_lag_query_reference"]
+)
+def test_lag_sequence_archive_exact_source_and_three_lesson_trajectory(reference_module):
     import ast
     import hashlib
+    import importlib
     import subprocess
     import sys
     import types
     from pathlib import Path
 
-    from experiments.r4_integrated import local_sequence_memory_reference as reference
+    reference = importlib.import_module("experiments.r4_integrated." + reference_module)
     from experiments.r4_integrated.local_lag_query_v1 import plain
 
     root = Path(__file__).resolve().parents[1]
@@ -2818,7 +2825,11 @@ def test_lag_sequence_archive_exact_source_and_three_lesson_trajectory():
 def test_lag_complete_lesson_and_capacity_cap_accounting(arm):
     from experiments.r4_integrated import local_lag_query_v1 as runner
 
-    model = runner.new_model(runner.SPEC, arm)
+    if arm in runner.ARMS[:4]:
+        from experiments.r4_integrated.local_lag_query_reference import LocalMemoryLearner
+        model = LocalMemoryLearner(mode=arm, seed=733)
+    else:
+        model = runner.new_model(runner.SPEC, arm)
     episode = {"document_hex": [b"ab.".hex()], "query_hex": b"q".hex(), "target_hex": b"ab".hex()}
     row = runner.lesson(runner.SPEC, arm, model, episode, lambda: None)
     assert row["teacher_count"] == 3 and row["work"]["document_raw_bytes"] == 3
@@ -2907,3 +2918,250 @@ def test_lag_journal_complete_rows_bounds_and_pending_audit_projection(tmp_path)
     assert final["projected_learning_seconds"] == pytest.approx(2 * 1024 * sum(
         0.04 + item["max_journal_seconds"] + 0.001 for item in journal.summary.values()
     ))
+
+
+def test_shared_temporal_small_end_to_end_and_snapshot():
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    model = LocalMemoryLearner(seed=733)
+    state = model.ingest([b"ab."])
+    before = model.snapshot(state)
+    first = model.predict_with_receipt(b"q", state, 2)
+    _assert_nested_equal(before, model.snapshot(state))
+    receipt = model.teach(b"q", b"ab", state, 0.01)
+    assert receipt.teacher_count == len(receipt.steps) == 3
+    assert model.address_weight.shape == (32, 32)
+    assert receipt.address_updated and receipt.codec_updated
+    assert first.work["address_projection_channel_applications"] == 32
+    assert receipt.work["address_local_synapse_contributions"] == 32768
+    assert receipt.work["address_local_channel_reductions"] == 31744
+    _assert_nested_equal(before["memory"], state.snapshot())
+    clone = LocalMemoryLearner(seed=733)
+    restored = clone.restore_snapshot(before)
+    assert clone.predict(b"q", restored, 2) == first.generation
+
+
+def test_shared_temporal_multichannel_scalar_forward_and_local_update():
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    model = LocalMemoryLearner(seed=733)
+    state = model.ingest([b"ab."])
+    before = copy.deepcopy(model.state_dict())
+    event = model.query_receipt(b"q", state)
+    z = event.activity.reshape(32, 32).tolist()
+    b = before["address_weight"].tolist()
+    expected_q = torch.tensor([
+        math.fsum(b[i][j] * z[i][d] for i in range(32))
+        for j in range(32) for d in range(32)
+    ], dtype=torch.float32)
+    torch.testing.assert_close(event.projected_query, expected_q, rtol=2e-6, atol=2e-7)
+    initial = event.log_prior.exp().tolist()
+    errors, bias_errors, losses, posteriors = _sequence_scalar_teacher(
+        before["codec.weight"].tolist(), before["codec.bias"].tolist(),
+        [97, 98, 46, 256], [1, 2, 3, 3], initial, [97, 98, 256],
+    )
+    e = [a - b for a, b in zip(initial, posteriors[-1], strict=True)]
+    keys = state.keys[:4].tolist()
+    h = [[math.fsum(e[s] * keys[s][j * 32 + d] for s in range(4))
+          for d in range(32)] for j in range(32)]
+    original_evaluate = model.codec.evaluate
+    calls = []
+
+    def held(sensory):
+        _assert_nested_equal(before, model.state_dict())
+        calls.append(len(sensory))
+        return original_evaluate(sensory)
+
+    with patch.object(model.codec, "evaluate", side_effect=held), patch.object(
+        torch.autograd, "backward", side_effect=AssertionError("local only")
+    ):
+        receipt = model.teach(b"q", b"ab", state, 0.01)
+    assert calls == [4, 4, 4]
+    assert [step.nll for step in receipt.steps] == pytest.approx(losses, abs=2e-14)
+    assert receipt.address_error.tolist() == pytest.approx(e, abs=2e-15)
+    for i, j in ((0, 0), (0, 1), (1, 1), (1, 2)):
+        summed = math.fsum(z[i][d] * h[j][d] for d in range(32))
+        contribution = torch.tensor(summed, dtype=torch.float32)
+        delta = float(torch.tensor(0.01, dtype=torch.float32) * contribution)
+        expected = float(torch.tensor(b[i][j] - delta, dtype=torch.float32))
+        assert float(model.address_weight[i, j].detach()) == expected
+    assert torch.equal(model.address_weight[2:], before["address_weight"][2:])
+    assert torch.equal(model.address_weight[:, 3:], before["address_weight"][:, 3:])
+    for (output, column), error in errors.items():
+        assert float(model.codec.weight[output, column].detach()) == pytest.approx(
+            float(before["codec.weight"][output, column]) - 0.01 * error, abs=2e-15
+        )
+    for output, error in enumerate(bias_errors):
+        assert float(model.codec.bias[output].detach()) == pytest.approx(-0.01 * error, abs=2e-15)
+    assert receipt.work["address_projection_channel_applications"] == 32
+    assert receipt.work["address_projection_synapse_evaluations"] == 32768
+    assert receipt.work["address_local_synapse_contributions"] == 32768
+    assert receipt.work["address_local_channel_reductions"] == 31744
+    assert all(parameter.grad is None for parameter in model.parameters())
+
+
+def test_shared_temporal_channel_permutation_equivariance():
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    original, permuted = LocalMemoryLearner(seed=733), LocalMemoryLearner(seed=733)
+    order = torch.arange(31, -1, -1)
+    permuted.input_codes.copy_(original.input_codes[:, order])
+    states = [model.ingest([b"ab.", b"cd."]) for model in (original, permuted)]
+    events = [model.query_receipt(b"qa?", state)
+              for model, state in zip((original, permuted), states, strict=True)]
+    torch.testing.assert_close(events[1].activity.reshape(32, 32),
+                               events[0].activity.reshape(32, 32)[:, order])
+    torch.testing.assert_close(events[1].projected_query.reshape(32, 32),
+                               events[0].projected_query.reshape(32, 32)[:, order],
+                               rtol=2e-6, atol=2e-7)
+    torch.testing.assert_close(events[1].log_prior, events[0].log_prior, rtol=2e-6, atol=2e-7)
+    assert torch.equal(original.address_weight, permuted.address_weight)
+
+
+@pytest.mark.parametrize("mode", ["learned", "address_frozen", "slow_frozen", "writes_disabled"])
+def test_shared_temporal_control_publications_and_counts(mode):
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    model = LocalMemoryLearner(mode=mode, seed=733)
+    state = model.ingest([b"ab."])
+    before = model.snapshot(state)
+    receipt = model.teach(b"q", b"ab", state, 0.01)
+    _assert_nested_equal(before["memory"], state.snapshot())
+    assert receipt.work["codec_update_group_offers"] == 1
+    assert receipt.work["address_update_group_offers"] == 1
+    assert receipt.work["address_local_synapse_contributions"] == 32768
+    assert receipt.work["address_local_channel_reductions"] == 31744
+    assert receipt.work["enabled_codec_update_groups"] == (mode != "slow_frozen")
+    assert receipt.work["enabled_address_update_groups"] == (mode in {"learned", "writes_disabled"})
+    assert receipt.address_updated == (mode == "learned")
+    assert receipt.codec_updated == (mode != "slow_frozen")
+    assert torch.equal(before["model"]["input_codes"], model.input_codes)
+    if mode != "learned":
+        assert torch.equal(before["model"]["address_weight"], model.address_weight)
+    if mode == "slow_frozen":
+        _assert_nested_equal(before["model"], model.state_dict())
+    if mode == "writes_disabled":
+        assert not state.keys.count_nonzero() and not state.sensory.count_nonzero()
+        assert torch.equal(before["model"]["codec.weight"], model.codec.weight)
+
+
+def test_shared_temporal_invalid_normalization_and_dense_checkpoint_rejected():
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    model = LocalMemoryLearner(seed=733)
+    state = model.ingest([b"a"])
+    model.input_codes.fill_(1e30)
+    before = copy.deepcopy(model.state_dict())
+    with pytest.raises(ValueError, match="query lag norm"):
+        model.teach(b"q", b"a", state, 0.01)
+    _assert_nested_equal(before, model.state_dict())
+    model.input_codes.zero_()
+    event = model.query_receipt(b"q", state)
+    assert not event.activity.count_nonzero() and torch.isfinite(event.log_prior).all()
+    before = copy.deepcopy(model.state_dict())
+    wrong = copy.deepcopy(before)
+    wrong["address_weight"] = torch.zeros(1024, 1024)
+    with pytest.raises(ValueError, match="tensor contract"):
+        model.load_state_dict(wrong)
+    _assert_nested_equal(before, model.state_dict())
+    invalid = copy.deepcopy(before)
+    invalid["address_weight"][0, 0] = float("nan")
+    with pytest.raises(ValueError, match="finite"):
+        model.load_state_dict(invalid)
+    _assert_nested_equal(before, model.state_dict())
+
+
+def test_shared_temporal_journal_and_completed_audit_projection(tmp_path):
+    import hashlib
+    import json
+
+    from experiments.r4_integrated import local_shared_temporal_query_v1 as runner
+
+    journal = runner.LessonJournal(tmp_path / "lessons.jsonl", runner.SPEC)
+    expected = []
+    for index in range(4):
+        for arm in runner.ARMS:
+            row = dict(arm=arm, index=index, seconds=0.01 * (index + 1),
+                       first_exact=False, decisions=3, teacher_count=3, work={"x": 2},
+                       codec_group_enabled=arm != "slow_frozen", codec_updated=False,
+                       address_group_enabled=arm in {"learned", "writes_disabled",
+                                                     "dense_reference"},
+                       address_updated=False, query_group_enabled=True, query_updated=False,
+                       decoder_changed_steps=0, memory_updated=False,
+                       complete_nested_receipt={"values": [1.0, None, "\u00e9"]})
+            expected.append(copy.deepcopy(row))
+            journal.append(row)
+            row["complete_nested_receipt"]["values"].clear()
+    receipt = journal.close()
+    raw = (tmp_path / "lessons.jsonl").read_bytes()
+    assert raw.endswith(b"\n") and b"\r" not in raw
+    assert [json.loads(line) for line in raw.splitlines()] == expected
+    assert receipt["sha256"] == hashlib.sha256(raw).hexdigest()
+    assert receipt["rows"] == 20 and receipt["bytes"] == len(raw)
+    assert journal.counts["teacher_byte_offers"] == 60
+    assert journal.counts["enabled_teacher_offers"] == 48
+    assert not hasattr(journal, "lessons")
+    assert all(summary["rows"] == 4 and summary["work"] == {"x": 8}
+               for summary in journal.summary.values())
+    rejected = runner.LessonJournal(tmp_path / "rejected.jsonl", runner.SPEC)
+    try:
+        with pytest.raises(MemoryError, match="host-tree"):
+            rejected.append({"too_large": "x" * 262144})
+        with pytest.raises(MemoryError, match="line limit"):
+            rejected.append({"escaped": "\u00ff" * 50000})
+        assert rejected.rows == 0 and rejected.bytes == 0
+    finally:
+        rejected.close()
+    report = dict(status="completed", mode="cost", config=runner.SPEC.config,
+                  duration_clock=runner.duration_clock(), counts=journal.counts,
+                  actions=[{}] * 100, motor_demonstrations=[{}, {}],
+                  lesson_summary=journal.summary, lesson_log=receipt,
+                  cap_generation={arm: dict(stop_reason="limit", decisions=3,
+                      generated_hex="0000", seconds=0.001) for arm in runner.ARMS},
+                  memory={"peak_working_set_mib": 100},
+                  worker={"memory": {"peak_working_set_mib": 80}})
+    launch = dict(elapsed_seconds=10, observed_tree_peak_sum_mib=150)
+    pending = runner.project_cost(runner.SPEC, report, launch)
+    assert pending["audit_peak_pending"] and not pending["admissible"]
+    assert pending["receipt_memory_projection"]["run_projected_peak_mib"] == 311
+    audit = dict(status="passed", exit_code=0, elapsed_seconds=1,
+                 observed_tree_peak_sum_mib=200)
+    final = runner.project_cost(runner.SPEC, report, launch, audit_launch=audit)
+    assert not final["audit_peak_pending"] and final["admissible"]
+    assert final["peak_upper_mib"] == 235 + 2 * 105236476 / 2**20
+    assert final["projected_learning_seconds"] == pytest.approx(2 * 1024 * sum(
+        0.04 + item["max_journal_seconds"] + 0.001 for item in journal.summary.values()
+    ))
+
+
+@pytest.mark.parametrize("arm", ["learned", "address_frozen", "slow_frozen",
+                                "writes_disabled", "dense_reference"])
+def test_shared_temporal_actual_lesson_and_full_cap_counts(arm):
+    from experiments.r4_integrated import local_shared_temporal_query_v1 as runner
+
+    model = runner.new_model(runner.SPEC, arm)
+    episode = {"document_hex": [b"ab.".hex()], "query_hex": b"q".hex(), "target_hex": b"ab".hex()}
+    row = runner.lesson(runner.SPEC, arm, model, episode, lambda: None)
+    work = row["work"]
+    assert row["teacher_count"] == 3 and work["query_lag_shift_steps"] == 4
+    assert work["tape_key_normalizations"] == (0 if arm == "writes_disabled" else 4)
+    assert work["branch_cursor_initializations"] == 8
+    assert work["codec_slot_evaluations"] == 4 * (row["decisions"] + 3)
+    if arm != "dense_reference":
+        assert work["address_projection_channel_applications"] == 64
+        assert work["address_projection_synapse_evaluations"] == 65536
+        assert work["address_local_synapse_contributions"] == 32768
+        assert work["address_local_channel_reductions"] == 31744
+    else:
+        assert work["address_projection_synapse_evaluations"] == 2 * 1024 ** 2
+        assert work["address_local_synapse_contributions"] == 1024 ** 2
+        assert "address_projection_channel_applications" not in work
+    before = copy.deepcopy(model.state_dict())
+    cap = runner.capped_prediction(runner.SPEC, arm, model)
+    assert cap["generated_hex"] == "0000" and cap["decisions"] == 3
+    assert cap["occupied_slots"] == 128
+    assert cap["work"]["codec_slot_evaluations"] == 384
+    assert cap["ingestion_work"]["document_raw_bytes"] == 127
+    assert cap["ingestion_work"]["document_eos_symbols"] == 1
+    assert cap["original_weights_restored"]
+    _assert_nested_equal(before, model.state_dict())

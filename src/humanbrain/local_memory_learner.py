@@ -142,8 +142,9 @@ class LocalMemoryLearner(nn.Module):
     WORK_KEYS = (
         "query_raw_bytes", "query_eos_symbols", "query_lag_shift_steps",
         "query_population_normalizations", "address_projection_neurons",
+        "address_projection_channel_applications",
         "address_projection_synapse_evaluations", "address_score_evaluations",
-        "address_local_synapse_contributions",
+        "address_local_synapse_contributions", "address_local_channel_reductions",
         "address_normalizations", "codec_slot_evaluations", "codec_output_potentials",
         "codec_normalizations", "mixture_output_reductions", "prefix_belief_updates",
         "branch_cursor_initializations", "branch_cursor_advances", "teacher_offers",
@@ -167,7 +168,7 @@ class LocalMemoryLearner(nn.Module):
         )
         generator = torch.Generator(device="cpu").manual_seed(seed + 4)
         self.address_weight = nn.Parameter(
-            torch.empty(1024, 1024, dtype=torch.float32, device="cpu")
+            torch.empty(32, 32, dtype=torch.float32, device="cpu")
         )
         nn.init.xavier_uniform_(self.address_weight, generator=generator)
         self.codec = ConditionalByteCodec()
@@ -179,10 +180,14 @@ class LocalMemoryLearner(nn.Module):
 
     def get_extra_state(self) -> dict:
         return {
-            "schema": "local-neuronal-lag-query-learner-v1", "mode": self.mode, "seed": self.seed,
+            "schema": "local-neuronal-shared-temporal-query-learner-v1",
+            "mode": self.mode, "seed": self.seed,
             "capacity": 128, "lags": 32, "input_code_size": 32, "query_size": 1024,
             "input_code": "fixed normal258x32; private seed+2; raw bytes plus EOS256",
-            "address": "one shared1024x1024 Xavier projection; private seed+4; no slot parameters",
+            "address": (
+                "one shared32x32 temporal Xavier projection; private seed+4; "
+                "B.T@Z across32 sensory-code channels; no slot parameters"
+            ),
             "query": "fixed32x32 newest-first raw-code lags including EOS; reset each query",
             "query_normalization": (
                 "float32 lag/norm.clamp_min(1e-8)*sqrt(32); "
@@ -193,6 +198,10 @@ class LocalMemoryLearner(nn.Module):
             "recall": "all starts; forward EOS-absorbing adjacency; causal prefix belief",
             "loss": "sequence_mixture_negative_log_likelihood",
             "address_credit": "initial probability minus final prefix posterior",
+            "address_synapse_credit": (
+                "one physical32x32 circuit reused across32 channels; "
+                "sum local Z[i,d]*H[j,d] in float64 with B held; cast once to float32"
+            ),
             "codec_credit": "current prefix responsibility; filtering approximation; local sum",
             "publication": "all weights held through teacher sequence; eta0.01 summed once",
             "upstream_dtype": "torch.float32", "codec_signal_dtype": "torch.float64",
@@ -206,7 +215,7 @@ class LocalMemoryLearner(nn.Module):
     def _check_parameters(self) -> None:
         if self.mode not in self.MODES:
             raise ValueError("invalid sequence learner mode")
-        tensors = [(self.input_codes, (258, 32)), (self.address_weight, (1024, 1024))]
+        tensors = [(self.input_codes, (258, 32)), (self.address_weight, (32, 32))]
         for value, shape in tensors:
             if value.shape != shape or value.dtype != torch.float32 or value.device.type != "cpu":
                 raise ValueError("query/address/codes must retain CPU float32 geometry")
@@ -259,7 +268,9 @@ class LocalMemoryLearner(nn.Module):
         _finite(norm, "query lag norm")
         activity = (lags.flatten() / norm.clamp_min(1e-8) * math.sqrt(32))[None]
         _finite(activity, "normalized query lag activity")
-        projected = F.linear(activity, self.address_weight.T)[0]
+        # The same physical temporal map is applied to every sensory-code
+        # channel. Batched arithmetic reuses B; no channel has its own weights.
+        projected = (self.address_weight.T @ activity.reshape(32, 32)).flatten()
         _finite(projected, "projected query")
         scores = F.linear(projected, state.keys[:state.used])
         _finite(scores, "address scores")
@@ -271,7 +282,8 @@ class LocalMemoryLearner(nn.Module):
             "query_lag_shift_steps": len(query) + 1,
             "query_population_normalizations": 1,
             "address_projection_neurons": 1024, "address_score_evaluations": state.used,
-            "address_projection_synapse_evaluations": 1024 * 1024,
+            "address_projection_channel_applications": 32,
+            "address_projection_synapse_evaluations": 32 * 32 * 32,
             "address_normalizations": 1,
         })
         return SequenceQuery(activity, projected, log_prior, work)
@@ -399,9 +411,15 @@ class LocalMemoryLearner(nn.Module):
         _finite(address_error, "final address error")
         projection_signal = F.linear(address_error, state.keys[:state.used].T.to(torch.float64))
         _finite(projection_signal, "address projection neuron error")
-        address_change64 = event.activity[0].to(torch.float64)[:, None] * projection_signal[None]
+        # Each B[i,j] synapse accumulates its own preactivity times the j-th
+        # neuronal error over 32 channel applications, all using held weights.
+        address_change64 = (
+            event.activity.to(torch.float64).reshape(32, 32)
+            @ projection_signal.reshape(32, 32).T
+        )
         _finite(address_change64, "address synapse local contribution")
-        work["address_local_synapse_contributions"] = self.address_weight.numel()
+        work["address_local_synapse_contributions"] = 32 * self.address_weight.numel()
+        work["address_local_channel_reductions"] = 31 * self.address_weight.numel()
         address_change = address_change64.to(torch.float32)
         _finite(address_change, "cast address synapse contribution")
 
@@ -483,10 +501,16 @@ class LocalMemoryLearner(nn.Module):
             "query_lag_neurons": 1024, "normalized_query_neurons": 1024,
             "query_lag_forward_connections": 31 * 32,
             "query_population_squared_energy": 32,
-            "address_projection_neurons": 1024,
+            "address_projection_circuit_neurons": 32,
+            "address_projection_neuron_evaluations_per_query": 1024,
+            "address_projection_channel_applications_per_query": 32,
+            "address_projection_synapse_evaluations_per_query": 32 * 32 * 32,
+            "address_projection_lag_reductions_per_query": 32 * 32 * 31,
+            "address_local_products_per_teacher": 32 * 32 * 32,
+            "address_local_channel_reductions_per_teacher": 32 * 32 * 31,
             "allocated_address_competition_neurons": 128,
             "shared_codec_input_neurons": 257, "shared_codec_output_neurons": 257,
-            "address_slow_synapses": 1024 * 1024,
+            "address_slow_synapses": 32 * 32,
             "codec_slow_synapses_including_bias": 66306, "fixed_input_code_values": 8256,
             "model_tensor_bytes": sum(
                 v.numel() * v.element_size() for v in self.state_dict().values()
@@ -508,11 +532,12 @@ class LocalMemoryLearner(nn.Module):
             "query_lag_bytes": 1024 * 4, "normalized_query_activity_bytes": 1024 * 4,
             "query_lag_shift_copy_bytes": 31 * 32 * 4,
             "query_activity_cast_bytes": 1024 * 8,
+            "projected_query_bytes": 1024 * 4,
             "maximum_address_key_cast_bytes": 128 * 1024 * 8,
             "projection_signal_bytes": 1024 * 8,
-            "address_local_contribution_float64_bytes": 1024 * 1024 * 8,
-            "address_local_contribution_float32_bytes": 1024 * 1024 * 4,
-            "address_parameter_proposal_bytes": 1024 * 1024 * 4,
+            "address_local_contribution_float64_bytes": 32 * 32 * 8,
+            "address_local_contribution_float32_bytes": 32 * 32 * 4,
+            "address_parameter_proposal_bytes": 32 * 32 * 4,
             "transient_scope": (
                 "named tensor payloads, not allocator/peak bounds; old/new conditional cache "
                 "may overlap across iterations; parameter proposals, returned decision receipts, "
@@ -520,5 +545,10 @@ class LocalMemoryLearner(nn.Module):
                 "the process-tree watchdog measures actual peak"
             ),
             "codec_clock": "one shared circuit time-multiplexed over occupied branches",
+            "address_clock": (
+                "one32-neuron temporal circuit applied across32 sensory-code channels; "
+                "1024 projected activities retained for slot scoring; "
+                "one held local accumulator per shared synapse"
+            ),
             "retained_query_or_teacher_history": False,
         }
