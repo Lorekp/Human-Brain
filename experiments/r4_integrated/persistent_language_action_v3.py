@@ -14,7 +14,7 @@ import sys
 import time
 from pathlib import Path
 
-DRAFT = True
+DRAFT = False
 ROOT = Path(__file__).resolve().parents[2]
 ROUTES = ("online", "learning_disabled", "simple")
 PHASES = ("acquisition", "transfer", "recovery", "retention")
