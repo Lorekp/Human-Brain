@@ -173,6 +173,16 @@ audit. Reuse the existing declared run/audit reserve policy only after its
 accounting is recomputed for the fifth arm and 360 tapes. A rejected cost closes
 this attempted configuration; it does not authorize retries or ceiling changes.
 
+The v2 factory/prior and isolated worker/endpoint source are now implemented.
+Root selects the [single-exchange custody check](neuronal-address-competition-worker-qa-v1.md)
+with its exact original-prior load and one authored observation/action, after
+source review, commit and doctor. This narrow checkpoint exposure supersedes
+the source-only boundary for that check alone. No historical tape, old question,
+transfer prediction or acquisition is included. The parent-only shared action
+format remains v1 inside explicitly bound v2 envelopes.
+The separately selected [one-construction data check](neuronal-address-competition-data-qa-v1.md)
+qualifies and freezes the new roster without models or program execution.
+
 Exact roster source/data QA, complete source freeze and fresh measured admission
 remain prerequisites. This is one selected integrated
 milestone, not a queue of alternative experiments or a general SWE claim.

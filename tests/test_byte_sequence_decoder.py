@@ -6807,3 +6807,692 @@ def test_competitive_receipt_trace_tampering_and_bounds(tmp_path):
             "actions": 0,
         },
     )
+
+
+def test_competitive_splice_prior_worker_exchange():
+    """Five strict reader continuations; one competitive worker action, no teaching."""
+    import json
+    import os
+    import shutil
+    import subprocess
+    import sys
+    import time
+    from pathlib import Path
+    from types import SimpleNamespace
+
+    from experiments.r4_integrated.check_neuronal_address_competition_v1 import check_reader
+    from experiments.r4_integrated.check_neuronal_splice_online_v1 import initial_action_tensors
+    from experiments.r4_integrated.neuronal_splice_endpoint_v2 import (
+        check_acknowledgement,
+        check_proposal,
+    )
+    from experiments.r4_integrated.neuronal_splice_io_v1 import (
+        JsonlJournal,
+        process_identity,
+        read_row,
+        write_message,
+    )
+    from experiments.r4_integrated.neuronal_splice_models_v2 import ARMS, reader_policy
+    from experiments.r4_integrated.neuronal_splice_online_v1 import (
+        execute_action,
+        qualified_launch,
+        workspace_from_records,
+    )
+    from experiments.r4_integrated.neuronal_splice_prior_v2 import initialize_models, tensor_bytes
+    from experiments.r4_integrated.neuronal_splice_receipts_v2 import validate_prediction
+    from experiments.r4_integrated.neuronal_splice_worker_v2 import (
+        LIMITS,
+        SOURCE_MODULES,
+        WORKER_SOURCE,
+        check_requests,
+        file_hash,
+        write_json,
+    )
+    from humanbrain.competitive_local_memory_learner import CompetitiveLocalMemoryLearner
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+    from humanbrain.neuronal_splice_learner import NeuronalSpliceLearner, _digest
+
+    root = Path(__file__).resolve().parents[1]
+    output = root / ".pytest-tmp/competitive-splice-prior-worker-qa-v1"
+    output.mkdir(exist_ok=False)
+    deadline = float(os.environ["HUMANBRAIN_RUN_DEADLINE_UNIX"])
+    assert 0 < deadline - time.time() <= 60
+    spec = SimpleNamespace(config={"receipt_limits": LIMITS})
+    baseline_paths = {
+        *SOURCE_MODULES.values(),
+        WORKER_SOURCE,
+        "experiments/r4_integrated/neuronal_splice_prior_v2.py",
+        "experiments/r4_integrated/neuronal_splice_prior_v1.py",
+        "experiments/r4_integrated/neuronal_splice_endpoint_v2.py",
+        "experiments/r4_integrated/check_neuronal_address_competition_v1.py",
+        "experiments/r4_integrated/check_neuronal_splice_online_v1.py",
+        "experiments/r4_integrated/neuronal_splice_online_v1.py",
+    }
+    baseline = {
+        "source_sha256": {name: file_hash(root / name) for name in sorted(baseline_paths)},
+        "test_sha256": file_hash(Path(__file__)),
+        "parent_identity": process_identity(),
+    }
+    write_json(output / "before-initialization.json", baseline)
+    models, custody = initialize_models(root)
+    write_json(output / "prior.json", custody)
+    assert (
+        tuple(models)
+        == ARMS
+        == ("learned", "action_frozen", "slow_frozen", "memory_disabled", "marginal_reference")
+    )
+    assert custody["schema"] == "neuronal-splice-prior-custody-v2"
+    assert custody["actual_loaded_payload_tensor_bytes"] == 33801664
+    assert custody["historical_payload_tensor_bytes"] == 33801664
+    assert custody["new_model_tensor_bytes"] == 3172160
+    assert custody["selected_entry"] == "learned.weights"
+    assert custody["metadata_fields_changed"]["marginal_reference"] == []
+    assert custody["reader_policy"] == {arm: reader_policy(arm) for arm in ARMS}
+    initial_actions = initial_action_tensors(torch)
+    marginal_metadata = models["marginal_reference"].reader.get_extra_state()
+    reader_tensors = {
+        key: value
+        for key, value in models["marginal_reference"].reader.state_dict().items()
+        if isinstance(value, torch.Tensor)
+    }
+    assert _digest(reader_tensors) == custody["initial_reader_tensor_sha256"]
+    allowed_metadata = {
+        "mode",
+        "schema",
+        "recall",
+        "competition",
+        "free_belief",
+        "codec_activity",
+        "teacher_phase",
+    }
+    initial_model_hashes = {}
+    for arm, current in models.items():
+        mode = "learned" if arm == "marginal_reference" else arm
+        expected_type = (
+            LocalMemoryLearner if arm == "marginal_reference" else CompetitiveLocalMemoryLearner
+        )
+        assert type(current.reader) is expected_type
+        assert current.mode == mode and current.reader.mode == NeuronalSpliceLearner.MODES[mode]
+        assert current._pending is None and current._experience == 0
+        assert all(
+            not value.requires_grad
+            and value.grad is None
+            and value.grad_fn is None
+            and torch.isfinite(value).all()
+            for value in current.parameters()
+        )
+        assert all(
+            torch.equal(current.state_dict()[key], value) for key, value in initial_actions.items()
+        )
+        assert all(
+            torch.equal(current.reader.state_dict()[key], value)
+            for key, value in reader_tensors.items()
+        )
+        metadata = current.reader.get_extra_state()
+        changed = sorted(
+            key
+            for key in set(metadata) | set(marginal_metadata)
+            if metadata.get(key) != marginal_metadata.get(key)
+        )
+        assert changed == custody["metadata_fields_changed"][arm]
+        assert set(changed) <= allowed_metadata
+        assert metadata["mode"] == current.reader.mode
+        if arm != "marginal_reference":
+            assert metadata["schema"] == "local-neuronal-competitive-address-learner-v1"
+        initial_model_hashes[arm] = _digest(current.state_dict())
+    assert initial_model_hashes == custody["initial_model_sha256"]
+    for key in reader_tensors:
+        assert (
+            len({current.reader.state_dict()[key].data_ptr() for current in models.values()}) == 5
+        )
+    for key in initial_actions:
+        assert len({current.state_dict()[key].data_ptr() for current in models.values()}) == 5
+    model = models["learned"]
+    document = b"Record k00 has value ab."
+    state = model.ingest([document])
+    assert len(document) == 24 and state.used == 25
+    successor = state.successor[: state.used].tolist()
+    model_hash, memory_hash = _digest(model.state_dict()), _digest(state.snapshot())
+    workspace = workspace_from_records(
+        [
+            {"path": "a.py", "content_hex": b"x = 'old'\n".hex()},
+            {"path": "main.py", "content_hex": b"import a\nprint(a.x)\n".hex()},
+        ]
+    )
+    task = {
+        "task_id": "endpoint-0",
+        "memory_id": "qa-memory",
+        "request_hex": b"SET a.py x k00".hex(),
+        "workspace_sha256": workspace.sha256,
+        "files": [
+            {"path": item.path, "content_hex": item.content.hex()} for item in workspace.files
+        ],
+    }
+    package = output / "package"
+    package.mkdir()
+    sources = {}
+    for relative in (*SOURCE_MODULES.values(), WORKER_SOURCE):
+        destination = package / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(root / relative, destination)
+        assert file_hash(destination) == file_hash(root / relative)
+        sources[relative] = file_hash(destination)
+    assert len(sources) == 16
+    assert {path.relative_to(package).as_posix() for path in package.rglob("*.py")} == set(sources)
+    assert all(digest == baseline["source_sha256"][name] for name, digest in sources.items())
+    checkpoint = output / "source_free.pt"
+    payload = {
+        "schema": "neuronal-splice-single-exchange-qa-state-v2",
+        "arms": {
+            "learned": {
+                "weights": model.state_dict(),
+                "memories": {"qa-memory": state.snapshot()},
+                "experience": 0,
+            }
+        },
+    }
+    assert tensor_bytes(payload) == 1291336
+    with checkpoint.open("xb") as stream:
+        torch.save(payload, stream)
+    del payload
+    checkpoint_hash = file_hash(checkpoint)
+    requests = {
+        "schema": "neuronal-splice-single-exchange-qa-request-v2",
+        "checkpoint_sha256": checkpoint_hash,
+        "source_sha256": sources,
+        "receipt_limits": LIMITS,
+        "arms": ["learned"],
+        "reading_cases": [],
+        "cases": [
+            {
+                "id": task["task_id"],
+                **{key: task[key] for key in ("memory_id", "request_hex", "files")},
+            }
+        ],
+    }
+    check_requests(requests, single_exchange_qa=True)
+    with pytest.raises(ValueError):
+        check_requests(requests)
+    request_path = output / "query_only.json"
+    write_json(request_path, requests)
+    requests_hash = file_hash(request_path)
+    qualification_paths = {
+        ".pytest-tmp/temporary-module-bootstrap-v1-qualification.json": (
+            "0bb809fd33aee145f169776a03a884fd62daf381ff4e67ed333a2a378c46d92b"
+        ),
+        ".pytest-tmp/stdlib-python-action-v1-qualification.json": (
+            "4c3a6438549ce1ecd4c8d92509f1a60753692b8aab1ab9155df00b12db10941c"
+        ),
+    }
+    assert all(file_hash(root / name) == digest for name, digest in qualification_paths.items())
+    launch = qualified_launch(root)
+    write_json(
+        output / "qualification.json",
+        {
+            "qualification_sha256": qualification_paths,
+            "launch_record": launch.to_record(),
+            "launch_record_sha256": launch.sha256,
+        },
+    )
+    command = [
+        sys.executable,
+        "-I",
+        "-X",
+        "utf8",
+        str(package / WORKER_SOURCE),
+        "--package-root",
+        str(package),
+        "--checkpoint",
+        str(checkpoint),
+        "--checkpoint-sha",
+        checkpoint_hash,
+        "--requests",
+        str(request_path),
+        "--requests-sha",
+        requests_hash,
+        "--output",
+        str(output / "worker"),
+        "--deadline-unix",
+        repr(deadline),
+        "--single-exchange-qa",
+    ]
+    action_journal = JsonlJournal(output / "actions.jsonl", spec)
+    try:
+        with (output / "worker-stderr.bin").open("xb") as stderr:
+            worker_started_unix = time.time()
+            process = subprocess.Popen(
+                command, cwd=output, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=stderr
+            )
+            try:
+                launcher_identity = process_identity(process.pid)
+                write_json(
+                    output / "worker-launch.json",
+                    {
+                        "command": command,
+                        "cwd": str(output),
+                        "pid": process.pid,
+                        "process_identity": launcher_identity,
+                        "parent_pid": os.getpid(),
+                        "baseline_sha256": file_hash(output / "before-initialization.json"),
+                        "parent_identity": baseline["parent_identity"],
+                        "started_unix": worker_started_unix,
+                    },
+                )
+                proposal_row = read_row(process.stdout, spec)
+                write_json(output / "proposal.json", proposal_row)
+                proposal = check_proposal(
+                    proposal_row, "learned", 0, task, model_hash, memory_hash, successor=successor
+                )
+                validate_prediction(
+                    proposal_row["prediction"],
+                    successor,
+                    expected_policy="competitive_free",
+                    boundaries=workspace.boundaries,
+                )
+                payload_row = proposal_row["prediction"]["payload"]
+                summary = check_reader(payload_row, successor, "competitive_free")
+                assert payload_row["work"]["query_raw_bytes"] == 14
+                assert len(payload_row["competition"]["scores"]) == 25
+                assert len(payload_row["competition"]["pair_currents"]) == 300
+                assert len(summary["final_cursors"]) == 1
+                assert payload_row["work"]["codec_slot_evaluations"] == 25
+                assert payload_row["work"]["codec_response_gathers"] == summary["decisions"]
+                identity = {
+                    key: proposal_row[key]
+                    for key in ("schema", "type", "arm", "index", "id", "attempt_id")
+                }
+                envelope, action_hash, _, _ = execute_action(
+                    task=None,
+                    workspace=workspace,
+                    proposal=proposal,
+                    attempt_id=identity["attempt_id"],
+                    phase="endpoint",
+                    arm="learned",
+                    index=0,
+                    output=output,
+                    launch=launch,
+                    journal=action_journal,
+                )
+                write_message(
+                    process.stdin,
+                    {
+                        **identity,
+                        "type": "executed",
+                        "action_sha256": action_hash,
+                        "outcome": envelope,
+                    },
+                    spec,
+                )
+                acknowledgement = read_row(process.stdout, spec)
+                write_json(output / "acknowledgement.json", acknowledgement)
+                check_acknowledgement(
+                    acknowledgement, identity, action_hash, model_hash, memory_hash
+                )
+                with pytest.raises(ValueError):
+                    check_acknowledgement(
+                        {**acknowledgement, "action_sha256": "0" * 64},
+                        identity,
+                        action_hash,
+                        model_hash,
+                        memory_hash,
+                    )
+                process.stdin.close()
+                process.wait(timeout=max(0.001, deadline - time.time()))
+                assert process.returncode == 0 and read_row(process.stdout, spec) is None
+                worker_finished_unix = time.time()
+            except BaseException:
+                if process.poll() is None:
+                    process.kill()
+                    process.wait()
+                raise
+            finally:
+                process.stdout.close()
+                if not process.stdin.closed:
+                    process.stdin.close()
+    finally:
+        action_log = action_journal.close()
+    completion = json.loads((output / "worker/completion.json").read_bytes())
+    assert completion["schema"] == "neuronal-splice-endpoint-completion-v2"
+    assert completion["scope"] == "single_exchange_qa" and completion["status"] == "passed"
+    assert completion["pid"] == process.pid or completion["parent_pid"] == process.pid
+    worker_identity = completion["process_identity"]
+    assert worker_identity["pid"] == completion["pid"]
+    assert baseline["parent_identity"]["creation_ticks"] <= launcher_identity["creation_ticks"]
+    assert launcher_identity["creation_ticks"] <= worker_identity["creation_ticks"]
+    if completion["pid"] == process.pid:
+        assert worker_identity == launcher_identity and completion["parent_pid"] == os.getpid()
+    else:
+        assert completion["parent_pid"] == launcher_identity["pid"]
+    worker_created_unix = (worker_identity["creation_ticks"] - 621355968000000000) / 10**7
+    assert worker_started_unix - 0.001 <= worker_created_unix <= worker_finished_unix + 0.001
+    assert completion["checkpoint_sha256"] == file_hash(checkpoint) == checkpoint_hash
+    assert completion["requests_sha256"] == file_hash(request_path) == requests_hash
+    assert completion["source_sha256"] == sources
+    assert completion["source_origins"] == {
+        key: str(package / path) for key, path in SOURCE_MODULES.items()
+    }
+    assert completion["final"] == {
+        "learned": {
+            "model_sha256": model_hash,
+            "memories_sha256": {"qa-memory": memory_hash},
+            "experience": 1,
+        }
+    }
+    assert completion["endpoint_log"]["rows"] == 2 and completion["reading_log"]["rows"] == 0
+    for name, filename in (("endpoint_log", "endpoints.jsonl"), ("reading_log", "reading.jsonl")):
+        log = completion[name]
+        log_path = output / "worker" / filename
+        assert set(log) == {
+            "path",
+            "rows",
+            "bytes",
+            "sha256",
+            "max_line_bytes",
+            "max_row_tree_bytes",
+        }
+        assert log["path"] == filename and log["bytes"] == log_path.stat().st_size
+        assert log["sha256"] == file_hash(log_path)
+        assert 0 <= log["max_line_bytes"] <= LIMITS["max_line_bytes"]
+        assert 0 <= log["max_row_tree_bytes"] <= LIMITS["max_row_tree_bytes"]
+        if log["rows"]:
+            assert log["bytes"] > 0 and log["max_line_bytes"] > 0 and log["max_row_tree_bytes"] > 0
+        else:
+            assert log["bytes"] == log["max_line_bytes"] == log["max_row_tree_bytes"] == 0
+    assert (output / "worker-stderr.bin").stat().st_size <= 1024
+    assert _digest(model.state_dict()) == model_hash and _digest(state.snapshot()) == memory_hash
+    assert {
+        arm: _digest(current.state_dict()) for arm, current in models.items()
+    } == initial_model_hashes
+    assert all(current._pending is None and current._experience == 0 for current in models.values())
+    assert all(
+        file_hash(root / relative) == file_hash(package / relative) == digest
+        for relative, digest in sources.items()
+    )
+    assert all(file_hash(root / name) == digest for name, digest in qualification_paths.items())
+    assert {name: file_hash(root / name) for name in baseline["source_sha256"]} == baseline[
+        "source_sha256"
+    ]
+    assert file_hash(Path(__file__)) == baseline["test_sha256"]
+    assert action_log["rows"] == 1
+    assert acknowledgement["work"] == {
+        "action": {"custody_tensor_bytes_hashed": 1291336},
+        "reader": {},
+    }
+    steps = proposal_row["prediction"]["payload"]["steps"]
+    assert 1 <= len(steps) <= 17
+    write_json(
+        output / "passed.json",
+        {
+            "schema": "competitive-splice-prior-worker-qa-v1",
+            "status": "passed",
+            "parent_pid": os.getpid(),
+            "baseline_sha256": file_hash(output / "before-initialization.json"),
+            "launcher_identity": launcher_identity,
+            "worker_identity": completion["process_identity"],
+            "action_log": action_log,
+            "prior": custody,
+            "worker_completion_sha256": file_hash(output / "worker/completion.json"),
+            "source_sha256": sources,
+            "test_sha256": file_hash(Path(__file__)),
+            "combined_model_constructions": 6,
+            "parent_models": 5,
+            "reader_prior_copies": 5,
+            "prior_loads": 1,
+            "worker_checkpoint_loads": 1,
+            "ingests": 1,
+            "document_raw_bytes": len(document),
+            "document_eos": 1,
+            "free_proposals": 1,
+            "actual_payload_decisions": len(steps),
+            "action_children": 1,
+            "worker_processes": 1,
+            "teachers": 0,
+            "reading_panel_calls": 0,
+            "checkpoint_output_probes": 0,
+            "query_raw_bytes": 14,
+            "query_eos": 1,
+            "qualification_sha256": qualification_paths,
+            "launch_record_sha256": launch.sha256,
+            "reader_policy": reader_policy("learned"),
+            "initial_model_sha256": initial_model_hashes,
+            "proposal_sha256": proposal.sha256,
+            "action_line_sha256": action_hash,
+            "qualification_scope": (
+                "Same pending neuronal worker through actual execution; no acquired task skill."
+            ),
+        },
+    )
+
+
+def test_competitive_splice_roster_data_contract():
+    """One new roster construction; saved v1 comparison; no model or program execution."""
+    import ast
+    import json
+    from collections import Counter
+    from hashlib import sha256
+    from pathlib import Path
+
+    from experiments.r4_integrated import neuronal_splice_roster_v2 as data
+
+    root = Path(__file__).resolve().parents[1]
+    old_path = root / ".pytest-tmp/local-joint-address-online-v6-run/offline_teacher_roster.json"
+    previous_path = root / ".pytest-tmp/neuronal-splice-roster-qa-generated-v1.json"
+    old_source = root / "experiments/r4_integrated/neuronal_splice_roster_v1.py"
+    new_source = root / "experiments/r4_integrated/neuronal_splice_roster_v2.py"
+    bindings = {
+        old_path: "009b42e22976733bba207e46337ec23d5f6de5ab15ab061bc6fd08539e44a2b1",
+        previous_path: "245a0d908ded5d4bbf4216028d062a9609597561d4c63c67c50f69fd164de5e9",
+        old_source: "b814edae2d3bc0da5d6be85ef1adb36f85b411522b189ee376617c192f194d77",
+        new_source: "de3d672e7e72299a706d2e154c0e426364f72b472086c2f5272fec6939b4ff6b",
+    }
+    for path, expected in bindings.items():
+        assert sha256(path.read_bytes()).hexdigest() == expected
+    previous = json.loads(previous_path.read_bytes())
+    output = root / ".pytest-tmp/neuronal-splice-roster-qa-generated-v2.json"
+    raw_receipt = root / ".pytest-tmp/neuronal-splice-roster-data-qa-v2-raw.json"
+    passed = root / ".pytest-tmp/neuronal-splice-roster-data-qa-v2.json"
+    assert not any(path.exists() for path in (output, raw_receipt, passed))
+    roster = data.build_roster(old_path)  # The sole constructor call.
+    with output.open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps(roster, sort_keys=True, allow_nan=False) + "\n")
+    receipt = {
+        "schema": "competitive-splice-roster-data-qa-v1", "status": "pending_checks",
+        "source_inputs": {str(path): value for path, value in bindings.items()},
+        "tested_source_sha256": sha256(Path(__file__).read_bytes()).hexdigest(),
+        "generated_path": str(output), "generated_sha256": sha256(output.read_bytes()).hexdigest(),
+        "builder_calls": 1, "v1_builder_calls": 0, "models": 0, "children": 0,
+        "checkpoint_loads": 0, "program_executions": 0,
+    }
+    with raw_receipt.open("x", encoding="utf-8") as stream:
+        json.dump(receipt, stream, sort_keys=True)
+
+    assert roster["schema"] == "neuronal-splice-roster-v2"
+    assert roster["source_inputs"] == previous["source_inputs"]
+    for name in ("train_task_ids", "schedule", "cost_task_ids", "retention_task_ids", "old_panel"):
+        assert roster[name] == previous[name]
+    tasks, memories = roster["tasks"], roster["memory_packages"]
+    for task_id in roster["train_task_ids"]:
+        assert tasks[task_id] == previous["tasks"][task_id]
+        memory_id = tasks[task_id]["memory_id"]
+        assert memories[memory_id] == previous["memory_packages"][memory_id]
+    old_ids = {row["memory_id"] for row in roster["old_panel"]}
+    assert len(old_ids) == 12
+    for memory_id in old_ids:
+        assert memories[memory_id] == previous["memory_packages"][memory_id]
+    assert Counter(roster["schedule"]) == {f"T{i:02d}": 8 for i in range(32)}
+    assert roster["fresh_task_ids"] == [f"{g}{r}-{m}" for g in "DCVO"
+                                         for r in range(4) for m in range(2)]
+    assert set(tasks) == set(roster["train_task_ids"] + roster["fresh_task_ids"])
+    assert Counter(tasks[key]["required_operation"] for key in roster["fresh_task_ids"]) == {
+        "SPLICE": 28, "STOP": 4}
+    assert roster["counts"] == {
+        "tasks": 64, "train_tasks": 32, "fresh_tasks": 32, "retention_tasks": 16,
+        "lessons_per_arm": 256, "memory_packages_per_arm": 72,
+        "before_learning_packages": 48, "after_learning_packages": 24,
+        "documents_per_arm": 168, "document_raw_bytes_per_arm": 4022,
+        "document_eos_per_arm": 168, "ingestion_symbols_per_arm": 4190,
+        "maximum_memory_slots": 128, "reader_teacher_offers_per_arm": 480,
+        "action_teacher_labels_per_arm": 640, "full_action_verifications": 1520,
+        "old_panel_reader_calls": 200, "full_reader_teacher_offers": 2400,
+        "full_action_teacher_labels": 3200,
+    }
+    docs = [bytes.fromhex(raw) for package in memories.values() for raw in package["document_hex"]]
+    assert (len(docs), sum(map(len, docs))) == (168, 4022)
+    before_ids, after_ids = (roster[f"{stage}_memory_ids"] for stage in
+                             ("before_learning", "after_learning"))
+    assert len(before_ids) == 48 and len(after_ids) == 24
+    assert not set(before_ids) & set(after_ids)
+    assert set(before_ids + after_ids) == set(memories)
+    for stage, ids in (("before_learning", before_ids), ("after_learning", after_ids)):
+        assert {key for key, value in memories.items() if value["stage"] == stage} == set(ids)
+    fresh_memory_ids = {tasks[key]["memory_id"] for key in roster["fresh_task_ids"]}
+    assert len(fresh_memory_ids) == 28
+    assert fresh_memory_ids & set(before_ids) == {f"M-V{r}-{m}" for r in range(2) for m in range(2)}
+    assert all(sum(len(bytes.fromhex(raw)) + 1 for raw in memory["document_hex"]) <= 128
+               for memory in memories.values())
+
+    syntax_parses = literal_reads = 0
+    for task in tasks.values():
+        before = {f["path"]: bytes.fromhex(f["content_hex"]) for f in task["files"]}
+        expected_after = {f["path"]: bytes.fromhex(f["content_hex"])
+                          for f in task["expected_after_files"]}
+        assert len(before) == 3 and set(before) == set(expected_after)
+        assert max(len(path.encode()) for path in before) <= 31
+        assert 0 < len(bytes.fromhex(task["request_hex"])) <= 31
+        teacher, actual = task["teacher"], dict(before)
+        # Independent generic digest, not the constructor's helper.
+        digest = sha256(b"humanbrain.raw-splice-workspace.v1\0")
+        digest.update(len(before).to_bytes(4, "big"))
+        for path in sorted(before, key=lambda value: value.encode()):
+            for raw in (path.encode(), before[path]):
+                digest.update(len(raw).to_bytes(8, "big"))
+                digest.update(raw)
+        assert task["workspace_sha256"] == teacher["workspace_sha256"] == digest.hexdigest()
+        assert teacher["operation"] == task["required_operation"]
+        assert teacher["stop_reason"] == "eos"
+        if teacher["operation"] == "SPLICE":
+            path, start, end = teacher["path"], teacher["start"], teacher["end"]
+            replacement = bytes.fromhex(teacher["replacement_hex"])
+            assert 0 <= start <= end <= len(before[path]) and len(replacement) <= 16
+            actual[path] = before[path][:start] + replacement + before[path][end:]
+        else:
+            assert teacher["operation"] == "STOP" and teacher["replacement_hex"] == ""
+        assert actual == expected_after
+        after_trees = {}
+        for workspace in (before, actual):
+            for path, raw in workspace.items():
+                assert len(raw) <= 128
+                tree = ast.parse(raw.decode("ascii"), filename=path)
+                syntax_parses += 1
+                if workspace is actual:
+                    after_trees[path] = tree
+        values = {}
+        for path, tree in after_trees.items():
+            if path == "main.py":
+                continue
+            values[path[:-3]] = {}
+            assert len(tree.body) == 2
+            for assignment in tree.body:
+                assert isinstance(assignment, ast.Assign) and len(assignment.targets) == 1
+                assert isinstance(assignment.targets[0], ast.Name)
+                value = ast.literal_eval(assignment.value)
+                literal_reads += 1
+                assert isinstance(value, str)
+                values[path[:-3]][assignment.targets[0].id] = value.encode("ascii")
+            assert set(values[path[:-3]]) == {"x", "y"}
+        main = after_trees["main.py"].body
+        assert len(main) == 2 and isinstance(main[0], ast.Import)
+        assert len(main[0].names) == 2 and all(alias.asname is None for alias in main[0].names)
+        names = [alias.name for alias in main[0].names]
+        assert set(names) == set(values)
+        assert isinstance(main[1], ast.Expr) and isinstance(main[1].value, ast.Call)
+        call = main[1].value
+        assert isinstance(call.func, ast.Name) and call.func.id == "print"
+        assert len(call.args) == 4 and len(call.keywords) == 1
+        assert call.keywords[0].arg == "sep" and ast.literal_eval(call.keywords[0].value) == "|"
+        argument_names = [(n, v) for n in names for v in ("x", "y")]
+        for arg, (name, variable) in zip(call.args, argument_names, strict=True):
+            assert isinstance(arg, ast.Attribute) and isinstance(arg.value, ast.Name)
+            assert (arg.value.id, arg.attr) == (name, variable)
+        stdout = b"|".join(values[name][var] for name in names for var in ("x", "y")) + b"\n"
+        assert stdout.hex() == task["expected_stdout_hex"]
+        observation = data.task_observation(task)
+        assert set(observation) == {
+            "task_id", "memory_id", "request_hex", "files", "workspace_sha256"}
+        assert all(set(item) == {"path", "content_hex"} for item in observation["files"])
+        assert all(observation[key] == task[key] for key in observation)
+        observation["files"][0]["content_hex"] = ""
+        assert task["files"][0]["content_hex"] != ""
+    assert (syntax_parses, literal_reads) == (384, 256)
+
+    continuation = ((b"ab", b"ababab"), (b"ba", b"bababa"),
+                    (b"cd", b"cdcdcd"), (b"dc", b"dcdcdc"))
+    role_values = ((b"ab", b"ba"), (b"cd", b"dc"), (b"ac", b"ca"), (b"bd", b"db"))
+    for group in "DCVO":
+        for r in range(4):
+            left, right = (tasks[f"{group}{r}-{m}"] for m in range(2))
+            assert left["pair_id"] == right["pair_id"] == f"{group}{r}"
+            assert (left["member"], right["member"]) == (0, 1)
+            assert left["files"] == right["files"]
+            documents = [[bytes.fromhex(raw) for raw in memories[t["memory_id"]]["document_hex"]]
+                         for t in (left, right)]
+            payloads = tuple(bytes.fromhex(t["teacher"]["replacement_hex"]) for t in (left, right))
+            if group != "O":
+                assert left["request_hex"] == right["request_hex"]
+                assert left["memory_id"] != right["memory_id"]
+                for field in ("path", "start", "end", "operation"):
+                    assert left["teacher"][field] == right["teacher"][field]
+            if group == "D":
+                assert len(documents[0]) == 2 and documents[0] == documents[1][::-1]
+                assert left["teacher"] == right["teacher"]
+                assert left["expected_after_files"] == right["expected_after_files"]
+            elif group == "C":
+                assert payloads == continuation[r] and payloads[0] == payloads[1][:2]
+                assert documents[0][1] == documents[1][1]
+                assert len(documents[0]) == len(documents[1]) == 2
+                assert documents[1][0] == documents[0][0][:-3] + payloads[1] + b"."
+                assert left["expected_after_files"] != right["expected_after_files"]
+            elif group == "V":
+                assert payloads == role_values[r]
+                expected_slots = 50 if r < 2 else 125
+                for member, rows in enumerate(documents):
+                    assert sum(len(raw) + 1 for raw in rows) == expected_slots
+                    prefix = f"Record k{88 + r} has value ".encode()
+                    assert rows[0] == prefix + payloads[member] + b"."
+                    assert rows[1] == b"Record k96 has value " + payloads[1 - member] + b"."
+                assert documents[0][2:] == documents[1][2:]
+                assert left["expected_after_files"] != right["expected_after_files"]
+            else:
+                assert left["memory_id"] == right["memory_id"] and documents[0] == documents[1]
+                assert bytes.fromhex(left["request_hex"]).startswith(b"SET ")
+                assert bytes.fromhex(right["request_hex"]) == (
+                    b"KEEP " + bytes.fromhex(left["request_hex"])[4:])
+                raw = next(bytes.fromhex(f["content_hex"]) for f in left["files"]
+                           if f["path"] == left["teacher"]["path"])
+                if r < 2:
+                    assert b"\t" in raw
+                    if r == 0:
+                        assert b"  " in raw
+                    assert left["teacher"]["end"] - left["teacher"]["start"] == 3
+                elif r == 2:
+                    assert raw.startswith(b"\n# insertion\n\n")
+                    assert left["teacher"]["start"] == left["teacher"]["end"] and payloads[0]
+                else:
+                    assert raw.startswith(b"# deletion\n\n") and payloads[0] == b""
+                    assert left["teacher"]["end"] > left["teacher"]["start"]
+    exposed_paths = {f["path"] for task in previous["tasks"].values() for f in task["files"]}
+    fresh_paths = {f["path"] for key in roster["fresh_task_ids"] for f in tasks[key]["files"]}
+    assert exposed_paths & fresh_paths == {"main.py"}
+    fresh_keys = {bytes.fromhex(raw)[7:10] for key in fresh_memory_ids
+                  for raw in memories[key]["document_hex"]}
+    exposed_keys = {bytes.fromhex(raw)[7:10] for key, value in previous["memory_packages"].items()
+                    if not key.startswith("M-old-") for raw in value["document_hex"]}
+    assert not fresh_keys & exposed_keys
+    assert fresh_keys == {f"k{i}".encode() for i in range(80, 100)}
+    for path, expected in bindings.items():
+        assert sha256(path.read_bytes()).hexdigest() == expected
+    receipt.update(status="passed", syntax_parses=syntax_parses,
+                   assignment_literal_reads=literal_reads, paired_contrasts=16,
+                   raw_receipt_sha256=sha256(raw_receipt.read_bytes()).hexdigest())
+    with passed.open("x", encoding="utf-8") as stream:
+        json.dump(receipt, stream, sort_keys=True)
