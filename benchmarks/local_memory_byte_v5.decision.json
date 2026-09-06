@@ -1,0 +1,105 @@
+{
+  "schema": "local-memory-byte-v5-result",
+  "status": "closed_qualification_failed",
+  "full_fit_ran": true,
+  "source_revision": "cdb9c9171ab5bde24fff2877bfdb67432708b99e",
+  "recipe": "experiments/r4_integrated/local_memory_byte_v5.md",
+  "evidence": {
+    "cost_admission": {
+      "path": "benchmarks/local_memory_byte_v5.cost_decision.json",
+      "sha256": "e04f85dacf08ceac6191a2390726c567998c845af54e818b56a412ec2eb678f7"
+    },
+    "completion": {
+      "path": ".pytest-tmp/local-memory-byte-v5-run/completion.json",
+      "sha256": "dd4723cdf7e08df95bdb4544f97fc08a7f251922a5f43218fba1744abba3c0bd"
+    },
+    "report": {
+      "path": ".pytest-tmp/local-memory-byte-v5-run/report.json",
+      "sha256": "1c3b66d3c00af4dc3c8af5d55711924f7b25be5403df7b2dea50ed810b31c276"
+    },
+    "launcher": {
+      "path": ".pytest-tmp/local-memory-byte-v5-run.launch.json",
+      "sha256": "d87e47e65ef12ff6f2a8540e46699a227dae9b64dc3366cc276d1934328aebc3"
+    },
+    "cost_audit": {
+      "path": ".pytest-tmp/local-memory-byte-v5-cost-independent-audit.json",
+      "sha256": "2a5ed6231a77b0c2b1aa1cda7d0fbae0290585a8a23e4787e2a64766958787ce"
+    },
+    "run_audit": {
+      "path": ".pytest-tmp/local-memory-byte-v5-run-independent-audit.json",
+      "sha256": "3e94c78c9be678f978b2f4cb6a09948d37f92b2fa73f7ccc4a5d35e6f5114deb"
+    },
+    "description": {
+      "path": ".pytest-tmp/local-memory-byte-v5-run.description.json",
+      "sha256": "59f6c167d559ef68defac0adb6e676133e029f499d9a2e05100be29e98055925"
+    },
+    "contrasts": {
+      "path": ".pytest-tmp/local-memory-byte-v5-contrasts.result.json",
+      "sha256": "c04c9cc43cfe4681c9ca435fa208c704649256dc80f0fcc294dc73fb5cd1387f"
+    }
+  },
+  "scores": {
+    "tagged": {
+      "fit": 1,
+      "unseen_value": 0,
+      "delayed": 0,
+      "interference": 0
+    },
+    "aggregate": {
+      "fit": 1,
+      "unseen_value": 0,
+      "delayed": 0,
+      "interference": 0
+    },
+    "writer_maps_frozen": {
+      "fit": 1,
+      "unseen_value": 0,
+      "delayed": 0,
+      "interference": 0
+    },
+    "frozen": {
+      "fit": 0,
+      "unseen_value": 0,
+      "delayed": 0,
+      "interference": 0
+    },
+    "writes_disabled": {
+      "fit": 1,
+      "unseen_value": 0,
+      "delayed": 0,
+      "interference": 0
+    }
+  },
+  "qualification": false,
+  "tag_specific_advantage": false,
+  "counts": {
+    "first_attempts": 5120,
+    "teacher_byte_offers": 33665,
+    "document_byte_steps": 292155,
+    "acquisition_query_byte_steps": 266240,
+    "final_query_byte_steps": 19240,
+    "actions": 100,
+    "motor_demos": 2,
+    "enabled_decoder_step_opportunities": 26932,
+    "first_generation_decisions": 55815
+  },
+  "acquisition_first_exact": {
+    "tagged": 72,
+    "aggregate": 70,
+    "writer_maps_frozen": 65,
+    "frozen": 0,
+    "writes_disabled": 68
+  },
+  "resources": {
+    "elapsed_seconds": 322.4202907,
+    "peak_upper_mib": 847.140625
+  },
+  "source_free_tensor_bytes": 124109512,
+  "finding": "Every updating arm generates mavi lune on all twenty final checks. No useful source conditioning or learned-writing advantage.",
+  "claim_limits": [
+    "Synthetic supervised development only",
+    "Host-authored action motor",
+    "No execution-feedback learning or recovery",
+    "No integrated or protected gate advancement"
+  ]
+}

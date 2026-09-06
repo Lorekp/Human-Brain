@@ -46,6 +46,14 @@ The [precisely timed v4 check](../experiments/r4_integrated/local_memory_byte_v4
 resolves that failure and passes its strict audit, but still projects 995.972
 seconds against 900 seconds (774.773 MiB peak). All samples are positive; no
 full acquisition runs and no cost limit is waived.
+The [v5 full local fit](../experiments/r4_integrated/local_memory_byte_v5_result.md)
+is admitted at 882.649 projected seconds and completes in 322.420 seconds with
+847.141 MiB conservative peak. The strict audit passes, but acquisition fails:
+tagged, aggregate, writer-frozen and writes-disabled each emit `mavi lune` on
+every final question, scoring 1/8 fit and zero new-value, delayed or interference
+checks. All 5,120 lessons and 102 executions are accounted for. Teacher loss
+improves without useful source conditioning; retained matrices differ across
+contradictory-answer sources. V5 is closed, with no learned-writing advantage.
 The official-exam scorer remains ready, with genuine structured learner output
 still pending.
 

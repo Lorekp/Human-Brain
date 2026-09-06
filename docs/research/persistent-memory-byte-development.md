@@ -153,8 +153,19 @@ now passes 89 combined tests and ninety paired complete-lesson comparisons;
 all records and learned weights match except timing on the finite-forward
 fixtures. Summed five-arm median time improves 1.101x. The declared omission
 of unused eligibility-overflow errors is tested separately. The
-[v5 return](../../experiments/r4_integrated/local_memory_byte_v5.md) keeps the
-same workload and precise clock; its complete cost admission is pending.
+[v5 return](../../experiments/r4_integrated/local_memory_byte_v5.md) was prepared
+with the same workload and precise clock before its cost admission below.
+
+The [v5 acquisition result](../../experiments/r4_integrated/local_memory_byte_v5_result.md)
+now completes after valid admission at 882.649 projected seconds. Actual runtime
+is 322.420 seconds and peak 847.141 MiB; strict saved-only audit passes all 5,120
+lessons and 102 executions. All four updating arms emit `mavi lune` on every
+final question: 1/8 fit, zero new-value, delayed and interference success.
+Writes-disabled performs equally. Teacher loss improves while source-conditioned
+generation fails, despite differing retained synapses. Close v5 without another
+fit or automatic order-credit modification. The immediate next step is a bounded
+primary-source/local-credit review and diagnostic that separates failure to learn
+context use from inadequate fact representation, then one return to integration.
 
 The [independent preflight review](local-memory-byte-preflight-review.md) records
 two learning risks: averaging byte feedback weakens explicit order credit, and
