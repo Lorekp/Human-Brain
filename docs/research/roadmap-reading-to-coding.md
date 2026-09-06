@@ -345,6 +345,10 @@ First execute the [two-child authored executor profile](local-action-executor-pr
 under unchanged transport, with no learner/motor calls or acquisition.
 That profile places 94-95% inside subprocess. One [authored child import profile](local-action-import-profile-v1.md)
 now localizes import subtrees before choosing a regular-source bootstrap change.
+It found a 17-ms `pkgutil` subtree. Select the
+[v4 source bootstrap](../../experiments/r4_integrated/local_joint_address_online_v4.md),
+retaining the existing qualified main-module lifecycle and requiring authored
+semantic QA plus fresh complete cost before learning. No neuronal rule changes.
 Run/audit peaks of 665.539/432.832 MiB fit the revised admission estimates.
 The shorter aggregate duration includes a changed reference roster and must not
 be presented as an isolated circuit speedup.

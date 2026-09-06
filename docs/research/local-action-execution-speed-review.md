@@ -22,6 +22,10 @@ distinguish the subprocess boundary from parent work. It runs no learner or moto
 That profile now passes and localizes 94-95% inside subprocess. The selected
 [single-child import profile](local-action-import-profile-v1.md) distinguishes
 site/import subtrees before any source-execution specialization is chosen.
+That diagnostic found a 17-ms cumulative `pkgutil` subtree. Select the
+[v4 regular-source bootstrap](../../experiments/r4_integrated/local_joint_address_online_v4.md)
+with pinned existing module-lifecycle handling, authored semantic qualification
+and fresh whole-workload cost. Import timing alone is not speed evidence.
 
 ## Concrete finding
 

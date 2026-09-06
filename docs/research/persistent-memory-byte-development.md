@@ -41,6 +41,10 @@ The selected [two-child profile](local-action-executor-profile-v1.md) localizes
 actual unchanged execution using authored inputs and no neuronal learning.
 It places 94-95% inside subprocess; one [authored import profile](local-action-import-profile-v1.md)
 now examines the child import path without changing the learner or fitted workload.
+It found a 17-ms `pkgutil` subtree; the selected
+[v4 return](../../experiments/r4_integrated/local_joint_address_online_v4.md)
+specializes regular-source loading while retaining the qualified script lifecycle.
+Semantic QA and new complete cost must precede acquisition.
 
 Current result: the [shared temporal-map comparison](../../experiments/r4_integrated/local_shared_temporal_query_v1_result.md)
 and independent audit complete in 119.745 seconds. Learned solves 8/8 taught,

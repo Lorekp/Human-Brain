@@ -3681,6 +3681,196 @@ def test_joint_online_v3_export_publishes_complete_request_once(tmp_path):
     assert request_path.read_bytes() == original
 
 
+_SOURCE_BOOTSTRAP_CASES = (
+    "namespace_cleanup", "utf8_bom_crlf", "latin1_cookie", "syntax_error",
+    "runtime_error", "exit_invalid_utf8", "pending",
+)
+
+_SOURCE_NAMESPACE_PROGRAM = r'''"""authored module doc"""
+_initial = sorted(globals())
+import __main__, atexit, ctypes, encodings, json, os, runpy, site, sys
+import authored_config
+_script_module = __main__
+_image = ctypes.create_unicode_buffer(32768)
+_length = ctypes.windll.kernel32.GetModuleFileNameW(None, _image, len(_image))
+assert 0 < _length < len(_image)
+print(json.dumps(dict(
+    phase='body', initial_globals=_initial, name=__name__, file=__file__,
+    spec=__spec__, package=__package__, loader=__loader__, cached=__cached__, doc=__doc__,
+    main_is_globals=(__main__.__dict__ is globals()), argv=sys.argv,
+    sibling=authored_config.setting, executable=sys.executable,
+    base_executable=sys._base_executable, prefix=sys.prefix, exec_prefix=sys.exec_prefix,
+    base_prefix=sys.base_prefix, base_exec_prefix=sys.base_exec_prefix,
+    version=sys.version, path=sys.path, os_image=_image.value, user_site=site.ENABLE_USER_SITE,
+    flags={n: getattr(sys.flags, n) for n in dir(sys.flags)
+           if not n.startswith('_') and isinstance(getattr(sys.flags, n), int)},
+    stdio={n: [getattr(sys, n).encoding, getattr(sys, n).errors]
+           for n in ('stdin', 'stdout', 'stderr')},
+    stdlib_origins={m.__name__: getattr(m, '__file__', None)
+                   for m in (runpy, site, encodings)},
+), sort_keys=True))
+def _at_exit():
+    print(json.dumps(dict(phase='atexit', argv0=sys.argv[0],
+        main_restored=(sys.modules['__main__'] is not _script_module),
+        retained_name=__name__, retained_file=__file__, retained_doc=__doc__), sort_keys=True))
+atexit.register(_at_exit)
+'''
+
+
+def _source_bootstrap_fixture(old, name):
+    from dataclasses import replace
+
+    value, program, pending = "ab", None, False
+    if name == "namespace_cleanup":
+        program = _SOURCE_NAMESPACE_PROGRAM.encode("utf-8")
+    elif name == "utf8_bom_crlf":
+        value = "café '\\\n雪"
+        program = b"\xef\xbb\xbf" + f"# coding: utf-8\r\nprint({value!r})\r\n".encode()
+    elif name == "latin1_cookie":
+        value, program = "café", b"# coding: latin-1\nprint('caf\xe9')\n"
+    elif name == "syntax_error":
+        program = b"if True print('bad')\n"
+    elif name == "runtime_error":
+        program = (b"import atexit, sys\n"
+                   b"atexit.register(lambda: print('runtime-exit:' + sys.argv[0]))\n"
+                   b"raise ValueError('authored runtime failure')\n")
+    elif name == "exit_invalid_utf8":
+        program = (b"import os, sys, atexit\n"
+                   b"atexit.register(lambda: sys.stderr.write('exit-hook\\n'))\n"
+                   b"os.write(1, b'\\xff\\n')\nsys.exit(7)\n")
+    elif name == "pending":
+        value, pending = "desired", True
+    else:
+        raise AssertionError("undeclared bootstrap fixture")
+    fixture = _direct_executor_fixture(old, name, value, pending=pending)
+    if program is None:
+        return fixture
+    case, files, before = fixture
+
+    def replace_main(items):
+        return tuple(replace(item, content=program) if item.path == "main.py" else item
+                     for item in items)
+
+    return case, replace_main(files), replace_main(before)
+
+
+@pytest.mark.parametrize("case_name", _SOURCE_BOOTSTRAP_CASES)
+def test_source_python_bootstrap_semantic_pair(tmp_path, case_name):
+    """Seven pairs/14 children; wrapper traceback and import-event differences are declared."""
+    import json
+    import os
+    import sys
+    from hashlib import sha256
+    from pathlib import Path
+
+    from experiments.r4_integrated import direct_python_action_bridge_v1 as old
+    from experiments.r4_integrated import source_python_action_bridge_v1 as new
+
+    root = Path(__file__).resolve().parents[1]
+    launch = old.discover_launch(root / ".venv/Scripts/python.exe")
+    raw_name = f"source-python-bootstrap-v1-{case_name}-raw.json"
+    passed_name = f"source-python-bootstrap-v1-{case_name}.json"
+    assert not (root / ".pytest-tmp" / raw_name).exists()
+    assert not (root / ".pytest-tmp" / passed_name).exists()
+    source_paths = (Path(__file__).resolve(), Path(old.__file__).resolve(),
+                    Path(new.__file__).resolve())
+    source_hashes = {str(path): sha256(path.read_bytes()).hexdigest() for path in source_paths}
+    fixture = _source_bootstrap_fixture(old, case_name)
+    case, files, before = fixture
+    index = _SOURCE_BOOTSTRAP_CASES.index(case_name)
+    order = ("old", "source") if index % 2 == 0 else ("source", "old")
+    receipts = {}
+    ambient = dict(os.environ)
+    for route in order:
+        bridge = old if route == "old" else new
+        receipts[route] = bridge.execute_utf8(case, files, before, tmp_path / route, launch=launch)
+    raw_path = _direct_executor_save(root, raw_name, dict(
+        schema="source-python-bootstrap-raw-v1", status="pending_semantic_checks", case=case_name,
+        execution_order=list(order), launch_record=launch.to_record(), source_sha256=source_hashes,
+        fixture_files={item.path: item.content.hex() for item in files},
+        receipts=receipts, child_executions=2))
+
+    assert dict(os.environ) == ambient
+    assert source_hashes == {
+        str(path): sha256(path.read_bytes()).hexdigest() for path in source_paths}
+    assert receipts["source"]["bootstrap_policy"] == new.BOOTSTRAP_POLICY
+    assert receipts["source"]["bootstrap_sha256"] == new.BOOTSTRAP_SHA256
+    assert receipts["source"]["child_command"] == [
+        launch.base_executable, "-I", "-X", "utf8", "-B", "-c", new.BOOTSTRAP]
+    for route, receipt in receipts.items():
+        assert receipt["launch_record_sha256"] == launch.sha256
+        assert receipt["child_environment_override"] == {
+            "__PYVENV_LAUNCHER__": launch.venv_executable}
+        assert receipt["child_python_flags"] == ["-I", "-X", "utf8", "-B"]
+        assert receipt["decoys_unchanged"] and receipt["materialized_matches_action"]
+        assert {item.path: (tmp_path / route / item.path).read_bytes() for item in files} == {
+            item.path: item.content for item in files}
+        assert not list((tmp_path / route).rglob("*.pyc"))
+        for channel in ("stdout", "stderr"):
+            raw_channel = bytes.fromhex(receipt[channel + "_hex"])
+            assert receipt[channel + "_sha256"] == sha256(raw_channel).hexdigest()
+
+    if case_name == "namespace_cleanup":
+        identities = {}
+        for route, receipt in receipts.items():
+            assert receipt["returncode"] == 0 and receipt["stderr_hex"] == ""
+            body, exit_record = map(json.loads, receipt["stdout"].splitlines())
+            assert body["initial_globals"] == sorted([
+                "__name__", "__doc__", "__package__", "__loader__", "__spec__",
+                "__file__", "__cached__", "__builtins__"])
+            assert {key: body[key] for key in ("name", "file", "package", "doc")} == {
+                "name": "__main__", "file": "main.py", "package": "", "doc": "authored module doc"}
+            assert all(body[key] is None for key in ("spec", "loader", "cached"))
+            assert body["main_is_globals"] is True and body["argv"] == ["main.py"]
+            assert body["sibling"] == "ab"
+            assert body["executable"] == sys.executable
+            assert body["base_executable"] == sys._base_executable
+            assert Path(body["os_image"]).resolve() == Path(sys._base_executable).resolve()
+            assert body["stdio"]["stdout"] == body["stdio"]["stderr"] == ["utf-8", "strict"]
+            assert body["flags"]["isolated"] == body["flags"]["utf8_mode"] == 1
+            assert exit_record == dict(phase="atexit", argv0="-c", main_restored=True,
+                retained_name="__main__", retained_file="main.py",
+                retained_doc="authored module doc")
+            identities[route] = [body, exit_record]
+        assert identities["old"] == identities["source"]
+    elif case_name in {"syntax_error", "runtime_error"}:
+        for receipt in receipts.values():
+            assert receipt["returncode"] == 1 and receipt["decode_errors"] == {}
+            assert not receipt["passed"]
+            if case_name == "syntax_error":
+                assert receipt["stdout_hex"] == ""
+                assert 'File "main.py", line 1' in receipt["stderr"]
+                assert "if True print('bad')" in receipt["stderr"]
+                assert receipt["stderr"].splitlines()[-1] == "SyntaxError: invalid syntax"
+            else:
+                assert receipt["stdout"] == "runtime-exit:-c\n"
+                assert 'File "main.py", line 3, in <module>' in receipt["stderr"]
+                assert receipt["stderr"].splitlines()[-1] == "ValueError: authored runtime failure"
+    else:
+        expected_stdout = b"\xff\n" if case_name == "exit_invalid_utf8" else (
+            b"pending\n" if case_name == "pending" else (case.value + "\n").encode("utf-8"))
+        expected_stderr = b"exit-hook\n" if case_name == "exit_invalid_utf8" else b""
+        for receipt in receipts.values():
+            assert receipt["stdout_hex"] == expected_stdout.hex()
+            assert receipt["stderr_hex"] == expected_stderr.hex()
+            assert receipt["returncode"] == (7 if case_name == "exit_invalid_utf8" else 0)
+            assert receipt["passed"] is (case_name in {"utf8_bom_crlf", "latin1_cookie"})
+            if case_name == "exit_invalid_utf8":
+                assert receipt["stdout"] is None and set(receipt["decode_errors"]) == {"stdout"}
+            else:
+                assert receipt["stdout"] == expected_stdout.decode("utf-8")
+                assert receipt["decode_errors"] == {}
+    _direct_executor_save(root, passed_name, dict(
+        schema="source-python-bootstrap-case-qa-v1", status="passed", case=case_name,
+        case_index=index, execution_order=list(order), launch_record=launch.to_record(),
+        source_sha256=source_hashes, bootstrap_policy=new.BOOTSTRAP_POLICY,
+        bootstrap_sha256=new.BOOTSTRAP_SHA256,
+        raw_evidence={str(raw_path): sha256(raw_path.read_bytes()).hexdigest()},
+        declared_differences=["bootstrap_frames", "bootstrap_import_set",
+                              "import_path_hook_and_audit_events"],
+        child_executions=2))
+
+
 def test_joint_address_autograd_and_invalid_learning_flag_rejected_before_activity():
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
