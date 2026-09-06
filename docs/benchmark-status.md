@@ -74,6 +74,14 @@ still fail the useful 4/4 criterion; both reference controls and both decoder
 orders score zero withheld. The saved audit passes exact old-checkpoint parity
 and reference update reconstruction. This is supplied-context local acquisition
 evidence, not a learned reader or integration pass; no automatic extra fit follows.
+The [local LMS output comparison](../experiments/r4_integrated/local_context_lms_v1_result.md)
+passes its scoped criterion: both orders solve 12/12 TRAIN and 4/4 withheld
+with genuine EOS, margins above 0.96 and no withheld success in either control.
+It takes 33.897 seconds at 368.961 MiB; monitored saved audit adds 4.170 seconds
+at 303.547 MiB. All source, residual, update, output and budget checks pass,
+along with a separate TRAIN-only certificate on the represented weights.
+This earns a limited return to document-derived memory and real Python actions,
+not a reading/coding gate or a claim about arbitrary continuous contexts.
 The official-exam scorer remains ready, with genuine structured learner output
 still pending.
 

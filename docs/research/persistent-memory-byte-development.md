@@ -242,7 +242,20 @@ two-byte raw-document/action return. The current joined learner needs an explici
 decoder/input-code and upstream-feedback interface; do not invent embeddings or
 silently disable writer learning to make the new output module fit its API.
 
-The conditional integrated return keeps the existing five learning controls and
+The [LMS result](../../experiments/r4_integrated/local_context_lms_v1_result.md)
+now passes the fixed useful criterion in both orders: 12/12 TRAIN and 4/4
+withheld exact outputs with EOS, minimum margins 0.960445 and 0.961010, and
+zero withheld success in both controls. The 7,680-lesson run takes 33.897
+seconds at 368.961 MiB; its separately monitored saved audit takes 4.170 seconds
+at 303.547 MiB, totaling 38.068 seconds within the original aggregate ceiling.
+Exact sums of saved TRAIN coefficients yield an additional represented-weight
+certificate, with missing-pair margin bounds above 0.934; this verifies the
+learned weights, not every floating operation of the convergence proof.
+The scoped output qualification is complete. Proceed directly to the following
+raw-document/action return with fresh output weights and no authored factors;
+do not start another output mechanism experiment.
+
+The selected integrated return keeps the existing five learning controls and
 source-free worker/execution custody, but uses a newly declared two-byte value
 roster. Start its output weights fresh; do not port weights fitted to authored
 factor inputs. Document/query byte codes must become an explicitly owned fixed

@@ -132,14 +132,17 @@ only 5/12 under either order at 768 lessons. The reference transfers to only
 2/4 or 3/4 withheld compositions, so neither architecture meets the useful
 endpoint. Exact old-checkpoint parity and the reference certificate pass.
 Retire further tuning of this decoder candidate. The
-[composition review](local-composition-return-review.md) selects one local
-potential-error (LMS) comparison: generic continuous phase/context neurons,
-zero output synapses, four correct/permuted/zero/frozen arms and one analytically
-motivated 160-cycle endpoint. Check numerical margins separately from its
-real-arithmetic bound. Useful exact composition earns a limited two-byte return
-to actual document memory and executed actions, with an explicit upstream
-teaching interface. Do not silently teach the probes or wire factor selection
-into the model.
+[composition review](local-composition-return-review.md) leads to a successful
+[local potential-learning comparison](../../experiments/r4_integrated/local_context_lms_v1_result.md):
+both training orders solve 12/12 TRAIN and 4/4 withheld combinations with genuine
+EOS and minimum margins above 0.96; both controls score zero withheld. The
+saved audit and a separate TRAIN-only represented-weight certificate pass.
+Learning plus monitored audit takes 38.068 seconds. This earns the planned
+limited two-byte return to actual document memory and executed actions, with
+fresh output weights, explicit input-code ownership and upstream teaching.
+Remove the authored factor inputs and requalify complete-workload cost; no
+additional output diagnostic is queued. The supplied clock and fixed additive
+representation remain priors, not learned reading or general output timing.
 These byte learners use no pretrained encoder or LLM. The
 [action-path review](local-memory-byte-preflight-review.md) identifies host-computed
 matching in the legacy edit motor, however. Keep neuron-generated answer bytes

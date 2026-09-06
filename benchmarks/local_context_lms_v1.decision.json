@@ -1,0 +1,2037 @@
+{
+  "schema": "local-context-lms-v1-result",
+  "status": "qualified_for_scoped_two_byte_document_return",
+  "revision": "19f767b0335265045c08b78e4179d99e6c491b78",
+  "recipe": "experiments/r4_integrated/local_context_lms_v1.md",
+  "evidence": {
+    "report": {
+      "path": ".pytest-tmp/local-context-lms-v1-run/report.json",
+      "sha256": "cdf609014fc11a8c46d4a91abe1b77a783fe2fc646592ae5f3f5a52178069e07"
+    },
+    "completion": {
+      "path": ".pytest-tmp/local-context-lms-v1-run/completion.json",
+      "sha256": "6afca735005b4ae3240f95ff0087d04d50cc7f7943faead838babdc06e7681e7"
+    },
+    "run_watchdog": {
+      "path": ".pytest-tmp/local-context-lms-v1-run.launch.json",
+      "sha256": "2813984fc207871db456b9715b42e84c5a0cdf94409e305b0689087ea9e0dee9"
+    },
+    "independent_audit": {
+      "path": ".pytest-tmp/local-context-lms-v1-independent-audit.json",
+      "sha256": "62820c8df486b79a43be9c161c24c374f2e9ae462b2dcb83cfc40b014ddcb5b1"
+    },
+    "audit_watchdog": {
+      "path": ".pytest-tmp/local-context-lms-v1-audit-watchdog.launch.json",
+      "sha256": "515a84097781224609a98d0b4d6fba3531d6a5188890fb874c086ceb5370277d"
+    }
+  },
+  "scores": {
+    "frozen": {
+      "heldout": 0,
+      "train": 0
+    },
+    "lexical": {
+      "heldout": 4,
+      "train": 12
+    },
+    "permuted": {
+      "heldout": 4,
+      "train": 12
+    },
+    "zero": {
+      "heldout": 0,
+      "train": 1
+    }
+  },
+  "useful_endpoint": {
+    "lexical": true,
+    "permuted": true
+  },
+  "minimum_final_margins": {
+    "lexical": 0.9604450609261397,
+    "permuted": 0.9610096413450895,
+    "zero": -0.022608117955676632,
+    "frozen": 0.0
+  },
+  "final_outputs_and_margins": [
+    {
+      "arm": "lexical",
+      "target": "aa",
+      "group": "train",
+      "hex": "6161",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9794191721063441,
+        0.9793464535435557,
+        1.0001223780801167
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "lexical",
+      "target": "ac",
+      "group": "train",
+      "hex": "6163",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9792414856435852,
+        0.9796290334117905,
+        1.0002068283803465
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "lexical",
+      "target": "ad",
+      "group": "train",
+      "hex": "6164",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9794109443003332,
+        0.9800423816665509,
+        1.0000659007863426
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "lexical",
+      "target": "ba",
+      "group": "train",
+      "hex": "6261",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9794238528276732,
+        0.9793381900140975,
+        0.9999748102088992
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "lexical",
+      "target": "bb",
+      "group": "train",
+      "hex": "6262",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.979425033481611,
+        0.9790743092366085,
+        1.0002010379434523
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "lexical",
+      "target": "bd",
+      "group": "train",
+      "hex": "6264",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.979166089086382,
+        0.9803292891172772,
+        0.9999183329151249
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "lexical",
+      "target": "ca",
+      "group": "train",
+      "hex": "6361",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9799779202754306,
+        0.9798984688100603,
+        0.9998193413303498
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "lexical",
+      "target": "cb",
+      "group": "train",
+      "hex": "6362",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9793284608104839,
+        0.9796263754335668,
+        1.0000455690649028
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "lexical",
+      "target": "cc",
+      "group": "train",
+      "hex": "6363",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9793341129914197,
+        0.9797799610513316,
+        0.9999037916305795
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "lexical",
+      "target": "db",
+      "group": "train",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9800676863400276,
+        0.979550567517268,
+        1.0000740382988238
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "lexical",
+      "target": "dc",
+      "group": "train",
+      "hex": "6463",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9802514025382336,
+        0.979630003293065,
+        0.9999322608645004
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "lexical",
+      "target": "dd",
+      "group": "train",
+      "hex": "6464",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9802506449738815,
+        0.9800414117852763,
+        0.9997913332704964
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "lexical",
+      "target": "ab",
+      "group": "heldout",
+      "hex": "6162",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9606140817374358,
+        0.9605544759263369,
+        1.0003486058146698
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "lexical",
+      "target": "bc",
+      "group": "heldout",
+      "hex": "6263",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9608128283822853,
+        0.9604450609261397,
+        1.0000592605091287
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "lexical",
+      "target": "cd",
+      "group": "heldout",
+      "hex": "6364",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9609112295367296,
+        0.9609536837128966,
+        0.9997628640365755
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "lexical",
+      "target": "da",
+      "group": "heldout",
+      "hex": "6461",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9604937438671692,
+        0.9617614234901222,
+        0.9998478105642707
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "permuted",
+      "target": "aa",
+      "group": "train",
+      "hex": "6161",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9797420864755821,
+        0.9798238200614376,
+        1.000023539411702
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "permuted",
+      "target": "ac",
+      "group": "train",
+      "hex": "6163",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9797627911584693,
+        0.9798232324448786,
+        0.9999892346478148
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "permuted",
+      "target": "ad",
+      "group": "train",
+      "hex": "6164",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.979759723156463,
+        0.9797515830138382,
+        0.9999844407675796
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "permuted",
+      "target": "ba",
+      "group": "train",
+      "hex": "6261",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9798348071813687,
+        0.9797885007170098,
+        1.0000163258333286
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "permuted",
+      "target": "bb",
+      "group": "train",
+      "hex": "6262",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9798682964784987,
+        0.9797709973950117,
+        0.9999860625821473
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "permuted",
+      "target": "bd",
+      "group": "train",
+      "hex": "6264",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9798269282421053,
+        0.9797979917934208,
+        0.9999772271892065
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "permuted",
+      "target": "ca",
+      "group": "train",
+      "hex": "6361",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9797553159926873,
+        0.9797484044338798,
+        1.0000160967669127
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "permuted",
+      "target": "cb",
+      "group": "train",
+      "hex": "6362",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9797218266955572,
+        0.9796712611665024,
+        0.9999858335157312
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "permuted",
+      "target": "cc",
+      "group": "train",
+      "hex": "6363",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9798165930326064,
+        0.9798986480724365,
+        0.9999817920030254
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "permuted",
+      "target": "db",
+      "group": "train",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9797151174706462,
+        0.9796416507591419,
+        1.0000174493173017
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "permuted",
+      "target": "dc",
+      "group": "train",
+      "hex": "6463",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9798318247662798,
+        0.9799281110572229,
+        1.000013407804596
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "permuted",
+      "target": "dd",
+      "group": "train",
+      "hex": "6464",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9797652933130052,
+        0.9797271874795094,
+        1.000008613924361
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "permuted",
+      "target": "ab",
+      "group": "heldout",
+      "hex": "6162",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9610606208882958,
+        0.9610119966142713,
+        0.9999932761605206
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "permuted",
+      "target": "bc",
+      "group": "heldout",
+      "hex": "6263",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9611381307993621,
+        0.9611746417123324,
+        0.9999820210694413
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "permuted",
+      "target": "cd",
+      "group": "heldout",
+      "hex": "6364",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.961093965384223,
+        0.9610424731911099,
+        0.9999769981227904
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "permuted",
+      "target": "da",
+      "group": "heldout",
+      "hex": "6461",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.9610096413450895,
+        0.9611051900559564,
+        1.0000477125684832
+      ],
+      "margin_passed": true
+    },
+    {
+      "arm": "zero",
+      "target": "aa",
+      "group": "train",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": false,
+      "target_margins": [
+        -0.022608117955676632,
+        -0.009126281020381405,
+        0.9999999958353966
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "zero",
+      "target": "ac",
+      "group": "train",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": false,
+      "target_margins": [
+        -0.022608117955676632,
+        -0.0007111977943943248,
+        0.9999999958353966
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "zero",
+      "target": "ad",
+      "group": "train",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": false,
+      "target_margins": [
+        -0.022608117955676632,
+        -0.0015635207402999174,
+        0.9999999958353966
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "zero",
+      "target": "ba",
+      "group": "train",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": false,
+      "target_margins": [
+        -0.015298121840427115,
+        -0.009126281020381405,
+        0.9999999958353966
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "zero",
+      "target": "bb",
+      "group": "train",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": false,
+      "target_margins": [
+        -0.015298121840427115,
+        0.0007111977943943248,
+        0.9999999958353966
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "zero",
+      "target": "bd",
+      "group": "train",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": false,
+      "target_margins": [
+        -0.015298121840427115,
+        -0.0015635207402999174,
+        0.9999999958353966
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "zero",
+      "target": "ca",
+      "group": "train",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": false,
+      "target_margins": [
+        -0.007764365632032033,
+        -0.009126281020381405,
+        0.9999999958353966
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "zero",
+      "target": "cb",
+      "group": "train",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": false,
+      "target_margins": [
+        -0.007764365632032033,
+        0.0007111977943943248,
+        0.9999999958353966
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "zero",
+      "target": "cc",
+      "group": "train",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": false,
+      "target_margins": [
+        -0.007764365632032033,
+        -0.0007111977943943248,
+        0.9999999958353966
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "zero",
+      "target": "db",
+      "group": "train",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": true,
+      "target_margins": [
+        0.007764365632032033,
+        0.0007111977943943248,
+        0.9999999958353966
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "zero",
+      "target": "dc",
+      "group": "train",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": false,
+      "target_margins": [
+        0.007764365632032033,
+        -0.0007111977943943248,
+        0.9999999958353966
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "zero",
+      "target": "dd",
+      "group": "train",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": false,
+      "target_margins": [
+        0.007764365632032033,
+        -0.0015635207402999174,
+        0.9999999958353966
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "zero",
+      "target": "ab",
+      "group": "heldout",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": false,
+      "target_margins": [
+        -0.022608117955676632,
+        0.0007111977943943248,
+        0.9999999958353966
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "zero",
+      "target": "bc",
+      "group": "heldout",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": false,
+      "target_margins": [
+        -0.015298121840427115,
+        -0.0007111977943943248,
+        0.9999999958353966
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "zero",
+      "target": "cd",
+      "group": "heldout",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": false,
+      "target_margins": [
+        -0.007764365632032033,
+        -0.0015635207402999174,
+        0.9999999958353966
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "zero",
+      "target": "da",
+      "group": "heldout",
+      "hex": "6462",
+      "stop_reason": "eos",
+      "exact": false,
+      "target_margins": [
+        0.007764365632032033,
+        -0.009126281020381405,
+        0.9999999958353966
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "frozen",
+      "target": "aa",
+      "group": "train",
+      "hex": "0000",
+      "stop_reason": "limit",
+      "exact": false,
+      "target_margins": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "frozen",
+      "target": "ac",
+      "group": "train",
+      "hex": "0000",
+      "stop_reason": "limit",
+      "exact": false,
+      "target_margins": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "frozen",
+      "target": "ad",
+      "group": "train",
+      "hex": "0000",
+      "stop_reason": "limit",
+      "exact": false,
+      "target_margins": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "frozen",
+      "target": "ba",
+      "group": "train",
+      "hex": "0000",
+      "stop_reason": "limit",
+      "exact": false,
+      "target_margins": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "frozen",
+      "target": "bb",
+      "group": "train",
+      "hex": "0000",
+      "stop_reason": "limit",
+      "exact": false,
+      "target_margins": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "frozen",
+      "target": "bd",
+      "group": "train",
+      "hex": "0000",
+      "stop_reason": "limit",
+      "exact": false,
+      "target_margins": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "frozen",
+      "target": "ca",
+      "group": "train",
+      "hex": "0000",
+      "stop_reason": "limit",
+      "exact": false,
+      "target_margins": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "frozen",
+      "target": "cb",
+      "group": "train",
+      "hex": "0000",
+      "stop_reason": "limit",
+      "exact": false,
+      "target_margins": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "frozen",
+      "target": "cc",
+      "group": "train",
+      "hex": "0000",
+      "stop_reason": "limit",
+      "exact": false,
+      "target_margins": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "frozen",
+      "target": "db",
+      "group": "train",
+      "hex": "0000",
+      "stop_reason": "limit",
+      "exact": false,
+      "target_margins": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "frozen",
+      "target": "dc",
+      "group": "train",
+      "hex": "0000",
+      "stop_reason": "limit",
+      "exact": false,
+      "target_margins": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "frozen",
+      "target": "dd",
+      "group": "train",
+      "hex": "0000",
+      "stop_reason": "limit",
+      "exact": false,
+      "target_margins": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "frozen",
+      "target": "ab",
+      "group": "heldout",
+      "hex": "0000",
+      "stop_reason": "limit",
+      "exact": false,
+      "target_margins": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "frozen",
+      "target": "bc",
+      "group": "heldout",
+      "hex": "0000",
+      "stop_reason": "limit",
+      "exact": false,
+      "target_margins": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "frozen",
+      "target": "cd",
+      "group": "heldout",
+      "hex": "0000",
+      "stop_reason": "limit",
+      "exact": false,
+      "target_margins": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "margin_passed": false
+    },
+    {
+      "arm": "frozen",
+      "target": "da",
+      "group": "heldout",
+      "hex": "0000",
+      "stop_reason": "limit",
+      "exact": false,
+      "target_margins": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "margin_passed": false
+    }
+  ],
+  "represented_weight_train_certificates": {
+    "lexical": {
+      "train_output_potential_abs_residual_max": 0.010890759726788803,
+      "train_residual_exact_fraction": [
+        "1569523886315125",
+        "144115188075855872"
+      ],
+      "train_residual_witness": {
+        "phase": 0,
+        "target_pair": "ac",
+        "output": 97
+      },
+      "binary64_dot_roundoff_upper_bound": 7.526480272769184e-14,
+      "missing_pair_margin_lower_bound": 0.9346554416391165,
+      "epsilon_less_than_one_sixth": true,
+      "strict_missing_margin_certified": true,
+      "scope": "A posteriori exact TRAIN coefficient sums plus generic missing-row identity and explicit binary64 dot envelope; no historical update-rounding theorem."
+    },
+    "permuted": {
+      "train_output_potential_abs_residual_max": 0.01053882550294373,
+      "train_residual_exact_fraction": [
+        "759402409727681",
+        "72057594037927936"
+      ],
+      "train_residual_witness": {
+        "phase": 1,
+        "target_pair": "db",
+        "output": 98
+      },
+      "binary64_dot_roundoff_upper_bound": 7.526396559517379e-14,
+      "missing_pair_margin_lower_bound": 0.9367670469821869,
+      "epsilon_less_than_one_sixth": true,
+      "strict_missing_margin_certified": true,
+      "scope": "A posteriori exact TRAIN coefficient sums plus generic missing-row identity and explicit binary64 dot envelope; no historical update-rounding theorem."
+    }
+  },
+  "counts": {
+    "byte_offers": 23040,
+    "changed_steps": 17280,
+    "enabled_nonzero_residual_offers": 51770,
+    "enabled_residual_offers": 4440960,
+    "enabled_steps": 17280,
+    "final_generations": 64,
+    "first_attempts": 7680,
+    "generation_decisions": 23232,
+    "nonzero_residual_offers": 57530,
+    "residual_offers": 5921280
+  },
+  "acquisition": {
+    "frozen": {
+      "all": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "limit": 1920
+        },
+        "lessons": 1920,
+        "loss_kind": "half_sum_squared_potential_error",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "mean_teacher_loss": 0.5
+      },
+      "byte_offers": 5760,
+      "changed_steps": 0,
+      "enabled_nonzero_residual_offers": 0,
+      "enabled_residual_offers": 0,
+      "enabled_steps": 0,
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "limit": 128
+        },
+        "lessons": 128,
+        "loss_kind": "half_sum_squared_potential_error",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "mean_teacher_loss": 0.5
+      },
+      "last128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "limit": 128
+        },
+        "lessons": 128,
+        "loss_kind": "half_sum_squared_potential_error",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "mean_teacher_loss": 0.5
+      },
+      "nonzero_residual_offers": 5760,
+      "residual_offers": 1480320
+    },
+    "lexical": {
+      "all": {
+        "first_exact": 1906,
+        "first_stop_reasons": {
+          "eos": 1919,
+          "limit": 1
+        },
+        "lessons": 1920,
+        "loss_kind": "half_sum_squared_potential_error",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.0418305882813624,
+          0.041830596997171586,
+          0.008812745396839463
+        ],
+        "mean_teacher_loss": 0.03082464355845779
+      },
+      "byte_offers": 5760,
+      "changed_steps": 5760,
+      "enabled_nonzero_residual_offers": 17255,
+      "enabled_residual_offers": 1480320,
+      "enabled_steps": 5760,
+      "first128": {
+        "first_exact": 114,
+        "first_stop_reasons": {
+          "eos": 127,
+          "limit": 1
+        },
+        "lessons": 128,
+        "loss_kind": "half_sum_squared_potential_error",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.3090616917378824,
+          0.309212119993444,
+          0.12946808941835908
+        ],
+        "mean_teacher_loss": 0.24924730038322848
+      },
+      "last128": {
+        "first_exact": 128,
+        "first_stop_reasons": {
+          "eos": 128
+        },
+        "lessons": 128,
+        "loss_kind": "half_sum_squared_potential_error",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.0002441718356578601,
+          0.00024407970494201873,
+          1.1223710660422068e-08
+        ],
+        "mean_teacher_loss": 0.00016275425477017965
+      },
+      "nonzero_residual_offers": 17255,
+      "residual_offers": 1480320
+    },
+    "permuted": {
+      "all": {
+        "first_exact": 1908,
+        "first_stop_reasons": {
+          "eos": 1919,
+          "limit": 1
+        },
+        "lessons": 1920,
+        "loss_kind": "half_sum_squared_potential_error",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.04183055612099217,
+          0.041830541302498005,
+          0.008812746735708154
+        ],
+        "mean_teacher_loss": 0.030824614719732753
+      },
+      "byte_offers": 5760,
+      "changed_steps": 5760,
+      "enabled_nonzero_residual_offers": 17260,
+      "enabled_residual_offers": 1480320,
+      "enabled_steps": 5760,
+      "first128": {
+        "first_exact": 116,
+        "first_stop_reasons": {
+          "eos": 127,
+          "limit": 1
+        },
+        "lessons": 128,
+        "loss_kind": "half_sum_squared_potential_error",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.3092089348332115,
+          0.3090966862669198,
+          0.12951459843987445
+        ],
+        "mean_teacher_loss": 0.24927340651333518
+      },
+      "last128": {
+        "first_exact": 128,
+        "first_stop_reasons": {
+          "eos": 128
+        },
+        "lessons": 128,
+        "loss_kind": "half_sum_squared_potential_error",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.0002444755173411322,
+          0.0002446060636444129,
+          1.7736761806989468e-10
+        ],
+        "mean_teacher_loss": 0.00016302725278438766
+      },
+      "nonzero_residual_offers": 17260,
+      "residual_offers": 1480320
+    },
+    "zero": {
+      "all": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 1919,
+          "limit": 1
+        },
+        "lessons": 1920,
+        "loss_kind": "half_sum_squared_potential_error",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.3819558643304203,
+          0.38202722289229624,
+          0.013086264656616374
+        ],
+        "mean_teacher_loss": 0.25902311729311134
+      },
+      "byte_offers": 5760,
+      "changed_steps": 5760,
+      "enabled_nonzero_residual_offers": 17255,
+      "enabled_residual_offers": 1480320,
+      "enabled_steps": 5760,
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 127,
+          "limit": 1
+        },
+        "lessons": 128,
+        "loss_kind": "half_sum_squared_potential_error",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.4238906852722875,
+          0.42403400625885396,
+          0.1813137986992396
+        ],
+        "mean_teacher_loss": 0.3430794967434603
+      },
+      "last128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 128
+        },
+        "lessons": 128,
+        "loss_kind": "half_sum_squared_potential_error",
+        "mean_loss_by_byte1_byte2_eos": [
+          0.3786357805130177,
+          0.3787643789807287,
+          4.1206746040896124e-17
+        ],
+        "mean_teacher_loss": 0.25246671983124896
+      },
+      "nonzero_residual_offers": 17255,
+      "residual_offers": 1480320
+    }
+  },
+  "first_attempt_curves": {
+    "lexical": {
+      "lessons_per_cycle": 12,
+      "first_exact_by_cycle": [
+        1,
+        9,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12
+      ],
+      "first_exact_by_128_lesson_block": [
+        114,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128
+      ]
+    },
+    "permuted": {
+      "lessons_per_cycle": 12,
+      "first_exact_by_cycle": [
+        1,
+        11,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12
+      ],
+      "first_exact_by_128_lesson_block": [
+        116,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128
+      ]
+    },
+    "zero": {
+      "lessons_per_cycle": 12,
+      "first_exact_by_cycle": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "first_exact_by_128_lesson_block": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "frozen": {
+      "lessons_per_cycle": 12,
+      "first_exact_by_cycle": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "first_exact_by_128_lesson_block": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "resources": {
+    "aggregate_outer_seconds_limit": 120,
+    "per_process_tree_memory_limit_mib": 2048,
+    "run_outer_seconds": 33.8972996,
+    "audit_outer_seconds": 4.1704137,
+    "combined_outer_seconds": 38.067713299999994,
+    "audit_watchdog_seconds_limit": 86,
+    "run_tree_peak_mib": 368.9609375,
+    "audit_tree_peak_mib": 303.546875,
+    "memory_scope": "Separately monitored sequential process trees; peaks are not summed.",
+    "time_scope": "Both outer timers include process startup/imports. Their sum is the aggregate computation time; orchestration gaps are excluded.",
+    "audit_internal_seconds": 3.61719230000017,
+    "audit_internal_time_scope": "Audit internal timer excludes its startup; not the aggregate-budget authority.",
+    "model_accounting": {
+      "clock_initial_values": 3,
+      "feedback_residual_tensor_bytes": 2056,
+      "fixed_allocated_synapses": 585,
+      "fixed_nonzero_synapses": 578,
+      "learned_output_synapses": 74787,
+      "neurons": {
+        "clock": 3,
+        "gating": 288,
+        "output": 257,
+        "supplied_context": 96
+      },
+      "serialized_tensor_bytes": 602952,
+      "state_tensor_bytes": 12,
+      "step_tensor_bytes": 4396,
+      "supplied_float64_context_bytes": 768,
+      "total_neurons": 644
+    },
+    "artifact_bytes": {
+      "admission.json": 2688,
+      "final.pt": 2417479,
+      "initial.pt": 2417651,
+      "lessons.jsonl": 17639720,
+      "schedule.json": 250350
+    },
+    "transient_scope": "The 4,396-byte step includes its 12-byte next-clock state; residual 2,056 bytes and supplied float64 context 768 bytes are additional. Python containers, copies and scratch are measured by process monitoring."
+  },
+  "audit": {
+    "status": "passed",
+    "source_hashes_verified": 12,
+    "artifact_hashes_verified": 5,
+    "saved_residual_correction_reconstruction_matches_final_weights": true,
+    "scope": [
+      "No project/model import, inference or teaching call.",
+      "Recorded sparse potentials determine winners and residuals; no potentials reconstructed for receipt validation.",
+      "Correction arithmetic uses saved residuals/features, not recalculated network errors.",
+      "A posteriori represented-weight TRAIN certificate is separate exact rational analysis, not a machine proof of training convergence.",
+      "Authored factors and fixed neuronal timing are engineering scaffolding; previously exposed withheld pairs are not fresh evaluation."
+    ],
+    "run_and_audit_watchdogs_passed": true
+  },
+  "source_sha256": {
+    "docs/research/local-composition-return-review.md": "7f74b6964ed38528ef310b91e83f3c6155859be29d6683bbbb62039a514bf311",
+    "experiments/r4_integrated/__init__.py": "7456726a8fbf66eed6ea1000d14fd05ae0081a893954a489af4188ab6de8daec",
+    "experiments/r4_integrated/local_context_lms_v1.md": "362f112bce01fddb827e42c9f65bde8d14e6ac17ffaaff43426ba0a20b5acafe",
+    "experiments/r4_integrated/local_context_lms_v1.py": "10a61f6d01653493bd134ac2a3f53ea6ba58517d8e94517a6e0b997967b7d60c",
+    "experiments/r4_integrated/local_context_use_v1.md": "18d92d8d1994959cdc555918c949ad34b851ae0b3e5a3c2ba232322ae83dfa11",
+    "experiments/r4_integrated/local_context_use_v1.py": "5b8d26297554fb0ef73ab8d75b17df316c08af6ebc1ba5ccc432c37914526cfa",
+    "experiments/r4_integrated/run_source_absent_memory_byte_v1.ps1": "4f26b669442a596cf3023c8d066ef49ff6231732baa575b8c503ad4ae3d198dd",
+    "src/humanbrain/__init__.py": "b327d4b0b4c8784f3e2f92a87afb763a77f11a9dd34524d2700d3b191f14b9a4",
+    "src/humanbrain/byte_sequence_decoder.py": "a9e3ba4d50f8936b9e87ce7199b0f31ba2308213788815ad0bcd5b44d04d005c",
+    "src/humanbrain/local_memory_learner.py": "24e2f57072e90309d4ae51822b0b20f084cc9013e01355bc0a393be332462e35",
+    "src/humanbrain/phase_context_lms.py": "3338b146600bdcf159cdedc11f911428aa3da65b3906b225c7f21817ff340e6f",
+    "src/humanbrain/plastic_memory.py": "d2df1e57d3fda87a70fc662d536cc83472e56d3576f9604914a9a87d0f075d30"
+  },
+  "artifact_sha256": {
+    "admission.json": "80d00af1f6fdf59c4e7aaa3e0ba2bc495c759fc275f38ac8881e9f2cc6c2ffa1",
+    "final.pt": "5deb62d959f317680a7ce7995157dd2ce4f687d88ae1f801befb6bde7df384a2",
+    "initial.pt": "29a405cf4d9170d697c37303067298bfc7928ab609c140df023b868ba6a8edbc",
+    "lessons.jsonl": "70eeadbc1a6c11e843ba77d955143fab390656730e532ccd9528f8fc6004199e",
+    "schedule.json": "be44ee3897b0d790dba9bc794e1fe3a0675c95bf6d08f80dbdf6307f6f6e6aa3"
+  },
+  "criteria": {
+    "train_exact_required": 12,
+    "withheld_exact_required": 4,
+    "margin_exclusive_minimum": 0.1,
+    "margin_positions_per_informative_arm": 48,
+    "strict_withheld_superiority_over": [
+      "zero",
+      "frozen"
+    ],
+    "all_met": true
+  },
+  "decision": "Close this qualified component comparison without additional diagnostic fits. It earns one separately reviewed and cost-admitted return to raw-document memory and executed actions with a declared two-byte value scope, removing authored answer-factor contexts.",
+  "claim_limits": [
+    "Fixed phase dynamics and generic context gating are supplied neuronal priors; output associations learn through explicit residual supervision of all 257 neurons.",
+    "The 16-pair development domain and its four TRAIN-excluded probes were already exposed; this is not fresh adjudication.",
+    "The exact saved-weight TRAIN certificate plus summation envelope is a posteriori, not a proof of all floating training operations or arbitrary continuous memory inputs.",
+    "No document understanding, source-absent memory acquisition, variable-length generation, learned action policy, real coding success or gate advancement is established."
+  ]
+}
