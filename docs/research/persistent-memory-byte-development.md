@@ -54,6 +54,13 @@ simulation improvements before selecting the next bounded step.
 The selected [runtime return](local-online-runtime-return-v1.md) owns that step:
 standard-library fresh action processes and held codec responses within each
 call, with authored qualification before one new integrated cost.
+The [complete v5 cost](../../experiments/r4_integrated/local_joint_address_online_v5_result.md)
+and independent audit now pass in 21.232 seconds but project 956.052 seconds
+against 900, with 702.879 MiB projected memory. All 96 generated actions remain
+pending; no full acquisition ran. The accepted probe sets every arm's action
+maximum, with 90.95% inside its executor. Close v5 and perform the selected
+[single-child no-site import diagnostic](local-stdlib-action-import-profile-v1.md)
+before choosing another execution change. Preserve the learning rule and exposure.
 
 Current result: the [shared temporal-map comparison](../../experiments/r4_integrated/local_shared_temporal_query_v1_result.md)
 and independent audit complete in 119.745 seconds. Learned solves 8/8 taught,

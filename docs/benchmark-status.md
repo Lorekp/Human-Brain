@@ -10,14 +10,18 @@ with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. Hybrid permission does not relabel existing
 cell-only evidence or reopen protected evaluations.
 
-The current no-backpropagation [joint-address online v4 cost](../experiments/r4_integrated/local_joint_address_online_v4_result.md)
-and independent audit complete in 27.597 seconds, but the final 1,886.974-second
+The current no-backpropagation [joint-address online v5 cost](../experiments/r4_integrated/local_joint_address_online_v5_result.md)
+and independent audit complete in 21.232 seconds, but the final 956.052-second
 projection exceeds 900. No full acquisition ran. All 96 generated actions in
 this disposable four-lesson-per-arm sample use pending fallback and solve zero
 tasks; the separately supplied accepted probe is excluded from neuronal scores.
 The same neuronal instance predicts, acts and then receives direct local teaching.
 Its supplied host motor and teacher supervision remain explicit limitations.
-The slowdown spans unchanged model work and execution, with no established cause.
+Memory projects 702.879 MiB. The accepted-action probe sets every arm's action
+maximum; its executor consumes 90.95% of complete action time. Neither the
+shorter aggregate duration nor that one sample isolates a causal speed effect.
+The selected [current-runtime import diagnostic](research/local-stdlib-action-import-profile-v1.md)
+examines one authored child before any further execution change or acquisition.
 
 ## Current separate-answerability result
 
