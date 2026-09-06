@@ -7,9 +7,12 @@ values than earlier identifiers, and read changes are largely common across
 queries before the second document. Both checkpoints solve 5/16 questions and
 one narrow paired swap, but all eight identifier-exchange pairs preserve their
 outputs when value order is fixed. These are scoped exposed-development facts,
-not proof of erased information. The next bounded design review concerns generic
-multiscale neuronal writer state, with local eligibility and amplitude/cost
-accounting before a single matched integrated comparison. No more observations
+not proof of erased information. The completed [design review](local-multiscale-writer-review.md)
+and [source review](local-multiscale-writer-sources.md) select a fixed 32/16/16
+bank of update fractions 0.5/0.125/0.03125 within the existing 64 writer neurons.
+Validate its local eligibility, absolute signal tradeoff, fixed-vector state,
+exact scalar-reference parity and fresh cost before one matched integrated
+comparison. No more observations
 or training starts merely because this diagnostic is complete.
 
 The preceding [value-credit comparison](../../experiments/r4_integrated/local_memory_value_credit_v1_result.md)

@@ -200,10 +200,14 @@ Both checkpoints solve 5/16 diagnostic questions and one narrow paired swap;
 all eight matched identifier-exchange pairs per checkpoint keep their answers
 unchanged when value order is held fixed. This supports an early binding
 weakness without proving information destruction or excluding routing limits.
-Close the diagnostic. The next bounded design review selects a generic bank
-of neuronal timescales for the writer: derive its local eligibility, signal
-scaling, exact predecessor controls and resource cost before one integrated
-comparison. No special identifier detector, supplied address, answer factors
+Close the diagnostic. The completed [multiscale design review](local-multiscale-writer-review.md),
+supported by [primary sources](local-multiscale-writer-sources.md), selects a
+64-neuron writer bank: 32 update at 0.5, 16 at 0.125 and 16 at 0.03125.
+Its local eligibility includes the corresponding input susceptibility and
+self-path carry. Slower retention can still mean weaker absolute signals;
+all maps retain generic access and the query cell stays unchanged. Validate
+exact scalar-predecessor parity, fixed-vector state and the fresh complete cost
+before one integrated comparison. No special identifier detector, supplied address, answer factors
 or additional observation sweep is authorized by this result.
 These byte learners use no pretrained encoder or LLM. The
 [action-path review](local-memory-byte-preflight-review.md) identifies host-computed
