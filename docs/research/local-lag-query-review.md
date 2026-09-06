@@ -213,6 +213,43 @@ full A changes, query-feature matrices or h per lesson; ordinary scalar QA check
 those locally, while the fixed run retains hashes, required small beliefs and
 existing work receipts. Actual watchdog peaks remain authoritative.
 
+Root selects streamed per-lesson JSONL for this comparison's reporting. Preserve
+every scientific row, ordering, reference field and count; include append/flush
+work in the measured workload, bind the final log hash/count in completion, and
+release each row after writing. Keep only fixed scalar/hash/count summaries in
+the parent. The new audit streams these rows rather than materializing the full
+learning history. This changes evidence storage, not learning or exposure.
+Cost auditing must include the same historical-report parsing as full auditing,
+with explicit accounting for any full-only historical checkpoint payload. Bind
+the finished cost-audit launch as well as the model-cost launch when deriving
+final admission. Freeze the exact memory formula and receipt schemas before
+cost execution; the four-lesson working-set sample alone is not a full-run bound.
+
+The prospective journal guards are 262,144 bytes per serialized line and per
+recursive CPython row-tree estimate, with at most two new lesson rows live in
+either runner or auditor. Their explicit transient allowance is
+`E = 2*2*262144 + 2*262144 = 1.5 MiB`. Let C_run be the larger of the disposable
+parent-plus-worker peak and its owned-tree peak. Estimate the full run as
+`C_run + E + 32 MiB`. The fixed 32-MiB allocator/metadata reserve is an engineering
+margin, not a formal allocator bound. For auditing, include the same historical
+report parsing and lifetimes during cost and full audit, and load historical
+checkpoint comparisons sequentially. Let F be the authenticated full-only
+historical tensor payload: 232,400,120 bytes for a1ab plus 80,431,116 for 0b3d7d3.
+Estimate full audit memory as the finished cost-audit owned-tree peak plus
+`E + 2*F + 32 MiB`. Both estimates must fit 2,048 MiB. The cost checker explicitly
+leaves audit-peak admission pending; only a separately bound completed audit
+launcher can finalize admission. The full runner and independent auditor must
+rederive the final projection from those bound receipts.
+
+Project learning time as twice 1,024 times the sum across arms of the separate
+maximum measured model-lesson, maximum journal and complete-cap durations.
+This is at least as conservative as the maximum combined lesson/journal sample.
+Other time is `2*(cost launch duration - sum(model durations) - sum(journal durations))`,
+followed by the existing 30-second allowance. Row bounds,
+serialization, writing, flushing and incremental hashing belong to measured
+journal time. Freeze these constants before cost measurement; do not adjust
+them retrospectively to admit the run.
+
 Require fresh six-arm cost admission: four ordered samples per arm, 24 lessons,
 72 teacher offers, all 120 final actions plus two demos, and six complete-cap
 fixtures with 127 period bytes plus EOS. Count raw query/EOS lag transitions,

@@ -1,10 +1,10 @@
-"""Local query learning over a literal neuronal sequence memory.
+"""Local address learning over fixed query lags and a literal neuronal sequence.
 
 Answer-free sensory associations store every document byte. One shared query
 projection addresses preceding-context keys. Forward cursors and causal prefix
 beliefs recall ordered content through a shared conditional byte codec. Codec
-filtering credit and query self-path credit are explicitly approximate; final
-address credit is exact conditional on the held current features and codec.
+filtering credit remains explicitly approximate; address credit is exact
+conditional on the fixed normalized query features and held current codec.
 """
 
 import copy
@@ -18,7 +18,7 @@ from torch.nn import functional as F
 
 from humanbrain.byte_sequence_decoder import BYTE_BOS, BYTE_EOS, ByteGeneration
 from humanbrain.neuronal_sequence_memory import NeuronalSequenceMemory, TapeState
-from humanbrain.plastic_memory import RateCellLearningState, StreamingRateCell, _all_finite
+from humanbrain.plastic_memory import _all_finite
 
 
 def _finite(value: Tensor, name: str) -> None:
@@ -90,7 +90,6 @@ class SequenceQuery:
     projected_query: Tensor
     log_prior: Tensor
     work: dict[str, int]
-    learning_state: RateCellLearningState | None = None
 
 
 @dataclass(frozen=True)
@@ -121,20 +120,18 @@ class SequenceLessonFeedback:
     mean_loss: float
     codec_updated: bool
     address_updated: bool
-    query_updated: bool
     steps: tuple[SequenceStep, ...]
     work: dict[str, int]
     initial_log_belief: Tensor
     final_log_belief: Tensor
     address_error: Tensor
-    query_signal: Tensor
     loss_kind: str = "sequence_mixture_negative_log_likelihood"
 
 
 class LocalMemoryLearner(nn.Module):
     """Four matched controls over one literal neuronal episode.
 
-    learned: query/address/codec learn. address_frozen: only codec learns.
+    learned: address/codec learn. address_frozen: only codec learns.
     slow_frozen: all slow parameters fixed, sensory storage still active.
     writes_disabled: allocation/boundary clocks advance with zero keys/content.
     No writer tags, event encoder, static phase decoder or compatibility mode.
@@ -143,15 +140,16 @@ class LocalMemoryLearner(nn.Module):
 
     MODES = frozenset({"learned", "address_frozen", "slow_frozen", "writes_disabled"})
     WORK_KEYS = (
-        "query_raw_bytes", "query_eos_symbols", "query_controller_steps",
-        "query_eligibility_steps", "address_projection_neurons", "address_score_evaluations",
+        "query_raw_bytes", "query_eos_symbols", "query_lag_shift_steps",
+        "query_population_normalizations", "address_projection_neurons",
+        "address_projection_synapse_evaluations", "address_score_evaluations",
+        "address_local_synapse_contributions",
         "address_normalizations", "codec_slot_evaluations", "codec_output_potentials",
         "codec_normalizations", "mixture_output_reductions", "prefix_belief_updates",
         "branch_cursor_initializations", "branch_cursor_advances", "teacher_offers",
         "codec_update_group_offers",
-        "address_update_group_offers", "query_update_group_offers",
+        "address_update_group_offers",
         "enabled_codec_update_groups", "enabled_address_update_groups",
-        "enabled_query_update_groups",
     )
 
     def __init__(self, *, mode: str = "learned", seed: int = 0) -> None:
@@ -160,7 +158,6 @@ class LocalMemoryLearner(nn.Module):
             raise ValueError("invalid sequence learner mode or seed")
         self.mode, self.seed = mode, seed
         self.memory = NeuronalSequenceMemory()
-        self.query_cell = StreamingRateCell(32, 32, seed=seed + 1)
         generator = torch.Generator(device="cpu").manual_seed(seed + 2)
         self.register_buffer(
             "input_codes",
@@ -169,11 +166,12 @@ class LocalMemoryLearner(nn.Module):
             ),
         )
         generator = torch.Generator(device="cpu").manual_seed(seed + 4)
-        self.address_weight = nn.Parameter(torch.empty(32, 1024, dtype=torch.float32, device="cpu"))
+        self.address_weight = nn.Parameter(
+            torch.empty(1024, 1024, dtype=torch.float32, device="cpu")
+        )
         nn.init.xavier_uniform_(self.address_weight, generator=generator)
         self.codec = ConditionalByteCodec()
         if mode in {"address_frozen", "slow_frozen"}:
-            self.query_cell.requires_grad_(False)
             self.address_weight.requires_grad_(False)
         if mode == "slow_frozen":
             self.codec.requires_grad_(False)
@@ -181,11 +179,15 @@ class LocalMemoryLearner(nn.Module):
 
     def get_extra_state(self) -> dict:
         return {
-            "schema": "local-neuronal-sequence-learner-v1", "mode": self.mode, "seed": self.seed,
-            "capacity": 128, "lags": 32, "input_code_size": 32, "query_size": 32,
+            "schema": "local-neuronal-lag-query-learner-v1", "mode": self.mode, "seed": self.seed,
+            "capacity": 128, "lags": 32, "input_code_size": 32, "query_size": 1024,
             "input_code": "fixed normal258x32; private seed+2; raw bytes plus EOS256",
-            "address": "one shared32x1024 Xavier projection; private seed+4; no slot parameters",
-            "query": "seed+1 scalar-half rate cell; local self-path eligibility",
+            "address": "one shared1024x1024 Xavier projection; private seed+4; no slot parameters",
+            "query": "fixed32x32 newest-first raw-code lags including EOS; reset each query",
+            "query_normalization": (
+                "float32 lag/norm.clamp_min(1e-8)*sqrt(32); "
+                "squared energy at most32 in real arithmetic"
+            ),
             "codec": "shared257x257; log(256)*identity and zero bias; float64",
             "prior": "same-identity probability1/2; every other byte/EOS1/512",
             "recall": "all starts; forward EOS-absorbing adjacency; causal prefix belief",
@@ -204,17 +206,7 @@ class LocalMemoryLearner(nn.Module):
     def _check_parameters(self) -> None:
         if self.mode not in self.MODES:
             raise ValueError("invalid sequence learner mode")
-        cell = self.query_cell
-        if (
-            cell.kind != "cell" or cell.input_size != 32 or cell.hidden_size != 32
-            or type(cell.update_fraction) is not float or cell.update_fraction != 0.5
-        ):
-            raise ValueError("query cell must retain its fixed scalar-half geometry")
-        cell._check_update_fraction()
-        tensors = [(self.input_codes, (258, 32)), (self.address_weight, (32, 1024))]
-        tensors.extend((getattr(cell, name), shape) for name, shape in (
-            ("weight", (32, 32)), ("recurrent", (32, 32)), ("bias", (32,))
-        ))
+        tensors = [(self.input_codes, (258, 32)), (self.address_weight, (1024, 1024))]
         for value, shape in tensors:
             if value.shape != shape or value.dtype != torch.float32 or value.device.type != "cpu":
                 raise ValueError("query/address/codes must retain CPU float32 geometry")
@@ -224,10 +216,8 @@ class LocalMemoryLearner(nn.Module):
         if self.input_codes.requires_grad:
             raise ValueError("input codes must stay fixed")
         self.codec.check_parameters()
-        if self.mode in {"address_frozen", "slow_frozen"} and (
-            self.address_weight.requires_grad or any(p.requires_grad for p in cell.parameters())
-        ):
-            raise ValueError("address/query parameters must remain frozen in this control")
+        if self.mode in {"address_frozen", "slow_frozen"} and self.address_weight.requires_grad:
+            raise ValueError("address parameters must remain frozen in this control")
         if self.mode == "slow_frozen" and any(p.requires_grad for p in self.codec.parameters()):
             raise ValueError("slow-frozen codec parameters must remain frozen")
 
@@ -253,22 +243,22 @@ class LocalMemoryLearner(nn.Module):
         return result
 
     @torch.no_grad()
-    def _query(self, query: bytes, state: TapeState, *, learning: bool = False) -> SequenceQuery:
+    def _query(self, query: bytes, state: TapeState) -> SequenceQuery:
         self._check_parameters()
         self._check_state(state)
-        if not isinstance(query, bytes) or type(learning) is not bool:
-            raise ValueError("query must be raw bytes and learning must be boolean")
+        if not isinstance(query, bytes):
+            raise ValueError("query must be raw bytes")
         tokens = torch.tensor([*query, BYTE_EOS], dtype=torch.long, device="cpu")
         codes = F.embedding(tokens, self.input_codes)
-        learning_state = self.query_cell.initial_learning_state(1) if learning else None
-        activity = self.query_cell.initial_state(1)
+        lags = torch.zeros(32, 32, dtype=torch.float32, device="cpu")
         for inputs in codes.unbind(0):
-            if learning:
-                learning_state = self.query_cell.local_step(inputs[None], learning_state)
-                activity = learning_state.activity
-            else:
-                activity, _ = self.query_cell._step(inputs[None], activity)
-                _finite(activity, "query activity")
+            # Fixed forward adjacency; every byte and EOS take the same route.
+            lags[1:].copy_(lags[:-1].clone())
+            lags[0].copy_(inputs)
+        norm = torch.linalg.vector_norm(lags)
+        _finite(norm, "query lag norm")
+        activity = (lags.flatten() / norm.clamp_min(1e-8) * math.sqrt(32))[None]
+        _finite(activity, "normalized query lag activity")
         projected = F.linear(activity, self.address_weight.T)[0]
         _finite(projected, "projected query")
         scores = F.linear(projected, state.keys[:state.used])
@@ -278,12 +268,13 @@ class LocalMemoryLearner(nn.Module):
         work = dict.fromkeys(self.WORK_KEYS, 0)
         work.update({
             "query_raw_bytes": len(query), "query_eos_symbols": 1,
-            "query_controller_steps": len(query) + 1,
-            "query_eligibility_steps": len(query) + 1 if learning else 0,
+            "query_lag_shift_steps": len(query) + 1,
+            "query_population_normalizations": 1,
             "address_projection_neurons": 1024, "address_score_evaluations": state.used,
+            "address_projection_synapse_evaluations": 1024 * 1024,
             "address_normalizations": 1,
         })
-        return SequenceQuery(activity, projected, log_prior, work, learning_state)
+        return SequenceQuery(activity, projected, log_prior, work)
 
     @torch.no_grad()
     def query_receipt(self, query: bytes, state: TapeState) -> SequenceQuery:
@@ -361,7 +352,7 @@ class LocalMemoryLearner(nn.Module):
 
         Codec errors use each current prefix posterior when the teacher arrives,
         not the final posterior on past errors. All teacher bytes/EOS are offered.
-        Tape and query traces are caller-owned and unchanged by publication.
+        Tape is caller-owned and unchanged; fixed query lags carry no eligibility.
         """
         if not isinstance(teacher, bytes):
             raise ValueError("teacher must be raw bytes")
@@ -369,7 +360,7 @@ class LocalMemoryLearner(nn.Module):
             raise ValueError("sequence learning_rate must be 0.01")
         if type(learning_enabled) is not bool:
             raise ValueError("learning_enabled must be boolean")
-        event = self._query(query, state, learning=True)
+        event = self._query(query, state)
         cursors = self.memory.initial_recall(state)
         log_belief = event.log_prior
         weight_error = torch.zeros_like(self.codec.weight)
@@ -408,12 +399,9 @@ class LocalMemoryLearner(nn.Module):
         _finite(address_error, "final address error")
         projection_signal = F.linear(address_error, state.keys[:state.used].T.to(torch.float64))
         _finite(projection_signal, "address projection neuron error")
-        query_signal64 = F.linear(projection_signal, self.address_weight.to(torch.float64))[None]
-        _finite(query_signal64, "query neuron error")
-        query_signal = query_signal64.to(torch.float32)
-        _finite(query_signal, "cast query neuron error")
         address_change64 = event.activity[0].to(torch.float64)[:, None] * projection_signal[None]
         _finite(address_change64, "address synapse local contribution")
+        work["address_local_synapse_contributions"] = self.address_weight.numel()
         address_change = address_change64.to(torch.float32)
         _finite(address_change, "cast address synapse contribution")
 
@@ -431,11 +419,8 @@ class LocalMemoryLearner(nn.Module):
         if address_enabled and self.address_weight.requires_grad:
             address_proposal = self.address_weight - learning_rate * address_change
             _finite(address_proposal, "address parameter proposal")
-        # Codec/address candidates are checked before the existing query cell
-        # validates and publishes its atomic local group. All use held old values.
-        query_updated = self.query_cell.apply_learning_signal(
-            event.learning_state, query_signal, learning_rate, learning_enabled=address_enabled
-        )
+        # Every candidate is finite before either group publishes. All signals
+        # and contributions use held old values, with no query-history update.
         codec_updated = any(not torch.equal(old, new) for old, new in codec_proposals)
         address_updated = (
             address_proposal is not None and not torch.equal(self.address_weight, address_proposal)
@@ -444,18 +429,14 @@ class LocalMemoryLearner(nn.Module):
             parameter.copy_(candidate)
         if address_proposal is not None:
             self.address_weight.copy_(address_proposal)
-        for group in ("codec", "address", "query"):
+        for group in ("codec", "address"):
             work[f"{group}_update_group_offers"] = 1
         work["enabled_codec_update_groups"] = int(bool(codec_proposals))
         work["enabled_address_update_groups"] = int(address_proposal is not None)
-        work["enabled_query_update_groups"] = int(
-            address_enabled and any(p.requires_grad for p in self.query_cell.parameters())
-        )
         return SequenceLessonFeedback(
             self.memory.restore_state(state.snapshot()), len(targets), total_loss,
-            total_loss / len(targets), codec_updated, address_updated, query_updated,
+            total_loss / len(targets), codec_updated, address_updated,
             tuple(steps), work, event.log_prior.clone(), log_belief.clone(), address_error,
-            query_signal,
         )
 
     def snapshot(self, state: TapeState) -> dict:
@@ -499,10 +480,13 @@ class LocalMemoryLearner(nn.Module):
         self._check_parameters()
         return {
             "tape": self.memory.accounting(self.memory.initial_state()),
-            "query_neurons": 32, "address_projection_neurons": 1024,
+            "query_lag_neurons": 1024, "normalized_query_neurons": 1024,
+            "query_lag_forward_connections": 31 * 32,
+            "query_population_squared_energy": 32,
+            "address_projection_neurons": 1024,
             "allocated_address_competition_neurons": 128,
             "shared_codec_input_neurons": 257, "shared_codec_output_neurons": 257,
-            "query_slow_synapses": 2080, "address_slow_synapses": 32768,
+            "address_slow_synapses": 1024 * 1024,
             "codec_slow_synapses_including_bias": 66306, "fixed_input_code_values": 8256,
             "model_tensor_bytes": sum(
                 v.numel() * v.element_size() for v in self.state_dict().values()
@@ -521,13 +505,14 @@ class LocalMemoryLearner(nn.Module):
             "maximum_current_codec_error_bytes": 128 * 257 * 8,
             "maximum_scaled_codec_column_error_bytes": 128 * 257 * 8,
             "maximum_responsibility_bytes": 128 * 8,
-            "query_local_eligibility_bytes": (32 * 32 * 2 + 32) * 4,
-            "query_activity_bytes": 32 * 4,
+            "query_lag_bytes": 1024 * 4, "normalized_query_activity_bytes": 1024 * 4,
+            "query_lag_shift_copy_bytes": 31 * 32 * 4,
+            "query_activity_cast_bytes": 1024 * 8,
             "maximum_address_key_cast_bytes": 128 * 1024 * 8,
-            "address_weight_cast_bytes": 32 * 1024 * 8,
             "projection_signal_bytes": 1024 * 8,
-            "address_local_contribution_float64_bytes": 32 * 1024 * 8,
-            "address_local_contribution_float32_bytes": 32 * 1024 * 4,
+            "address_local_contribution_float64_bytes": 1024 * 1024 * 8,
+            "address_local_contribution_float32_bytes": 1024 * 1024 * 4,
+            "address_parameter_proposal_bytes": 1024 * 1024 * 4,
             "transient_scope": (
                 "named tensor payloads, not allocator/peak bounds; old/new conditional cache "
                 "may overlap across iterations; parameter proposals, returned decision receipts, "
