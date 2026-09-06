@@ -51,6 +51,9 @@ audit total 27.597 seconds; memory projects 690.047 MiB. All 96 generated action
 remain pending. The broad timing slowdown has no established cause. Close this
 cost without acquisition or an identical retry; review concrete execution and
 simulation improvements before selecting the next bounded step.
+The selected [runtime return](local-online-runtime-return-v1.md) owns that step:
+standard-library fresh action processes and held codec responses within each
+call, with authored qualification before one new integrated cost.
 
 Current result: the [shared temporal-map comparison](../../experiments/r4_integrated/local_shared_temporal_query_v1_result.md)
 and independent audit complete in 119.745 seconds. Learned solves 8/8 taught,

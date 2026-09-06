@@ -355,6 +355,10 @@ The slowdown spans unchanged model work and action execution; no contemporaneous
 host evidence establishes its cause. No full acquisition ran. Preserve this
 failure and review concrete executor/simulation optimizations before selecting
 one bounded next change; no identical timing retry or budget relaxation.
+The selected [runtime return](local-online-runtime-return-v1.md) pairs an explicitly
+standard-library action runtime in fresh processes with current-call held codec
+responses. Qualify both boundaries and actual work/storage accounting, then
+return once to the same integrated workload with fresh complete cost admission.
 Run/audit peaks of 665.539/432.832 MiB fit the revised admission estimates.
 The shorter aggregate duration includes a changed reference roster and must not
 be presented as an isolated circuit speedup.

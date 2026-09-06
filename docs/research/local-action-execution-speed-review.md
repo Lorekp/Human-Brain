@@ -31,6 +31,9 @@ passes its saved audit but rejects the 1,886.974-second projection. The broad
 timing pattern spans unchanged model work as well as execution; its cause is
 unresolved. No full fit ran. Preserve the failure and review concrete execution
 and simulation improvements before selecting one next step.
+The selected [runtime return](local-online-runtime-return-v1.md) now declares
+the separate standard-library action environment and held-codec simulation
+change, including fixed authored qualification and timing budgets.
 
 ## Concrete finding
 
