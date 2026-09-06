@@ -116,3 +116,29 @@ finished audit, 2,048 MiB owned memory, factor-two margins and 30-second run
 allowance. A preliminary estimate cannot admit a fit. Source/data/serialization
 and bounded IPC QA are the next work; record their exact exposure prospectively.
 No cost or acquisition execution has occurred under this protocol.
+
+## Harness implementation and first ordinary QA scope
+
+The standalone parent, prior adapter, roster, isolated worker, binary transport,
+compact receipts and independent audit are under implementation. Parent and
+auditor retain explicit DRAFT guards; source publication is not cost admission.
+The qualified reader, raw action ABI and neuronal action learner remain unchanged.
+
+Run exactly three new nodes in the existing decoder QA file after a committed
+source checkpoint and a clean selected-checkout doctor: `test_splice_online_roster_data_contract`,
+`test_splice_online_receipt_maximum_contract` and
+`test_splice_online_binary_protocol_contract`. Do not run the whole historical
+file or its backpropagation tests. This is ordinary data/serialization/transport
+QA: one successful raw roster generation, one rejected old JSON identity,
+authored free/teacher activity records with 14,640 named vector entries, and
+four in-memory protocol messages with bounded negative cases. The maximum
+fixture additionally reserves all declared text/output limits and four complete
+160-entry counter dictionaries. It is deliberately conservative rather than
+a measured model receipt. These nodes construct zero models, load zero
+checkpoints, make zero neuronal forward/teacher calls and launch zero action
+children. Importing the existing test module loads Torch definitions only.
+
+Preserve the generated roster and raw QA receipts, including any failure before
+repair. This batch does not qualify the still-unfinished auditor, actual worker
+startup, prior deserialization or new cost. Those remaining integration boundaries
+need review and their own explicitly bounded QA before the final source freeze.

@@ -5029,6 +5029,122 @@ def test_splice_same_instance_execution_before_correction(tmp_path):
             sort_keys=True, allow_nan=False) + "\n")
 
 
+def test_splice_online_receipt_maximum_contract(tmp_path):
+    """Authored activity numbers test serialization; no neural model is run."""
+    import json
+    from types import SimpleNamespace as Value
+
+    from experiments.r4_integrated import neuronal_splice_receipts_v1 as receipts
+    from experiments.r4_integrated.neuronal_splice_io_v1 import JsonlJournal, read_row
+    from experiments.r4_integrated.neuronal_splice_online_v1 import SPEC
+
+    successor = list(range(1, 128)) + [127]
+    state = {"write_index": 128, "successor": successor}
+    belief = [-math.log(128)] * 128
+    steps, cursors = [], list(range(128))
+    for index in range(17):
+        token = 65 if index < 16 else 256
+        probabilities = [0.0] * 257
+        probabilities[token] = 1.0
+        steps.append(Value(output_step=index, observed_token=token, nll=0.0,
+                           mixture_probabilities=probabilities,
+                           prior_log_belief=list(belief), posterior_log_belief=list(belief),
+                           branch_cursors=list(cursors)))
+        cursors = [successor[cursor] for cursor in cursors]
+    common = dict(steps=steps, work={}, initial_log_belief=belief, final_log_belief=belief)
+    free = Value(**common, generation=Value(data=b"A" * 16, stop_reason="eos"))
+    teacher = Value(**common, teacher_count=17, total_loss=0.0, mean_loss=0.0,
+                    address_error=[0.0] * 128, codec_updated=True, address_updated=False)
+    compact_free = receipts.compact_reader(free, state)
+    compact_teacher = receipts.compact_reader(teacher, state)
+    heads = {name: {"logits": [0.0] * count, "selected_index": 0}
+             for name, count in (("start", 516), ("end", 129), ("operation", 2))}
+    for name, head in heads.items():
+        receipts.validate_head(head, name)
+    numbers = sum(len(item["initial_log_belief"]) + sum(
+        len(step["mixture"]) + len(step["posterior"]) for step in item["steps"])
+        for item in (compact_free, compact_teacher)) + 2 * sum(len(head["logits"]) for head in heads.values())
+    assert numbers == 14640
+    # Reserve the complete named vectors plus the declared maximum free text,
+    # full counter dictionaries and host/executable/bootstrap/output fields.
+    row = {"free": compact_free, "teacher": compact_teacher,
+           "free_heads": heads, "teacher_heads": copy.deepcopy(heads),
+           "metadata": "x" * 32768, "host_path": "p" * 1024,
+           "executable_path": "e" * 1024, "bootstrap": "b" * 4096,
+           "stdout_hex": "ff" * 16384, "stderr_hex": "ff" * 16384,
+           "diagnostics": ["d" * 1024, "e" * 1024],
+           "ids": ["i" * 128 for _ in range(12)], "hashes": ["a" * 64 for _ in range(16)],
+           "work": [{f"counter_{i:03d}".ljust(96, "x"): 10**12 for i in range(160)}
+                    for _ in range(4)]}
+    encoded = receipts.bounded_record(row)
+    assert len(encoded) <= 2**20 and receipts.tree_bytes(row) <= 2**20
+    path = tmp_path / "maximum.jsonl"
+    journal = JsonlJournal(path, SPEC)
+    line_hash = journal.append(row)
+    summary = journal.close()
+    with path.open("rb") as stream:
+        assert read_row(stream, SPEC) == row
+        assert read_row(stream, SPEC) is None
+    assert summary["sha256"] == line_hash
+    bad = copy.deepcopy(free)
+    bad.steps[1].prior_log_belief[0] += .1
+    with pytest.raises(ValueError, match="omitted prior"):
+        receipts.compact_reader(bad, state)
+    bad = copy.deepcopy(free)
+    bad.steps[1].branch_cursors[0] = 0
+    with pytest.raises(ValueError, match="omitted cursor"):
+        receipts.compact_reader(bad, state)
+    with pytest.raises(ValueError, match="tree limit"):
+        receipts.bounded_record({"over": "x" * 2**20})
+    (tmp_path / "maximum-summary.json").write_text(json.dumps({
+        "authored_vector_numbers": numbers, "line_bytes": len(encoded),
+        "tree_bytes": receipts.tree_bytes(row), "models": 0, "children": 0,
+        "journal": summary}, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def test_splice_online_binary_protocol_contract():
+    """Four in-memory messages exercise transport and reply validation only."""
+    from experiments.r4_integrated.neuronal_splice_endpoint_v1 import check_acknowledgement
+    from experiments.r4_integrated.neuronal_splice_io_v1 import read_row, write_message
+    from experiments.r4_integrated.neuronal_splice_online_v1 import SPEC
+    from experiments.r4_integrated.neuronal_splice_worker_v1 import IPC_SCHEMA, check_executed
+
+    identity = dict(schema=IPC_SCHEMA, type="proposal", arm="learned", index=0,
+                    id="P0-0", attempt_id="authored:1")
+    outcome = {"attempt_id": identity["attempt_id"], "proposal_sha256": "b" * 64,
+               "workspace_sha256": "c" * 64,
+               "execution": {"returncode": 1, "stdout_hex": "", "stderr_hex": "657272"}}
+    executed = {**identity, "type": "executed", "action_sha256": "a" * 64, "outcome": outcome}
+    acknowledged = {**identity, "type": "acknowledged", "action_sha256": "a" * 64,
+                    "model_sha256": "d" * 64, "memory_sha256": "e" * 64,
+                    "work": {"action": {}, "reader": {}}, "model_seconds": .01}
+    messages = [identity, executed, acknowledged, {**identity, "index": 1, "attempt_id": "authored:2"}]
+    pipe = io.BytesIO()
+    for message in messages:
+        write_message(pipe, message, SPEC)
+    pipe.seek(0)
+    assert [read_row(pipe, SPEC) for _ in range(4)] == messages
+    assert read_row(pipe, SPEC) is None
+    assert check_executed(executed, identity) == outcome
+    check_acknowledgement(acknowledged, identity, "a" * 64, "d" * 64, "e" * 64)
+    for field in ("teacher", "grade", "passed"):
+        with pytest.raises(ValueError):
+            check_executed({**executed, field: True}, identity)
+        bad = copy.deepcopy(executed)
+        bad["outcome"]["execution"][field] = True
+        with pytest.raises(ValueError):
+            check_executed(bad, identity)
+    for field, value in (("arm", "slow_frozen"), ("index", 1), ("attempt_id", "another")):
+        with pytest.raises(ValueError):
+            check_executed({**executed, field: value}, identity)
+    with pytest.raises(ValueError):
+        check_acknowledgement({**acknowledged, "action_sha256": "f" * 64},
+                              identity, "a" * 64, "d" * 64, "e" * 64)
+    for raw in (b"{}", b"x" * (2**20 + 1), b"not-json\n"):
+        with pytest.raises(ValueError):
+            read_row(io.BytesIO(raw), SPEC)
+
+
 def test_splice_free_end_and_corrected_end_use_distinct_prefixes():
     """One model, two free proposals, one SPLICE plus one STOP; simulated outcomes."""
     from humanbrain import neuronal_splice_learner as splice
@@ -5231,3 +5347,181 @@ def test_splice_combined_snapshot_roundtrip_has_no_external_selector():
     _assert_nested_equal(restored.state_dict(), original["model"])
     _assert_nested_equal(state.snapshot(), original["memory"])
     _assert_nested_equal(restored_state.snapshot(), original["memory"])
+
+
+def test_splice_online_roster_data_contract(tmp_path):
+    """One complete data roster and one bad-hash rejection; zero neural/child calls."""
+    import ast
+    import json
+    from collections import Counter
+    from hashlib import sha256
+    from pathlib import Path
+
+    from experiments.r4_integrated import neuronal_splice_roster_v1 as data
+
+    root = Path(__file__).resolve().parents[1]
+    generated_path = root / ".pytest-tmp/neuronal-splice-roster-qa-generated-v1.json"
+    passed_path = root / ".pytest-tmp/neuronal-splice-roster-data-qa-v1.json"
+    assert not generated_path.exists() and not passed_path.exists()
+    old_path = root / ".pytest-tmp/local-joint-address-online-v6-run/offline_teacher_roster.json"
+    roster = data.build_roster(old_path)
+    with generated_path.open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps(roster, sort_keys=True, allow_nan=False) + "\n")
+    assert roster["schema"] == "neuronal-splice-roster-v1"
+    expected_counts = {
+        "tasks": 64, "train_tasks": 32, "fresh_tasks": 32, "retention_tasks": 16,
+        "lessons_per_arm": 256, "memory_packages_per_arm": 64,
+        "before_learning_packages": 48, "after_learning_packages": 16,
+        "documents_per_arm": 152, "document_raw_bytes_per_arm": 3490,
+        "document_eos_per_arm": 152, "ingestion_symbols_per_arm": 3642,
+        "maximum_memory_slots": 124, "reader_teacher_offers_per_arm": 480,
+        "action_teacher_labels_per_arm": 640, "full_action_verifications": 1216,
+        "old_panel_reader_calls": 160, "full_reader_teacher_offers": 1920,
+        "full_action_teacher_labels": 2560,
+    }
+    assert roster["counts"] == expected_counts
+    tasks, memories = roster["tasks"], roster["memory_packages"]
+    documents = [bytes.fromhex(raw) for memory in memories.values()
+                 for raw in memory["document_hex"]]
+    assert len(documents) == 152 and sum(map(len, documents)) == 3490
+    stage_ids = roster["before_learning_memory_ids"] + roster["after_learning_memory_ids"]
+    assert len(set(stage_ids)) == 64
+    assert set(roster["before_learning_memory_ids"]) == {
+        key for key, value in memories.items() if value["stage"] == "before_learning"}
+    assert set(roster["after_learning_memory_ids"]) == {
+        key for key, value in memories.items() if value["stage"] == "after_learning"}
+    assert roster["train_task_ids"] == [f"T{i:02d}" for i in range(32)]
+    assert Counter(roster["schedule"]) == {task_id: 8 for task_id in roster["train_task_ids"]}
+    for repeat in range(8):
+        assert roster["schedule"][repeat * 32:(repeat + 1) * 32] == [
+            f"T{(i + 4 * repeat) % 32:02d}" for i in range(32)]
+    assert roster["cost_task_ids"] == ["T00", "T08", "T16", "T24"]
+    assert roster["fresh_task_ids"] == [f"{group}{r}-{member}" for group in "PLVO"
+                                        for r in range(4) for member in range(2)]
+    assert roster["retention_task_ids"] == [f"T{i:02d}" for base in (0, 8, 16, 24)
+                                            for i in range(base, base + 4)]
+    assert Counter(tasks[key]["required_operation"] for key in roster["train_task_ids"]) == {
+        "SPLICE": 24, "STOP": 8}
+    assert Counter(tasks[key]["required_operation"] for key in roster["fresh_task_ids"]) == {
+        "SPLICE": 28, "STOP": 4}
+    assert Counter(tasks[key]["required_operation"] for key in roster["retention_task_ids"]) == {
+        "SPLICE": 12, "STOP": 4}
+    payload_offers, action_labels = 0, 0
+    for task_id in roster["schedule"]:
+        teacher = tasks[task_id]["teacher"]
+        if teacher["operation"] == "SPLICE":
+            payload_offers += len(bytes.fromhex(teacher["replacement_hex"])) + 1
+            action_labels += 3
+        else:
+            action_labels += 1
+    assert (payload_offers, action_labels) == (480, 640)
+
+    for task in tasks.values():
+        before = {item["path"]: bytes.fromhex(item["content_hex"]) for item in task["files"]}
+        assert len(before) == 3 and max(map(len, before.values())) <= 128
+        assert max(len(path.encode()) for path in before) <= 31
+        assert len(bytes.fromhex(task["request_hex"])) <= 31
+        teacher = task["teacher"]
+        actual = dict(before)
+        if teacher["operation"] == "SPLICE":
+            path, start, end = teacher["path"], teacher["start"], teacher["end"]
+            raw = before[path]
+            assert 0 <= start <= end <= len(raw)
+            assert teacher["stop_reason"] == "eos"
+            actual[path] = raw[:start] + bytes.fromhex(teacher["replacement_hex"]) + raw[end:]
+        assert actual == {item["path"]: bytes.fromhex(item["content_hex"])
+                          for item in task["expected_after_files"]}
+        # Independent Python literal interpretation, never exec/eval/runpy/subprocess.
+        module_values = {}
+        for path, raw in actual.items():
+            if path == "main.py":
+                continue
+            module_values[path[:-3]] = {}
+            body = ast.parse(raw.decode("ascii"), filename=path).body
+            assert len(body) == 2
+            for assignment in body:
+                assert isinstance(assignment, ast.Assign) and len(assignment.targets) == 1
+                assert isinstance(assignment.targets[0], ast.Name)
+                value = ast.literal_eval(assignment.value)
+                assert isinstance(value, str)
+                module_values[path[:-3]][assignment.targets[0].id] = value.encode("ascii")
+            assert set(module_values[path[:-3]]) == {"x", "y"}
+        main = ast.parse(actual["main.py"].decode("ascii")).body
+        assert isinstance(main[0], ast.Import) and len(main[0].names) == 2
+        names = [alias.name for alias in main[0].names]
+        stdout = b"|".join(module_values[name][variable] for name in names
+                             for variable in ("x", "y")) + b"\n"
+        assert stdout.hex() == task["expected_stdout_hex"]
+        observation = data.task_observation(task)
+        assert set(observation) == {"task_id", "memory_id", "request_hex", "files",
+                                    "workspace_sha256"}
+        assert set(observation["files"][0]) == {"path", "content_hex"}
+        observation["files"][0]["content_hex"] = ""
+        assert task["files"][0]["content_hex"] != ""
+
+    for group in "PLVO":
+        for r in range(4):
+            left, right = tasks[f"{group}{r}-0"], tasks[f"{group}{r}-1"]
+            assert left["pair_id"] == right["pair_id"] == f"{group}{r}"
+            assert (left["member"], right["member"]) == (0, 1)
+            assert left["expected_after_files"] != right["expected_after_files"]
+            if group == "P":
+                assert left["memory_id"] == right["memory_id"]
+                assert left["workspace_sha256"] == right["workspace_sha256"]
+                assert left["files"] == list(reversed(right["files"]))
+                assert left["teacher"]["path"] != right["teacher"]["path"]
+                assert left["teacher"]["replacement_hex"] == right["teacher"]["replacement_hex"]
+            elif group == "L":
+                assert left["memory_id"] == right["memory_id"]
+                assert left["teacher"]["start"] != right["teacher"]["start"]
+                assert (left["request_hex"] == right["request_hex"]) is (r < 2)
+                assert (left["workspace_sha256"] == right["workspace_sha256"]) is (r >= 2)
+            elif group == "V":
+                assert left["request_hex"] == right["request_hex"]
+                assert left["files"] == right["files"]
+                assert left["memory_id"] != right["memory_id"]
+                a, b = (memories[item["memory_id"]] for item in (left, right))
+                assert a["stage"] == b["stage"] == (
+                    "before_learning" if r < 2 else "after_learning")
+                assert len(a["document_hex"]) == len(b["document_hex"]) == (2 if r < 2 else 5)
+                assert left["teacher"]["replacement_hex"] != right["teacher"]["replacement_hex"]
+                target_prefix = f"Record k{40 + r} has value ".encode()
+                other_prefix = f"Record k{60 + r} has value ".encode()
+                assert bytes.fromhex(a["document_hex"][0])[len(target_prefix):] == (
+                    bytes.fromhex(b["document_hex"][1])[len(other_prefix):])
+                assert bytes.fromhex(a["document_hex"][1])[len(other_prefix):] == (
+                    bytes.fromhex(b["document_hex"][0])[len(target_prefix):])
+            else:
+                assert left["files"] == right["files"] and left["memory_id"] == right["memory_id"]
+                assert left["required_operation"] == "SPLICE"
+                assert right["required_operation"] == "STOP"
+                assert bytes.fromhex(left["request_hex"])[4:] == (
+                    bytes.fromhex(right["request_hex"])[5:])
+                if r == 1:
+                    assert left["teacher"]["start"] == left["teacher"]["end"]
+                if r == 2:
+                    assert left["teacher"]["replacement_hex"] == ""
+                if r == 3:
+                    assert left["teacher"]["replacement_hex"] == "625c2763"
+
+    old = json.loads(old_path.read_bytes())["checks"]
+    assert sha256(old_path.read_bytes()).hexdigest() == data.OLD_ROSTER_SHA256
+    for row, prior in zip(roster["old_panel"], old, strict=True):
+        assert row["case_id"] == prior["id"]
+        assert row["query_hex"] == prior["query_hex"]
+        assert row["expected_hex"] == prior["expected_hex"]
+        assert row["max_bytes"] == 2 and "delay_reads" not in row
+        assert row["originally_correct"] is (prior["id"] not in (16, 18))
+        assert memories[row["memory_id"]]["document_hex"] == prior["document_hex"]
+    malformed = tmp_path / "wrong-old-roster.json"
+    malformed.write_text("{}\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="exact authenticated v6 roster"):
+        data.build_roster(malformed)
+    with passed_path.open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps({"schema": "neuronal-splice-roster-data-qa-v1", "status": "passed",
+            "counts": roster["counts"], "generated_roster_sha256": sha256(
+                generated_path.read_bytes()).hexdigest(), "source_sha256": sha256(
+                Path(data.__file__).read_bytes()).hexdigest(), "test_sha256": sha256(
+                Path(__file__).read_bytes()).hexdigest(), "completed_roster_generations": 1,
+            "rejected_old_json": 1, "models": 0, "children": 0, "teachers": 0},
+            sort_keys=True, allow_nan=False) + "\n")
