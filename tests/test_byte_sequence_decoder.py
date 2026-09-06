@@ -10370,3 +10370,74 @@ def test_request_conditioned_prefix_atomicity_and_actual_action(tmp_path):
         "disabled_work": disabled.work, "action_feedback_work": feedback.work,
         "claim": "causal prefixes, atomic local publication and real execution custody only",
     })
+
+
+def test_incremental_prefix_full_capacity_exact_activity(tmp_path):
+    """One cache, no learner: all17 positions match the frozen full circuit."""
+    import json
+
+    import pytest
+    import torch
+
+    from humanbrain.incremental_prefix_coincidence import IncrementalPrefixCoincidence
+    from humanbrain.neuronal_byte_coincidence import coincidence_features, encode_symbol_rails
+
+    n = 512
+    symbols = torch.arange(n * 32, dtype=torch.int64).reshape(n, 32) % 256
+    keys = encode_symbol_rails(symbols)
+    lengths = torch.arange(n, dtype=torch.int64) % 33
+    keys &= (torch.arange(32)[None, :] < lengths[:, None])[:, :, None]
+    reference_keys = keys.clone()
+    work = {}
+    cache = IncrementalPrefixCoincidence(keys, work=work)
+    keys.zero_()  # Caller changes cannot alter this call's owned key population.
+    raw = bytes([0, 255, 0, 17, 17, 128, 1, 254, 4, 5, 6, 7, 8, 9, 10, 11])
+    b = torch.arange(1024, dtype=torch.float32).reshape(32, 32) / 1024
+    c = b.flip(0) - 0.5
+    held_query = torch.ones(n, 32, 32, dtype=torch.float32) / 32
+    full_calls = 0
+    for position in range(17):
+        if position:
+            cache.advance(raw[position - 1])
+        encoded = encode_symbol_rails(torch.tensor([257, *raw[:position]], dtype=torch.int64))
+        lags = torch.zeros(32, 18, dtype=torch.bool)
+        lags[: position + 1].copy_(encoded.flip(0))
+        expected = torch.empty(n, 32, 32, dtype=torch.float32)
+        for first in range(0, n, 128):
+            expected[first:first + 128].copy_(
+                coincidence_features(lags, reference_keys[first:first + 128])
+            )
+            full_calls += 1
+        actual = cache.features()
+        assert actual.is_contiguous()
+        assert torch.equal(actual, expected)
+        actual_scores = (held_query * b).sum((1, 2)) + (actual * c).sum((1, 2))
+        expected_scores = (held_query * b).sum((1, 2)) + (expected * c).sum((1, 2))
+        assert torch.equal(actual_scores, expected_scores)
+    before_work = dict(work)
+    for invalid in [True, 256, 1]:
+        with pytest.raises(ValueError):
+            cache.advance(invalid)
+        assert work == before_work
+    assert torch.equal(cache.features(), actual)
+    pairs = n * 1024 + 16 * n * 32
+    assert work['prefix_cache_constructions'] == 1
+    assert work['prefix_cache_advances'] == 16
+    assert work['prefix_cache_feature_calls'] == 18
+    assert work['prefix_cache_lag_pairs'] == pairs
+    assert work['prefix_cache_threshold_evaluations'] == 19 * pairs
+    assert work['prefix_cache_input_applications'] == 54 * pairs
+    assert work['prefix_cache_reused_activity_values'] == 16 * n * 31 * 32
+    assert work['prefix_cache_shift_copy_values'] == 32 * n * 31 * 32
+    assert work['prefix_cache_feature_scalings'] == 18 * n * 1024
+    assert work['prefix_cache_held_key_bytes'] == n * 32 * 18
+    assert work['prefix_cache_held_match_bytes'] == n * 32 * 32
+    assert work['prefix_cache_held_count_bytes'] == n * 4
+    (tmp_path / 'incremental-prefix-parity.json').write_text(json.dumps({
+        'status': 'passed', 'positions': 17, 'candidates': n,
+        'cache_constructions': 1, 'cache_feature_calls': 18,
+        'valid_advances': 16, 'rejected_advances': 3,
+        'frozen_full_kernel_calls': full_calls,
+        'model_constructions': 0, 'teachers': 0, 'checkpoint_loads': 0,
+        'actions': 0, 'work': work,
+    }, sort_keys=True) + '\n', encoding='utf-8')
