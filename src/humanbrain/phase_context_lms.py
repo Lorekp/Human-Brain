@@ -62,6 +62,7 @@ class PhaseLMSFeedback:
     target: int
     phase: int
     residual: Tensor
+    context_signal: Tensor
 
 
 class PhaseContextLMS(nn.Module):
@@ -95,12 +96,13 @@ class PhaseContextLMS(nn.Module):
 
     def get_extra_state(self) -> dict:
         return {
-            "schema": "phase-context-lms-v1", "context_size": 96,
+            "schema": "phase-context-lms-v2", "context_size": 96,
             "phase_size": 3, "feature_size": 291, "outputs": 257,
             "dtype": "float64", "device": "cpu", "learning_rate": 0.01,
             "features": "phase-then-all-continuous-phase-context-products",
             "learning": "immediate-all-output-potential-residual",
             "loss": "half_sum_squared_potential_error",
+            "context_feedback": "preupdate-half-squared-loss-gradient; phase-gated-forward-weights",
             "clock": "fixed-three-neuron-chain", "max_bytes": 2,
         }
 
@@ -225,6 +227,13 @@ class PhaseContextLMS(nn.Module):
         loss = 0.5 * float(residual.square().sum())
         if not math.isfinite(loss):
             raise ValueError("LMS squared potential loss must be finite")
+        # Explicit neuronal return path through the pre-update forward weights.
+        # Upstream synapses subtract their learning signal, hence -residual.
+        phase_weights = self.output_weights[:, 3:].reshape(257, 3, 96)
+        active_weights = (phase_weights * step.features[0, :3][None, :, None]).sum(1)
+        context_signal = F.linear(-residual, active_weights.T)
+        if not _all_finite(context_signal):
+            raise ValueError("LMS pre-update context signal must be finite")
         updated = False
         if learning_enabled:
             candidate = self.output_weights + (learning_rate * residual.T) * step.features
@@ -233,7 +242,8 @@ class PhaseContextLMS(nn.Module):
             updated = not torch.equal(candidate, self.output_weights)
             self.output_weights.copy_(candidate)
         return PhaseLMSFeedback(
-            loss, 1, updated, winner, target, int(step.features[0, :3].argmax()), residual,
+            loss, 1, updated, winner, target, int(step.features[0, :3].argmax()),
+            residual, context_signal,
         )
 
     @torch.no_grad()
@@ -269,4 +279,7 @@ class PhaseContextLMS(nn.Module):
             ),
             "state_tensor_bytes": 12, "step_tensor_bytes": 4396,
             "feedback_residual_tensor_bytes": 2056, "supplied_float64_context_bytes": 768,
+            "feedback_context_tensor_bytes": 768,
+            "context_return_connections": 74016,
+            "context_return_weight_storage": "shared forward output weights; no additional array",
         }

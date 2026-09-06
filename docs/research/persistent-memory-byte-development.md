@@ -255,7 +255,8 @@ The scoped output qualification is complete. Proceed directly to the following
 raw-document/action return with fresh output weights and no authored factors;
 do not start another output mechanism experiment.
 
-The selected integrated return keeps the existing five learning controls and
+The selected [integrated return](../../experiments/r4_integrated/local_memory_two_byte_v1.md)
+keeps the existing five learning controls and
 source-free worker/execution custody, but uses a newly declared two-byte value
 roster. Start its output weights fresh; do not port weights fitted to authored
 factor inputs. Document/query byte codes must become an explicitly owned fixed
@@ -269,6 +270,15 @@ complete disposable workload under the existing 2x safety margin, 30-second
 overhead allowance and 900-second/2,048-MiB ceiling. The old admission does not
 transfer. This return still separates byte-label corrections from execution
 feedback and discloses the host motor's supplied matching schema.
+Its [implementation contract](local-phase-memory-integration.md) replaces the
+retired recurrent output directly; older experiments remain reproducible from
+their original commits, with no checkpoint migration or compatibility mode.
+The same-question swaps require twelve retained memories per arm, and all of
+that state remains counted. Preserve exact executed 8/8 fit and 4/4 in each
+new-value, delayed and interference stratum, plus the original strict controls.
+The delayed stratum uses read-only distractor queries, not neuronal decay or
+retention through further teaching; unrelated document writes supply the separate
+interference challenge.
 
 The [independent preflight review](local-memory-byte-preflight-review.md) records
 two learning risks: averaging byte feedback weakens explicit order credit, and

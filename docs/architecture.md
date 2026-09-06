@@ -20,6 +20,26 @@ fidelity constraints apply to those lanes and frozen experiments, not to every
 future architecture. Current integration work is in the
 [persistent memory and output plan](research/persistent-memory-byte-development.md).
 
+Current local development combines a streaming rate-cell document writer,
+explicit fast synapses and retained local credit with byte output. The closed
+recurrent output candidate fails useful context composition. Its replacement
+candidate, `PhaseContextLMS`, uses a three-neuron clock, generic continuous
+phase-by-context multiplication neurons and 257 learned byte/EOS readouts.
+Every readout synapse updates from its own input activity and its output
+neuron's potential error; no optimizer or historical reverse gradient is used.
+The [qualified output result](../experiments/r4_integrated/local_context_lms_v1_result.md)
+demonstrates two-byte composition on supplied factor inputs, with a separate
+certificate on the learned weights. Clock and representation are explicit priors.
+
+The selected document return owns byte input codes independently of the output
+module and connects its pre-update context-neuron teaching signal to the
+writer/query cells' existing local traces. That integration is under development;
+the output result alone establishes neither learned document writing nor useful
+source-absent actions. Its fresh-weight, two-byte workload and cost admission
+remain separate from earlier variable-length experiments. The legacy Python
+motor supplies a narrow edit-selection schema; learned neuronal action selection
+and learning from execution feedback remain required work.
+
 ## Existing cell implementations
 
 The computational object in the dendritic lane is a sparse simulation of

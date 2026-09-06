@@ -3,7 +3,8 @@
 This composition owns no corpus, answer inventory, optimizer or action solver.
 Fixed byte codes feed learned writer/query cells. First generation is separate
 from explicitly supplied teacher bytes; every byte/EOS teacher event is counted.
-Fixed broadcasts approximate upstream credit, not reverse derivatives.
+LMS supplies its actual immediate context gradient; fixed module broadcasts and
+local traces still approximate upstream credit rather than full recurrent gradients.
 """
 
 import copy
@@ -15,7 +16,8 @@ import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
-from humanbrain.byte_sequence_decoder import BYTE_BOS, BYTE_EOS, ByteGeneration, ByteSequenceDecoder
+from humanbrain.byte_sequence_decoder import BYTE_BOS, BYTE_EOS, ByteGeneration
+from humanbrain.phase_context_lms import PhaseContextLMS
 from humanbrain.plastic_memory import (
     LocalMemoryState,
     PlasticMemory,
@@ -36,6 +38,10 @@ class LocalLessonFeedback:
     query_updated: bool
     memory_updated: bool
     mean_context_signal: Tensor
+    decoder_changed_steps: int
+    nonzero_residual_offers: int
+    enabled_nonzero_residual_offers: int
+    loss_kind: str = "half_sum_squared_potential_error"
 
 
 class LocalMemoryLearner(nn.Module):
@@ -47,12 +53,15 @@ class LocalMemoryLearner(nn.Module):
     ``frozen`` fixes every slow parameter, while ``writes_disabled`` permits
     local slow teaching but cannot change fast synapses or write credit.
 
-    The decoder's fixed embedding is shared for documents and queries. Each raw
+    Owned fixed input codes are shared for documents and queries. Each raw
     input is followed by one terminator (256); no textual normalization is applied.
-    Memory, query and decoder seeds are seed, seed+1, seed+2. Upstream feedback
+    Memory/query seeds are seed/seed+1; input codes use the old decoder embedding's
+    first normal draw at seed+2. Fresh LMS output weights start at zero. Upstream feedback
     uses a private seed+3 stream, controller/key/value/strength/query order,
-    normal(0,1)/sqrt(context_size). Decoder feedback uses its own seed+2 offset.
+    normal(0,1)/sqrt(context_size). LMS context error uses pre-update output weights.
     All fixed matrices serialize; controls have identical initial tensor bytes.
+    The output module must stay CPU float64; whole-model .float() violates its
+    contract. Upstream dtype conversion must leave that module unchanged.
     """
 
     MODES = frozenset({"tagged", "aggregate", "writer_maps_frozen", "frozen", "writes_disabled"})
@@ -61,7 +70,7 @@ class LocalMemoryLearner(nn.Module):
         self,
         *,
         mode: str = "tagged",
-        embedding_size: int = 32,
+        input_code_size: int = 32,
         hidden_size: int = 64,
         key_size: int = 64,
         value_size: int = 64,
@@ -72,16 +81,26 @@ class LocalMemoryLearner(nn.Module):
             raise ValueError("unknown local memory control mode")
         if type(seed) is not int:
             raise ValueError("seed must be an integer")
+        if (
+            type(input_code_size) is not int or type(value_size) is not int
+            or input_code_size < 1 or value_size < 1 or input_code_size + value_size != 96
+        ):
+            raise ValueError(
+                "input/query and read sizes must be positive and sum to LMS context 96"
+            )
         self.mode = mode
-        self.memory = PlasticMemory(embedding_size, hidden_size, key_size, value_size, seed=seed)
-        self.query_cell = StreamingRateCell(embedding_size, embedding_size, seed=seed + 1)
-        self.decoder = ByteSequenceDecoder(
-            embedding_size + value_size,
-            hidden_size,
-            embedding_size,
-            seed=seed + 2,
-            local_learning=True,
+        self.seed, self.input_code_size, self.query_size = seed, input_code_size, input_code_size
+        self.memory = PlasticMemory(input_code_size, hidden_size, key_size, value_size, seed=seed)
+        self.query_cell = StreamingRateCell(input_code_size, self.query_size, seed=seed + 1)
+        code_generator = torch.Generator(device="cpu").manual_seed(seed + 2)
+        self.register_buffer(
+            "input_codes",
+            torch.empty(
+                BYTE_BOS + 1, input_code_size,
+                dtype=self.memory.controller.weight.dtype, device="cpu",
+            ).normal_(generator=code_generator),
         )
+        self.decoder = PhaseContextLMS()
         generator = torch.Generator(device="cpu").manual_seed(seed + 3)
         for name, size in (
             ("controller", hidden_size),
@@ -92,8 +111,8 @@ class LocalMemoryLearner(nn.Module):
         ):
             self.register_buffer(
                 f"{name}_feedback",
-                torch.randn(size, embedding_size + value_size, generator=generator)
-                / math.sqrt(embedding_size + value_size),
+                torch.randn(size, input_code_size + value_size, generator=generator)
+                / math.sqrt(input_code_size + value_size),
             )
         if mode == "writer_maps_frozen":
             for name, parameter in self.memory.named_parameters():
@@ -104,14 +123,21 @@ class LocalMemoryLearner(nn.Module):
 
     def get_extra_state(self) -> dict:
         return {
-            "schema": "local-memory-learner-v1",
+            "schema": "local-memory-phase-lms-v1",
             "mode": self.mode,
-            "embedding_size": self.decoder.embedding_size,
-            "hidden_size": self.decoder.hidden_size,
+            "seed": self.seed,
+            "input_code_size": self.input_code_size,
+            "query_size": self.query_size,
+            "writer_hidden_size": self.memory.hidden_size,
             "key_size": self.memory.key_size,
-            "value_size": self.memory.value_size,
-            "input_code": "shared-fixed-decoder-embedding; raw-bytes+256",
+            "read_size": self.memory.value_size,
+            "input_code": "owned-fixed-normal-codes; private seed+2 first draw; raw-bytes+256",
+            "input_code_rows": BYTE_BOS + 1,
+            "upstream_dtype": str(self.memory.controller.weight.dtype),
+            "output": "phase-context-lms-v2; fresh zero float64 weights; two-byte teacher",
+            "loss": "half_sum_squared_potential_error",
             "feedback": "normal/sqrt(context); private seed+3; controller,key,value,strength,query",
+            "context_signal": "preupdate gradient; sum/mean float64; one checked upstream cast",
             "clock": "mean teacher-byte signals once; upstream once; retire write/query credit",
         }
 
@@ -123,9 +149,9 @@ class LocalMemoryLearner(nn.Module):
         if not isinstance(raw, bytes):
             raise ValueError("inputs must be raw bytes")
         tokens = torch.tensor(
-            [*raw, BYTE_EOS], dtype=torch.long, device=self.decoder.embedding.weight.device
+            [*raw, BYTE_EOS], dtype=torch.long, device=self.input_codes.device
         )
-        return self.decoder.embedding(tokens)[None]
+        return F.embedding(tokens, self.input_codes)[None]
 
     def _check_state_mode(self, state: LocalMemoryState) -> None:
         if self.mode == "writer_maps_frozen" and any(
@@ -206,7 +232,10 @@ class LocalMemoryLearner(nn.Module):
         self._check_state_mode(state)
         values = self._encoded(query)
         self.memory._check_local_state(state)
-        if values.ndim != 3 or values.shape[0] != 1 or values.shape[2] != self.query_cell.input_size:
+        if (
+            values.ndim != 3 or values.shape[0] != 1
+            or values.shape[2] != self.query_cell.input_size
+        ):
             raise ValueError("encoded query must be [1, tokens, query input size]")
         if (
             values.dtype != self.query_cell.weight.dtype
@@ -251,18 +280,20 @@ class LocalMemoryLearner(nn.Module):
         never reconstructed after a slow update. Returned state retires write and
         query credit; it must replace the caller's state for subsequent lessons.
         """
-        if not isinstance(teacher, bytes):
-            raise ValueError("teacher must be raw bytes")
-        if not math.isfinite(learning_rate) or learning_rate < 0:
-            raise ValueError("learning_rate must be finite and nonnegative")
+        if not isinstance(teacher, bytes) or len(teacher) != 2:
+            raise ValueError("teacher must be exactly two raw bytes")
+        if not math.isfinite(learning_rate) or learning_rate != 0.01:
+            raise ValueError("local memory LMS learning_rate must be 0.01")
         if type(learning_enabled) is not bool:
             raise ValueError("learning_enabled must be boolean")
         enabled = learning_enabled and self.mode != "frozen"
         context, query_state, read_event = self._query(query, state)
-        total_signal = torch.zeros_like(context)
+        total_signal = torch.zeros_like(context, dtype=torch.float64)
         losses = 0.0
         count = 0
         decoder_updated = False
+        decoder_changed_steps = 0
+        nonzero_residual_offers = 0
         decoder_state = None
         previous = BYTE_BOS
         for target in (*teacher, BYTE_EOS):
@@ -275,13 +306,33 @@ class LocalMemoryLearner(nn.Module):
                 learning_rate,
                 learning_enabled=enabled,
             )
+            if (
+                feedback.context_signal.shape != context.shape
+                or feedback.context_signal.dtype != torch.float64
+                or feedback.context_signal.device != context.device
+                or not _all_finite(feedback.context_signal)
+            ):
+                raise ValueError(
+                    "LMS context signal must be finite float64 with matching shape/device"
+                )
             total_signal.add_(feedback.context_signal)
+            if not _all_finite(total_signal):
+                raise ValueError("accumulated LMS context signal must be finite")
             losses += feedback.loss
+            if not math.isfinite(losses):
+                raise ValueError("accumulated LMS teacher loss must be finite")
             count += feedback.teacher_count
             decoder_updated = decoder_updated or feedback.updated
+            decoder_changed_steps += int(feedback.updated)
+            nonzero_residual_offers += int(feedback.residual.count_nonzero())
             decoder_state = step.state
             previous = target
-        mean_signal = total_signal / count
+        mean_signal64 = total_signal / count
+        if not _all_finite(mean_signal64):
+            raise ValueError("mean LMS context signal must be finite")
+        mean_signal = mean_signal64.to(dtype=context.dtype)
+        if not _all_finite(mean_signal):
+            raise ValueError("LMS context signal must remain finite after upstream cast")
         signals = {
             name: F.linear(mean_signal, getattr(self, f"{name}_feedback"))
             for name in ("controller", "key", "value", "strength", "query")
@@ -291,7 +342,7 @@ class LocalMemoryLearner(nn.Module):
         )
         query_updated = self.query_cell.apply_learning_signal(
             query_state,
-            mean_signal[:, : self.decoder.embedding_size],
+            mean_signal[:, : self.query_size],
             learning_rate,
             learning_enabled=enabled,
         )
@@ -304,6 +355,9 @@ class LocalMemoryLearner(nn.Module):
             query_updated,
             memory_updated,
             mean_signal,
+            decoder_changed_steps,
+            nonzero_residual_offers,
+            nonzero_residual_offers if enabled else 0,
         )
 
     def snapshot(self, state: LocalMemoryState) -> dict:
