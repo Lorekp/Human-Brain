@@ -10004,3 +10004,118 @@ def test_persistent_coincidence_512_append_and_reader_regression(tmp_path):
         "metadata": reader.get_extra_state(),
         "claim": "append/storage/forward regression, not an acquired-skill gate",
     })
+
+
+def test_public_language_action_execution_contract(tmp_path):
+    """One real child; two private grades, one baseline prediction, no neurons."""
+    import copy
+    import hashlib
+    import json
+    import time
+    from pathlib import Path
+
+    from experiments.r4_integrated.persistent_language_action_execution_v1 import (
+        execute_proposal,
+        grade_execution,
+        proposal_from_record,
+        qualified_launch,
+        workspace_from_records,
+    )
+    from experiments.r4_integrated.persistent_language_action_tasks_v1 import (
+        SimpleBaseline,
+        build_stream,
+        observation,
+    )
+
+    root = Path(__file__).resolve().parents[1]
+    manifest = build_stream()
+    with (tmp_path / "full-manifest.json").open("x") as handle:
+        json.dump(manifest, handle, indent=2, sort_keys=True)
+    launch = qualified_launch(root)
+    files = [
+        {"path": "cfg.py", "content_hex": b"value = 'old'\n".hex()},
+        {"path": "main.py", "content_hex": b"import cfg\nprint(cfg.value)\n".hex()},
+    ]
+    workspace = workspace_from_records(files)
+    proposal = proposal_from_record(
+        {
+            "operation": "SPLICE",
+            "path": "cfg.py",
+            "start": 8,
+            "end": 13,
+            "replacement_hex": b'"blue"'.hex(),
+            "stop_reason": "eos",
+        },
+        workspace,
+    )
+    after, receipt = execute_proposal(
+        workspace,
+        proposal,
+        tmp_path / "actual-action",
+        launch=launch,
+        deadline=time.perf_counter() + 10,
+    )
+    with (tmp_path / "actual-execution.json").open("x") as handle:
+        json.dump(receipt, handle, indent=2)
+    # The canonical single-quoted spelling differs from the actual correct edit.
+    grade = {
+        "expected_returncode": 0,
+        "expected_stdout_hex": b"blue\n".hex(),
+        "protected_paths": ["main.py"],
+        "expected_after_files": [
+            {"path": "cfg.py", "content_hex": b"value = 'blue'\n".hex()},
+            files[1],
+        ],
+    }
+    positive = grade_execution(receipt, grade, files)
+    # Pure scorer negative: explicitly synthetic, not a second execution receipt.
+    protected_counterexample = copy.deepcopy(receipt)
+    next(row for row in protected_counterexample["after_files"] if row["path"] == "main.py")[
+        "content_hex"
+    ] = b"print('blue')\n".hex()
+    negative = grade_execution(protected_counterexample, grade, files)
+    baseline = SimpleBaseline()
+    document = b"Harbor's code is 'Q7'.\n"
+    baseline.append_documents([document])
+    answer = baseline.predict(b"What is Harbor's code?", [], kind="reading")
+    public = observation(
+        {
+            "kind": "reading",
+            "request_hex": b"What is Harbor's code?".hex(),
+            "files": [],
+            "teacher": {"target_hex": b"private-answer".hex()},
+            "grade": {"secret": True},
+            "episode_id": "PRIVATE-ID",
+            "split_annotation": {"target_note": 3},
+        }
+    )
+    with (tmp_path / "contract-checks.json").open("x") as handle:
+        json.dump(
+            {
+                "actual_after": after,
+                "alternate_patch_grade": positive,
+                "synthetic_protected_grade": negative,
+                "baseline": answer,
+                "public_observation": public,
+                "actual_child_executions": 1,
+                "neuronal_calls": 0,
+            },
+            handle,
+            indent=2,
+        )
+    assert receipt["returncode"] == 0 and receipt["stdout_hex"] == b"blue\n".hex()
+    assert positive["task_success"] and not negative["task_success"]
+    assert after != grade["expected_after_files"]
+    assert answer["answer_hex"] == b"Q7".hex()
+    assert answer["attribution"]["document_sha256"] == hashlib.sha256(document).hexdigest()
+    assert answer["attribution"]["literal_span"] == [18, 20]
+    assert set(public) == {"kind", "request_hex", "files"}
+    assert len(manifest["episodes"]) == 56 and len(manifest["documents"]) == 16
+    assert sum(len(bytes.fromhex(row["text_hex"])) + 1 for row in manifest["documents"]) == 453
+    assert sum(row["teacher"] is not None for row in manifest["episodes"]) == 24
+    assert sum(row["attempt_limit"] for row in manifest["episodes"]) == 72
+    assert sum(len(bytes.fromhex(row["request_hex"])) > 31 for row in manifest["episodes"]) == 4
+    for episode in manifest["episodes"]:
+        assert set(observation(episode)) == {"kind", "request_hex", "files"}
+        assert all(len(bytes.fromhex(file["content_hex"])) <= 128 for file in episode["files"])
+        assert episode["teacher"] is None or episode["phase"] == "acquisition"
