@@ -363,3 +363,13 @@ cost admission. Report every extra conditional-codec evaluation or replay. Ordin
 authored QA validates longer continuation and scalar local math, but does not
 train a separate output model or inspect novel endpoints. One fresh cost run and
 one conditional fixed integrated fit remain the next executions.
+
+The disposable complete-cap sample ingests one authored document of exactly
+127 period bytes plus its EOS, filling all 128 candidate slots, for every arm
+including the byte reference. Query the existing `k00` question at the normal
+two-byte cap after ordinary output-parameter EOS suppression, then restore exact
+weights. There are no teachers or retained cap weights. Count this additional
+cost-only ingestion and all actual branch/codec work; its time enters other-cost
+overhead and the complete capped prediction enters the conservative lesson
+projection. Do not measure the candidate's cap on empty memory or alter the
+fixture based on results.

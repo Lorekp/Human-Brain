@@ -1139,7 +1139,7 @@ def test_multiscale_controller_traces_reach_unchanged_overwrite_tags(dtype):
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
 def test_fixed_event_encoder_matches_independent_serial_formula_and_retains_no_state(dtype):
-    from humanbrain.local_memory_learner import LocalMemoryLearner
+    from experiments.r4_integrated.local_memory_event_candidate_reference import LocalMemoryLearner
 
     model = LocalMemoryLearner(
         input_code_size=2, hidden_size=3, key_size=2, value_size=94,
@@ -1206,7 +1206,7 @@ def test_fixed_event_encoder_matches_independent_serial_formula_and_retains_no_s
     "weight_grad", "code_grad", "query_dtype", "fraction", "activity_nan",
 ])
 def test_fixed_event_encoder_rejects_invalid_boundary_and_actual_activity(fault):
-    from humanbrain.local_memory_learner import LocalMemoryLearner
+    from experiments.r4_integrated.local_memory_event_candidate_reference import LocalMemoryLearner
 
     model = LocalMemoryLearner(
         input_code_size=2, hidden_size=3, key_size=2, value_size=94,
@@ -1246,7 +1246,7 @@ def test_fixed_event_encoder_rejects_invalid_boundary_and_actual_activity(fault)
 
 
 def test_fixed_event_encoder_private_initialization_preserves_shared_arrays():
-    from humanbrain.local_memory_learner import LocalMemoryLearner
+    from experiments.r4_integrated.local_memory_event_candidate_reference import LocalMemoryLearner
 
     rng = torch.random.get_rng_state().clone()
     model = LocalMemoryLearner(
@@ -1271,3 +1271,180 @@ def test_fixed_event_encoder_private_initialization_preserves_shared_arrays():
     assert torch.equal(torch.random.get_rng_state(), rng)
     assert model.get_extra_state()['schema'] == 'local-memory-phase-lms-v5'
     assert sum(p.numel() for p in model.event_encoder.parameters()) == 10
+
+
+def _sequence_test_codes():
+    return torch.arange(1, 258 * 32 + 1, dtype=torch.float32).reshape(258, 32) / 8192
+
+
+def test_sequence_tape_local_associations_and_independent_preceding_lag_keys():
+    from humanbrain.neuronal_sequence_memory import NeuronalSequenceMemory
+
+    memory = NeuronalSequenceMemory()
+    codes = _sequence_test_codes()
+    initial = memory.initial_state()
+    before = initial.snapshot()
+    documents = [b"ab", b"", bytes([0, 255])]
+    state = memory.ingest(documents, codes, initial)
+    assert state.used == 7
+    index = 0
+    for document in documents:
+        prefix = []
+        for symbol in (*document, 256):
+            expected = np.zeros((32, 32))
+            for lag, prior in enumerate(reversed(prefix[-32:])):
+                expected[lag] = codes[prior].numpy()
+            norm = np.sqrt(sum(float(value) ** 2 for value in expected.flat))
+            expected = expected.reshape(-1) / max(norm, 1e-8)
+            np.testing.assert_allclose(state.keys[index].numpy(), expected, atol=2e-7, rtol=2e-7)
+            sensory = torch.zeros(257)
+            sensory[symbol] = 1
+            assert torch.equal(state.sensory[index], sensory)
+            # Scalar unit-rate overwrite at this fresh cursor, not a target write.
+            assert all(float(value) == 0.0 + 1.0 * (float(target) - 0.0)
+                       for value, target in zip(state.sensory[index], sensory, strict=True))
+            assert int(state.successor[index]) == (index if symbol == 256 else index + 1)
+            prefix.append(symbol)
+            index += 1
+    assert all(torch.equal(value, getattr(initial, name)) for name, value in before.items())
+    assert not state.keys[7:].count_nonzero() and not state.sensory[7:].count_nonzero()
+    assert all(not value.requires_grad and value.grad_fn is None
+               for value in state.snapshot().values())
+
+
+def test_sequence_tape_sparse_long_recall_matches_dense_forward_adjacency():
+    from humanbrain.neuronal_sequence_memory import NeuronalSequenceMemory
+
+    memory = NeuronalSequenceMemory()
+    state = memory.ingest([b"ababa!xyz", b"Q"], _sequence_test_codes())
+    before = state.snapshot()
+    cursors = memory.initial_recall(state)
+    assert state.used == 12 and torch.equal(cursors, torch.arange(12))
+    dense = torch.eye(12)
+    adjacency = torch.zeros(12, 12)
+    for source in range(12):
+        adjacency[source, source if source in (9, 11) else source + 1] = 1
+    for step in range(14):
+        expected = torch.tensor([min(start + step, 9 if start < 10 else 11)
+                                 for start in range(12)])
+        assert torch.equal(cursors, expected)
+        assert torch.equal(memory.content(state, cursors), dense @ state.sensory[:12])
+        assert torch.equal(memory._content_checked(state, cursors),
+                           dense @ state.sensory[:12])
+        dense = dense @ adjacency
+        following = memory.advance(state, cursors)
+        assert torch.equal(memory._advance_checked(state, cursors), following)
+        cursors = following
+    assert all(torch.equal(value, getattr(state, name)) for name, value in before.items())
+    assert not cursors.requires_grad
+    accounting = memory.accounting(state)
+    assert accounting['state_tensor_bytes'] == 656904
+    assert accounting['stored_initial_recall_cursor_bytes'] == 96
+    assert accounting['logical_recall_cursor_neurons'] == 16384
+    assert accounting['logical_recall_connections_all_branches'] == 32640
+
+
+@pytest.mark.parametrize("start,stop", [(0, 127), (127, 254), (254, 256)])
+def test_sequence_tape_every_sensory_byte_identity_including_eos(start, stop):
+    from humanbrain.neuronal_sequence_memory import NeuronalSequenceMemory
+
+    memory = NeuronalSequenceMemory()
+    raw = bytes(range(start, stop))
+    state = memory.ingest([raw], _sequence_test_codes())
+    expected = torch.tensor([*raw, 256])
+    assert torch.equal(state.sensory[:state.used].argmax(-1), expected)
+    assert torch.equal(state.sensory[:state.used].sum(-1), torch.ones(state.used))
+    assert state.used == len(raw) + 1
+    # The EOS key contains only the last 32 raw codes, newest first, even for
+    # a full-capacity document. This also covers zero padding on a short input.
+    expected = np.zeros((32, 32))
+    codes = _sequence_test_codes().double().numpy()
+    for lag, symbol in enumerate(reversed(raw[-32:])):
+        expected[lag] = codes[symbol]
+    expected = expected.reshape(-1)
+    expected /= max(np.sqrt(np.sum(expected ** 2)), 1e-8)
+    np.testing.assert_allclose(state.keys[state.used - 1], expected, atol=2e-7, rtol=2e-7)
+
+
+def test_sequence_tape_append_disabled_storage_and_snapshot_independence():
+    from humanbrain.neuronal_sequence_memory import NeuronalSequenceMemory
+
+    memory = NeuronalSequenceMemory()
+    codes = _sequence_test_codes()
+    first = memory.ingest([b"a"], codes)
+    before = first.snapshot()
+    appended = memory.ingest([b"bc", b""], codes, first)
+    disabled = memory.ingest([b"a", b"bc", b""], codes, writes_enabled=False)
+    assert appended.used == disabled.used == 6
+    assert torch.equal(appended.successor, disabled.successor)
+    assert not disabled.keys.count_nonzero() and not disabled.sensory.count_nonzero()
+    assert torch.equal(appended.keys[:2], first.keys[:2])
+    assert torch.equal(appended.sensory[:2], first.sensory[:2])
+    assert all(torch.equal(value, getattr(first, name)) for name, value in before.items())
+    payload = appended.snapshot()
+    restored = memory.restore_state(payload)
+    assert all(torch.equal(value, getattr(restored, name)) for name, value in payload.items())
+    assert all(value.data_ptr() != getattr(restored, name).data_ptr()
+               for name, value in payload.items())
+    payload['keys'].zero_()
+    assert restored.keys.count_nonzero()
+    cursors = memory.initial_recall(restored)
+    selected = memory.content(restored, cursors)
+    selected.zero_()
+    cursors.zero_()
+    assert restored.sensory.count_nonzero() == 6
+
+
+def test_sequence_tape_capacity_and_invalid_inputs_reject_without_caller_mutation():
+    from humanbrain.neuronal_sequence_memory import NeuronalSequenceMemory
+
+    memory = NeuronalSequenceMemory()
+    codes = _sequence_test_codes()
+    full = memory.ingest([b"a" * 127], codes)
+    before = full.snapshot()
+    with pytest.raises(ValueError, match='capacity'):
+        memory.ingest([b""], codes, full)
+    assert all(torch.equal(value, getattr(full, name)) for name, value in before.items())
+    empty = memory.initial_state()
+    invalid_codes = [codes.double(), codes.clone().requires_grad_(), codes[:2]]
+    nan_codes = codes.clone()
+    nan_codes[0, 0] = torch.nan
+    invalid_codes.append(nan_codes)
+    for invalid in invalid_codes:
+        with pytest.raises(ValueError, match='codes'):
+            memory.ingest([b"a"], invalid, empty)
+    for documents in (b"a", ["a"], [bytearray(b"a")]):
+        with pytest.raises(ValueError, match='documents'):
+            memory.ingest(documents, codes, empty)
+    with pytest.raises(ValueError, match='normalization'):
+        memory.ingest([b"ab"], torch.full_like(codes, torch.finfo(torch.float32).max), empty)
+    assert empty.used == 0 and not empty.keys.count_nonzero() and not empty.sensory.count_nonzero()
+    assert memory.ingest([], codes, empty).used == 0
+    assert memory.initial_recall(empty).numel() == 0
+
+
+def test_sequence_tape_invalid_snapshots_and_cursor_bounds():
+    from humanbrain.neuronal_sequence_memory import NeuronalSequenceMemory
+
+    memory = NeuronalSequenceMemory()
+    state = memory.ingest([b"a"], _sequence_test_codes())
+    for fault in ('keys_nan', 'sensory_fraction', 'end_crossing', 'unused', 'dtype', 'cursor'):
+        payload = state.snapshot()
+        if fault == 'keys_nan':
+            payload['keys'][0, 0] = torch.nan
+        elif fault == 'sensory_fraction':
+            payload['sensory'][0, 97] = 0.5
+        elif fault == 'end_crossing':
+            payload['successor'][1] = 2
+        elif fault == 'unused':
+            payload['sensory'][2, 256] = 1
+        elif fault == 'dtype':
+            payload['keys'] = payload['keys'].double()
+        elif fault == 'cursor':
+            payload['write_index'].fill_(129)
+        with pytest.raises(ValueError):
+            memory.restore_state(payload)
+    for cursors in (torch.tensor([-1]), torch.tensor([2]), torch.tensor([0.0]),
+                    torch.zeros(129, dtype=torch.int64)):
+        with pytest.raises(ValueError, match='cursors'):
+            memory.advance(state, cursors)
