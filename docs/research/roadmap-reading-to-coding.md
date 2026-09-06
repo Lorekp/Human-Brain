@@ -280,7 +280,21 @@ superiority to the three matched controls and no regression plus overall gain
 over the dense reference, which already solves all four novel cases. This new
 criterion does not change the closed result. No hard-address or gain sweep is
 queued. Shared-address operation and storage counts shrink; actual whole-workload
-time and memory must still be measured.
+time and memory must still be measured. The
+[completed shared-map comparison](../../experiments/r4_integrated/local_shared_temporal_query_v1_result.md)
+passes its independent audit in 119.745 seconds including the run. Learned now
+solves 8/8 fit, 4/4 new-value, 4/4 delayed and 2/4 interference checks; all three
+controls score zero and the dense reference exactly reproduces 7/4/4/2.
+All four different-question fit pairs are correct, and the last 128 acquisition
+first attempts are all exact. Strict qualification still fails on two interference
+cases. Close this fixed fit; falling loss and perfect late first attempts do not
+authorize more epochs. The saved correct individual starts still lose to pooled
+bytes from several competing records. Review the latent-start retrieval policy
+against marginal byte decoding before selecting a bounded frozen-checkpoint
+comparison; no counterfactual answers or policy success are yet measured.
+Run/audit peaks of 665.539/432.832 MiB fit the revised admission estimates.
+The shorter aggregate duration includes a changed reference roster and must not
+be presented as an isolated circuit speedup.
 Streamed scientific receipts cost 8.693 seconds and remove retained lesson-list
 growth. Run/audit peaks are 907.887/988.676 MiB, below the final 1,617.741-MiB
 admission estimate. The run-specific estimate still understates its peak by
