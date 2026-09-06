@@ -117,6 +117,15 @@ Set these variables **before Python starts**: some existing modules initialize
 native cells during import, so assignments inside an experiment's `run()` can
 occur after the process has already loaded and cached a different library.
 
+For new performance measurements, use `time.perf_counter()` consistently for
+elapsed durations and record `time.get_clock_info("perf_counter")`. On the
+qualified Windows Python 3.11 environment, `time.monotonic()` uses 15.625 ms
+`GetTickCount64` ticks and can report zero for completed sub-tick work; the
+performance counter uses `QueryPerformanceCounter`. Keep Unix-time deadline
+comparisons separate and never subtract timestamps from different clock origins.
+Preserve invalid historical samples; do not replace zeros with a guessed floor
+or reuse a frozen admission after changing its timer.
+
 For change-specific QA, run reviewed existing test nodes with this interpreter.
 Use `-o addopts= -ra --durations=10` to expose counts, skips, and timing. Broader
 CPU/native, SciPy, and CUDA regressions require explicit selections and available

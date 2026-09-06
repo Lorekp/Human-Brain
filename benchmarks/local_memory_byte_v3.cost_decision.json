@@ -1,0 +1,44 @@
+{
+  "status": "invalid_timing",
+  "source_revision": "9199aa1cf660c81a027c8d5f3116ccdf0368b5f5",
+  "full_fit_ran": false,
+  "projected_seconds": null,
+  "admissible": false,
+  "seconds_limit": 900,
+  "memory_limit_mib": 2048,
+  "peak_upper_mib": 780.26953125,
+  "outer_cost_seconds": 27.3159252,
+  "invalid_sample": {
+    "arm": "frozen",
+    "measurement": "capped_prediction",
+    "seconds": 0,
+    "decisions": 33
+  },
+  "clock_diagnosis": {
+    "monotonic": {
+      "implementation": "GetTickCount64()",
+      "resolution_seconds": 0.015625
+    },
+    "perf_counter": {
+      "implementation": "QueryPerformanceCounter()",
+      "resolution_seconds": 1e-7
+    }
+  },
+  "saved_invariants_status": "passed",
+  "counts": {
+    "first_attempts": 20,
+    "teacher_byte_offers": 200,
+    "enabled_decoder_step_opportunities": 160,
+    "actions": 100,
+    "motor_demonstrations": 2
+  },
+  "retained_tensor_bytes": 124109512,
+  "evidence": {
+    ".pytest-tmp/local-memory-byte-v3-cost/report.json": "66cccb2f04e2b5130777f20a9522c5eb44d73ee50d14a27aef998ac361a13829",
+    ".pytest-tmp/local-memory-byte-v3-cost/completion.json": "93f5c9d36d32f9dd58439e8a08716f7a9a1ce9bc3caa721719bb1f316b1541da",
+    ".pytest-tmp/local-memory-byte-v3.cost-admission.json": "d07b48bb6b36d8c3a373b1a77097dcaae8c10862d7620c058e774c094495861f",
+    ".pytest-tmp/local-memory-byte-v3-cost-independent-audit.json": "f36fa0f3fea32c7f8afee6a2da26b4cc62e2b5030c43fa92ef3628be10787af6",
+    ".pytest-tmp/local-memory-byte-v3-cost-invariants-audit.json": "de67cf631ed4851e06250b00497c4fe2d8e7c0809c9bdd87c4c48089572a9e0f"
+  },
+  "decision": "Preserve v3 as invalid timing. No zero-duration imputation, fit admission, capability claim or retrospective margin change. Fix elapsed measurement under a fresh source-bound identity, keeping Unix deadlines and original cost formula."
+}

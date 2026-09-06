@@ -37,6 +37,11 @@ reduces that projection to 1,468.472 seconds with 792.051 MiB conservative peak
 memory, but remains cost-rejected. Its twenty disposable lessons, 100 actions,
 two motor demonstrations and independent saved-only audit pass the engineering
 contract; no full fit runs. Fifty-three focused checks verify the optimizations.
+The [finite-validation v3 return](../experiments/r4_integrated/local_memory_byte_v3_result.md)
+finishes the disposable workload but has invalid admission timing: a capped
+prediction falls within one coarse Windows clock tick and records zero seconds.
+All unaffected saved-only invariants pass; no duration is imputed and no fit
+starts. A high-resolution elapsed-clock regression is required before a new return.
 The official-exam scorer remains ready, with genuine structured learner output
 still pending.
 

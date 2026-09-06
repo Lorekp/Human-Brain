@@ -124,6 +124,13 @@ shared fixed-workload runner with explicit experiment identity, preserving the
 closed v1/v2 runners. Its full cost admission and acquisition remain pending;
 the isolated timing is not permission to launch training.
 
+The [v3 disposable return](../../experiments/r4_integrated/local_memory_byte_v3_result.md)
+now finishes but cannot be cost-admitted: one complete capped prediction records
+zero seconds under Python 3.11's 15.625 ms Windows monotonic clock. Saved source,
+state and execution invariants pass independently; the strict timing failure is
+preserved with no imputation or fit. The immediate next step is a regression-tested
+performance-counter fix under a fresh identity and the unchanged budget formula.
+
 The [independent preflight review](local-memory-byte-preflight-review.md) records
 two learning risks: averaging byte feedback weakens explicit order credit, and
 correlated write keys may overwrite useful information. These are hypotheses
