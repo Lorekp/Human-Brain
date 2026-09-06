@@ -1,16 +1,18 @@
 # Persistent memory and byte output: parallel development
 
-Current execution: the two-byte document fit and its
-[localization diagnostic](../../experiments/r4_integrated/local_memory_localization_v1_result.md)
-are closed. The diagnostic and audit finish in 26.236 seconds: assignment
-distinctions reach reads and output potentials, and every tested positive block
-update improves loss, but no answer changes. The
-[follow-up review](local-memory-localization-followup.md) selects one direct
-integrated comparison of actual instantaneous read-path error transport into
-query neurons. Preserve writer credit, LMS output, rate and roster. Implement
-and verify the local arithmetic, then freeze a six-arm protocol with the repaired
-five controls and a matched current-rule tagged reference. Fresh complete cost
-admission must pass before acquisition; neither prior admission transfers.
+Current execution: the [query-credit comparison](../../experiments/r4_integrated/local_memory_query_credit_v1_result.md)
+is complete and audited in 369.946 seconds. Actual read-path query feedback raises
+fit from 2/8 to 5/8, but new-value and delayed checks remain 1/4 and interference
+remains zero. The writer-frozen control matches tagged correctness on all twenty
+checks; tagged still ignores both assignment swaps. Exact old-rule trajectory
+parity confirms the comparison. This is a scoped fit gain, not useful transfer
+qualification. Close the fixed fit and conduct one bounded source/mathematical
+review of writer teaching and forward eligibility, supported by primary-source
+research. Do not automatically extend exposure or change another learning rule.
+Any selected integrated return needs its own fixed contract and fresh cost
+admission. The [localization diagnostic](../../experiments/r4_integrated/local_memory_localization_v1_result.md)
+and [query-credit rationale](local-memory-localization-followup.md) retain their
+original evidence and scope.
 
 Updated 2026-09-06 after the user required local, online cell/synapse learning
 for the main system. The prepared BPTT/Adam joint fit is **withdrawn before

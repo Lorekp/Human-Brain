@@ -165,8 +165,18 @@ sign. The [follow-up review](local-memory-localization-followup.md) selects one
 direct integrated comparison of instantaneous memory-read credit into the query
 map and query cell. Keep writer learning, LMS output, rate and roster fixed;
 compare the repaired five controls with a matched current-rule tagged reference.
-Fresh six-arm cost admission is required before fitting. No additional
-supplied-factor output diagnostic or protected gate is opened.
+The [completed query-credit comparison](../../experiments/r4_integrated/local_memory_query_credit_v1_result.md)
+passes admission at 853.567 projected seconds and finishes with its saved audit
+in 369.946 seconds. Tagged improves fit from 2/8 to 5/8, but new-value and delayed
+success remain 1/4 and interference remains zero. Writer-frozen matches tagged
+correctness on all twenty checks; tagged still ignores both assignment swaps.
+The old-rule arm exactly reproduces its prior trajectory. Close this fit with a
+scoped taught-task gain, without useful transfer qualification or an automatic
+epoch/rule sweep. The next bounded source and mathematical review examines
+writer teaching against its existing forward eligibility, with primary-source
+research on local value-credit transport and its limits. Select one justified
+return only after that review. No additional supplied-factor output diagnostic
+or protected gate is opened.
 These byte learners use no pretrained encoder or LLM. The
 [action-path review](local-memory-byte-preflight-review.md) identifies host-computed
 matching in the legacy edit motor, however. Keep neuron-generated answer bytes

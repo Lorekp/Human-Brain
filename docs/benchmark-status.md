@@ -12,6 +12,16 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current separate-answerability result
 
+The [query-credit return](../experiments/r4_integrated/local_memory_query_credit_v1_result.md)
+finishes its six-arm fit and saved audit in 369.946 seconds after admission at
+853.567 projected seconds. Actual memory-read error transport improves tagged
+fit from 2/8 to 5/8. New-value and delayed scores stay 1/4 and interference stays
+zero; writer-frozen matches tagged correctness on all twenty cases. Tagged still
+ignores both source-assignment swaps. The old-rule arm exactly reproduces its
+prior weights and non-timing trajectory. The fit gain does not satisfy useful
+transfer, learned-writing advantage or the integrated gate. The fixed comparison
+is closed; a bounded writer-credit review precedes another experiment.
+
 The latest [document-memory localization](../experiments/r4_integrated/local_memory_localization_v1_result.md)
 completes with a passing saved audit in 26.236 seconds. Both frozen endpoints
 solve 2/8 original-order and 1/8 reversed-order diagnostic actions. Assignment
