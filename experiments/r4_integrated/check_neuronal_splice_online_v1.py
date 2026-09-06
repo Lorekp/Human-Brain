@@ -16,9 +16,22 @@ import time
 from pathlib import Path
 
 from experiments.r4_integrated.neuronal_splice_receipts_v1 import (
-    HEAD_LIMITS, LINE_LIMIT, TREE_LIMIT, close, exact_keys, hash_value, hex_bytes,
-    logsumexp, number, proposal_digest, require, softmax, tree_bytes,
-    validate_head, validate_prediction, validate_proposal, validate_reader,
+    HEAD_LIMITS,
+    LINE_LIMIT,
+    TREE_LIMIT,
+    close,
+    exact_keys,
+    hash_value,
+    hex_bytes,
+    logsumexp,
+    number,
+    proposal_digest,
+    require,
+    tree_bytes,
+    validate_head,
+    validate_prediction,
+    validate_proposal,
+    validate_reader,
 )
 
 DRAFT = True
@@ -126,7 +139,7 @@ def task_grade(task, proposal, after_files, rejection, execution):
                and stdout == hex_bytes(task["expected_stdout_hex"])
                and ordered_files(after_files, maximum=144)
                == ordered_files(task["expected_after_files"], maximum=144)
-               and (task["required_operation"] != "STOP" or proposal["operation"] == "STOP"))
+               and proposal["operation"] == task["required_operation"])
     canonical_correct = (proposal["operation"] == "STOP" if task["required_operation"] == "STOP"
                          else proposal == task["teacher"])
     return {"task_success": success, "canonical_tuple_correct": canonical_correct}
@@ -271,6 +284,291 @@ class Stream:
                            ("sha256", self.hasher.hexdigest())):
             require(self.metadata[key] == value, "journal completion mismatch")
         require(self.metadata["max_row_tree_bytes"] <= TREE_LIMIT, "writer tree exceeded bound")
+
+
+def check_action(row, *, task, files, phase, arm, index, launch, output):
+    """Reconstruct the actual edit and inspect the saved executed source bytes."""
+    exact_keys(row, ("schema", "phase", "arm", "index", "task_id", "attempt_id",
+                     "proposal_sha256", "workspace_sha256", "proposal", "before_files",
+                     "after_files", "rejection", "execution", "grade", "envelope",
+                     "apply_execute_grade_seconds", "action_completed_perf"))
+    require(row["schema"] == "neuronal-splice-action-row-v1"
+            and (row["phase"], row["arm"], row["index"]) == (phase, arm, index),
+            "action identity/order mismatch")
+    require(row["task_id"] == (task["task_id"] if task else f"{phase}-{index}"),
+            "action task mismatch")
+    require(ordered_files(row["before_files"]) == ordered_files(files), "action observation changed")
+    require(row["workspace_sha256"] == workspace_digest(files), "action workspace hash mismatch")
+    require(row["proposal_sha256"] == proposal_digest(row["proposal"]), "action proposal hash mismatch")
+    require(row["proposal"]["workspace_sha256"] == row["workspace_sha256"], "stale action workspace")
+    after, rejection = apply_saved(files, row["proposal"])
+    require(ordered_files(after, maximum=144) == ordered_files(row["after_files"], maximum=144),
+            "action does not apply its selected bytes")
+    require((row["rejection"] is None) == (rejection is None), "action rejection mismatch")
+    execution = row["execution"]
+    validate_action_launch(execution, launch)
+    require("stdout" not in execution and "stderr" not in execution, "duplicate decoded process output")
+    for name in ("stdout", "stderr"):
+        raw = hex_bytes(execution[name + "_hex"], 16384)
+        require(hashlib.sha256(raw).hexdigest() == execution[name + "_sha256"], "raw output hash mismatch")
+    directory = output / "executions" / f"{phase}-{arm}-{index:06d}"
+    require(Path(execution["workspace"]).resolve() == directory.resolve(), "execution directory mismatch")
+    require(len(str(directory).encode("utf-8")) <= 1024, "execution path exceeds declared bound")
+    for path, content in ordered_files(after, maximum=144):
+        require((directory / path).read_bytes() == content, "saved executed file changed")
+    require(execution["materialized_matches_action"] is True, "executed source did not match proposal")
+    envelope = {"attempt_id": row["attempt_id"], "proposal_sha256": row["proposal_sha256"],
+                "workspace_sha256": row["workspace_sha256"],
+                "execution": {key: execution[key] for key in ("returncode", "stdout_hex", "stderr_hex")}}
+    require(row["envelope"] == envelope, "action feedback differs from actual execution")
+    positive(row["apply_execute_grade_seconds"])
+    positive(row["action_completed_perf"])
+    if task is None:
+        require(row["grade"] is None, "engineering probe was graded as skill")
+    else:
+        require(row["grade"] == task_grade(task, row["proposal"], after, row["rejection"], execution),
+                "external task grade disagrees with actual executed edit")
+    return row["grade"]
+
+
+def cap_task():
+    files = [{"path": "main.py", "content_hex": (b"print('cap')\n" + b"#" + b"A" * 113 + b"\n").hex()}]
+    files += [{"path": f"z{i}.py", "content_hex": (b"#" + b"A" * 126 + b"\n").hex()} for i in range(3)]
+    return {"task_id": "cap-0", "memory_id": "cap", "files": files,
+            "workspace_sha256": workspace_digest(files), "request_hex": (b"Q" * 31).hex(),
+            "teacher": {"operation": "SPLICE", "path": "main.py", "start": 0, "end": 0,
+                        "replacement_hex": (b"A" * 16).hex(), "stop_reason": "eos",
+                        "workspace_sha256": workspace_digest(files)}}
+
+
+def check_learning_pair(actions, lessons, *, task, documents, phase, arm, index,
+                        launch, output, expected_before=None, expected_memory=None):
+    """Own two full rows only; return scalar bindings for the later timing row."""
+    action, action_hash = actions.next()
+    row, _ = lessons.next()
+    grade = check_action(action, task=task if phase == "regular" else None,
+                         files=task["files"], phase=phase, arm=arm, index=index,
+                         launch=launch, output=output)
+    exact_keys(row, ("schema", "phase", "arm", "index", "task_id", "memory_id", "request_hex",
+                     "workspace_sha256", "action_line_sha256", "prediction", "teacher", "feedback",
+                     "model_after_sha256", "memory_after_sha256", "model_seconds", "model_instance_token",
+                     "teacher_started_perf", "teacher_completed_perf"))
+    require(row["schema"] == "neuronal-splice-learning-row-v1"
+            and (row["phase"], row["arm"], row["index"]) == (phase, arm, index), "learning order changed")
+    for key in ("task_id", "memory_id", "request_hex", "workspace_sha256", "teacher"):
+        require(row[key] == task[key], "learning task fields changed")
+    prediction = row["prediction"]
+    require(row["action_line_sha256"] == action_hash, "correction does not bind published actual action")
+    for key in ("attempt_id", "proposal_sha256", "proposal"):
+        require(action[key] == prediction[key], "execution replaced the free proposal")
+    require(prediction["attempt_id"].split(":")[0] == row["model_instance_token"],
+            "correction did not retain the proposing instance")
+    require(positive(action["action_completed_perf"]) <= positive(row["teacher_started_perf"])
+            <= positive(row["teacher_completed_perf"]), "teacher preceded execution")
+    successor = documents_adjacency(documents)
+    validate_prediction(prediction, successor, boundaries=boundaries(task["files"]))
+    query = hex_bytes(task["request_hex"], 31)
+    decisions = len(prediction["payload"]["steps"])
+    require(prediction["work"]["reader"] == reader_work(query, len(successor), decisions,
+                                                        teaching=False, arm=arm), "free reader work mismatch")
+    require(prediction["work"]["action"] == action_work(query, task["files"], prediction["proposal"],
+                                                        teaching=False, arm=arm), "free action work mismatch")
+    offers, labels = check_feedback(row["feedback"], prediction, row["teacher"], task["files"],
+                                     successor, query, arm)
+    hash_value(row["model_after_sha256"])
+    require(row["memory_after_sha256"] == prediction["memory_sha256"], "local correction rewrote episode memory")
+    require(expected_before is None or prediction["model_sha256"] == expected_before,
+            "persistent learner weight chain broke")
+    require(expected_memory is None or prediction["memory_sha256"] == expected_memory,
+            "learning episode identity changed")
+    if arm == "slow_frozen":
+        require(row["model_after_sha256"] == prediction["model_sha256"], "frozen learner changed")
+    if phase == "cap":
+        proposal = prediction["proposal"]
+        expected_payload = b"\0" * 16 if arm == "memory_disabled" else b"A" * 16
+        require(proposal["operation"] == "STOP" and proposal["path"] == "main.py"
+                and proposal["start"] == proposal["end"] == 0
+                and hex_bytes(proposal["replacement_hex"]) == expected_payload
+                and proposal["stop_reason"] == ("limit" if arm == "memory_disabled" else "eos")
+                and decisions == offers == 17 and labels == 3, "cap geometry/output incomplete")
+    return {"model_after": row["model_after_sha256"], "memory": row["memory_after_sha256"],
+            "instance": row["model_instance_token"], "attempt_id": prediction["attempt_id"],
+            "decisions": decisions, "offers": offers, "labels": labels,
+            "model_seconds": positive(row["model_seconds"]),
+            "action_partial_seconds": positive(action["apply_execute_grade_seconds"]), "grade": grade}
+
+
+def check_panel(row, case, *, phase, arm, index, documents, model_hash, memory_hash):
+    exact_keys(row, ("schema", "phase", "arm", "index", "memory_id", "request_hex",
+                     "model_sha256", "memory_sha256", "prediction", "model_seconds"))
+    require(row["schema"] == "neuronal-splice-panel-row-v1"
+            and (row["phase"], row["arm"], row["index"]) == (phase, arm, index), "panel order mismatch")
+    require(row["memory_id"] == case["memory_id"] and row["request_hex"] == case["query_hex"],
+            "panel request changed")
+    require(row["model_sha256"] == model_hash and row["memory_sha256"] == memory_hash,
+            "reading panel state changed")
+    successor = documents_adjacency(documents)
+    prediction = row["prediction"]
+    require(prediction["kind"] == "free", "panel contains teacher activity")
+    result = validate_reader(prediction, successor, max_bytes=2)
+    require(prediction["work"] == reader_work(hex_bytes(case["query_hex"]), len(successor),
+                                             result["decisions"], teaching=False, arm=arm), "panel work mismatch")
+    positive(row["model_seconds"])
+    return prediction["stop_reason"] == "eos" and prediction["generated_hex"] == case["expected_hex"]
+
+
+def tensor_digest(value, torch):
+    digest = hashlib.sha256()
+
+    def visit(item):
+        if isinstance(item, torch.Tensor):
+            raw = item.detach().contiguous().numpy().tobytes()
+            digest.update(str((str(item.dtype), tuple(item.shape), len(raw))).encode())
+            digest.update(raw)
+        elif isinstance(item, dict):
+            for key in sorted(item):
+                digest.update(json.dumps(key).encode())
+                visit(item[key])
+        else:
+            digest.update(json.dumps(item, sort_keys=True, allow_nan=False).encode())
+    visit(value)
+    return digest.hexdigest()
+
+
+def validate_tensor(value, shape, dtype, torch):
+    require(isinstance(value, torch.Tensor) and tuple(value.shape) == shape
+            and value.dtype == dtype and value.device.type == "cpu"
+            and not value.requires_grad and value.grad_fn is None and value.grad is None
+            and bool(torch.isfinite(value).all()), "invalid saved tensor contract")
+    return value.numel() * value.element_size()
+
+
+def reconstruct_tape(snapshot, documents, codes, enabled, torch):
+    """Independent literal storage reconstruction, never a neuronal model call."""
+    exact_keys(snapshot, ("keys", "sensory", "successor", "write_index"))
+    total = 0
+    for name, shape, dtype in (("keys", (128, 1024), torch.float32),
+                               ("sensory", (128, 257), torch.float32),
+                               ("successor", (128,), torch.int64), ("write_index", (), torch.int64)):
+        total += validate_tensor(snapshot[name], shape, dtype, torch)
+    expected_keys = torch.zeros(128, 1024, dtype=torch.float64)
+    expected_sensory = torch.zeros(128, 257, dtype=torch.float32)
+    expected_successor = torch.full((128,), -1, dtype=torch.int64)
+    position = 0
+    for encoded in documents:
+        raw = hex_bytes(encoded)
+        preceding = []
+        for token in (*raw, 256):
+            require(position < 128, "saved tape exceeds capacity")
+            if enabled:
+                expected_sensory[position, token] = 1
+                for lag, previous in enumerate(reversed(preceding[-32:])):
+                    expected_keys[position, lag * 32:(lag + 1) * 32] = codes[previous].double()
+                norm = max(float(expected_keys[position].square().sum().sqrt()), 1e-8)
+                expected_keys[position] /= norm
+            expected_successor[position] = position if token == 256 else position + 1
+            preceding.append(token)
+            position += 1
+    require(int(snapshot["write_index"].item()) == position, "saved tape allocation mismatch")
+    require(torch.equal(snapshot["sensory"], expected_sensory)
+            and torch.equal(snapshot["successor"], expected_successor), "saved literal/adjacency mismatch")
+    torch.testing.assert_close(snapshot["keys"].double(), expected_keys, rtol=2e-6, atol=2e-7)
+    require(total == TAPE_BYTES, "saved tape storage changed")
+    return position
+
+
+def check_saved_state(output, report, roster):
+    """Authenticate slow-state lineage and every retained episode without recall."""
+    import torch
+
+    torch.set_num_threads(1)
+    prior_path = ROOT / "benchmarks/local_joint_address_online_v6.decision.json"
+    require(sha(prior_path) == "f9b3b02b3bacf9977bb990f115072d41a043adeb074283d390bf45b5a0bf7a97",
+            "prior completed decision changed")
+    prior_decision = read(prior_path)
+    prior_completion_path = ROOT / ".pytest-tmp/local-joint-address-online-v6-run/completion.json"
+    require(sha(prior_completion_path) == prior_decision["input_sha256"][str(prior_completion_path.relative_to(ROOT)).replace("\\", "/")],
+            "prior completion changed")
+    prior_completion = read(prior_completion_path)
+    prior_path = prior_completion_path.parent / "source-free/source_free.pt"
+    require(sha(prior_path) == prior_completion["artifacts"]["source-free/source_free.pt"]
+            == report["prior"]["checkpoint_sha256"]
+            == "03654f61af4cccb93688a75e75a84c089800672530cdaffdc7a30f7cc5181180", "prior checkpoint changed")
+    previous = torch.load(prior_path, map_location="cpu", weights_only=True)
+    prior = previous["learned"]["weights"]
+    checkpoint = output / "endpoint/source_free.pt"
+    require(sha(checkpoint) == report["worker"]["checkpoint_sha256"], "final checkpoint changed")
+    saved = torch.load(checkpoint, map_location="cpu", weights_only=True)
+    exact_keys(saved, ("schema", "arms"))
+    require(saved["schema"] == "neuronal-splice-endpoint-state-v1", "saved state schema changed")
+    exact_keys(saved["arms"], ARMS)
+    geometries = {
+        "reader.input_codes": ((258, 32), torch.float32),
+        "reader.address_weight": ((32, 32), torch.float32),
+        "reader.codec.weight": ((257, 257), torch.float64),
+        "reader.codec.bias": ((257,), torch.float64),
+        "actions.start_weight": ((6177,), torch.float32),
+        "actions.end_weight": ((2049,), torch.float32),
+        "actions.operation_weight": ((2, 4244), torch.float32),
+        "actions.operation_bias": ((2,), torch.float32),
+    }
+    slots = retained = 0
+    initial_hashes, final_hashes, memory_hashes = {}, {}, {}
+    fresh_actions = {}
+    for head, width, offset in (("start", 6177, 5), ("end", 2049, 6), ("operation", 4244, 7)):
+        outputs = 2 if head == "operation" else 1
+        generator = torch.Generator(device="cpu").manual_seed(733 + offset)
+        value = torch.empty(outputs, width, dtype=torch.float32)
+        bound = math.sqrt(3.0) * math.sqrt(2.0 / (outputs + width))
+        value.uniform_(-bound, bound, generator=generator)
+        fresh_actions[f"actions.{head}_weight"] = value if outputs == 2 else value[0]
+    fresh_actions["actions.operation_bias"] = torch.zeros(2, dtype=torch.float32)
+    for arm in ARMS:
+        entry = saved["arms"][arm]
+        exact_keys(entry, ("weights", "memories", "experience"))
+        require(isinstance(entry["weights"], dict), "saved model state must be a mapping")
+        weights = dict(entry["weights"])
+        exact_keys(weights, (*geometries, "_extra_state", "reader._extra_state"))
+        model_bytes = sum(validate_tensor(weights[key], shape, dtype, torch)
+                          for key, (shape, dtype) in geometries.items())
+        require(model_bytes == MODEL_BYTES, "combined model storage changed")
+        metadata = {"schema": "neuronal-byte-splice-learner-v1", "mode": arm,
+                    "seed": 733, "widths": {"start": 6177, "end": 2049, "operation": 4244},
+                    "feature_energy": 32, "operation_augmented_energy": 33, "learning_rate": .01,
+                    "payload_cap": 16, "publication": "validated action then atomic reader then copies"}
+        require(weights["_extra_state"] == metadata, "action model metadata changed")
+        reader_mode = {"action_frozen": "learned", "memory_disabled": "writes_disabled"}.get(arm, arm)
+        expected_reader = {**prior["_extra_state"], "mode": reader_mode}
+        require(weights["reader._extra_state"] == expected_reader, "reader metadata adaptation exceeded mode")
+        require(torch.equal(weights["reader.input_codes"], prior["input_codes"]), "fixed input codes changed")
+        initial = {**fresh_actions, **{"reader." + key: value for key, value in prior.items()},
+                   "_extra_state": metadata, "reader._extra_state": expected_reader}
+        initial_hashes[arm] = tensor_digest(initial, torch)
+        final_hashes[arm] = tensor_digest(weights, torch)
+        require(initial_hashes[arm] == report["prior"]["initial_model_sha256"][arm], "initial model lineage mismatch")
+        require(final_hashes[arm] == report["final_model_sha256"][arm]
+                == report["worker"]["initial_hashes"][arm]["model_sha256"], "final model identity mismatch")
+        if arm == "slow_frozen":
+            require(initial_hashes[arm] == final_hashes[arm], "all-frozen slow state changed")
+        if arm in ("action_frozen", "slow_frozen"):
+            require(all(torch.equal(weights[key], value) for key, value in fresh_actions.items()),
+                    "frozen action synapses changed")
+        require(entry["experience"] == (4 if report["mode"] == "cost" else 256), "saved action count changed")
+        require(set(entry["memories"]) == set(roster["memory_packages"]), "retained memory package scope changed")
+        memory_hashes[arm] = {}
+        for memory_id, snapshot in entry["memories"].items():
+            slots += reconstruct_tape(snapshot, roster["memory_packages"][memory_id]["document_hex"],
+                                      weights["reader.input_codes"], arm != "memory_disabled", torch)
+            memory_hashes[arm][memory_id] = tensor_digest(snapshot, torch)
+            retained += TAPE_BYTES
+        retained += model_bytes
+        require(memory_hashes[arm] == report["worker"]["initial_hashes"][arm]["memories_sha256"],
+                "exported episode hashes mismatch")
+    require(retained == 170705152 and slots == 15160, "retained-state storage/ingestion ledger mismatch")
+    del prior, previous, saved, entry, weights, initial
+    return {"initial_model_sha256": initial_hashes, "final_model_sha256": final_hashes,
+            "memory_sha256": memory_hashes, "retained_tensor_bytes": retained,
+            "reconstructed_slots": slots, "model_forwards": 0}
 
 
 def check_monitor(outer, *, pid, command=None):
@@ -526,9 +824,233 @@ def project_cost(report, outer, *, audit=None, audit_outer=None):
                 admissible=audit is not None and total <= 900 and peak <= 2048)
 
 
-def audit(*args, **kwargs):
-    """Full source/launch/report dispatcher remains guarded until schema review."""
-    raise RuntimeError("DRAFT: parent report and complete custody integration pending")
+def audit(args, result):
+    """Stream completed records; no model, correction or child execution occurs."""
+    started = time.perf_counter()
+    require((args.cost_dir is None) != (args.run_dir is None), "select exactly one saved phase")
+    output = (args.cost_dir or args.run_dir).resolve()
+    mode = "cost" if args.cost_dir else "run"
+    require(sha(args.admission) == args.admission_sha, "admission identity changed")
+    admission, report, completion, outer = (read(path) for path in (
+        args.admission, output / "report.json", output / "completion.json", args.launch))
+    require(admission["schema"] == "neuronal-splice-admission-v1"
+            and admission["status"] == "passed" and admission["authorized_phase"] == mode
+            and admission["qa_passed"] is True, "execution was not admitted")
+    require(report["status"] == "completed" and report["mode"] == mode
+            and report["admission_sha256"] == args.admission_sha
+            and report["config"] == admission["config"]
+            and report["source_sha256"] == report["source_sha256_after"] == admission["source_sha256"],
+            "report/admission/source chain mismatch")
+    require(completion["schema"] == "neuronal-splice-completion-v1"
+            and completion["status"] == "completed" and completion["mode"] == mode
+            and completion["report_sha256"] == sha(output / "report.json")
+            and completion["admission_sha256"] == args.admission_sha
+            and completion["logs"] == report["logs"], "completion chain mismatch")
+    command = [str(ROOT / ".venv/Scripts/python.exe"), "-X", "utf8", "-m",
+               "experiments.r4_integrated.neuronal_splice_online_v1", mode,
+               "--output", str(output), "--admission", str(args.admission),
+               "--admission-sha", args.admission_sha, "--deadline-unix", repr(report["deadline_unix"])]
+    check_monitor(outer, pid=report["pid"], command=command)
+    require(report["deadline_unix"] == outer["deadline_unix"], "run deadline differs from watchdog")
+    for relative, expected in report["source_sha256"].items():
+        path = (ROOT / relative).resolve()
+        require(path.is_relative_to(ROOT) and sha(path) == expected, "held source changed")
+    roster_path = Path(admission["roster_path"])
+    require(sha(roster_path) == admission["roster_sha256"] == report["roster_sha256"], "frozen roster changed")
+    roster = read(roster_path)
+    require(roster["schema"] == "neuronal-splice-roster-v1"
+            and roster["counts"]["document_raw_bytes_per_arm"] == 3638
+            and roster["counts"]["maximum_memory_slots"] == 128, "roster arithmetic amendment absent")
+    runtime = report["action_launch_record"]
+    validate_launch_record(runtime)
+    validate_qualification((ROOT / ".pytest-tmp/stdlib-python-action-v1-qualification.json").resolve(),
+                           "4c3a6438549ce1ecd4c8d92509f1a60753692b8aab1ab9155df00b12db10941c", runtime)
+    validate_bootstrap_qualification({
+        "qualification_sha256": "4c3a6438549ce1ecd4c8d92509f1a60753692b8aab1ab9155df00b12db10941c",
+        "bootstrap_policy": "regular_source_public_temporary_module_v1",
+        "bootstrap_sha256": expected_action_bootstrap_sha256(),
+        "bootstrap_qualification_path": str((ROOT / ".pytest-tmp/temporary-module-bootstrap-v1-qualification.json").resolve()),
+        "bootstrap_qualification_sha256": "0bb809fd33aee145f169776a03a884fd62daf381ff4e67ed333a2a378c46d92b"})
+    lineage = check_saved_state(output, report, roster)
+    worker_path = output / "endpoint/worker/completion.json"
+    worker = read(worker_path)
+    require(sha(worker_path) == report["worker"]["worker_completion_sha256"]
+            and worker == report["worker"]["worker"] and worker["status"] == "passed", "worker completion changed")
+    require(f'{worker["process_identity"]["pid"]}/{worker["process_identity"]["creation_ticks"]}'
+            in outer["observed_process_peaks_mib"], "actual endpoint worker lacks owned creation identity")
+    request_path = output / "endpoint/query_only.json"
+    require(sha(request_path) == worker["requests_sha256"] == report["worker"]["requests_sha256"],
+            "worker observations changed")
+    requests = read(request_path)
+    task_ids = roster["fresh_task_ids"] + roster["retention_task_ids"]
+    expected_cases = [{"id": task_id, "memory_id": roster["tasks"][task_id]["memory_id"],
+                       "request_hex": roster["tasks"][task_id]["request_hex"],
+                       "files": roster["tasks"][task_id]["files"]} for task_id in task_ids]
+    expected_reading = [{"id": str(case["case_id"]), "memory_id": case["memory_id"],
+                         "request_hex": case["query_hex"]} for case in roster["old_panel"]]
+    exact_keys(requests, ("schema", "checkpoint_sha256", "source_sha256", "receipt_limits", "arms", "cases", "reading_cases"))
+    require(requests["cases"] == expected_cases and requests["reading_cases"] == expected_reading
+            and requests["arms"] == list(ARMS) and requests["receipt_limits"] == report["config"]["receipt_limits"],
+            "teacher-free worker request contains changed observations")
+    package = output / "endpoint/package"
+    require(requests["source_sha256"] == worker["source_sha256"] == report["worker"]["source_sha256"],
+            "worker source chain mismatch")
+    require({path.relative_to(package).as_posix() for path in package.rglob("*.py")}
+            == set(requests["source_sha256"]), "isolated package contains undeclared source")
+    for relative, expected in requests["source_sha256"].items():
+        require(sha(package / relative) == sha(ROOT / relative) == expected, "isolated source changed")
+    actions = Stream(output / "actions.jsonl", report["logs"]["actions"])
+    lessons = Stream(output / "lessons.jsonl", report["logs"]["lessons"])
+    timing = Stream(output / "timings.jsonl", report["logs"]["timings"])
+    pairs = {arm: {phase: {"rows": 0, "seconds": 0., "max_seconds": 0.}
+                    for phase in ("regular", "cap")} for arm in ARMS}
+    measured = {arm: {phase: {"rows": 0, "model": 0., "action": 0., "journal_partial": 0.,
+                              "model_max": 0., "action_max": 0., "journal_partial_max": 0.}
+                       for phase in ("regular", "cap")} for arm in ARMS}
+    chain = dict(lineage["initial_model_sha256"])
+    instances = {}
+    counts = {"learning_pairs": 0, "free_decisions": 0, "reader_offers": 0, "action_labels": 0}
+    curves = {arm: [] for arm in ARMS}
+
+    def pair(task, documents, phase, arm, index):
+        began = time.perf_counter()
+        values = check_learning_pair(actions, lessons, task=task, documents=documents,
+                                     phase=phase, arm=arm, index=index, launch=runtime, output=output,
+                                     expected_before=chain[arm] if phase == "regular" else None,
+                                     expected_memory=lineage["memory_sha256"][arm][task["memory_id"]]
+                                     if phase == "regular" else None)
+        # The two full rows have been released before reading this small timing row.
+        row, _ = timing.next()
+        exact_keys(row, ("phase", "arm", "index", "model_seconds", "action_seconds", "journal_before_timing_append_seconds"))
+        require((row["phase"], row["arm"], row["index"]) == (phase, arm, index), "timing order mismatch")
+        close(row["model_seconds"], values["model_seconds"])
+        require(positive(row["action_seconds"]) >= values["action_partial_seconds"], "action timing omits execution")
+        measured[arm][phase]["rows"] += 1
+        for stage, field in (("model", "model_seconds"), ("action", "action_seconds"),
+                              ("journal_partial", "journal_before_timing_append_seconds")):
+            value = positive(row[field])
+            measured[arm][phase][stage] += value
+            measured[arm][phase][stage + "_max"] = max(measured[arm][phase][stage + "_max"], value)
+        for key, value in (("learning_pairs", 1), ("free_decisions", values["decisions"]),
+                           ("reader_offers", values["offers"]), ("action_labels", values["labels"])):
+            counts[key] += value
+        if phase == "regular":
+            if arm in instances:
+                require(instances[arm] == values["instance"], "learning switched model instance")
+            instances[arm] = values["instance"]
+            require(values["attempt_id"] == f'{values["instance"]}:{index + 1}', "experience sequence changed")
+            chain[arm] = values["model_after"]
+            curves[arm].append(values["grade"]["task_success"])
+        seconds = time.perf_counter() - began
+        totals = pairs[arm][phase]
+        totals["rows"] += 1
+        totals["seconds"] += seconds
+        totals["max_seconds"] = max(totals["max_seconds"], seconds)
+
+    if mode == "cost":
+        task = cap_task()
+        documents = [(b"A" * 16).hex()] * 7 + [(b"A" * 8).hex()]
+        for arm in ARMS:
+            pair(task, documents, "cap", arm, 0)
+        comment = (b"#" + b"A" * 14 + b"\n").hex()
+        definitions = (("STOP", 0, "", "eos"), ("SPLICE", 0, comment, "eos"),
+                       ("SPLICE", 0, comment, "limit"), ("SPLICE", 1, "21", "eos"))
+        for index, (operation, end, payload, reason) in enumerate(definitions):
+            row, digest = actions.next()
+            check_action(row, task=None, files=task["files"], phase="category", arm="shared", index=index,
+                         launch=runtime, output=output)
+            require(row["proposal"] == {**task["teacher"], "operation": operation, "end": end,
+                                         "replacement_hex": payload, "stop_reason": reason}, "category proposal changed")
+            code = row["execution"]["returncode"]
+            require(code == 0 if index < 3 else type(code) is int and code != 0
+                    and b"SyntaxError" in hex_bytes(row["execution"]["stderr_hex"]), "category outcome mismatch")
+            require(report["category_probes"][index]["action_line_sha256"] == digest, "category timing binding changed")
+    selected = roster["cost_task_ids"] if mode == "cost" else roster["schedule"]
+    require(report["selected_task_ids"] == selected, "acquisition schedule changed")
+    for index, task_id in enumerate(selected):
+        task = roster["tasks"][task_id]
+        for arm in ARMS:
+            pair(task, roster["memory_packages"][task["memory_id"]]["document_hex"], "regular", arm, index)
+    lessons.finish()
+    timing.finish()
+    require(chain == lineage["final_model_sha256"] and curves == report["acquisition_first_attempts"],
+            "learning trajectory/final export mismatch")
+    require((counts["learning_pairs"], counts["reader_offers"], counts["action_labels"])
+            == ((20, 96, 52) if mode == "cost" else (1024, 1920, 2560)), "teaching exposure changed")
+    for arm in ARMS:
+        for phase in ("regular", "cap"):
+            summary, rows = report["timing_summary"][arm][phase], measured[arm][phase]
+            require(summary["rows"] == rows["rows"], "timing summary count mismatch")
+            for stage in ("model", "action"):
+                close(summary[stage + "_seconds"], rows[stage])
+                close(summary[stage + "_max_seconds"], rows[stage + "_max"])
+            require(summary["journal_seconds"] >= rows["journal_partial"]
+                    and summary["journal_max_seconds"] >= rows["journal_partial_max"],
+                    "complete journal summary omits timing-row append")
+    endpoint_stream = Stream(output / "endpoint/worker/endpoints.jsonl", worker["endpoint_log"])
+    scores = {arm: [] for arm in ARMS}
+    for arm in ARMS:
+        for index, task_id in enumerate(task_ids):
+            task = roster["tasks"][task_id]
+            proposal, _ = endpoint_stream.next()
+            exact_keys(proposal, ("schema", "type", "arm", "index", "id", "attempt_id", "prediction", "model_seconds"))
+            require((proposal["schema"], proposal["type"], proposal["arm"], proposal["index"], proposal["id"])
+                    == ("neuronal-splice-endpoint-ipc-v1", "proposal", arm, index, task_id), "worker endpoint order mismatch")
+            successor = documents_adjacency(roster["memory_packages"][task["memory_id"]]["document_hex"])
+            prediction = proposal["prediction"]
+            validate_prediction(prediction, successor, boundaries=boundaries(task["files"]))
+            require(prediction["model_sha256"] == lineage["final_model_sha256"][arm]
+                    and prediction["memory_sha256"] == lineage["memory_sha256"][arm][task["memory_id"]],
+                    "endpoint state differs from learned export")
+            action, action_hash = actions.next()
+            grade = check_action(action, task=task, files=task["files"], phase="endpoint", arm=arm, index=index,
+                                 launch=runtime, output=output)
+            for key in ("attempt_id", "proposal", "proposal_sha256"):
+                require(action[key] == prediction[key], "endpoint execution replaced a neuronal choice")
+            scores[arm].append(grade["task_success"])
+            identity = {key: proposal[key] for key in ("schema", "arm", "index", "id", "attempt_id")}
+            model_hash, memory_hash = prediction["model_sha256"], prediction["memory_sha256"]
+            del proposal, prediction, action
+            acknowledgement, _ = endpoint_stream.next()
+            exact_keys(acknowledgement, (*identity, "type", "action_sha256", "model_sha256", "memory_sha256", "work", "model_seconds"))
+            require(all(acknowledgement[key] == value for key, value in identity.items())
+                    and acknowledgement["type"] == "acknowledged" and acknowledgement["action_sha256"] == action_hash
+                    and acknowledgement["model_sha256"] == model_hash and acknowledgement["memory_sha256"] == memory_hash
+                    and acknowledgement["work"]["reader"] == {}, "worker acknowledgement changed state/action")
+            del acknowledgement
+    endpoint_stream.finish()
+    actions.finish()
+    require(scores == report["worker"]["task_success"], "endpoint scores disagree")
+    panels = {}
+    for phase, path, metadata, hashes in (
+        ("pre", output / "pre_panel.jsonl", report["logs"]["pre_panel"], lineage["initial_model_sha256"]),
+        ("post", output / "endpoint/worker/reading.jsonl", worker["reading_log"], lineage["final_model_sha256"])):
+        panel = Stream(path, metadata)
+        panels[phase] = {}
+        for arm in ARMS:
+            panels[phase][arm] = []
+            for index, case in enumerate(roster["old_panel"]):
+                row, _ = panel.next()
+                panels[phase][arm].append(check_panel(
+                    row, case, phase=phase, arm=arm, index=index,
+                    documents=roster["memory_packages"][case["memory_id"]]["document_hex"],
+                    model_hash=hashes[arm], memory_hash=lineage["memory_sha256"][arm][case["memory_id"]]))
+        panel.finish()
+    fresh_edit_indices = [i for i, task_id in enumerate(task_ids[:32])
+                          if roster["tasks"][task_id]["required_operation"] == "SPLICE"]
+    learned_edits = sum(scores["learned"][i] for i in fresh_edit_indices)
+    criterion = (all(scores["learned"])
+                 and all(panels["post"]["learned"][i] for i in range(20) if i not in (16, 18))
+                 and all(learned_edits > sum(scores[arm][i] for i in fresh_edit_indices) for arm in ARMS[1:]))
+    result.update(status="passed", mode=mode, report_sha256=sha(output / "report.json"),
+                  completion_sha256=sha(output / "completion.json"), launch_sha256=sha(args.launch),
+                  admission_sha256=args.admission_sha, source_sha256=report["source_sha256"],
+                  learning_pair_timing=pairs, counts=counts, endpoint_scores=scores, reading_panels=panels,
+                  scoped_criterion_passed=criterion if mode == "run" else False,
+                  lineage=lineage, seconds=time.perf_counter() - started,
+                  limits=["No neuronal forward or action replay in saved audit.",
+                          "Receipt/source custody is not a filesystem sandbox or formal timing bound.",
+                          "Narrow fragment-copy edit tasks do not establish general software ability."])
 
 
 def main():

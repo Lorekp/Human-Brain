@@ -5145,6 +5145,75 @@ def test_splice_online_binary_protocol_contract():
             read_row(io.BytesIO(raw), SPEC)
 
 
+def test_splice_online_saved_audit_arithmetic():
+    """Authored grades and timing numbers, never an audit of real neural output."""
+    from hashlib import sha256
+
+    from experiments.r4_integrated import check_neuronal_splice_online_v1 as audit
+
+    phases = {
+        "regular": {"rows": 4, "model_seconds": .04, "model_max_seconds": .01,
+                    "action_seconds": .08, "action_max_seconds": .02,
+                    "journal_seconds": .004, "journal_max_seconds": .001},
+        "cap": {"rows": 1, "model_seconds": .03, "model_max_seconds": .03,
+                "action_seconds": .015, "action_max_seconds": .015,
+                "journal_seconds": .002, "journal_max_seconds": .002}}
+    report = {"mode": "cost", "status": "completed",
+              "timing_summary": {arm: copy.deepcopy(phases) for arm in audit.ARMS},
+              "category_probes": [{"action_seconds": .025}] * 4,
+              "memory": {"peak_working_set_mib": 300},
+              "worker": {"worker": {"memory": {"peak_working_set_mib": 200}}}}
+    outer = {"elapsed_seconds": 20., "observed_tree_peak_sum_mib": 550.}
+    preliminary = audit.project_cost(report, outer)
+    assert preliminary["projected_run_seconds"] == pytest.approx(185.744)
+    assert preliminary["run_projected_peak_mib"] == 690
+    assert preliminary["audit_peak_pending"] and not preliminary["admissible"]
+    finished = {"status": "passed", "pid": 7, "learning_pair_timing": {
+        arm: {"regular": {"rows": 4, "seconds": .004, "max_seconds": .001},
+              "cap": {"rows": 1, "seconds": .002, "max_seconds": .002}}
+        for arm in audit.ARMS}}
+    audit_outer = {"status": "passed", "exit_code": 0, "seconds_limit": 900,
+                   "tree_peak_sum_mib_limit": 2048, "elapsed_seconds": 5.,
+                   "observed_tree_peak_sum_mib": 250., "started_unix": 100.,
+                   "deadline_unix": 1000., "child_pid": 7,
+                   "observed_process_peaks_mib": {f"7/{621355968000000000 + 1010000000}": 250.}}
+    projected = audit.project_cost(report, outer, audit=finished, audit_outer=audit_outer)
+    assert projected["projected_audit_seconds"] == pytest.approx(14.064)
+    assert projected["projected_seconds"] == pytest.approx(199.808)
+    assert projected["admissible"] and projected["projected_tree_mib"] == 690
+    costly = copy.deepcopy(report)
+    costly["category_probes"][0]["action_seconds"] = 1.
+    assert not audit.project_cost(costly, outer, audit=finished, audit_outer=audit_outer)["admissible"]
+    with pytest.raises(ValueError, match="unfinished"):
+        audit.project_cost(report, outer, audit=finished)
+    invalid = copy.deepcopy(report)
+    invalid["timing_summary"]["learned"]["regular"]["rows"] = 3
+    with pytest.raises(ValueError, match="incomplete"):
+        audit.project_cost(invalid, outer)
+
+    files = [{"path": "a.py", "content_hex": b"abc".hex()}]
+    teacher = {"operation": "SPLICE", "path": "a.py", "start": 1, "end": 2,
+               "replacement_hex": b"X".hex(), "stop_reason": "eos",
+               "workspace_sha256": audit.workspace_digest(files)}
+    expected, rejected = audit.apply_saved(files, teacher)
+    assert rejected is None
+    task = {"files": files, "teacher": teacher, "required_operation": "SPLICE",
+            "expected_after_files": expected, "expected_stdout_hex": b"done\n".hex()}
+    execution = {"returncode": 0, "stdout_hex": b"done\n".hex(), "stderr_hex": "",
+                 "stdout_sha256": sha256(b"done\n").hexdigest(), "stderr_sha256": sha256(b"").hexdigest(),
+                 "materialized_matches_action": True, "decode_errors": {}}
+    alternative = {**teacher, "start": 0, "end": 3, "replacement_hex": b"aXc".hex()}
+    assert audit.task_grade(task, alternative, expected, None, execution) == {
+        "task_success": True, "canonical_tuple_correct": False}
+    stopped = {**teacher, "operation": "STOP"}
+    unchanged_set = {**task, "expected_after_files": files}
+    assert not audit.task_grade(unchanged_set, stopped, files, None, execution)["task_success"]
+    limited = {**teacher, "stop_reason": "limit"}
+    after, rejection = audit.apply_saved(files, limited)
+    assert after == files and rejection == "missing_eos"
+    assert not audit.task_grade(task, limited, after, rejection, execution)["task_success"]
+
+
 def test_splice_free_end_and_corrected_end_use_distinct_prefixes():
     """One model, two free proposals, one SPLICE plus one STOP; simulated outcomes."""
     from humanbrain import neuronal_splice_learner as splice

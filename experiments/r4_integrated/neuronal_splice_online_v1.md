@@ -160,3 +160,13 @@ The generated corrected roster hash is
 The [data QA receipt](../../benchmarks/neuronal_splice_online_v1.data_qa.json)
 preserves the original failed batch, corrected source, both doctor/JUnit records
 and actual zero-model exposure. Do not repeat these unaffected tests.
+
+The independent auditor now has a source-only complete-stream draft: actual raw
+edit reconstruction, execution/teacher ordering, local work arithmetic, persistent
+weight hashes, all retained tape reconstruction, endpoint acknowledgements and
+both old reading panels. Its DRAFT guard remains. Next ordinary QA is only
+`test_splice_online_saved_audit_arithmetic`: hand-authored cost/audit durations
+with exact formula results, incomplete-cost rejection, byte-exact alternative
+splice acceptance, and STOP/limit rejection. It makes zero model/checkpoint/
+action calls and does not run the full audit dispatcher. Source review and actual
+integration QA still precede cost; passing this arithmetic node cannot admit it.
