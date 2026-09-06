@@ -9630,3 +9630,256 @@ def test_coincidence_splice_prior_worker_exchange():
             ),
         },
     )
+
+
+def test_coincidence_splice_saved_cost_contract(tmp_path, monkeypatch):
+    """Authored JSON only; six admission calls, no genuine runtime evidence."""
+    import ast
+    import copy
+    import hashlib
+    import json
+    from pathlib import Path
+
+    from experiments.r4_integrated import check_neuronal_splice_online_v3 as checker
+
+    root = Path(__file__).resolve().parents[1]
+    raw = root / ".pytest-tmp/coincidence-cost-qa-v1-raw.jsonl"
+    passed = root / ".pytest-tmp/coincidence-cost-qa-v1.json"
+    assert not raw.exists() and not passed.exists()
+    old_source = root / "experiments/r4_integrated/check_neuronal_splice_online_v2.py"
+    new_source = Path(checker.__file__)
+    trees = [ast.parse(path.read_text(encoding="utf-8")) for path in (old_source, new_source)]
+    definitions = [
+        {node.name: ast.dump(node, include_attributes=False)
+         for node in tree.body if isinstance(node, (ast.FunctionDef, ast.ClassDef))}
+        for tree in trees
+    ]
+    unchanged = sorted(
+        name for name in definitions[0]
+        if definitions[0][name] == definitions[1].get(name)
+    )
+    assert len(unchanged) == 29
+    assert {"project_cost", "check_monitor", "Stream"} <= set(unchanged)
+    checker_sha = hashlib.sha256(Path(checker.__file__).read_bytes()).hexdigest()
+    relative = "experiments/r4_integrated/check_neuronal_splice_online_v3.py"
+    fake_checker = tmp_path / relative
+    fake_checker.parent.mkdir(parents=True)
+    source = b"# Authored source identity only; never imported.\n"
+    fake_checker.write_bytes(source)
+    monkeypatch.setattr(checker, "ROOT", tmp_path)
+    monkeypatch.setattr(checker, "__file__", str(fake_checker))
+    config = checker.expected_config()
+    arms = ["learned", "action_frozen", "slow_frozen", "memory_disabled", "graded_reference"]
+    assert config == {
+        "schema": "neuronal-splice-online-v3", "arms": arms, "seed": 733,
+        "reader_policy": dict.fromkeys(arms, "competitive_free"),
+        "address_frontend": {arm: "graded_random_code" if arm == "graded_reference"
+                             else "coincidence" for arm in arms},
+        "learning_rate": 0.01, "lessons_per_arm": 256,
+        "cost_task_ids": ["T00", "T08", "T16", "T24"],
+        "fresh_per_arm": 32, "retention_per_arm": 16, "panel_per_pass_per_arm": 20,
+        "retained_memories_per_arm": 72,
+        "retained_tensor_bytes": 5 * 634432 + 72 * (4 * 206344 + 656904),
+        "receipt_limits": {"max_line_bytes": 2**21, "max_row_tree_bytes": 2**21,
+                           "max_live_rows": 2, "max_line_copies": 2, "allocation_factor": 2},
+        "seconds": 900, "tree_mib": 2048, "run_reserve_mib": 128,
+        "audit_reserve_mib": 32, "buffer_mib": 24, "duration_clock": "perf_counter",
+        "full_only_tensor_bytes": 0,
+    }
+    assert config["retained_tensor_bytes"] == 109896320
+    sources = {relative: hashlib.sha256(source).hexdigest()}
+    roster_path = tmp_path / "authored-roster.json"
+    roster_sha = _competitive_cost_save(roster_path, {"schema": "synthetic-only", "tasks": []})
+    cost_dir = tmp_path / "cost"
+    cost_dir.mkdir()
+    paths = {
+        "cost_report": cost_dir / "report.json",
+        "cost_completion": cost_dir / "completion.json",
+        "cost_launch": tmp_path / "cost.launch.json",
+        "cost_admission": tmp_path / "cost-admission.json",
+        "cost_audit": tmp_path / "cost-audit.json",
+        "cost_audit_launch": tmp_path / "cost-audit.launch.json",
+    }
+    report, outer, audit, audit_outer = _competitive_cost_synthetic_inputs()
+    preliminary = _competitive_cost_authored_projection(
+        report, outer, audit, audit_outer, finished=False
+    )
+    final = _competitive_cost_authored_projection(report, outer, audit, audit_outer, finished=True)
+    # Preserve the old authored durations and their independent scalar oracle;
+    # rename only the fifth arm after that oracle has made its asymmetric row.
+    for mapping in (report["timing_summary"], audit["learning_pair_timing"],
+                    preliminary["per_arm"], final["per_arm"]):
+        mapping["graded_reference"] = mapping.pop("marginal_reference")
+    values, hashes = {}, {}
+    values["cost_admission"] = {
+        "schema": "neuronal-splice-admission-v3",
+        "status": "passed",
+        "authorized_phase": "cost",
+        "qa_passed": True,
+        "config": config,
+        "source_sha256": sources,
+        "roster_path": str(roster_path),
+        "roster_sha256": roster_sha,
+    }
+    hashes["cost_admission"] = _competitive_cost_save(
+        paths["cost_admission"], values["cost_admission"]
+    )
+    report.update(
+        schema="neuronal-splice-online-v3",
+        config=config,
+        source_sha256=sources,
+        source_sha256_after=sources,
+        admission_sha256=hashes["cost_admission"],
+        roster_sha256=roster_sha,
+        pid=101,
+        deadline_unix=1900.0,
+        logs={},
+    )
+    values["cost_report"] = report
+    hashes["cost_report"] = _competitive_cost_save(paths["cost_report"], report)
+    values["cost_completion"] = {
+        "schema": "neuronal-splice-completion-v3",
+        "status": "completed",
+        "mode": "cost",
+        "report_sha256": hashes["cost_report"],
+        "admission_sha256": hashes["cost_admission"],
+        "logs": {},
+    }
+    hashes["cost_completion"] = _competitive_cost_save(
+        paths["cost_completion"], values["cost_completion"]
+    )
+    prefix = [str(tmp_path / ".venv/Scripts/python.exe"), "-X", "utf8", "-m"]
+    outer["command"] = [
+        *prefix,
+        "experiments.r4_integrated.neuronal_splice_online_v3",
+        "cost",
+        "--output",
+        str(cost_dir),
+        "--admission",
+        str(paths["cost_admission"]),
+        "--admission-sha",
+        hashes["cost_admission"],
+    ]
+    values["cost_launch"] = outer
+    hashes["cost_launch"] = _competitive_cost_save(paths["cost_launch"], outer)
+    bound = {
+        str(paths[name]): hashes[name]
+        for name in ("cost_report", "cost_completion", "cost_launch", "cost_admission")
+    }
+    bound.update({str(fake_checker): sources[relative], str(roster_path): roster_sha})
+    audit.update(
+        schema="neuronal-splice-independent-audit-v3",
+        mode="cost",
+        source_sha256=sources,
+        roster_sha256=roster_sha,
+        report_sha256=hashes["cost_report"],
+        completion_sha256=hashes["cost_completion"],
+        launch_sha256=hashes["cost_launch"],
+        admission_sha256=hashes["cost_admission"],
+        input_sha256=bound,
+        projection=preliminary,
+    )
+    values["cost_audit"] = audit
+    hashes["cost_audit"] = _competitive_cost_save(paths["cost_audit"], audit)
+    audit_outer["command"] = [
+        *prefix,
+        "experiments.r4_integrated.check_neuronal_splice_online_v3",
+        "--output",
+        str(paths["cost_audit"]),
+        "--cost-dir",
+        str(cost_dir),
+        "--launch",
+        str(paths["cost_launch"]),
+        "--admission",
+        str(paths["cost_admission"]),
+        "--admission-sha",
+        hashes["cost_admission"],
+    ]
+    values["cost_audit_launch"] = audit_outer
+    hashes["cost_audit_launch"] = _competitive_cost_save(paths["cost_audit_launch"], audit_outer)
+    decision = {
+        "schema": "neuronal-splice-cost-decision-v3",
+        "status": "passed",
+        "config": config,
+        "source_sha256": sources,
+        "roster_sha256": roster_sha,
+        "completed_cost_audit": True,
+        "inputs": {key: {"path": str(path), "sha256": hashes[key]} for key, path in paths.items()},
+        "projection": final,
+        "projected_seconds": final["projected_seconds"],
+        "projected_tree_mib": final["projected_tree_mib"],
+    }
+    outcomes = {}
+    with raw.open("x", encoding="utf-8") as log:
+        log.write(json.dumps({
+            "schema": "coincidence-cost-qa-raw-v1", "checker_sha256": checker_sha,
+            "old_checker_sha256": hashlib.sha256(old_source.read_bytes()).hexdigest(),
+            "test_source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            "unchanged_functions_and_classes": unchanged, "config": config,
+        }) + "\n")
+        log.flush()
+        for label in ("valid", "frontend", "mixed_payload", "schema", "command", "source"):
+            altered, selected = copy.deepcopy(values), copy.deepcopy(decision)
+            fake_checker.write_bytes(source + (b"# Changed.\n" if label == "source" else b""))
+            expected = copy.deepcopy(config)
+            if label == "frontend":
+                expected["address_frontend"]["graded_reference"] = "coincidence"
+                selected["config"] = expected
+            elif label == "mixed_payload":
+                expected["retained_tensor_bytes"] = 239657600
+                selected["config"] = expected
+            elif label == "schema":
+                selected["schema"] = "neuronal-splice-cost-decision-v2"
+            elif label == "command":
+                altered["cost_audit_launch"]["command"][4] = (
+                    "experiments.r4_integrated.check_neuronal_splice_online_v2"
+                )
+            for name, value in altered.items():
+                selected["inputs"][name]["sha256"] = _competitive_cost_save(paths[name], value)
+            decision_path = tmp_path / "decision.json"
+            decision_sha = _competitive_cost_save(decision_path, selected)
+            inputs = {
+                "decision": selected,
+                "evidence": altered,
+                "actual_source_sha256": hashlib.sha256(fake_checker.read_bytes()).hexdigest(),
+                "expected_config": expected,
+            }
+            outcomes[label] = _competitive_cost_observe(
+                log,
+                label,
+                inputs,
+                checker.validate_cost_decision,
+                decision_path,
+                decision_sha,
+                expected,
+                sources,
+                roster_sha,
+            )
+    assert outcomes["valid"]["result"] == final
+    for label, fragment in (
+        ("frontend", "not this complete protocol"),
+        ("mixed_payload", "not this complete protocol"),
+        ("schema", "not this complete protocol"),
+        ("command", "different checker"),
+        ("source", "not the held source"),
+    ):
+        assert outcomes[label]["exception"] == "ValueError"
+        assert fragment in outcomes[label]["message"]
+    with passed.open("x") as stream:
+        json.dump(
+            {
+                "status": "passed",
+                "direct_decision_calls": 6,
+                "direct_expected_config_calls": 1,
+                "valid_decisions": 1,
+                "expected_value_errors": 5,
+                "unchanged_functions_and_classes": unchanged,
+                "old_checker_sha256": hashlib.sha256(old_source.read_bytes()).hexdigest(),
+                "checker_sha256": checker_sha,
+                "test_source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                "raw_sha256": hashlib.sha256(raw.read_bytes()).hexdigest(),
+                "models": 0,
+                "children": 0,
+            },
+            stream,
+        )
