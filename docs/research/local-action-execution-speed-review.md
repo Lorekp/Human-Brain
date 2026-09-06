@@ -7,6 +7,12 @@ remains unchanged and its failed time admission remains final.
 The [v2 recipe](../../experiments/r4_integrated/local_joint_address_online_v2.md)
 fixes the selected qualification, accepted-action coverage and admission contract.
 
+Current continuation: executor qualification passed, but the v2 cost stopped
+on a duplicate exclusive request publication. The [failure record](../../experiments/r4_integrated/local_joint_address_online_v2_result.md)
+preserves all partial exposure. The selected [v3 repair](../../experiments/r4_integrated/local_joint_address_online_v3.md)
+changes only export publication and versioned custody; reuse the unchanged
+qualified executor and require a fresh complete cost after the composition check.
+
 ## Concrete finding
 
 `utf8_action_bridge.py:26-60` writes the supplied files and launches

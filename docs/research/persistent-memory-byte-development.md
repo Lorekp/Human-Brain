@@ -25,6 +25,14 @@ standard CPython direct Windows launch with virtual-environment preservation and
 adds one explicitly supplied accepted-action cost probe. Preserve neuronal rules
 and lesson count; require paired environment/output QA and a fresh versioned cost.
 
+The [v2 cost attempt](../../experiments/r4_integrated/local_joint_address_online_v2_result.md)
+stopped when its export wrapper tried a second exclusive request-file write.
+Sixteen lessons, two demonstrations and one supplied probe are preserved; the
+worker/final actions did not run, so no complete projection or speed claim exists.
+The selected [v3 repair](../../experiments/r4_integrated/local_joint_address_online_v3.md)
+assembles launch identity before a single publication, with one non-neural
+composition regression and fresh cost. The learner and executor remain unchanged.
+
 Current result: the [shared temporal-map comparison](../../experiments/r4_integrated/local_shared_temporal_query_v1_result.md)
 and independent audit complete in 119.745 seconds. Learned solves 8/8 taught,
 4/4 new-value, 4/4 delayed and 2/4 interference checks; controls score zero and

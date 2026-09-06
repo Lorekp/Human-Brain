@@ -1,0 +1,41 @@
+{
+  "status": "cost_failed",
+  "source_revision": "32cd8b866575a949eef7bf2afabc065fcc5bb638",
+  "full_fit_ran": false,
+  "reason": "Duplicate exclusive publication of query_only.json before worker and final actions",
+  "elapsed_seconds": 6.7438326,
+  "observed_tree_peak_sum_mib": 287.94921875,
+  "exposure": {
+    "first_attempts": 16,
+    "first_generation_decisions": 44,
+    "teacher_byte_offers": 48,
+    "enabled_teacher_offers": 36,
+    "acquisition_actions": 16,
+    "codec_group_offers": 16,
+    "codec_enabled_groups": 12,
+    "codec_changed_groups": 12,
+    "address_group_offers": 16,
+    "address_enabled_groups": 8,
+    "address_changed_groups": 4,
+    "motor_demonstrations": 2,
+    "accepted_action_probes": 1,
+    "actual_execution_receipts": 19,
+    "caps": 4,
+    "cap_decisions": 12,
+    "cap_tape_allocations": 512,
+    "final_queries": 0,
+    "final_actions": 0,
+    "source_free_workers": 0
+  },
+  "projection": null,
+  "evidence": {
+    "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\local-joint-address-online-v2-cost\\report.json": "a156303b57271b1601c969ee3480e92d664d230e4fb86ba0b990b8bfdae0eaa9",
+    "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\local-joint-address-online-v2-cost\\completion.json": "b679937959c1caffbbadcd22a1c5c7eed92fe8e9b7fc52a9d368b8323ddc7701",
+    "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\local-joint-address-online-v2-cost.launch.json": "d7b2c2f29ae6bf11080deda3dededa790b9881ab22e782dc73ecaca849a77ef2",
+    "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\local-joint-address-online-v2-cost\\lessons.jsonl": "1408210a6c86454128ad8aca35cfc54ad25e0ab8c60b4ac1d3b3354820044f29",
+    "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\local-joint-address-online-v2-cost\\acquisition_actions.jsonl": "f5a4008463a5112f864b2b68bbb125e0e6011dfe9438e3d68ed0a022217e0248",
+    "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\local-joint-address-online-v2-cost\\accepted_action_probe.jsonl": "2d5bf081bd3b4feb256e1a17ebf19a098833f5bf4b809d682d29b897c8c207ae",
+    "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\local-joint-address-online-v2-cost\\source-free\\query_only.json": "f4b871f7a280a7e03c99ecc1398f3ee999ed85d012dee026f01fccb773430995"
+  },
+  "next_recipe": "experiments/r4_integrated/local_joint_address_online_v3.md"
+}

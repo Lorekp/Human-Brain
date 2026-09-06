@@ -331,6 +331,12 @@ qualified direct CPython launch using its established Windows virtual-environmen
 preservation mechanism, plus one explicit accepted-action cost probe. Keep the
 new local neuronal rule, same-instance action/feedback order and fixed exposure;
 require authored environment/output parity and fresh complete cost before fitting.
+The [v2 cost](../../experiments/r4_integrated/local_joint_address_online_v2_result.md)
+then stopped on a duplicate exclusive request-file publication, after sixteen
+lessons and before worker/final evaluation. Its partial result admits no fit or
+speed claim. Select the [v3 export repair](../../experiments/r4_integrated/local_joint_address_online_v3.md):
+publish the complete request once, verify the composition with a non-neural
+fixture, then require fresh cost with the same learner, executor and exposure.
 Run/audit peaks of 665.539/432.832 MiB fit the revised admission estimates.
 The shorter aggregate duration includes a changed reference roster and must not
 be presented as an isolated circuit speedup.

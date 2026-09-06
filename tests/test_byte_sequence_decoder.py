@@ -3617,6 +3617,70 @@ def test_direct_python_executor_mocked_timeout_preserves_launch_contract(tmp_pat
         assert "stdout" in receipt["decode_errors"]
 
 
+def test_joint_online_v3_export_publishes_complete_request_once(tmp_path):
+    """Real export/serialization, plain stubs: zero neuronal calls or child executions."""
+    import json
+    from types import SimpleNamespace
+
+    from experiments.r4_integrated import local_joint_address_online_v3 as runner
+
+    ingests, snapshots, guards = [], [], []
+
+    class StubState:
+        def snapshot(self):
+            snapshots.append(None)
+            return {}
+
+    class StubModel:
+        def state_dict(self):
+            return {}
+
+        def ingest(self, documents, state=None):
+            assert state is None
+            ingests.append(tuple(documents))
+            return StubState()
+
+    checks = [dict(id=i, memory_id=f"authored-{i}", base_memory_id=None,
+                   document_hex=[bytes([65 + i]).hex()], additional_document_hex=[],
+                   query_hex=b"authored query".hex(), delay_reads=0, target_hex=b"unused".hex())
+              for i in range(12)]
+    checks.append({**checks[0], "id": 12, "query_hex": b"second request".hex(), "delay_reads": 1})
+    report = {"source_sha256": {"authored_source": "a" * 64}}
+    launch = SimpleNamespace(sha256="b" * 64)
+    runner.export_memories(runner.SPEC, {"learned": StubModel()}, checks, tmp_path,
+                           report, lambda: guards.append(None), launch)
+
+    assert ingests == [(bytes([65 + i]),) for i in range(12)]
+    assert len(snapshots) == len(guards) == 12
+    assert torch.load(tmp_path / "source_free.pt", weights_only=True) == {
+        "learned": {"weights": {}, "memories": {f"authored-{i}": {} for i in range(12)}}}
+    request_path = tmp_path / "query_only.json"
+    original = request_path.read_bytes()
+    request = json.loads(original)
+    assert request == {
+        "source_sha256": report["source_sha256"],
+        "action_launch_record_sha256": launch.sha256,
+        "cases": [{key: case[key] for key in ("id", "memory_id", "query_hex", "delay_reads")}
+                  for case in checks],
+    }
+    assert all(set(case) == {"id", "memory_id", "query_hex", "delay_reads"}
+               for case in request["cases"])
+    assert report["source_free_tensor_bytes"] == 0
+    assert report["final_ingestion_work"] == {"learned": {
+        "document_raw_bytes": 12, "document_eos_symbols": 12,
+        "tape_allocation_steps": 24, "tape_key_normalizations": 24,
+        "tape_lag_shift_steps": 12, "tape_adjacency_assignments": 24,
+        "sensory_association_event_opportunities": 24,
+        "key_association_event_opportunities": 24, "byte_reference_writer_steps": 0,
+    }}
+    assert all(math.isfinite(report[key]) and report[key] >= 0 for key in (
+        "final_ingestion_seconds", "source_free_serialization_seconds",
+        "action_identity_binding_seconds"))
+    with pytest.raises(FileExistsError):
+        runner.write_json(request_path, {"must_not_replace": True})
+    assert request_path.read_bytes() == original
+
+
 def test_joint_address_autograd_and_invalid_learning_flag_rejected_before_activity():
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
