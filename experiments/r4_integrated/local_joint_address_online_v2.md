@@ -62,6 +62,34 @@ mapping with an injected subprocess timeout, not a ten-second real wait. Preserv
 all failures and counts. These ten children qualify transport semantics; their
 individual durations are not whole-workload speed or acquisition evidence.
 
+Qualification implementation record: the first identity pair failed after two
+children because canonicalizing uv's executable alias changed base-prefix,
+sys.path and module-origin spellings. The failed XML and both source snapshots
+are preserved. The bridge now keeps CPython's original absolute runtime path
+spellings and resolves paths separately only for physical file authentication.
+The exact identity assertions were retained. A fresh identity pair passed, then
+the four output pairs and injected-timeout node passed. Thus the successful
+qualification has ten child executions, with two additional failed-attempt
+children explicitly retained; none constructed a neuronal model or motor.
+
+The completed qualification is
+`.pytest-tmp/direct-python-action-qualification-v1.json`, SHA256
+`03a33ae6af0488727f7b165346646e89aed801f6f61be93dd0e8b60ca6534dc5`.
+It binds the paired identity/output receipts, five raw pair receipts, prior
+failure and exact launch record. Its launch-record SHA256 is
+`17777a200f0a9f98fa4bcaf14402ef4d5381451dbcc9dec86290bd7f0ec7b7e6`.
+The independent v2 checkers passed 134 authored standard-library helper cases
+on their first attempt; these executed no models, children or real artifacts.
+The unchanged neuronal rule relies on the already completed v1 authored
+arithmetic/control/action tests and source comparison; it was not retrained for
+this transport qualification. Cost and full acquisition still need fresh admission.
+Final lint removed two redundant literal UTF-8 encode arguments, wrapped one
+line and renamed one unused test binding. The exact tested file is preserved at
+`.pytest-tmp/direct-python-action-qualified-test-source.py`; an independent AST
+normalization in `.pytest-tmp/direct-python-qa-lint-only.json` confirms only those
+semantic no-ops. The bridge and qualification evidence are unchanged; no children
+were repeated for formatting. Final Ruff checks pass.
+
 ## Accepted-action cost coverage
 
 The v1 sample had no accepted generated answers. Add exactly one cost-only

@@ -3378,6 +3378,245 @@ def test_joint_address_explicit_local_publication_controls(
                for parameter in model.parameters())
 
 
+# Authored executor qualification only: no neuronal or motor construction.
+_DIRECT_QA_ATTEMPT = "v2"
+_DIRECT_IDENTITY_PROGRAM = r'''
+import ctypes, encodings, json, os, pathlib, runpy, site, sys
+image = ctypes.create_unicode_buffer(32768)
+length = ctypes.windll.kernel32.GetModuleFileNameW(None, image, len(image))
+assert 0 < length < len(image)
+flags = {name: getattr(sys.flags, name) for name in dir(sys.flags)
+         if not name.startswith('_') and isinstance(getattr(sys.flags, name), int)}
+print(json.dumps(dict(
+    executable=sys.executable, base_executable=sys._base_executable,
+    prefix=sys.prefix, exec_prefix=sys.exec_prefix,
+    base_prefix=sys.base_prefix, base_exec_prefix=sys.base_exec_prefix,
+    version=sys.version, implementation=sys.implementation.name,
+    path=sys.path, flags=flags, user_site=site.ENABLE_USER_SITE,
+    site_packages=site.getsitepackages(), filesystem_encoding=sys.getfilesystemencoding(),
+    filesystem_errors=sys.getfilesystemencodeerrors(),
+    stdio={name: [getattr(sys, name).encoding, getattr(sys, name).errors]
+           for name in ('stdin', 'stdout', 'stderr')},
+    stdlib_origins={m.__name__: getattr(m, '__file__', None)
+                    for m in (os, pathlib, runpy, site, encodings)},
+    launcher_environment=os.environ.get('__PYVENV_LAUNCHER__'),
+    os_image=image.value, pid=os.getpid(), parent_pid=os.getppid(), cwd=os.getcwd()
+), sort_keys=True))
+'''
+
+
+def _direct_executor_context():
+    from pathlib import Path
+
+    from experiments.r4_integrated import direct_python_action_bridge_v1 as direct
+    from experiments.r4_integrated import utf8_action_bridge as old
+
+    root = Path(__file__).resolve().parents[1]
+    return root, old, direct, direct.discover_launch(root / ".venv/Scripts/python.exe")
+
+
+def _direct_executor_sources(root, old, direct):
+    from hashlib import sha256
+    from pathlib import Path
+
+    return {str(path): sha256(path.read_bytes()).hexdigest() for path in (
+        Path(__file__).resolve(), Path(old.__file__).resolve(), Path(direct.__file__).resolve(),
+        root / "docs/research/local-action-execution-speed-review.md",
+    )}
+
+
+def _direct_executor_fixture(old, name, value, *, program=None, pending=False):
+    from dataclasses import replace
+
+    case = old.Case(name, "setting", value, "authored_config", "pending")
+    before = case.files()
+    if program is not None:
+        before = tuple(replace(item, content=program.encode("utf-8"))
+                       if item.path == "main.py" else item for item in before)
+    files = before if pending else tuple(
+        replace(item, content=f"setting = {value!r}\n".encode())
+        if item.path == "authored_config.py" else item for item in before)
+    return case, files, before
+
+
+def _direct_executor_pair(old, direct, launch, fixture, directory, order):
+    case, files, before = fixture
+    receipts = {}
+    for route in order:
+        workspace = directory / route
+        receipts[route] = (old.execute_utf8(case, files, before, workspace)
+                           if route == "old" else direct.execute_utf8(
+                               case, files, before, workspace, launch=launch))
+    return receipts
+
+
+def _direct_executor_check_files(fixture, directory):
+    files = fixture[1]
+    for route in ("old", "direct"):
+        workspace = directory / route
+        assert {item.path: (workspace / item.path).read_bytes() for item in files} == {
+            item.path: item.content for item in files}
+        assert not list(workspace.rglob("*.pyc"))
+
+
+def _direct_executor_save(root, name, value):
+    import json
+
+    path = root / ".pytest-tmp" / name
+    with path.open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + "\n")
+    return path
+
+
+def test_direct_python_executor_identity_pair(tmp_path):
+    """Exactly two real stdlib-only children; run before the output-pair node."""
+    import json
+    import os
+    import sys
+    from pathlib import Path
+
+    root, old, direct, launch = _direct_executor_context()
+    passed_name = f"direct-python-identity-{_DIRECT_QA_ATTEMPT}.json"
+    raw_name = f"direct-python-identity-{_DIRECT_QA_ATTEMPT}-raw.json"
+    assert not (root / ".pytest-tmp" / passed_name).exists()
+    assert not (root / ".pytest-tmp" / raw_name).exists()
+    ambient = dict(os.environ)
+    sources = _direct_executor_sources(root, old, direct)
+    fixture = _direct_executor_fixture(old, "identity", "unused", program=_DIRECT_IDENTITY_PROGRAM)
+    receipts = _direct_executor_pair(old, direct, launch, fixture, tmp_path, ("old", "direct"))
+    raw_path = _direct_executor_save(root, raw_name, dict(
+        schema="direct-python-identity-raw-v1", status="pending_semantic_checks",
+        launch_record=launch.to_record(), source_sha256=sources,
+        execution_order=["old", "direct"], receipts=receipts, child_executions=2))
+    _direct_executor_check_files(fixture, tmp_path)
+    identities = {}
+    for route, receipt in receipts.items():
+        assert receipt["returncode"] == 0 and receipt["stderr_hex"] == ""
+        assert receipt["decode_errors"] == {}
+        assert receipt["decoys_unchanged"] and receipt["materialized_matches_action"]
+        identity = json.loads(receipt["stdout"])
+        assert identity["pid"] != os.getpid() and identity["parent_pid"] > 0
+        assert identity["pid"] != identity["parent_pid"]
+        assert Path(identity["cwd"]).resolve() == (tmp_path / route).resolve()
+        assert Path(identity["os_image"]).resolve() == Path(sys._base_executable).resolve()
+        assert Path(identity["executable"]).resolve() == Path(sys.executable).resolve()
+        assert Path(identity["prefix"]).resolve() == (root / ".venv").resolve()
+        assert identity["flags"]["isolated"] == 1 and identity["flags"]["utf8_mode"] == 1
+        assert identity["flags"]["dont_write_bytecode"] == 1
+        assert identity["stdio"]["stdout"] == ["utf-8", "strict"]
+        assert identity["stdio"]["stderr"] == ["utf-8", "strict"]
+        assert identity["launcher_environment"] is None
+        identities[route] = identity
+    varying = {"pid", "parent_pid", "cwd"}
+    assert {k: v for k, v in identities["old"].items() if k not in varying} == {
+        k: v for k, v in identities["direct"].items() if k not in varying}
+    assert dict(os.environ) == ambient
+    assert sources == _direct_executor_sources(root, old, direct)
+    from hashlib import sha256
+
+    _direct_executor_save(root, passed_name, dict(
+        schema="direct-python-identity-qa-v1", status="passed", launch_record=launch.to_record(),
+        raw_evidence={str(raw_path): sha256(raw_path.read_bytes()).hexdigest()},
+        source_sha256=sources, identity_pair=dict(passed=True, receipts=receipts,
+        identities=identities, declared_varying_fields=sorted(varying)), child_executions=2))
+
+
+def test_direct_python_executor_authored_output_pairs(tmp_path):
+    """Exactly eight children, gated by the saved passing identity pair."""
+    import json
+    import os
+    from hashlib import sha256
+
+    root, old, direct, launch = _direct_executor_context()
+    output_name = f"direct-python-outputs-{_DIRECT_QA_ATTEMPT}.json"
+    assert not (root / ".pytest-tmp" / output_name).exists()
+    raw_names = [f"direct-python-output-{_DIRECT_QA_ATTEMPT}-{i}-raw.json" for i in range(4)]
+    assert all(not (root / ".pytest-tmp" / name).exists() for name in raw_names)
+    sources = _direct_executor_sources(root, old, direct)
+    identity_path = root / ".pytest-tmp" / f"direct-python-identity-{_DIRECT_QA_ATTEMPT}.json"
+    identity_raw = identity_path.read_bytes()
+    identity = json.loads(identity_raw)
+    assert identity["status"] == "passed" and identity["child_executions"] == 2
+    assert identity["launch_record"] == launch.to_record()
+    assert identity["source_sha256"] == sources
+    cases = [
+        ("ascii", "ab", None, False, b"ab\n", b"", 0, True),
+        ("unicode_escaping", "café '\\\n雪", None, False,
+         "café '\\\n雪\n".encode(), b"", 0, True),
+        ("pending", "desired", None, True, b"pending\n", b"", 0, False),
+        ("invalid_utf8", "unused", "import os\nos.write(1, b'\\xff\\n')\n"
+         "os.write(2, b'authored failure\\n')\nraise SystemExit(7)\n", False,
+         b"\xff\n", b"authored failure\n", 7, False),
+    ]
+    pairs = []
+    raw_evidence = {}
+    ambient = dict(os.environ)
+    for index, (name, value, program, pending, stdout, stderr, code, passed) in enumerate(cases):
+        order = ("old", "direct") if index % 2 == 0 else ("direct", "old")
+        fixture = _direct_executor_fixture(old, name, value, program=program, pending=pending)
+        receipts = _direct_executor_pair(old, direct, launch, fixture, tmp_path / name, order)
+        raw_path = _direct_executor_save(root, raw_names[index], dict(
+            schema="direct-python-output-raw-v1", status="pending_semantic_checks",
+            name=name, launch_record=launch.to_record(), source_sha256=sources,
+            execution_order=list(order), receipts=receipts, child_executions=2))
+        raw_evidence[str(raw_path)] = sha256(raw_path.read_bytes()).hexdigest()
+        _direct_executor_check_files(fixture, tmp_path / name)
+        for receipt in receipts.values():
+            assert receipt["returncode"] == code
+            assert receipt["stdout_hex"] == stdout.hex() and receipt["stderr_hex"] == stderr.hex()
+            assert receipt["passed"] is passed
+            assert receipt["decoys_unchanged"] and receipt["materialized_matches_action"]
+            assert receipt["stdout"] == (None if name == "invalid_utf8" else stdout.decode("utf-8"))
+            assert bool(receipt["decode_errors"]) == (name == "invalid_utf8")
+        common = set(receipts["old"]) - {"workspace", "elapsed_seconds"}
+        assert {k: receipts["old"][k] for k in common} == {
+            k: receipts["direct"][k] for k in common}
+        pairs.append(dict(name=name, passed=True, execution_order=list(order), receipts=receipts))
+    assert dict(os.environ) == ambient
+    assert sources == _direct_executor_sources(root, old, direct)
+    _direct_executor_save(root, output_name, dict(
+        schema="direct-python-output-qa-v1", status="passed", launch_record=launch.to_record(),
+        source_sha256=sources,
+        identity_evidence={str(identity_path): sha256(identity_raw).hexdigest()},
+        raw_evidence=raw_evidence, output_pairs=pairs, child_executions=8))
+
+
+def test_direct_python_executor_mocked_timeout_preserves_launch_contract(tmp_path, monkeypatch):
+    """No children: injected timeout verifies kwargs, parent environment, and raw partial bytes."""
+    import os
+    import subprocess
+    import sys
+
+    _root, old, direct, launch = _direct_executor_context()
+    captured = []
+    ambient = dict(os.environ)
+
+    def timeout(command, **kwargs):
+        captured.append((command, kwargs))
+        raise subprocess.TimeoutExpired(command, 10, output=b"partial\xff", stderr=b"failure\n")
+
+    monkeypatch.setattr(subprocess, "run", timeout)
+    fixture = _direct_executor_fixture(old, "timeout", "ab")
+    receipts = _direct_executor_pair(old, direct, launch, fixture, tmp_path, ("old", "direct"))
+    _direct_executor_check_files(fixture, tmp_path)
+    assert len(captured) == 2
+    old_command, old_kwargs = captured[0]
+    new_command, new_kwargs = captured[1]
+    assert old_command[0] == sys.executable and new_command[0] == sys._base_executable
+    assert old_command[1:] == new_command[1:]
+    assert old_command[1:6] == ["-I", "-X", "utf8", "-B", "-c"]
+    assert {k: v for k, v in old_kwargs.items() if k != "cwd"} == {
+        k: v for k, v in new_kwargs.items() if k not in {"cwd", "env"}}
+    assert new_kwargs["env"] == {**ambient, "__PYVENV_LAUNCHER__": sys.executable}
+    assert new_kwargs["capture_output"] is True and new_kwargs["timeout"] == 10
+    assert new_kwargs["check"] is False and dict(os.environ) == ambient
+    for receipt in receipts.values():
+        assert receipt["returncode"] is None and receipt["stdout"] is None
+        assert receipt["stdout_hex"] == b"partial\xff".hex()
+        assert receipt["stderr"] == "failure\n" and not receipt["passed"]
+        assert "stdout" in receipt["decode_errors"]
+
+
 def test_joint_address_autograd_and_invalid_learning_flag_rejected_before_activity():
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
