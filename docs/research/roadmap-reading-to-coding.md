@@ -337,6 +337,10 @@ lessons and before worker/final evaluation. Its partial result admits no fit or
 speed claim. Select the [v3 export repair](../../experiments/r4_integrated/local_joint_address_online_v3.md):
 publish the complete request once, verify the composition with a non-neural
 fixture, then require fresh cost with the same learner, executor and exposure.
+The [complete v3 cost](../../experiments/r4_integrated/local_joint_address_online_v3_result.md)
+and saved audit pass in 22.289 seconds, but project 996.224 seconds against 900.
+No full acquisition ran. Review saved action cost and executor source to select
+one bounded improvement; retain accepted-path coverage and the fixed workload.
 Run/audit peaks of 665.539/432.832 MiB fit the revised admission estimates.
 The shorter aggregate duration includes a changed reference roster and must not
 be presented as an isolated circuit speedup.

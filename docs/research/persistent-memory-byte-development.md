@@ -32,6 +32,11 @@ worker/final actions did not run, so no complete projection or speed claim exist
 The selected [v3 repair](../../experiments/r4_integrated/local_joint_address_online_v3.md)
 assembles launch identity before a single publication, with one non-neural
 composition regression and fresh cost. The learner and executor remain unchanged.
+The [complete v3 cost](../../experiments/r4_integrated/local_joint_address_online_v3_result.md)
+and independent audit now pass in 22.289 seconds, but project 996.224 seconds
+against 900. All 96 generated actions use pending fallback; only the separately
+supplied accepted probe emits. No full fit ran. Review saved action timing and
+executor source for one bounded speed improvement before any new acquisition.
 
 Current result: the [shared temporal-map comparison](../../experiments/r4_integrated/local_shared_temporal_query_v1_result.md)
 and independent audit complete in 119.745 seconds. Learned solves 8/8 taught,

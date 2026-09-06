@@ -12,6 +12,10 @@ on a duplicate exclusive request publication. The [failure record](../../experim
 preserves all partial exposure. The selected [v3 repair](../../experiments/r4_integrated/local_joint_address_online_v3.md)
 changes only export publication and versioned custody; reuse the unchanged
 qualified executor and require a fresh complete cost after the composition check.
+The [completed v3 result](../../experiments/r4_integrated/local_joint_address_online_v3_result.md)
+passes its independent audit but rejects the 996.224-second final projection.
+The next source/timing review must localize action execution cost before selecting
+another optimization; no identical timing retry or relaxed workload is authorized.
 
 ## Concrete finding
 
