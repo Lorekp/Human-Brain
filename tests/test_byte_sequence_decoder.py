@@ -4508,3 +4508,160 @@ def test_held_codec_nonzero_sensory_free_cursor_response_parity():
             Path(__file__).read_bytes()).hexdigest(),
             str(root / "src/humanbrain/local_memory_learner.py"): sha256(
                 (root / "src/humanbrain/local_memory_learner.py").read_bytes()).hexdigest()}))
+
+
+_TEMPORARY_MODULE_CASES = (*_SOURCE_BOOTSTRAP_CASES, "callback_lifetime")
+_TEMPORARY_MODULE_CALLBACK = '''"""callback lifetime doc"""
+import atexit, json, sys, weakref
+payload = 'callback-雪'
+_module_ref = weakref.ref(sys.modules[__name__])
+def _at_exit():
+    print(json.dumps(dict(phase='atexit', name=__name__, file=__file__, doc=__doc__,
+        payload=payload, module_alive=(_module_ref() is not None), argv0=sys.argv[0],
+        main_restored=(sys.modules['__main__'].__dict__ is not globals())), sort_keys=True))
+atexit.register(_at_exit)
+print('body')
+'''
+
+
+def _temporary_module_normalize_workspace(value, workspace):
+    """Only independent workspace roots vary; runtime paths/metadata stay exact."""
+    if isinstance(value, str):
+        return value.replace(str(workspace), "<workspace>")
+    if isinstance(value, list):
+        return [_temporary_module_normalize_workspace(item, workspace) for item in value]
+    if isinstance(value, dict):
+        return {key: _temporary_module_normalize_workspace(item, workspace)
+                for key, item in value.items()}
+    return value
+
+
+@pytest.mark.parametrize("case_name", _TEMPORARY_MODULE_CASES)
+def test_temporary_module_bootstrap_semantic_pair(tmp_path, case_name):
+    """Eight pairs/16 children; no neuronal model, teacher, motor or native call."""
+    import json
+    import os
+    from hashlib import sha256
+    from pathlib import Path
+
+    from experiments.r4_integrated import stdlib_python_action_bridge_v1 as old
+    from experiments.r4_integrated import temporary_module_action_bridge_v1 as new
+
+    root = Path(__file__).resolve().parents[1]
+    qualification = root / ".pytest-tmp/stdlib-python-action-v1-qualification.json"
+    qualification_sha = "4c3a6438549ce1ecd4c8d92509f1a60753692b8aab1ab9155df00b12db10941c"
+    launch = old.load_qualified_launch(
+        qualification, qualification_sha, root / ".venv/Scripts/python.exe")
+    prefix = f"temporary-module-bootstrap-v1-{case_name}"
+    passed_name = f"{prefix}.json"
+    raw_names = {route: f"{prefix}-{route}-raw.json" for route in ("old", "new")}
+    for name in (passed_name, *raw_names.values()):
+        assert not (root / ".pytest-tmp" / name).exists()
+    source_paths = (Path(__file__).resolve(), Path(old.__file__).resolve(),
+                    Path(new.__file__).resolve())
+    sources = {str(path): sha256(path.read_bytes()).hexdigest() for path in source_paths}
+    fixture = (_direct_executor_fixture(old, case_name, "unused",
+                                       program=_TEMPORARY_MODULE_CALLBACK)
+               if case_name == "callback_lifetime" else _source_bootstrap_fixture(old, case_name))
+    case, files, before = fixture
+    index = _TEMPORARY_MODULE_CASES.index(case_name)
+    order = ("old", "new") if index % 2 == 0 else ("new", "old")
+    ambient = dict(os.environ)
+    receipts, raw_paths = {}, {}
+    for route in order:
+        bridge = old if route == "old" else new
+        receipt = bridge.execute_utf8(case, files, before, tmp_path / route, launch=launch)
+        receipts[route] = receipt
+        raw_paths[route] = _direct_executor_save(root, raw_names[route], dict(
+            schema="temporary-module-bootstrap-raw-v1", status="pending_semantic_checks",
+            case=case_name, case_index=index, route=route, execution_order=list(order),
+            launch_record=launch.to_record(), runtime_qualification_sha256=qualification_sha,
+            source_sha256=sources, fixture_files={item.path: item.content.hex() for item in files},
+            receipt=receipt, child_executions=1))
+
+    assert dict(os.environ) == ambient
+    assert old.load_qualified_launch(
+        qualification, qualification_sha, root / ".venv/Scripts/python.exe") == launch
+    assert sources == {str(path): sha256(path.read_bytes()).hexdigest() for path in source_paths}
+    for route, receipt in receipts.items():
+        bridge = old if route == "old" else new
+        assert receipt["launch_record_sha256"] == launch.sha256
+        assert receipt["bootstrap_policy"] == bridge.BOOTSTRAP_POLICY
+        assert receipt["bootstrap_sha256"] == bridge.BOOTSTRAP_SHA256
+        assert receipt["child_command"] == [
+            launch.base_executable, "-I", "-S", "-X", "utf8", "-B", "-c", bridge.BOOTSTRAP]
+        assert receipt["child_python_flags"] == ["-I", "-S", "-X", "utf8", "-B"]
+        assert receipt["child_environment_override"] == {}
+        assert receipt["child_environment_removed"] == ["__PYVENV_LAUNCHER__"]
+        assert receipt["decoys_unchanged"] and receipt["materialized_matches_action"]
+        assert {item.path: (tmp_path / route / item.path).read_bytes() for item in files} == {
+            item.path: item.content for item in files}
+        assert {path.name for path in (tmp_path / route).iterdir()} == {
+            item.path for item in files}
+
+    if case_name == "namespace_cleanup":
+        bodies, exits = {}, {}
+        for route, receipt in receipts.items():
+            assert receipt["returncode"] == 0 and receipt["stderr_hex"] == ""
+            assert receipt["decode_errors"] == {}
+            body, exit_record = map(json.loads, receipt["stdout"].splitlines())
+            _stdlib_check_base_identity(body, launch, tmp_path / route)
+            bodies[route] = _temporary_module_normalize_workspace(body, tmp_path / route)
+            exits[route] = exit_record
+        assert bodies["old"] == bodies["new"]
+        body = bodies["new"]
+        assert body["initial_globals"] == sorted([
+            "__name__", "__file__", "__cached__", "__doc__", "__loader__", "__package__",
+            "__spec__", "__builtins__"])
+        assert body["main_is_globals"] is True and body["argv"] == ["main.py"]
+        assert body["name"] == "__main__" and body["file"] == "main.py"
+        assert body["package"] == "" and body["sibling"] == "ab"
+        assert body["doc"] == "authored module doc"
+        assert body["spec"] is body["loader"] is body["cached"] is None
+        assert body["flags"]["no_site"] == 1 and body["user_site"] is None
+        assert exits["old"] == exits["new"] == dict(
+            phase="atexit", argv0="-c", main_restored=True, retained_name="__main__",
+            retained_file="main.py", retained_doc="authored module doc")
+    elif case_name == "callback_lifetime":
+        for receipt in receipts.values():
+            assert receipt["returncode"] == 0 and receipt["stderr_hex"] == ""
+            assert receipt["decode_errors"] == {}
+            body, callback = receipt["stdout"].splitlines()
+            assert body == "body"
+            assert json.loads(callback) == dict(
+                phase="atexit", name="__main__", file="main.py", doc="callback lifetime doc",
+                payload="callback-雪", module_alive=False, argv0="-c", main_restored=True)
+    elif case_name in {"syntax_error", "runtime_error"}:
+        for receipt in receipts.values():
+            assert receipt["returncode"] == 1 and receipt["decode_errors"] == {}
+            assert not receipt["passed"]
+            if case_name == "syntax_error":
+                assert receipt["stdout_hex"] == ""
+                assert 'File "main.py", line 1' in receipt["stderr"]
+                assert "if True print('bad')" in receipt["stderr"]
+                assert receipt["stderr"].splitlines()[-1] == "SyntaxError: invalid syntax"
+            else:
+                assert receipt["stdout"] == "runtime-exit:-c\n"
+                assert 'File "main.py", line 3, in <module>' in receipt["stderr"]
+                assert receipt["stderr"].splitlines()[-1] == "ValueError: authored runtime failure"
+    else:
+        stdout = b"\xff\n" if case_name == "exit_invalid_utf8" else (
+            b"pending\n" if case_name == "pending" else (case.value + "\n").encode())
+        stderr = b"exit-hook\n" if case_name == "exit_invalid_utf8" else b""
+        for receipt in receipts.values():
+            assert receipt["stdout_hex"] == stdout.hex() and receipt["stderr_hex"] == stderr.hex()
+            assert receipt["returncode"] == (7 if case_name == "exit_invalid_utf8" else 0)
+            assert receipt["passed"] is (case_name in {"utf8_bom_crlf", "latin1_cookie"})
+            assert receipt["stdout"] == (
+                None if case_name == "exit_invalid_utf8" else stdout.decode())
+            assert set(receipt["decode_errors"]) == (
+                {"stdout"} if case_name == "exit_invalid_utf8" else set())
+    _direct_executor_save(root, passed_name, dict(
+        schema="temporary-module-bootstrap-case-qa-v1", status="passed", case=case_name,
+        case_index=index, child_executions=2, execution_order=list(order),
+        launch_record=launch.to_record(), runtime_qualification_sha256=qualification_sha,
+        source_sha256=sources, bootstrap_policy=new.BOOTSTRAP_POLICY,
+        bootstrap_sha256=new.BOOTSTRAP_SHA256,
+        raw_evidence={str(path): sha256(path.read_bytes()).hexdigest()
+                      for path in raw_paths.values()},
+        declared_differences=["bootstrap_wrapper_frames", "import_and_audit_events"]))

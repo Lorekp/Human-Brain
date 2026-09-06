@@ -72,3 +72,26 @@ then require fresh complete cost and finished independent audit under the same
 An authored speed pass does not admit full learning. The same neuronal learner
 must generate each first attempt and receive subsequent local correction; the
 supplied motor remains a separate limitation to be replaced after useful learning.
+
+## Completed semantic qualification
+
+The bridge and independent source reviews passed. Its execute/actuate function
+bodies match the preceding stdlib bridge's AST exactly. New bootstrap policy is
+`regular_source_public_temporary_module_v1`, SHA256
+`7213881ba88871e024789913aa742bba520cc79520b8a7b87292c0d3b2b745b9`.
+Bridge source SHA256 is
+`b2c6822c8c8087cd3ff8af1ba79d79555a2c08b5bbf90e1f9902d117c7d2a10f`.
+
+All eight authored semantic pairs passed on the first attempt: sixteen actual
+children, zero failures/skips, 4.85 pytest seconds and 5.8632049 process seconds.
+The extra callback fixture retains only a weak module reference; at exit the
+temporary module is gone, callback globals survive and main/argv are restored.
+No neuronal model, teacher or motor ran. Doctor receipt is
+`.pytest-tmp/dev/doctor-l4u74qdk/receipt.json`; JUnit is
+`.pytest-tmp/temporary-module-bootstrap-v1-qa.xml`. Every child has its own raw
+receipt preserved before pair assertions. The exact tested source is SHA256
+`03c5e739e7e8d145054f6ef8a54b2a71fb954ad8b81a4553593fad295f9887ae`.
+Source-only comparison preserves all 134 previous top-level AST nodes and adds
+four nodes. Earlier qualified suites were not rerun. Runtime qualification is
+still the separate stdlib manifest; new bootstrap evidence must be combined and
+authenticated before the single authored timing comparison above.
