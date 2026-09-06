@@ -20,8 +20,10 @@ auditor now has a complete-stream draft and a passed authored arithmetic check;
 its source review has closed the launch/final-state/admission bindings. The
 single-exchange worker/prior QA now passes in 31.26 monitored seconds at
 824.36 MiB observed peak. It emitted STOP and did not solve the requested edit;
-zero teachers ran. Authored completed-admission custody QA remains before fresh
-cost admission. Both execution and audit retain their DRAFT guards.
+zero teachers ran. Authored completed-admission custody QA also passes, and the
+final source review found no blocker. The fixed cost probe and its completed
+independent audit are selected next; full acquisition still requires their
+authenticated admission within the unchanged 900-second/2,048-MiB budget.
 No further v6 exposure or alternate recall policy is selected.
 
 ## Objective

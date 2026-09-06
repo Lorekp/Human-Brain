@@ -34,7 +34,7 @@ from experiments.r4_integrated.neuronal_splice_receipts_v1 import (
     validate_reader,
 )
 
-DRAFT = True
+DRAFT = False
 ROOT = Path(__file__).resolve().parents[2]
 ARMS = ("learned", "action_frozen", "slow_frozen", "memory_disabled")
 MODEL_BYTES = 634432

@@ -1,0 +1,43 @@
+{
+  "schema": "neuronal-splice-cost-custody-qa-v1",
+  "status": "passed",
+  "source_revision": "3f40aece120fe854119b43ae88f721ad9814d0b5",
+  "junit": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "tests": "1",
+    "time": "3.088",
+    "timestamp": "2026-09-06T19:20:02.790209+02:00",
+    "hostname": "gonorrhea"
+  },
+  "evidence_sha256": {
+    ".pytest-tmp/neuronal-splice-cost-custody-v1-qa.xml": "690adf3d0817ef67e089517e9c301c1fde805b469849fefaef6309a9ad468f8d",
+    ".pytest-tmp/dev/doctor-wnb_182y/receipt.json": "303d83f6a9b8ddf8df09cf8c5979dc2f1967ab8f64153bd61d6c7b4dbdb7e407",
+    "tests/test_byte_sequence_decoder.py": "752e69f64df71987c067ac91201c89fe7bc2e7faf7eea088bad28e8d6346f663",
+    "experiments/r4_integrated/check_neuronal_splice_online_v1.py": "94d69fdfdc95b1f691d2df10d6795eabe67b0495878266ce9dbcd8b3e1393707"
+  },
+  "coverage": [
+    "one accepted synthetic completed cost decision",
+    "rehashed audit PID mismatch rejected",
+    "rehashed audit input binding mismatch rejected",
+    "rehashed incorrect projection rejected"
+  ],
+  "exposure": {
+    "validator_calls": 4,
+    "models": 0,
+    "checkpoint_loads": 0,
+    "neuronal_forwards": 0,
+    "teachers": 0,
+    "action_children": 0,
+    "complete_audit_dispatcher_calls": 0
+  },
+  "authored_expected_projection": {
+    "run_seconds": 58.32,
+    "audit_seconds": 4.6112,
+    "total_seconds": 62.9312,
+    "peak_mib": 440
+  },
+  "limitation": "Synthetic saved JSON only; no real cost admission or learned skill. Final source review must finish before fixed cost."
+}

@@ -18,7 +18,7 @@ from types import SimpleNamespace
 from experiments.r4_integrated.neuronal_splice_prior_v1 import ARMS, file_sha256
 
 SCHEMA = "neuronal-splice-online-v1"
-DRAFT = True
+DRAFT = False
 RECEIPT_LIMITS = {"max_line_bytes": 2**20, "max_row_tree_bytes": 2**20,
                   "max_live_rows": 2, "max_line_copies": 2, "allocation_factor": 2}
 CONFIG = {

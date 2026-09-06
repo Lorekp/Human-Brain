@@ -248,3 +248,14 @@ completed admission and three rehashed but inconsistent variants: audit PID,
 bound report input and final projection. Four validator calls, zero models,
 checkpoint loads, neural forwards, teachers or child verifications. It does
 not run the complete audit dispatcher or create a real cost admission.
+
+The authored custody node now passes first execution at `3f40aec`: one test,
+four saved validators, 3.09 pytest seconds and zero neuronal/action exposure.
+Its [bank](../../benchmarks/neuronal_splice_online_v1.cost_custody_qa.json)
+retains source and receipt hashes. Final source review found no concrete
+learning/action, worker-custody or watchdog mismatch. Remove both DRAFT guards
+and freeze one cost probe against the existing generated roster
+`245a0d908ded5d4bbf4216028d062a9609597561d4c63c67c50f69fd164de5e9`.
+The exact selected cap/category/regular/endpoint/panel exposure and limits above
+remain. The completed cost audit must pass before a final cost decision can
+admit acquisition. Preserve any failed probe and its actual exposure.
