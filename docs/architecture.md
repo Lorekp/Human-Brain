@@ -54,6 +54,16 @@ The [integrated comparison](../experiments/r4_integrated/local_memory_query_cred
 keeps an explicit experiment-only copy of the old query rule as a matched arm.
 Implementation and arithmetic QA do not establish useful learning.
 
+The selected value-credit candidate also supplies each value neuron with its
+corresponding read error. Its existing tagged eligibility transports the effect
+of that neuron's value synapses through later overwrites, giving a conditional
+value-map partial derivative with fixed initial memory and slow weights during
+ingestion. Aggregate traces and the other writer pathways remain approximate.
+The [writer review](research/local-memory-writer-credit-review.md) defines this
+limited claim and the next integrated comparison; binding and interference
+remain unresolved. The removed random value buffer's initialization draw is
+still consumed to preserve the other feedback matrices exactly.
+
 ## Existing cell implementations
 
 The computational object in the dendritic lane is a sparse simulation of

@@ -4,8 +4,9 @@ This composition owns no corpus, answer inventory, optimizer or action solver.
 Fixed byte codes feed learned writer/query cells. First generation is separate
 from explicitly supplied teacher bytes; every byte/EOS teacher event is counted.
 LMS supplies its actual immediate context gradient. Query learning uses the
-instantaneous memory-read return path; writer broadcasts and recurrent local
-traces still approximate upstream credit rather than full recurrent gradients.
+instantaneous memory-read return path; value synapses use the read error with
+their overwrite traces. Other writer broadcasts and recurrent local traces
+still approximate upstream credit rather than full recurrent gradients.
 """
 
 import copy
@@ -58,8 +59,9 @@ class LocalMemoryLearner(nn.Module):
     input is followed by one terminator (256); no textual normalization is applied.
     Memory/query seeds are seed/seed+1; input codes use the old decoder embedding's
     first normal draw at seed+2. Fresh LMS output weights start at zero. Upstream feedback
-    uses a private seed+3 stream, controller/key/value/strength order,
-    normal(0,1)/sqrt(context_size). LMS context error uses pre-update output weights.
+    uses a private seed+3 stream, controller/key/reserved-value/strength order,
+    normal(0,1)/sqrt(context_size). The reserved value draw preserves initialization;
+    value credit uses the direct read error. LMS error uses pre-update output weights.
     All fixed matrices serialize; controls have identical initial tensor bytes.
     The output module must stay CPU float64; whole-model .float() violates its
     contract. Upstream dtype conversion must leave that module unchanged.
@@ -109,10 +111,13 @@ class LocalMemoryLearner(nn.Module):
             ("value", value_size),
             ("strength", 1),
         ):
+            feedback = torch.randn(size, input_code_size + value_size, generator=generator)
+            # Preserve this middle initialization slot without a stored legacy signal.
+            if name == "value":
+                continue
             self.register_buffer(
                 f"{name}_feedback",
-                torch.randn(size, input_code_size + value_size, generator=generator)
-                / math.sqrt(input_code_size + value_size),
+                feedback / math.sqrt(input_code_size + value_size),
             )
         if mode == "writer_maps_frozen":
             for name, parameter in self.memory.named_parameters():
@@ -123,7 +128,7 @@ class LocalMemoryLearner(nn.Module):
 
     def get_extra_state(self) -> dict:
         return {
-            "schema": "local-memory-phase-lms-v2",
+            "schema": "local-memory-phase-lms-v3",
             "mode": self.mode,
             "seed": self.seed,
             "input_code_size": self.input_code_size,
@@ -136,7 +141,13 @@ class LocalMemoryLearner(nn.Module):
             "upstream_dtype": str(self.memory.controller.weight.dtype),
             "output": "phase-context-lms-v2; fresh zero float64 weights; two-byte teacher",
             "loss": "half_sum_squared_potential_error",
-            "feedback": "normal/sqrt(context); private seed+3; controller,key,value,strength",
+            "feedback": (
+                "normal/sqrt(context); private seed+3; controller,key,reserved-value,strength"
+            ),
+            "value_feedback": (
+                "direct mean read-neuron error; existing value-map overwrite eligibility; "
+                "conditional value partial with fixed initial memory and slow weights during trace"
+            ),
             "query_feedback": (
                 "instantaneous M-transpose read error; full normalization once; "
                 "raw presynaptic map traces; direct plus old-Q-transpose query-cell error"
@@ -340,8 +351,9 @@ class LocalMemoryLearner(nn.Module):
             raise ValueError("LMS context signal must remain finite after upstream cast")
         signals = {
             name: F.linear(mean_signal, getattr(self, f"{name}_feedback"))
-            for name in ("controller", "key", "value", "strength")
+            for name in ("controller", "key", "strength")
         }
+        signals["value"] = mean_signal[:, self.query_size:]
         # Both errors use the retained M and Q before either upstream update.
         signals["query"], indirect_signal = self.memory.read_learning_signals(
             state, read_event, mean_signal[:, self.query_size:]

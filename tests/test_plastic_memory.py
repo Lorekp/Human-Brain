@@ -852,5 +852,113 @@ def test_joined_read_credit_uses_old_query_weights_and_keeps_single_upstream_cas
     ).sum(0)
     assert torch.equal(learner.memory.query_weight, expected_map)
     assert torch.equal(learner.query_cell.weight, expected_cell)
+    for name in ("value_weight", "value_bias"):
+        credit = state.credit[name]
+        retrieved = (credit * event.key.reshape(1, *([1] * (credit.ndim - 2)), 2)).sum(-1)
+        signal = gradient[:, 2:, None] if name.endswith("weight") else gradient[:, 2:]
+        expected_value = before["memory." + name] - 0.01 * (signal * retrieved).sum(0)
+        assert torch.equal(getattr(learner.memory, name), expected_value)
+        assert not torch.equal(expected_value, before["memory." + name])
     assert not hasattr(learner, "query_feedback")
-    assert learner.get_extra_state()["schema"] == "local-memory-phase-lms-v2"
+    assert not hasattr(learner, "value_feedback")
+    assert learner.get_extra_state()["schema"] == "local-memory-phase-lms-v3"
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_value_tags_match_independent_multiwrite_partial_and_read_update(dtype):
+    model = PlasticMemory(2, 3, 2, 2, seed=15).to(dtype=dtype)
+    rng = np.random.default_rng(327)
+    values = rng.normal(size=(2, 5, 2)) * 0.4
+    values[:, 4] = values[:, 2]  # Revisit a write input after intervening overwrite.
+    mask = np.array([[True, False, True, True, True], [True, True, False, True, True]])
+    values[~mask] = np.nan
+    query = rng.normal(size=(2, 2)) * 0.3
+    initial = model.initial_local_state(2)
+    initial.synapses.copy_(torch.tensor(rng.normal(size=(2, 2, 2)) * 0.2, dtype=dtype))
+    initial.cell.activity.copy_(torch.tensor(rng.normal(size=(2, 3)) * 0.1, dtype=dtype))
+    initial_snapshot = initial.snapshot()
+    inputs = torch.tensor(values, dtype=dtype)
+    queries = torch.tensor(query, dtype=dtype)
+    state = model.write_local(inputs, torch.tensor(mask), initial)
+    event = model.read_local(queries, state)
+    parameters = {name: value.detach().double().numpy().copy()
+                  for name, value in model.named_parameters()}
+    values, query = inputs.double().numpy(), queries.double().numpy()
+    matrix = initial.synapses.double().numpy()
+    writer = initial.cell.activity.double().numpy()
+    base = _reference(parameters, values, mask, query, matrix, writer)
+    tolerance = 3e-6 if dtype == torch.float32 else 1e-10
+    np.testing.assert_allclose(state.synapses, base[2], atol=tolerance, rtol=tolerance)
+    np.testing.assert_allclose(event.value, base[1], atol=tolerance, rtol=tolerance)
+    read_signal = torch.tensor([[0.8, -0.3], [-0.2, 0.6]], dtype=dtype)
+    expected_gradients = {}
+    for name in ("value_weight", "value_bias"):
+        array = parameters[name]
+        gradient = np.zeros_like(array)
+        for index in np.ndindex(array.shape):
+            original = array[index]
+            array[index] = original + 1e-6
+            plus = _reference(parameters, values, mask, query, matrix, writer)
+            array[index] = original - 1e-6
+            minus = _reference(parameters, values, mask, query, matrix, writer)
+            array[index] = original
+            matrix_partial = (plus[2] - minus[2]) / 2e-6
+            expected_partial = np.zeros_like(matrix_partial)
+            expected_partial[:, index[0], :] = state.credit[name][(slice(None), *index)].double()
+            np.testing.assert_allclose(
+                matrix_partial, expected_partial, atol=tolerance, rtol=tolerance
+            )
+            gradient[index] = (
+                ((plus[1] - minus[1]) / 2e-6) * read_signal.double().numpy()
+            ).sum() / 2
+        expected_gradients[name] = gradient
+    before = copy.deepcopy(model.state_dict())
+    signals = {name: torch.zeros(2, size, dtype=dtype) for name, size in (
+        ("controller", 3), ("key", 2), ("strength", 1), ("query", 2))}
+    signals["value"] = read_signal
+    assert model.apply_local_feedback(state, event, signals, 0.01)
+    for name, expected in expected_gradients.items():
+        np.testing.assert_allclose(
+            getattr(model, name).detach(), parameters[name] - 0.01 * expected,
+            atol=tolerance, rtol=tolerance,
+        )
+    assert all(torch.equal(value, model.state_dict()[name]) for name, value in before.items()
+               if name not in expected_gradients)
+    assert torch.equal(initial.synapses, initial_snapshot["synapses"])
+    assert all(p.grad is None for p in model.parameters())
+
+
+@pytest.mark.parametrize("seed", [0, 733])
+def test_direct_value_credit_preserves_feedback_initialization_slots(seed):
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    global_rng = torch.random.get_rng_state().clone()
+    learner = LocalMemoryLearner(input_code_size=2, value_size=94, hidden_size=3,
+                                 key_size=2, seed=seed)
+    generator = torch.Generator(device="cpu").manual_seed(seed + 3)
+    for name, size in (("controller", 3), ("key", 2), ("value", 94), ("strength", 1)):
+        original = torch.randn(size, 96, generator=generator) / np.sqrt(96)
+        if name == "value":
+            assert not hasattr(learner, "value_feedback")
+        else:
+            assert torch.equal(getattr(learner, name + "_feedback"), original)
+    assert torch.equal(global_rng, torch.random.get_rng_state())
+    restored = copy.deepcopy(learner)
+    restored.load_state_dict(copy.deepcopy(learner.state_dict()), strict=True)
+    obsolete = learner.get_extra_state()
+    obsolete["schema"] = "local-memory-phase-lms-v2"
+    with pytest.raises(ValueError, match="configuration"):
+        restored.set_extra_state(obsolete)
+
+
+def test_value_read_signal_nonfinite_rejects_before_memory_group_publication():
+    model = PlasticMemory(2, 3, 2, 2)
+    state = model.write_local(torch.ones(1, 2, 2), torch.ones(1, 2, dtype=torch.bool))
+    event = model.read_local(torch.ones(1, 2), state)
+    signals = {name: torch.ones(1, size) for name, size in (
+        ("controller", 3), ("key", 2), ("value", 2), ("strength", 1), ("query", 2))}
+    signals["value"][0, 0] = torch.inf
+    before = copy.deepcopy(model.state_dict())
+    with pytest.raises(ValueError, match="finite"):
+        model.apply_local_feedback(state, event, signals, 0.01)
+    assert all(torch.equal(value, model.state_dict()[name]) for name, value in before.items())

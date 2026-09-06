@@ -460,9 +460,9 @@ def test_local_composition_before_update_signals_mean_once_and_upstream_last():
         drive_error = (key_error - read.key * (read.key * key_error).sum(-1, keepdim=True))
         drive_error = drive_error / read.query_norm
         for name in incoming:
-            expected = drive_error if name == "query" else (
-                mean @ getattr(learner, name + "_feedback").T
-            )
+            expected = (drive_error if name == "query" else mean[:, 2:]) if (
+                name in {"query", "value"}
+            ) else mean @ getattr(learner, name + "_feedback").T
             torch.testing.assert_close(incoming[name], expected)
         expected_query.append(mean[:, :2] + drive_error @ writer_before["query_weight"])
         events.append("memory")
@@ -529,7 +529,7 @@ def test_local_composition_source_free_transport_and_disabled_teacher():
         wrong_mode.restore_snapshot(snapshot)
 
 
-@pytest.fixture(params=(2, 3, 4, 5, 6, 7))
+@pytest.fixture(params=(2, 3, 4, 5, 6, 7, 8))
 def local_cost_runner(request):
     if request.param == 2:
         from experiments.r4_integrated import local_memory_byte_v2 as runner
@@ -539,7 +539,10 @@ def local_cost_runner(request):
     from types import SimpleNamespace
 
     from experiments.r4_integrated import local_memory_byte_harness as harness
-    if request.param == 7:
+    if request.param == 8:
+        from experiments.r4_integrated import local_memory_value_credit_v1 as harness
+        SPEC = harness.SPEC
+    elif request.param == 7:
         from experiments.r4_integrated import local_memory_query_credit_v1 as harness
         SPEC = harness.SPEC
     elif request.param == 6:
@@ -1701,7 +1704,7 @@ def test_two_byte_lesson_actual_lms_receipts_before_update_and_retirement():
 
 
 @pytest.mark.parametrize(
-    "runner_module", ["local_memory_two_byte_v1", "local_memory_query_credit_v1"]
+    "runner_module", ["local_memory_value_credit_v1"]
 )
 def test_two_byte_source_free_worker_fresh_process_read_only_checkpoint(tmp_path, runner_module):
     import importlib
@@ -2021,17 +2024,22 @@ def test_localization_worker_fresh_process_empty_memory_query_only(tmp_path):
     assert observations[0]["phase_evaluations"] == 3
     assert hashes == [runner.file_hash(path) for path in (checkpoint, requests)]
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
-def test_query_credit_reference_matches_frozen_git_source_and_trajectories(dtype):
+@pytest.mark.parametrize(
+    "reference_module",
+    ["local_memory_query_credit_reference", "local_memory_value_credit_reference"],
+)
+def test_local_credit_reference_matches_frozen_git_source_and_trajectories(dtype, reference_module):
     """The experiment adapter must reproduce the old dependency, not only its caller."""
     import ast
     import hashlib
+    import importlib
     import subprocess
     import sys
     import types
     from dataclasses import fields
     from pathlib import Path
 
-    from experiments.r4_integrated import local_memory_query_credit_reference as reference
+    reference = importlib.import_module("experiments.r4_integrated." + reference_module)
 
     root = Path(__file__).resolve().parents[1]
     texts = {
@@ -2057,17 +2065,26 @@ def test_query_credit_reference_matches_frozen_git_source_and_trajectories(dtype
     assert ast.dump(archived["LocalMemoryLearner"]) == ast.dump(
         definitions(texts["local_memory_learner"])["LocalMemoryLearner"]
     )
-    assert ast.dump(archived["LocalMemoryRead"]) == ast.dump(old_memory["LocalMemoryRead"])
+    if "LocalMemoryRead" in archived:
+        assert ast.dump(archived["LocalMemoryRead"]) == ast.dump(old_memory["LocalMemoryRead"])
+    else:
+        assert ast.dump(old_memory["LocalMemoryRead"]) == ast.dump(
+            current_memory["LocalMemoryRead"]
+        )
     old_methods = {
         n.name: n for n in old_memory["PlasticMemory"].body if isinstance(n, ast.FunctionDef)
     }
     new_methods = {
         n.name: n for n in current_memory["PlasticMemory"].body if isinstance(n, ast.FunctionDef)
     }
-    overrides = {
+    overrides = {} if "PlasticMemory" not in archived else {
         n.name: n for n in archived["PlasticMemory"].body if isinstance(n, ast.FunctionDef)
     }
-    assert set(overrides) == {"read_local", "_check_local_read", "restore_local_read"}
+    expected_overrides = (
+        {"read_local", "_check_local_read", "restore_local_read"}
+        if reference_module == "local_memory_query_credit_reference" else set()
+    )
+    assert set(overrides) == expected_overrides
     for name, node in old_methods.items():
         assert ast.dump(node) == ast.dump(overrides.get(name, new_methods[name])), name
     for name in old_memory.keys() - {"PlasticMemory", "LocalMemoryRead"}:
@@ -2117,9 +2134,9 @@ def test_query_credit_reference_matches_frozen_git_source_and_trajectories(dtype
                 _assert_nested_equal(actual.state_dict(), expected.state_dict())
 
 
-def test_query_credit_fixed_roster_factory_source_and_strict_endpoint():
-    from experiments.r4_integrated import local_memory_query_credit_v1 as runner
+def test_value_credit_fixed_roster_factory_source_and_strict_endpoint():
     from experiments.r4_integrated import local_memory_two_byte_v1 as previous
+    from experiments.r4_integrated import local_memory_value_credit_v1 as runner
 
     assert (*previous.ARMS, "current_tagged") == runner.ARMS
     train, checks = runner.roster()
@@ -2129,17 +2146,19 @@ def test_query_credit_fixed_roster_factory_source_and_strict_endpoint():
     config = runner.SPEC.config
     config["arms"].clear()
     config["query_credit"].clear()
+    config["value_credit"].clear()
     assert len(runner.SPEC.config["arms"]) == len(runner.SPEC.config["query_credit"]) == 6
+    assert len(runner.SPEC.config["value_credit"]) == 6
     manifest = runner.sources()
-    for name in ("local_memory_query_credit_v1.py", "local_memory_query_credit_v1.md",
-                 "local_memory_query_credit_reference.py", "local_memory_two_byte_v1.py"):
+    for name in ("local_memory_value_credit_v1.py", "local_memory_value_credit_v1.md",
+                 "local_memory_value_credit_reference.py", "local_memory_two_byte_v1.py"):
         path = runner.ROOT / "experiments/r4_integrated" / name
         assert manifest[path.relative_to(runner.ROOT).as_posix()] == runner.file_hash(path)
     models = {arm: runner.new_model(runner.SPEC, arm) for arm in runner.ARMS}
     base = {k: v for k, v in models["tagged"].state_dict().items() if torch.is_tensor(v)}
     for arm, model in models.items():
         tensors = {k: v for k, v in model.state_dict().items() if torch.is_tensor(v)}
-        extra = {"query_feedback"} if arm == "current_tagged" else set()
+        extra = {"value_feedback"} if arm == "current_tagged" else set()
         assert set(tensors) == set(base) | extra
         for key, value in base.items():
             assert tensors[key].dtype == value.dtype and torch.equal(tensors[key], value)
@@ -2158,8 +2177,8 @@ def test_query_credit_fixed_roster_factory_source_and_strict_endpoint():
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
-def test_query_credit_forward_matches_current_reference_before_teaching(dtype):
-    from experiments.r4_integrated.local_memory_query_credit_reference import (
+def test_value_credit_forward_matches_current_reference_before_teaching(dtype):
+    from experiments.r4_integrated.local_memory_value_credit_reference import (
         LocalMemoryLearner as CurrentLearner,
     )
     from humanbrain.local_memory_learner import LocalMemoryLearner
@@ -2180,3 +2199,45 @@ def test_query_credit_forward_matches_current_reference_before_teaching(dtype):
         assert repaired.predict(query, states[0], 2) == current.predict(query, states[1], 2)
     for before, model in zip(weights, (repaired, current), strict=True):
         _assert_nested_equal(before, model.state_dict())
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+@pytest.mark.parametrize("mode", ["writer_maps_frozen", "frozen", "writes_disabled"])
+def test_value_credit_controls_preserve_immediate_predecessor_trajectory(dtype, mode):
+    from dataclasses import fields
+
+    from experiments.r4_integrated.local_memory_value_credit_reference import (
+        LocalMemoryLearner as PreviousLearner,
+    )
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    config = dict(mode=mode, input_code_size=2, value_size=94, hidden_size=3, key_size=2, seed=733)
+    candidate, previous = LocalMemoryLearner(**config), PreviousLearner(**config)
+    for model in (candidate, previous):
+        _set_upstream_dtype(model, dtype)
+
+    def common_weights():
+        new = {k: v for k, v in candidate.state_dict().items() if torch.is_tensor(v)}
+        old = {k: v for k, v in previous.state_dict().items() if torch.is_tensor(v)}
+        assert set(old) == set(new) | {"value_feedback"}
+        for key, value in new.items():
+            assert value.dtype == old[key].dtype and torch.equal(value, old[key]), key
+
+    common_weights()
+    assert not hasattr(candidate, "value_feedback") and not hasattr(candidate, "query_feedback")
+    for target in (b"aa", b"bc", b"ab"):
+        states = [model.ingest([b"x=a", b"y=b"]) for model in (candidate, previous)]
+        _assert_nested_equal(states[0].snapshot(), states[1].snapshot())
+        assert candidate.predict(b"x?", states[0], 2) == previous.predict(b"x?", states[1], 2)
+        with patch.object(torch.autograd, "backward", side_effect=AssertionError("no backward")):
+            receipts = [
+                model.teach(b"x?", target, state, 0.01)
+                for model, state in zip((candidate, previous), states, strict=True)
+            ]
+        for field in fields(receipts[0]):
+            new, old = (getattr(receipt, field.name) for receipt in receipts)
+            _assert_nested_equal(
+                new.snapshot() if field.name == "state" else new,
+                old.snapshot() if field.name == "state" else old,
+            )
+        common_weights()
