@@ -1,6 +1,19 @@
 # Persistent memory and byte output: parallel development
 
-Current execution: the [sequence-memory comparison](../../experiments/r4_integrated/local_sequence_memory_v1_result.md)
+Current result: the [lag-query comparison](../../experiments/r4_integrated/local_lag_query_v1_result.md)
+and independent audit pass in 271.806 seconds. Learned reaches 7/8 taught,
+4/4 new-value, 4/4 delayed and 2/4 interference, with zero scores in all three
+candidate controls and exact historical reference parity. Both novel assignment
+swaps are jointly correct, and three of four different-question fit pairs now
+return their respective correct answers. Useful binding improves; the strict
+completion criterion remains unmet. Close the fixed fit without extra epochs or
+automatic gain changes. A bounded saved-evidence review must distinguish the
+remaining incorrect start ranking from multi-record byte competition before
+one next integrated change is selected. Streamed complete scientific rows cost
+8.693 seconds; run/audit peaks of 907.887/988.676 MiB fit the final admission
+estimate, though the run-specific estimate remains 75.406 MiB too low.
+
+The preceding [sequence-memory comparison](../../experiments/r4_integrated/local_sequence_memory_v1_result.md)
 and independent audit complete in 213.521 seconds after fresh admission at
 518.720 projected seconds. Learned scores 4/8 taught, 2/4 new-value, 2/4 delayed
 and 1/4 interference, while all three candidate controls score zero. The byte

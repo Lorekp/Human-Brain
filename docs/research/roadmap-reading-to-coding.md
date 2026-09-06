@@ -258,10 +258,22 @@ local projection credit; saved outputs do not prove that recurrent compression
 destroyed identity information. Keep tape and codec unchanged, preserve both
 the current sequence and strongest byte references, and require ordinary QA
 and fresh six-arm admission before one fixed comparison. Retire the obsolete
-query cell, its traces and unused upstream feedback in this candidate. Do not infer
-convergence or extend training automatically. The full process-tree peak is
-1,094.074 MiB, above the disposable estimate of 734.363 MiB but below the
-2,048-MiB ceiling; future admission must account for growing retained receipts.
+query cell, its traces and unused upstream feedback in this candidate. The
+[completed lag-query comparison](../../experiments/r4_integrated/local_lag_query_v1_result.md)
+passes its independent audit in 271.806 seconds including the run. Learned solves
+7/8 fit, 4/4 new-value, 4/4 delayed and 2/4 interference checks; all candidate
+controls score zero, and both historical references reproduce exactly. Both
+novel assignment swaps now work in both directions. Three different-question
+fit pairs also produce their respective correct answers; the fourth retains one
+wrong answer. This is a useful query-binding and fresh-value gain, while the
+strict completion criterion still fails on three cases. Close the fixed fit
+without extra epochs or a gain sweep. Review the saved incorrect start ranking
+and multi-record byte competition before selecting one next integrated change.
+Streamed scientific receipts cost 8.693 seconds and remove retained lesson-list
+growth. Run/audit peaks are 907.887/988.676 MiB, below the final 1,617.741-MiB
+admission estimate. The run-specific estimate still understates its peak by
+75.406 MiB; its residual parent growth is not localized by saved receipts.
+Do not infer convergence or a formal allocator bound.
 No encoder learning
 or output-only diagnostic is added. Segmentation must not
 supply identifier/value roles or answer factors. Do not extend epochs or sweep

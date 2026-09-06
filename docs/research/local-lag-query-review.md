@@ -1,5 +1,12 @@
 # Sequence-memory follow-up: expose query evidence directly to local address learning
 
+Completed comparison: [result and evidence](../../experiments/r4_integrated/local_lag_query_v1_result.md).
+The fixed run plus independent audit take 271.806 seconds. Learned improves to
+7/8 fit, 4/4 new-value, 4/4 delayed and 2/4 interference, beating all controls
+on novel success with exact historical reference parity. Strict qualification
+still fails. This prospective design is closed; it does not authorize additional
+epochs, gain changes or a new fit. The roadmap owns the next saved-evidence review.
+
 2026-09-06. Root-selected structural comparison after independent scalar/source
 review. This design selection does not admit a cost workload or fit. No model construction,
 checkpoint forward, fit, new query, teacher or action was performed. Research skill
