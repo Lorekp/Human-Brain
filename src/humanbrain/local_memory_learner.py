@@ -29,12 +29,21 @@ def _finite(value: Tensor, name: str) -> None:
 
 @dataclass(frozen=True)
 class ConditionalByteStep:
-    """One shared-circuit pass, saved until its current local errors are formed."""
+    """Held shared-circuit responses; no state survives the owning call."""
 
     sensory: Tensor
     logits: Tensor
     log_probabilities: Tensor
     probabilities: Tensor
+
+    def _gather(self, cursors: Tensor) -> "ConditionalByteStep":
+        """Route held responses through already validated forward cursors."""
+        return ConditionalByteStep(
+            self.sensory.index_select(0, cursors),
+            self.logits.index_select(0, cursors),
+            self.log_probabilities.index_select(0, cursors),
+            self.probabilities.index_select(0, cursors),
+        )
 
 
 class ConditionalByteCodec(nn.Module):
@@ -152,7 +161,8 @@ class LocalMemoryLearner(nn.Module):
         "address_score_evaluations",
         "address_local_synapse_contributions", "address_local_slot_reductions",
         "address_normalizations", "codec_slot_evaluations", "codec_output_potentials",
-        "codec_normalizations", "mixture_output_reductions", "prefix_belief_updates",
+        "codec_normalizations", "codec_response_gathers", "codec_response_values_gathered",
+        "codec_response_bytes_gathered", "mixture_output_reductions", "prefix_belief_updates",
         "branch_cursor_initializations", "branch_cursor_advances", "teacher_offers",
         "codec_update_group_offers",
         "address_update_group_offers",
@@ -182,7 +192,7 @@ class LocalMemoryLearner(nn.Module):
 
     def get_extra_state(self) -> dict:
         return {
-            "schema": "local-neuronal-joint-address-learner-v1",
+            "schema": "local-neuronal-joint-address-held-codec-learner-v1",
             "mode": self.mode, "seed": self.seed,
             "capacity": 128, "lags": 32, "input_code_size": 32, "query_size": 1024,
             "input_code": "fixed normal258x32; private seed+2; raw bytes plus EOS256",
@@ -204,6 +214,11 @@ class LocalMemoryLearner(nn.Module):
                 "squared energy at most32 in real arithmetic"
             ),
             "codec": "shared257x257; log(256)*identity and zero bias; float64",
+            "codec_activity": (
+                "evaluate all occupied sensory slots once per call with held weights; "
+                "first decision uses bank, later forward cursors gather responses; "
+                "discard before any later call or publication-dependent reuse"
+            ),
             "prior": "same-identity probability1/2; every other byte/EOS1/512",
             "recall": "all starts; forward EOS-absorbing adjacency; causal prefix belief",
             "loss": "sequence_mixture_negative_log_likelihood",
@@ -327,11 +342,30 @@ class LocalMemoryLearner(nn.Module):
 
     @staticmethod
     def _count_step(work: dict[str, int], branches: int) -> None:
-        work["codec_slot_evaluations"] += branches
-        work["codec_output_potentials"] += branches * 257
-        work["codec_normalizations"] += branches
         work["mixture_output_reductions"] += 257
         work["prefix_belief_updates"] += branches
+
+    def _codec_bank(
+        self, state: TapeState, cursors: Tensor, work: dict[str, int],
+    ) -> ConditionalByteStep:
+        """Initial cursors enumerate every slot; weights remain held for this call."""
+        bank = self.codec.evaluate(self.memory._content_checked(state, cursors))
+        work["codec_slot_evaluations"] = state.used
+        work["codec_output_potentials"] = state.used * 257
+        work["codec_normalizations"] = state.used
+        return bank
+
+    def _codec_responses(
+        self, bank: ConditionalByteStep, state: TapeState, cursors: Tensor,
+        position: int, work: dict[str, int],
+    ) -> ConditionalByteStep:
+        if position == 0:
+            return bank
+        self.memory._check_cursors(state, cursors)
+        work["codec_response_gathers"] += state.used
+        work["codec_response_values_gathered"] += state.used * 257 * 4
+        work["codec_response_bytes_gathered"] += state.used * 257 * (4 + 3 * 8)
+        return bank._gather(cursors)
 
     @torch.no_grad()
     def predict_with_receipt(
@@ -345,8 +379,9 @@ class LocalMemoryLearner(nn.Module):
         log_belief = event.log_prior
         output, steps, work = bytearray(), [], dict(event.work)
         work["branch_cursor_initializations"] = state.used
+        bank = self._codec_bank(state, cursors, work)
         for position in range(max_bytes + 1):
-            conditional = self.codec.evaluate(self.memory._content_checked(state, cursors))
+            conditional = self._codec_responses(bank, state, cursors, position, work)
             mixture = self._mixture(conditional, log_belief)
             token = int(mixture.argmax())
             receipt = self._observe(position, token, cursors, log_belief, conditional, mixture)
@@ -392,8 +427,9 @@ class LocalMemoryLearner(nn.Module):
         steps, work, total_loss = [], dict(event.work), 0.0
         work["branch_cursor_initializations"] = state.used
         targets = (*teacher, BYTE_EOS)
+        bank = self._codec_bank(state, cursors, work)
         for position, token in enumerate(targets):
-            conditional = self.codec.evaluate(self.memory._content_checked(state, cursors))
+            conditional = self._codec_responses(bank, state, cursors, position, work)
             mixture = self._mixture(conditional, log_belief)
             receipt = self._observe(position, token, cursors, log_belief, conditional, mixture)
             steps.append(receipt)
@@ -536,6 +572,9 @@ class LocalMemoryLearner(nn.Module):
                 "probabilities_float64": 128 * 257 * 8,
                 "total": 128 * 257 * (4 + 3 * 8),
             },
+            "maximum_held_codec_response_bank_bytes": 128 * 257 * (4 + 3 * 8),
+            "maximum_codec_response_gather_bytes": 128 * 257 * (4 + 3 * 8),
+            "maximum_overlapping_codec_response_bytes": 3 * 128 * 257 * (4 + 3 * 8),
             "maximum_log_belief_bytes": 128 * 8,
             "codec_weight_error_bytes": 257 * 257 * 8, "codec_bias_error_bytes": 257 * 8,
             "maximum_current_codec_error_bytes": 128 * 257 * 8,
@@ -553,13 +592,18 @@ class LocalMemoryLearner(nn.Module):
             "address_local_contribution_float32_bytes": 32 * 32 * 4,
             "address_parameter_proposal_bytes": 32 * 32 * 4,
             "transient_scope": (
-                "named tensor payloads, not allocator/peak bounds; old/new conditional cache "
-                "may overlap across iterations; parameter proposals, returned decision receipts, "
+                "named tensor payloads, not allocator/peak bounds; one held response bank plus "
+                "old/new gathered responses may overlap during index_select/assignment; "
+                "parameter proposals, returned decision receipts, "
                 "encoded query, validation temporaries and snapshots also contribute; the actual "
                 "forward address bank is retained for this call, never in persistent state; "
                 "the process-tree watchdog measures actual peak"
             ),
-            "codec_clock": "one shared circuit time-multiplexed over occupied branches",
+            "codec_clock": (
+                "one shared circuit evaluates every occupied slot once per call; "
+                "later decisions route held responses by forward cursor gathers; "
+                "prefix mixtures and local teacher errors are recomputed each decision"
+            ),
             "address_clock": (
                 "fixed1024-component dendritic circuit forms each slot's joint query/key "
                 "activity before one shared1024-input score neuron; actual batched slot "

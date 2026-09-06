@@ -107,3 +107,64 @@ Repeated reproduction/minimization of that frozen cost is intentionally omitted
 because it would be an identical timing retry. This return does not claim to
 have identified the cause of v4's transient slowdown. Its two changes test
 explicit redundant work, and whole-workload success must still be measured.
+
+## Completed qualification before authored timing
+
+Main source is SHA256 `2a6bfe480757b248c585a00bdc9c79155af6abd3a162b3e93a098d406b73a3b8`;
+new action bridge is `3bacf37d703af9c6685a4ece8b554cc6779597073fa94adae2e6004cc8dd50c1`.
+Ruff and source review passed. The address feature construction, observation,
+mixture and standalone codec equations remain unchanged. Held codec activity
+now has explicit checkpoint metadata and actual evaluation/gather counters.
+
+Seventeen initial model checks passed on their first run in 4.35 pytest seconds
+(5.7256813 process seconds), covering exact old/new no-backpropagation parity,
+local scalar equations, all controls, finite publication failure and full-capacity
+accounting. JUnit `.pytest-tmp/held-codec-v1-qa.xml` is SHA256
+`7db47696edeb1fc2b639d095f5b667b3c841ec6008f76595c36335f478ed8eb1`.
+Five saved parity receipts record actual decision counts. The review is
+`.pytest-tmp/held-codec-v1-qa-review.md`, SHA256
+`43f2e36d9f5c51bc38947796018e77bac5ee4a7ab3be14e1a7325b04e3de646e`.
+
+Saved counts exposed a coverage gap: the nonzero-sensory parity fixtures stopped
+at their first EOS, while the longer free parity traversals used zero sensory
+activity. One additional authored biased-output fixture therefore compares all
+four held response tensors with actual fresh codec evaluations at five free
+positions over repeated bytes and absorbing EOS. It passed on its first run in
+2.99 pytest seconds (4.3874785 process seconds), with no teaching or actions.
+Its JUnit is SHA256 `2b263b67e95eff5cf902e23a9741c8c1589d1c6f06f28e8b2ef32b7f0f74c685`;
+JSON is `7722afd33c539b10f3bace8e889eb32b9fa7bb0e5058f953399398389e600f56`.
+The aggregate model QA made 23 constructions plus four disposable clones,
+23 ingestions, 26 valid free predictions with 54 decisions, one separate query,
+and 17 actual teacher traversals with 71 offers, including three offers in the
+injected publication rejection. Two invalid predictions and one invalid teacher
+were rejected at their boundaries. The extra free fixture made five standalone
+codec comparisons over twenty rows. No old adjoint reference or acquisition ran.
+
+All nine action qualification cases passed first try: seventeen actual children,
+zero failures/skips, 5.27 pytest seconds and 6.5050213 process seconds. JUnit
+`.pytest-tmp/stdlib-python-v1-qualification-qa.xml` is SHA256
+`4d5162c4bcaa1dcdd4e4966690160584a478818fd055e29f23712fb6c650355d`.
+The new standard-library identity and process-contamination checks passed, as
+did all seven semantic pairs. No neuronal model or motor was used by this suite.
+
+The saved-only combiner passed source review and completed once in 1.8511146
+process seconds, authenticating 21 evidence files with no new child executions.
+Its manifest `.pytest-tmp/stdlib-python-action-v1-qualification.json` is SHA256
+`4c3a6438549ce1ecd4c8d92509f1a60753692b8aab1ab9155df00b12db10941c`.
+The exact initially tested source is archived at
+`.pytest-tmp/stdlib-python-action-v1-tested-source.py`, SHA256
+`217296ba5fdff11addae60f10be147c173c0208ef583be7a730b04b82f68aa0c`.
+It binds both initial suites. The later test extension and line-ending
+normalization preserve every original AST node; source-only receipt SHA256
+`973e85251122d9fb86884a544ddb95d3c7b613e9d6b1714fcbdde926544cef1a`.
+Current tested source is `3b086c8bf7ef82e89c7ea2d002b39756c988eadc81eb3e343d2714057b07335f`.
+Doctor receipts are `.pytest-tmp/dev/doctor-la9ze38f/receipt.json` and, for the
+additional case, `.pytest-tmp/dev/doctor-5rntiha_/receipt.json`.
+
+The reviewed authored timing driver is
+`.pytest-tmp/stdlib-python-action-timing-v1.py`, SHA256
+`7293675b4caea6689075320722beb3173ac6a3d48f958706b043e1dbb4ba8f8c`.
+It records the performance-counter identity and optional contemporaneous
+GetSystemTimes counters, preserves all twelve observations, and uses the fixed
+criteria above. Qualification permits this diagnostic; its outcome still must
+earn integration before a new scientific harness or cost is executed.

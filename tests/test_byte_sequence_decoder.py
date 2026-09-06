@@ -3284,7 +3284,7 @@ def test_joint_address_scalar_forward_and_local_output_synapses():
     with patch.object(model, "_query", side_effect=capture_query), \
             patch.object(model.codec, "evaluate", side_effect=checked_codec):
         feedback = model.teach(b"q", b"ab", state, 0.01)
-    assert len(teacher_queries) == 1 and held_codec_calls == [4, 4, 4]
+    assert len(teacher_queries) == 1 and held_codec_calls == [4]
     np.testing.assert_array_equal(teacher_queries[0].address_features.numpy(), actual_x)
 
     # Output-neuron activity differences and actual cached preactivities only.
@@ -3361,7 +3361,8 @@ def test_joint_address_explicit_local_publication_controls(
     assert feedback.work["address_score_reductions"] == 4 * 1023
     assert feedback.work["address_local_synapse_contributions"] == 4 * 1024
     assert feedback.work["address_local_slot_reductions"] == 3 * 1024
-    assert feedback.work["codec_slot_evaluations"] == 12
+    assert feedback.work["codec_slot_evaluations"] == 4
+    assert feedback.work["codec_response_gathers"] == 8
     assert feedback.work["teacher_offers"] == 3
     assert not any("projection" in name for name in feedback.work)
     if not address_changed:
@@ -3993,7 +3994,11 @@ def test_joint_online_disposable_cap_and_feature_counts(arm):
     assert cap["generated_hex"] == "0000" and cap["decisions"] == 3
     assert cap["work"]["address_feature_products"] == 128 * 32768
     assert cap["work"]["address_score_synapse_evaluations"] == 128 * 1024
-    assert cap["work"]["codec_slot_evaluations"] == 3 * 128
+    assert cap["work"]["codec_slot_evaluations"] == 128
+    assert cap["work"]["codec_response_gathers"] == 2 * 128
+    accounting = model.accounting()
+    assert accounting["maximum_held_codec_response_bank_bytes"] == 921088
+    assert accounting["maximum_overlapping_codec_response_bytes"] == 2763264
     assert cap["work"]["teacher_offers"] == 0
     assert cap["ingestion_work"]["document_raw_bytes"] == 127
     assert cap["ingestion_work"]["document_eos_symbols"] == 1
@@ -4071,3 +4076,435 @@ def test_joint_address_injected_late_validation_failure_preserves_both_groups():
     _assert_nested_equal(before, model.snapshot(state))
     assert all(not parameter.requires_grad and parameter.grad is None
                for parameter in model.parameters())
+
+
+# New environment qualification: 1 identity + 14 semantic + 2 contamination children.
+_STDLIB_IDENTITY_PROGRAM = r'''
+import sys, os, json, ctypes, importlib.util
+image = ctypes.create_unicode_buffer(32768)
+length = ctypes.windll.kernel32.GetModuleFileNameW(None, image, len(image))
+assert 0 < length < len(image)
+print(json.dumps(dict(executable=sys.executable, base_executable=sys._base_executable,
+    prefix=sys.prefix, exec_prefix=sys.exec_prefix, base_prefix=sys.base_prefix,
+    base_exec_prefix=sys.base_exec_prefix, version=sys.version, path=sys.path,
+    os_image=image.value, pid=os.getpid(), cwd=os.getcwd(),
+    no_site=sys.flags.no_site, isolated=sys.flags.isolated, utf8=sys.flags.utf8_mode,
+    no_bytecode=sys.flags.dont_write_bytecode,
+    site_loaded=('site' in sys.modules),
+    hooks=[n for n in sys.modules if n in ('sitecustomize','usercustomize')
+           or n.startswith('__editable__')],
+    unavailable={n: importlib.util.find_spec(n) is None for n in ('humanbrain','numpy','torch')},
+    launcher=os.environ.get('__PYVENV_LAUNCHER__'),
+    stdio={n: [getattr(sys,n).encoding,getattr(sys,n).errors] for n in ('stdout','stderr')}
+), sort_keys=True))
+'''
+
+
+def _stdlib_context():
+    from hashlib import sha256
+    from pathlib import Path
+
+    from experiments.r4_integrated import source_python_action_bridge_v1 as old
+    from experiments.r4_integrated import stdlib_python_action_bridge_v1 as new
+
+    root = Path(__file__).resolve().parents[1]
+    launch = new.discover_launch(root / ".venv/Scripts/python.exe")
+    paths = (Path(__file__).resolve(), Path(old.__file__).resolve(), Path(new.__file__).resolve())
+    sources = {str(path): sha256(path.read_bytes()).hexdigest() for path in paths}
+    return root, old, new, launch, sources
+
+
+def _stdlib_check_base_identity(identity, launch, workspace):
+    from pathlib import Path
+
+    base = Path(launch.base_executable).resolve()
+    assert Path(identity["executable"]).resolve() == base
+    assert Path(identity["base_executable"]).resolve() == base
+    assert Path(identity["os_image"]).resolve() == base
+    for key in ("prefix", "exec_prefix", "base_prefix", "base_exec_prefix"):
+        assert Path(identity[key]).resolve() == base.parent
+    for entry in identity["path"]:
+        resolved = ((workspace / entry).resolve() if not Path(entry).is_absolute()
+                    else Path(entry).resolve())
+        assert resolved == workspace.resolve() or resolved.is_relative_to(base.parent)
+        assert ".venv" not in resolved.parts and "site-packages" not in resolved.parts
+
+
+def _stdlib_execute_saved(root, name, fixture, workspace, routes, launch, sources, old, new):
+    """Save all actual receipts before any output or materialization assertions."""
+    import os
+
+    raw_name = f"stdlib-python-v1-{name}-raw.json"
+    passed_name = f"stdlib-python-v1-{name}.json"
+    assert not (root / ".pytest-tmp" / raw_name).exists()
+    assert not (root / ".pytest-tmp" / passed_name).exists()
+    ambient = dict(os.environ)
+    case, files, before = fixture
+    receipts = {}
+    for route in routes:
+        bridge, record = (old, launch.parent_runtime) if route == "old" else (new, launch)
+        receipts[route] = bridge.execute_utf8(
+            case, files, before, workspace / route, launch=record)
+    raw_path = _direct_executor_save(root, raw_name, dict(
+        schema="stdlib-python-raw-qa-v1", status="pending_semantic_checks", name=name,
+        execution_order=list(routes), source_sha256=sources, launch_record=launch.to_record(),
+        fixture_files={item.path: item.content.hex() for item in files}, receipts=receipts,
+        child_executions=len(routes)))
+    assert dict(os.environ) == ambient
+    for route, receipt in receipts.items():
+        assert receipt["decoys_unchanged"] and receipt["materialized_matches_action"]
+        assert {item.path: (workspace / route / item.path).read_bytes() for item in files} == {
+            item.path: item.content for item in files}
+        assert not list((workspace / route).rglob("*.pyc"))
+        if route != "old":
+            assert receipt["child_command"] == [
+                launch.base_executable, "-I", "-S", "-X", "utf8", "-B", "-c", new.BOOTSTRAP]
+            assert receipt["child_environment_override"] == {}
+            assert receipt["child_environment_removed"] == ["__PYVENV_LAUNCHER__"]
+            assert receipt["launch_record_sha256"] == launch.sha256
+    return raw_path, passed_name, receipts
+
+
+def _stdlib_pass(root, name, raw_path, launch, sources, count, **details):
+    from hashlib import sha256
+    from pathlib import Path
+
+    assert sources == {path: sha256(Path(path).read_bytes()).hexdigest() for path in sources}
+    _direct_executor_save(root, name, dict(schema="stdlib-python-case-qa-v1", status="passed",
+        launch_record=launch.to_record(), source_sha256=sources, child_executions=count,
+        raw_evidence={str(raw_path): sha256(raw_path.read_bytes()).hexdigest()}, **details))
+
+
+def _stdlib_require_identity(root, launch, sources):
+    import json
+
+    identity = json.loads((root / ".pytest-tmp/stdlib-python-v1-identity.json").read_bytes())
+    assert identity["status"] == "passed" and identity["child_executions"] == 1
+    assert identity["launch_record"] == launch.to_record() and identity["source_sha256"] == sources
+
+
+def test_stdlib_python_action_identity(tmp_path):
+    """One new child; no repeat of the historical runtime qualification."""
+    import json
+    import os
+    import sys
+
+    root, old, new, launch, sources = _stdlib_context()
+    fixture = _direct_executor_fixture(old, "stdlib-identity", "unused",
+                                       program=_STDLIB_IDENTITY_PROGRAM)
+    raw_path, passed_name, receipts = _stdlib_execute_saved(
+        root, "identity", fixture, tmp_path, ("new",), launch, sources, old, new)
+    receipt = receipts["new"]
+    assert receipt["returncode"] == 0 and receipt["stderr_hex"] == ""
+    identity = json.loads(receipt["stdout"])
+    _stdlib_check_base_identity(identity, launch, tmp_path / "new")
+    assert identity["version"] == sys.version and identity["pid"] != os.getpid()
+    assert all(identity[key] == 1 for key in ("no_site", "isolated", "utf8", "no_bytecode"))
+    assert identity["site_loaded"] is False and identity["hooks"] == []
+    assert identity["unavailable"] == dict(humanbrain=True, numpy=True, torch=True)
+    assert identity["launcher"] is None
+    assert identity["stdio"] == {name: ["utf-8", "strict"] for name in ("stdout", "stderr")}
+    _stdlib_pass(root, passed_name, raw_path, launch, sources, 1, identity=identity)
+
+
+@pytest.mark.parametrize("case_name", _SOURCE_BOOTSTRAP_CASES)
+def test_stdlib_python_action_semantic_pair(tmp_path, case_name):
+    """Fourteen children reuse the frozen source fixtures; new runtime fields are explicit."""
+    import json
+
+    root, old, new, launch, sources = _stdlib_context()
+    _stdlib_require_identity(root, launch, sources)
+    fixture = _source_bootstrap_fixture(old, case_name)
+    case = fixture[0]
+    index = _SOURCE_BOOTSTRAP_CASES.index(case_name)
+    order = ("old", "new") if index % 2 == 0 else ("new", "old")
+    raw_path, passed_name, receipts = _stdlib_execute_saved(
+        root, case_name, fixture, tmp_path, order, launch, sources, old, new)
+    if case_name == "namespace_cleanup":
+        old_body, old_exit = map(json.loads, receipts["old"]["stdout"].splitlines())
+        body, exit_record = map(json.loads, receipts["new"]["stdout"].splitlines())
+        environment_fields = {"executable", "base_executable", "prefix", "exec_prefix",
+            "base_prefix", "base_exec_prefix", "path", "user_site", "flags", "stdlib_origins"}
+        assert {k: v for k, v in old_body.items() if k not in environment_fields} == {
+            k: v for k, v in body.items() if k not in environment_fields}
+        _stdlib_check_base_identity(body, launch, tmp_path / "new")
+        assert body["flags"] == {**old_body["flags"], "no_site": 1}
+        assert old_body["user_site"] is False and body["user_site"] is None
+        from pathlib import Path
+
+        assert {k: Path(v).resolve() for k, v in body["stdlib_origins"].items()} == {
+            k: Path(v).resolve() for k, v in old_body["stdlib_origins"].items()}
+        assert body["main_is_globals"] is True and body["argv"] == ["main.py"]
+        assert body["name"] == "__main__" and body["package"] == "" and body["sibling"] == "ab"
+        assert exit_record == old_exit == dict(phase="atexit", argv0="-c", main_restored=True,
+            retained_name="__main__", retained_file="main.py", retained_doc="authored module doc")
+        assert all(r["returncode"] == 0 and r["stderr_hex"] == "" for r in receipts.values())
+    elif case_name in {"syntax_error", "runtime_error"}:
+        for receipt in receipts.values():
+            assert receipt["returncode"] == 1 and receipt["decode_errors"] == {}
+            assert not receipt["passed"]
+            if case_name == "syntax_error":
+                assert receipt["stdout_hex"] == ""
+                assert 'File "main.py", line 1' in receipt["stderr"]
+                assert "if True print('bad')" in receipt["stderr"]
+                assert receipt["stderr"].splitlines()[-1] == "SyntaxError: invalid syntax"
+            else:
+                assert receipt["stdout"] == "runtime-exit:-c\n"
+                assert 'File "main.py", line 3, in <module>' in receipt["stderr"]
+                assert receipt["stderr"].splitlines()[-1] == "ValueError: authored runtime failure"
+    else:
+        stdout = b"\xff\n" if case_name == "exit_invalid_utf8" else (
+            b"pending\n" if case_name == "pending" else (case.value + "\n").encode())
+        stderr = b"exit-hook\n" if case_name == "exit_invalid_utf8" else b""
+        for receipt in receipts.values():
+            assert receipt["stdout_hex"] == stdout.hex() and receipt["stderr_hex"] == stderr.hex()
+            assert receipt["returncode"] == (7 if case_name == "exit_invalid_utf8" else 0)
+            assert receipt["passed"] is (case_name in {"utf8_bom_crlf", "latin1_cookie"})
+            expected_text = None if case_name == "exit_invalid_utf8" else stdout.decode()
+            expected_errors = {"stdout"} if case_name == "exit_invalid_utf8" else set()
+            assert receipt["stdout"] == expected_text
+            assert set(receipt["decode_errors"]) == expected_errors
+    _stdlib_pass(root, passed_name, raw_path, launch, sources, 2, case=case_name, case_index=index,
+        declared_differences=["base_no_site_runtime", "bootstrap_frames",
+                              "import_and_audit_events"])
+
+
+def test_stdlib_python_action_fresh_process_contamination(tmp_path):
+    """Two new children; first mutates process memory/cwd, second gets a clean process/workspace."""
+    import json
+    import os
+
+    root, old, new, launch, sources = _stdlib_context()
+    _stdlib_require_identity(root, launch, sources)
+    marker = "HUMANBRAIN_AUTHORED_CONTAMINATION_V1"
+    assert marker not in os.environ
+    producer = (
+        "import os,sys,builtins,types,json,authored_config\n"
+        f"os.environ[{marker!r}]='dirty'\n"
+        "builtins._authored_dirty=True\n"
+        "sys.modules['_authored_dirty']=types.ModuleType('_authored_dirty')\n"
+        "authored_config.setting='dirty'\nos.mkdir('inner')\nos.chdir('inner')\n"
+        "print(json.dumps(dict(pid=os.getpid(),cwd=os.getcwd(),mutated=True)))\n")
+    consumer = (
+        "import os,sys,builtins,json\n"
+        f"clean_env=({marker!r} not in os.environ)\n"
+        "clean_modules=('_authored_dirty' not in sys.modules "
+        "and 'authored_config' not in sys.modules)\n"
+        "import authored_config\n"
+        "print(json.dumps(dict(pid=os.getpid(),cwd=os.getcwd(),clean_env=clean_env,"
+        "clean_modules=clean_modules,clean_builtins=not hasattr(builtins,'_authored_dirty'),"
+        "sibling=authored_config.setting,clean_workspace=not os.path.exists('inner'))))\n")
+    raw_paths, receipts = [], []
+    # Precheck both pairs before the first launch; each raw result is preserved immediately.
+    for name in ("contamination-producer", "contamination-consumer"):
+        assert not (root / ".pytest-tmp" / f"stdlib-python-v1-{name}-raw.json").exists()
+        assert not (root / ".pytest-tmp" / f"stdlib-python-v1-{name}.json").exists()
+    passed_name = "stdlib-python-v1-contamination.json"
+    assert not (root / ".pytest-tmp" / passed_name).exists()
+    for name, program in (("producer", producer), ("consumer", consumer)):
+        fixture = _direct_executor_fixture(old, name, "ab", program=program)
+        raw_path, _, record = _stdlib_execute_saved(root, f"contamination-{name}", fixture,
+            tmp_path / name, ("new",), launch, sources, old, new)
+        raw_paths.append(raw_path)
+        receipts.append(record["new"])
+    assert all(r["returncode"] == 0 and r["stderr_hex"] == "" for r in receipts)
+    first, second = (json.loads(r["stdout"]) for r in receipts)
+    assert first["mutated"] is True
+    assert first["pid"] != second["pid"] and os.getpid() not in {first["pid"], second["pid"]}
+    from hashlib import sha256
+    from pathlib import Path
+
+    assert Path(first["cwd"]).resolve() == (tmp_path / "producer/new/inner").resolve()
+    assert Path(second["cwd"]).resolve() == (tmp_path / "consumer/new").resolve()
+    assert all(second[key] is True for key in (
+        "clean_env", "clean_modules", "clean_builtins", "clean_workspace"))
+    assert second["sibling"] == "ab" and marker not in os.environ
+    _stdlib_pass(root, passed_name, raw_paths[0], launch, sources, 2,
+        contamination=dict(passed=True),
+        all_raw_evidence={str(path): sha256(path.read_bytes()).hexdigest() for path in raw_paths})
+
+
+@pytest.mark.parametrize("mode,learning_enabled", [
+    ("learned", True), ("address_frozen", True), ("slow_frozen", True),
+    ("writes_disabled", True), ("learned", False),
+])
+def test_held_codec_exact_current_local_reference(mode, learning_enabled):
+    """Authored call scheduling parity against the frozen no-backprop source."""
+    import dataclasses
+    import hashlib
+    import subprocess
+    import sys
+    import types
+    from pathlib import Path
+
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    root = Path(__file__).resolve().parents[1]
+    raw = subprocess.check_output([
+        "git", "show", "64f9e0a60fe042a39a72a80c82d0a78c12960c2a:"
+        "src/humanbrain/local_memory_learner.py",
+    ], cwd=root)
+    assert hashlib.sha256(raw).hexdigest() == (
+        "4a4aa24f14f30705cb8a83a0954291ed86e7e4473744920775d3a7961d770ccc")
+    old = types.ModuleType("_held_codec_local_reference")
+
+    def same_steps(first, second):
+        assert len(first) == len(second)
+        for a, b in zip(first, second, strict=True):
+            for field in dataclasses.fields(a):
+                _assert_nested_equal(getattr(a, field.name), getattr(b, field.name))
+
+    def same_weights(first, second):
+        a, b = first.state_dict(), second.state_dict()
+        # Only explicitly declared simulator scheduling metadata may differ.
+        extra_a, extra_b = a.pop("_extra_state"), b.pop("_extra_state")
+        assert extra_a.pop("schema") == "local-neuronal-joint-address-learner-v1"
+        assert extra_b.pop("schema") == "local-neuronal-joint-address-held-codec-learner-v1"
+        assert extra_b.pop("codec_activity") == (
+            "evaluate all occupied sensory slots once per call with held weights; "
+            "first decision uses bank, later forward cursors gather responses; "
+            "discard before any later call or publication-dependent reuse"
+        )
+        assert extra_a == extra_b
+        _assert_nested_equal(a, b)
+
+    def same_prediction(first, second, slots):
+        assert first.generation == second.generation
+        same_steps(first.steps, second.steps)
+        _assert_nested_equal(first.initial_log_belief, second.initial_log_belief)
+        _assert_nested_equal(first.final_log_belief, second.final_log_belief)
+        same_work(first.work, second.work, slots, len(first.steps))
+
+    def same_work(first, second, slots, decisions):
+        changed = {"codec_slot_evaluations", "codec_output_potentials", "codec_normalizations"}
+        added = {key for key in second if key not in first}
+        assert added == {
+            "codec_response_gathers", "codec_response_values_gathered",
+            "codec_response_bytes_gathered",
+        }
+        assert first.keys() <= second.keys()
+        for key in first.keys() - changed:
+            assert first[key] == second[key]
+        assert first["codec_slot_evaluations"] == slots * decisions
+        assert first["codec_normalizations"] == slots * decisions
+        assert first["codec_output_potentials"] == slots * decisions * 257
+        assert second["codec_slot_evaluations"] == second["codec_normalizations"] == slots
+        assert second["codec_output_potentials"] == slots * 257
+        gathered = slots * (decisions - 1)
+        assert second["codec_response_gathers"] == gathered
+        assert second["codec_response_values_gathered"] == gathered * 257 * 4
+        assert second["codec_response_bytes_gathered"] == gathered * 257 * 28
+
+    with patch.dict(sys.modules, {old.__name__: old}):
+        exec(compile(raw, "<no-backprop-held-codec-reference>", "exec"), old.__dict__)
+        models = [old.LocalMemoryLearner(mode=mode, seed=733),
+                  LocalMemoryLearner(mode=mode, seed=733)]
+        same_weights(*models)
+        states = [model.ingest([b"aa", b""]) for model in models]
+        _assert_nested_equal(states[0].snapshot(), states[1].snapshot())
+        before_state = states[1].snapshot()
+        new_calls = []
+        decisions = []
+        evaluate = models[1].codec.evaluate
+
+        def counted(sensory):
+            new_calls.append(sensory.shape[0])
+            return evaluate(sensory)
+
+        with patch.object(models[1].codec, "evaluate", side_effect=counted):
+            predictions = [model.predict_with_receipt(b"r", state, 4)
+                           for model, state in zip(models, states, strict=True)]
+            same_prediction(*predictions, states[0].used)
+            decisions.extend(len(item.steps) for item in predictions)
+            teachers = [model.teach(b"r", b"aaba", state, .01,
+                                    learning_enabled=learning_enabled)
+                        for model, state in zip(models, states, strict=True)]
+            same_steps(teachers[0].steps, teachers[1].steps)
+            for field in dataclasses.fields(teachers[0]):
+                if field.name not in {"steps", "state", "work"}:
+                    _assert_nested_equal(getattr(teachers[0], field.name),
+                                         getattr(teachers[1], field.name))
+            same_work(teachers[0].work, teachers[1].work, states[0].used, 5)
+            same_weights(*models)
+            _assert_nested_equal(teachers[0].state.snapshot(), teachers[1].state.snapshot())
+            predictions = [model.predict_with_receipt(b"r", state, 4)
+                           for model, state in zip(models, states, strict=True)]
+            same_prediction(*predictions, states[0].used)
+            decisions.extend(len(item.steps) for item in predictions)
+        assert new_calls == [states[1].used] * 3
+        _assert_nested_equal(before_state, states[1].snapshot())
+        assert not any(parameter.requires_grad or parameter.grad is not None
+                       for model in models for parameter in model.parameters())
+        _direct_executor_save(root, f"held-codec-v1-{mode}-{learning_enabled}.json", dict(
+            status="passed", mode=mode, learning_enabled=learning_enabled,
+            model_constructions=2, ingestions=2, free_predictions=4,
+            free_decisions=decisions, teacher_traversals=2, teacher_offers=10,
+            current_codec_evaluation_rows=new_calls, child_actions=0,
+            source_sha256={str(Path(__file__).resolve()): hashlib.sha256(
+                Path(__file__).read_bytes()).hexdigest(),
+                str(root / "src/humanbrain/local_memory_learner.py"): hashlib.sha256(
+                    (root / "src/humanbrain/local_memory_learner.py").read_bytes()).hexdigest()},
+            reference_sha256=hashlib.sha256(raw).hexdigest()))
+
+
+def test_held_codec_rechecks_new_calls_after_external_mutation():
+    """No held response survives a public call or bypasses changed-input validation."""
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    model = LocalMemoryLearner(seed=733)
+    state = model.ingest([b"aa"])
+    model.predict_with_receipt(b"q", state, 0)
+    before = model.snapshot(state)
+    model.codec.bias[0] = float("nan")
+    with pytest.raises(ValueError, match="finite"):
+        model.predict_with_receipt(b"q", state, 1)
+    model.codec.bias.copy_(before["model"]["codec.bias"])
+    state.sensory[0, 0] = 0.5
+    with pytest.raises(ValueError):
+        model.predict_with_receipt(b"q", state, 1)
+    state.sensory.copy_(before["memory"]["sensory"])
+    with pytest.raises(ValueError, match="raw bytes"):
+        model.teach(b"q", "aa", state, .01)
+    _assert_nested_equal(before, model.snapshot(state))
+
+
+def test_held_codec_nonzero_sensory_free_cursor_response_parity():
+    """Force a long free traversal to compare nonzero/EOS gathers with actual evaluations."""
+    import dataclasses
+    from hashlib import sha256
+    from pathlib import Path
+
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    model = LocalMemoryLearner(seed=733)
+    state = model.ingest([b"aa", b""])
+    # Authored activity fixture, shared by both response paths; no teaching or task fit.
+    model.codec.bias[0] = 8.0
+    before = model.snapshot(state)
+    actual = model._codec_responses
+    positions = []
+
+    def checked(bank, tape, cursors, position, work):
+        response = actual(bank, tape, cursors, position, work)
+        recomputed = model.codec.evaluate(model.memory._content_checked(tape, cursors))
+        for field in dataclasses.fields(response):
+            _assert_nested_equal(getattr(recomputed, field.name), getattr(response, field.name))
+        positions.append(position)
+        return response
+
+    with patch.object(model, "_codec_responses", side_effect=checked):
+        prediction = model.predict_with_receipt(b"q", state, 4)
+    assert positions == [0, 1, 2, 3, 4]
+    assert prediction.generation == ByteGeneration(b"\x00" * 4, "limit")
+    assert prediction.work["codec_slot_evaluations"] == 4
+    assert prediction.work["codec_response_gathers"] == 16
+    _assert_nested_equal(before, model.snapshot(state))
+    root = Path(__file__).resolve().parents[1]
+    _direct_executor_save(root, "held-codec-v1-nonzero-free-qa.json", dict(
+        status="passed", model_constructions=1, ingestions=1, free_predictions=1,
+        free_decisions=len(prediction.steps), extra_standalone_codec_evaluations=5,
+        extra_standalone_codec_rows=20, teacher_offers=0, child_actions=0,
+        source_sha256={str(Path(__file__).resolve()): sha256(
+            Path(__file__).read_bytes()).hexdigest(),
+            str(root / "src/humanbrain/local_memory_learner.py"): sha256(
+                (root / "src/humanbrain/local_memory_learner.py").read_bytes()).hexdigest()}))
