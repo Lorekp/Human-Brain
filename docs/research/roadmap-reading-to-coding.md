@@ -151,9 +151,11 @@ checks. Writes-disabled solves only 1/8 fit. Outputs respond to unrelated
 document writes, but neither key/value assignment swap changes its answer.
 Distinct retained matrices and changed slow weights therefore do not establish
 useful binding or learned writing. Close this fit without more epochs or an
-automatic local-rule tweak. The next bounded review must localize where the
-actual document distinction is lost across writes, query addressing and output,
-using the frozen checkpoint before selecting another acquisition run. No
+automatic local-rule tweak. The selected
+[localization review](local-document-memory-return-review.md) directs one
+60-second frozen-checkpoint diagnostic of actual writes, query addressing,
+output potentials and isolated local update effects before another acquisition.
+It preserves raw inputs and counts every disposable correction and real action. No
 additional supplied-factor output diagnostic or protected gate is opened.
 These byte learners use no pretrained encoder or LLM. The
 [action-path review](local-memory-byte-preflight-review.md) identifies host-computed

@@ -1766,3 +1766,236 @@ def test_two_byte_source_free_worker_fresh_process_read_only_checkpoint(tmp_path
             saved[row["arm"]]["memories"][row["memory_id"]]
         )
     assert hashes == [runner.file_hash(p) for p in (checkpoint, requests)]
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+@pytest.mark.parametrize(
+    "mode", ["tagged", "aggregate", "writer_maps_frozen", "frozen", "writes_disabled"]
+)
+def test_localization_token_trace_matches_whole_ingest_and_single_purge(dtype, mode):
+    from experiments.r4_integrated.local_memory_localization_core import traced_ingest
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    model = LocalMemoryLearner(
+        mode=mode, input_code_size=2, value_size=94, hidden_size=3, key_size=2
+    )
+    _set_upstream_dtype(model, dtype)
+    weights = copy.deepcopy(model.state_dict())
+    documents = [b"A", b"BC"]
+    ordinary = model.ingest(documents)
+    state, rows = traced_ingest(model, documents)
+    _assert_nested_equal(ordinary.snapshot(), state.snapshot())
+    _assert_nested_equal(weights, model.state_dict())
+    assert [r["token"] for r in rows] == [65, BYTE_EOS, 66, 67, BYTE_EOS]
+    assert [r["document_index"] for r in rows] == [0, 0, 1, 1, 1]
+    assert torch.equal(rows[2]["writer_before"], rows[1]["writer"])
+    assert rows[2]["writer_before"].count_nonzero()
+    assert not state.cell.activity.count_nonzero()
+    assert torch.equal(rows[-1]["synapses"], state.synapses)
+    previous = torch.zeros_like(state.synapses, dtype=torch.float64)
+    for row in rows:
+        key, value, beta = (row[k].double() for k in ("key", "value", "beta"))
+        predicted = torch.bmm(previous, key[:, :, None]).squeeze(-1)
+        derived = previous + (beta * (value - predicted))[:, :, None] * key[:, None, :]
+        torch.testing.assert_close(derived, row["synapses"].double(), atol=1e-6, rtol=1e-6)
+        previous = row["synapses"].double()
+    snapshot = state.snapshot()
+    rows[-1]["synapses"].zero_()
+    rows[-1]["writer"].zero_()
+    _assert_nested_equal(snapshot, state.snapshot())
+
+
+@pytest.mark.parametrize("ending", ["first_eos", "second_eos", "full_eos", "cap"])
+def test_localization_observations_match_prediction_and_count_supplemental_phases(ending):
+    from experiments.r4_integrated.local_memory_localization_core import observed_query
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    model = LocalMemoryLearner(input_code_size=2, value_size=94, hidden_size=3, key_size=2)
+    with torch.no_grad():
+        model.decoder.output_weights[97, :3] = 1
+        if ending != "cap":
+            phase = {"first_eos": 0, "second_eos": 1, "full_eos": 2}[ending]
+            model.decoder.output_weights[BYTE_EOS, phase] = 2
+    state = model.ingest([b"A", b"BC"])
+    before = model.snapshot(state)
+    observation = observed_query(model, b"q", state)
+    ordinary = model.predict(b"q", state, 2)
+    context, query_state, event = model._query(b"q", state)
+    assert observation["generated_hex"] == ordinary.data.hex()
+    assert observation["stop_reason"] == ordinary.stop_reason
+    assert observation["decisions"] == len(ordinary.data) + 1
+    assert observation["phase_evaluations"] == 3
+    assert observation["extra_phase_evaluations"] == 3 - observation["decisions"]
+    assert torch.equal(observation["context"], context)
+    assert torch.equal(observation["query_activity"], query_state.activity)
+    assert torch.equal(observation["query_key"], event.key)
+    assert torch.equal(observation["read"], event.value)
+    _assert_nested_equal(before, model.snapshot(state))
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_localization_proposal_matches_actual_teacher_and_isolates_two_blocks(dtype):
+    from experiments.r4_integrated.local_memory_localization_core import (
+        observed_query,
+        perturbed_model,
+        propose_blocks,
+    )
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    model = LocalMemoryLearner(input_code_size=2, value_size=94, hidden_size=3, key_size=2)
+    _set_upstream_dtype(model, dtype)
+    with torch.no_grad():
+        model.decoder.output_weights.copy_(torch.linspace(
+            -0.002, 0.002, model.decoder.output_weights.numel(), dtype=torch.float64
+        ).reshape_as(model.decoder.output_weights))
+    state = model.ingest([b"x=ab", b"y=bc"])
+    before = model.snapshot(state)
+    observation = observed_query(model, b"x?", state)
+    reference = copy.deepcopy(model)
+    receipt = reference.teach(b"x?", b"ab", state, 0.01)
+    proposal = propose_blocks(model, b"x?", b"ab", state, observation)
+    assert proposal["teacher_count"] == 3
+    assert proposal["mean_loss"] == receipt.mean_loss
+    assert torch.equal(proposal["actual_mean_context_signal"], receipt.mean_context_signal)
+    assert torch.equal(proposal["discarded_output_delta"],
+                       reference.decoder.output_weights - model.decoder.output_weights)
+    assert proposal["teacher_context_signals"].count_nonzero()
+    expected = dict(reference.named_parameters())
+    for block, changes in proposal["blocks"].items():
+        assert any(change["delta"].count_nonzero() for change in changes.values())
+        for name, change in changes.items():
+            assert torch.equal(change["after"], expected[name])
+        for sign in (-1, 1):
+            candidate = perturbed_model(model, proposal, block, sign)
+            original = dict(model.named_parameters())
+            for name, parameter in candidate.named_parameters():
+                wanted = (
+                    (changes[name]["after"] if sign == 1 else
+                     original[name] - changes[name]["delta"])
+                    if name in changes else original[name]
+                )
+                assert torch.equal(parameter, wanted)
+            assert torch.equal(candidate.decoder.output_weights, model.decoder.output_weights)
+    _assert_nested_equal(before, model.snapshot(state))
+
+
+def test_localization_positive_block_uses_actual_after_despite_float_cancellation():
+    from experiments.r4_integrated.local_memory_localization_core import perturbed_model
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    model = LocalMemoryLearner(input_code_size=2, value_size=94, hidden_size=3, key_size=2)
+    with torch.no_grad():
+        model.memory.strength_bias.fill_(1.0)
+    before = model.memory.strength_bias.detach().clone()
+    after = torch.full_like(before, 1e-8)
+    delta = after - before
+    assert not torch.equal(before + delta, after)
+    proposal = {"blocks": {"writer": {"memory.strength_bias": {
+        "before": before, "after": after, "delta": delta,
+    }}}}
+    positive = perturbed_model(model, proposal, "writer", 1)
+    negative = perturbed_model(model, proposal, "writer", -1)
+    assert torch.equal(positive.memory.strength_bias, after)
+    assert torch.equal(negative.memory.strength_bias, before - delta)
+    assert torch.equal(model.memory.strength_bias, before)
+
+
+def test_localization_fixed_roster_and_saved_potential_scorer_without_model_calls():
+    from collections import Counter
+
+    from experiments.r4_integrated import local_memory_localization_v1 as runner
+
+    roster = runner.roster()
+    memories, cases = roster["memories"], roster["cases"]
+    assert len(memories) == 16 and len(cases) == 64
+    assert sum(runner.CONFIG[key] for key in (
+        "baseline_ingestions", "proposal_ingestions", "perturbed_ingestions"
+    )) == 56
+    assert runner.CONFIG["free_queries"] == 64 and runner.CONFIG["teacher_offers"] == 24
+    assert [row["id"] for row in cases] == list(range(64))
+    assert all(row["mode"] == "tagged" for row in cases[:8])
+    for index in range(4):
+        assert memories[index + 4]["document_hex"] == memories[index]["document_hex"][::-1]
+        assert memories[index + 12]["document_hex"] == memories[index + 8]["document_hex"][::-1]
+    assert Counter(row["baseline_id"] for row in cases[32:]) == dict.fromkeys(range(8), 4)
+    assert Counter((row["block"], row["sign"]) for row in cases[32:]) == {
+        ("writer", 1): 8, ("writer", -1): 8, ("address", 1): 8, ("address", -1): 8,
+    }
+    for row in cases[32:]:
+        baseline = cases[row["baseline_id"]]
+        assert row["query_hex"] == baseline["query_hex"]
+        assert row["target_hex"] == baseline["target_hex"]
+    scores = torch.zeros(3, 257, dtype=torch.float64)
+    scores[0, 97] = scores[1, 98] = scores[2, BYTE_EOS] = 1
+    observation = {"phase_scores": scores}
+    result = runner.score(observation, b"ab".hex())
+    assert result["phase_losses"] == [0, 0, 0] and result["phase_margins"] == [1, 1, 1]
+    assert result["mean_loss"] == 0
+    scores[0, 99] = 2
+    before = scores.clone()
+    result = runner.score(observation, b"ab".hex())
+    assert result["phase_losses"] == [2, 0, 0]
+    assert result["phase_margins"] == [-1, 1, 1]
+    assert result["mean_loss"] == 2 / 3
+    assert torch.equal(scores, before)
+
+
+def test_localization_worker_fresh_process_empty_memory_query_only(tmp_path):
+    import json
+    import os
+    import subprocess
+    import sys
+    import time
+    from pathlib import Path
+
+    from experiments.r4_integrated import local_memory_localization_v1 as runner
+
+    model = runner.previous.new_model(runner.previous.SPEC, "tagged")
+    state = model.memory.initial_local_state(1)
+    saved = {
+        "models": {"tagged": runner.clone(model.state_dict())},
+        "memories": {"m": {"model_id": "tagged", "state": runner.clone(state.snapshot())}},
+    }
+    checkpoint, requests, output = (
+        (tmp_path / name).resolve() for name in ("state.pt", "queries.json", "observations.json")
+    )
+    torch.save(saved, checkpoint)
+    runner.write_json(requests, {
+        "sources": runner.sources(),
+        "cases": [{"id": 0, "memory_id": "m", "query_hex": b"q".hex()}],
+    })
+    hashes = [runner.file_hash(path) for path in (checkpoint, requests)]
+    environment = dict(os.environ)
+    environment.update(
+        HUMANBRAIN_DEVICE="cpu",
+        HUMANBRAIN_NATIVE_CACHE=str(runner.ROOT / ".native-cache"),
+        OMP_NUM_THREADS="1", MKL_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1",
+    )
+    child = subprocess.run(
+        [
+            sys.executable, "-I", "-X", "utf8", str(Path(runner.__file__).resolve()),
+            "worker", "--output", str(output), "--checkpoint", str(checkpoint),
+            "--requests", str(requests), "--checkpoint-sha", hashes[0],
+            "--requests-sha", hashes[1], "--deadline-unix", str(time.time() + 45),
+        ],
+        cwd=tmp_path, env=environment, capture_output=True, text=True, timeout=45,
+    )
+    assert child.returncode == 0, child.stderr
+    result = json.loads(output.read_bytes())
+    assert result["status"] == "completed" and result["worker_pid"] != os.getpid()
+    assert not result["roster_or_documents_or_targets_supplied_to_model"]
+    assert result["query_traversals"] == 1 and result["query_byte_steps"] == 2
+    assert result["phase_evaluations"] == 3
+    assert result["checkpoint_sha256"] == hashes[0] and result["requests_sha256"] == hashes[1]
+    assert result["observations_sha256"] == runner.file_hash(output.with_suffix(".pt"))
+    row, = result["outputs"]
+    assert row["generated_hex"] == "0000" and row["stop_reason"] == "limit"
+    assert row["decisions"] == 3 and row["extra_phase_evaluations"] == 0
+    assert row["memory_sha256"] == runner.digest(saved["memories"]["m"]["state"])
+    assert row["weights_sha256"] == runner.digest(saved["models"]["tagged"])
+    observations = torch.load(output.with_suffix(".pt"), map_location="cpu", weights_only=True)
+    assert set(observations) == {0}
+    assert observations[0]["phase_scores"].shape == (3, 257)
+    assert not observations[0]["phase_scores"].count_nonzero()
+    assert observations[0]["phase_evaluations"] == 3
+    assert hashes == [runner.file_hash(path) for path in (checkpoint, requests)]

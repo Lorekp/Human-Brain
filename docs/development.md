@@ -126,6 +126,15 @@ comparisons separate and never subtract timestamps from different clock origins.
 Preserve invalid historical samples; do not replace zeros with a guessed floor
 or reuse a frozen admission after changing its timer.
 
+For the integrated memory harness, pass absolute output, admission, checkpoint
+and request paths. Its source-free worker changes working directory, so a
+relative output path can become invalid only after disposable lessons finish.
+The frozen `validate_cost_launch` also requires the exact Python prefix
+`-X utf8 -m <experiment module> cost`; inspect that contract before constructing
+the command. A completed workload with a mismatched invocation cannot admit a
+fit. Preserve failed receipts and discarded exposure, correct the invocation in
+a fresh directory, and keep the original validation checks.
+
 For change-specific QA, run reviewed existing test nodes with this interpreter.
 Use `-o addopts= -ra --durations=10` to expose counts, skips, and timing. Broader
 CPU/native, SciPy, and CUDA regressions require explicit selections and available
