@@ -33,28 +33,53 @@ executor optimization is not the evidence-led next intervention. The apparent
 location transfer is still limited to the authored short-file layouts, explicit
 paths and one seed; it is not proof that arbitrary duplicate contexts are resolved.
 
-## One next scientific question
+## Completed attribution and the next source/math question
 
-**Why does the preserved reader terminate immediately on new raw action requests:
-does it address EOS-producing locations, or does its codec emit EOS even at the
-requested literal content?** This separates loss of content routing under changed
-request context from a stopping/readout problem. Old-question retention alone
-does not distinguish them. The endpoint failure labels and empty strings do not
-either. A changed request, deletion supervision and codec adaptation are plausible
-contributors, not established causes.
+The completed saved attribution covers **48 learned-arm endpoints only**. It does
+not attribute matched-control outputs. For an observed first EOS, the recorded
+prior `p_s`, posterior `b_s` and mixture probability `m` imply
+`c_s(EOS) = m * exp(log b_s - log p_s)` and contribution
+`p_s * c_s(EOS) = m * b_s`. This uses saved filtering activity, not a new codec
+evaluation. Raw target/document indexing is external posthoc analysis and must
+never enter neuronal observations or teaching. Empty values have no payload-byte
+start, and STOP has no canonical reader teacher.
 
-Recommend one bounded saved-receipt attribution before choosing another learning
-mechanism or acquisition protocol. For the learned fresh nonempty-payload failures
-that emit EOS first, use the already saved first prior `p_s`, posterior `b_s` and
-mixture EOS probability `m`. The recorded filtering equation implies
-`c_s(EOS) = m * exp(log b_s - log p_s)` and actual slot contribution
-`p_s * c_s(EOS) = m * b_s`. Compute in log space, check finite normalization and
-rounding, and group actual contributions at target-value starts, other value
-starts, punctuation/document EOS and remaining positions. Position labels belong
-only to this external saved-data analysis of the authenticated raw documents;
-they must not enter neuronal observations or teaching. Contrast the corresponding
-saved slow-frozen and action-frozen cases, without claiming that those arms hold
-every downstream activity fixed.
+Across the eight V cases, the intended start receives prior mass 0.03345–0.09369.
+Its reconstructed conditional EOS probability is only 0.01835–0.01963, contributing
+0.000615–0.001839 to total EOS probability 0.14864–0.16550. Actual EOS sensory
+slots contribute 0.03400–0.04297; all other non-EOS slots contribute
+0.11242–0.12115. The three contribution categories are disjoint. Diffuse off-target
+activity therefore dominates observed EOS; the intended literal start itself is
+not a strong EOS producer in these cases. Among nonempty SPLICE endpoints, mean
+target-start prior is 0.14105 for twelve successes and 0.09520 for twenty-three
+failures, twenty of which emit first-step EOS. This association does not identify
+why the learned address distribution has that shape.
+
+The completed saved rank pass finds the intended literal start uniquely ranked
+first in all eight V cases, in 22/23 failed nonempty SPLICE cases, and in all
+12/12 successful nonempty SPLICE cases. The sole failed rank-two case is T01:
+its target-minus-top log margin is -0.04286336898803689. Thus correct ranking
+with diffuse activity, rather than wrong top ranking, describes the dominant
+observed failure pattern. It does not prove that selecting the top location would
+generate the right complete payload, and it does not erase the remaining
+misranking or STOP failure.
+
+Recommend **one bounded source/math review of neuronal address competition and
+concentration before payload generation**. Its question is whether an explicit
+neuronal competition circuit can turn learned address preferences into useful
+content retrieval while preserving direct local learning. Require the proposed
+forward state, competition dynamics, stopping/continuation semantics, local
+feedback ownership and actual arithmetic/storage costs to be concrete. The same
+persistent circuit must act and receive correction; a changed forward policy
+cannot silently retain an incompatible teacher computation or introduce reverse
+error transport. Preserve the action heads and identical unparsed raw request.
+
+That review must account for the tradeoff between suppressing off-target pooled
+emission and losing valid duplicate evidence or prefix disambiguation. It should
+produce one justified mechanism or identify an unresolved blocker, not a policy
+or gain sweep. Neither WTA nor temperature adjustment is selected by these ranks.
+Request-context interference, deletion supervision and codec adaptation remain
+candidate explanations for the learned distribution, not established causes.
 
 This reconstruction identifies the conditional probability of the token actually
 observed. It cannot recover every unsaved codec output, establish a corrected
@@ -66,6 +91,11 @@ mechanism must continue to receive the identical unparsed raw request and act an
 learn in the same instance. No implementation, diagnostic execution or fit is
 authorized by this recommendation.
 
+The v1 endpoints are now exposed development evidence. Any successor comparison
+must preregister new withheld cases before their outcomes are observed, retain
+matched controls and old-reading retention, and obtain fresh execution admission.
+The frozen v1 criterion and failures cannot be revised into a passing benchmark.
+
 ## Evidence identities
 
 The review read the saved report/audit and streamed the worker proposal journal;
@@ -76,5 +106,7 @@ the independent descriptive summary supplies complete head-error counts.
 - Independent audit: `96cbf7f155beb8efea0f3541cce535a7ab727661293e93e9525f0312af7afe6d`.
 - Worker endpoint journal: `21d83aedf0a1f0f4bcdf1ebac408e69147646fdc0c5995b5f8ba9603d48a0bbd`.
 - Outcome summary: `8be8f588acd0db1428a636e1581dd28c5ea3a4a1efc594489489f3bbdbbef6e1`.
+- Learned reader attribution: `c2b55caea8da7ba7266345263de24dc8b650d119a88dd75bc0a33b5837809ecf`.
+- Learned address ranks: `07541baa6c17eba19c3bad670dbc4c0b253880dfcc98d0350616b8ebdf1bda5e`.
 - Reader source: `2a6bfe480757b248c585a00bdc9c79155af6abd3a162b3e93a098d406b73a3b8`.
 - Action learner source: `bb06e074d44431cf2d09d62f7e98119a2a207ed53e7f6d5796bb6c7b274770ab`.

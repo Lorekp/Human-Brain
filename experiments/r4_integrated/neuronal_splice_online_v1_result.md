@@ -98,3 +98,19 @@ learned escaping, planning, autonomous recovery, broad language comprehension,
 or a SWE benchmark advantage. No protected benchmark or target-model comparison
 was attempted. The next decision must use the saved failure distribution and
 cost evidence before any new acquisition is selected.
+
+The subsequent [saved reader attribution](../../benchmarks/neuronal_splice_online_v1.reader_attribution.json)
+examined the 48 learned endpoint receipts without neural execution. In all
+eight V contrasts, the target payload start's conditional EOS probability is
+only 1.8–2.0%. Its contribution to the actual first-EOS mixture is 0.0006–0.0018;
+other non-EOS positions contribute 0.112–0.121, and document EOS slots another
+0.034–0.043. The intended start holds only 3.3–9.4% of initial address mass.
+Thus off-target branches dominate the observed EOS. This does not establish
+why learning produced that distribution or predict a repaired generation.
+The [completed saved rank pass](../../benchmarks/neuronal_splice_online_v1.address_ranks.json)
+finds unique rank one at all eight V starts, 22/23 failed nonempty edit starts
+and all twelve successful nonempty starts. The sole failed rank-two case is
+retained T01; its target-minus-top log-prior margin is -0.04286336898803689.
+Correct top ranking with diffuse mass is therefore the dominant observed
+pattern. No alternative decoded output was computed. The roadmap selects a
+source/math address-competition review, preserving the working action circuit.

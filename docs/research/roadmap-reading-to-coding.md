@@ -15,11 +15,16 @@ admission at 418.10 projected seconds and 1,500.5 MiB.
 
 All 28 fresh edited-task locations were correct; nineteen payloads were wrong,
 and one KEEP missed STOP. All eight value-swap tasks emitted empty payloads.
-The active [learning review](neuronal-splice-online-v1-learning-review.md) selects
-one saved-receipt prior/EOS attribution before any new mechanism or acquisition.
-Use existing probabilities and authenticated documents only; no model call,
-checkpoint load or action replay is needed. Preserve the working action circuit
-and the [current implementation speed](neuronal-splice-online-v1-cost-review.md).
+The active [learning review](neuronal-splice-online-v1-learning-review.md) now
+completes saved prior/EOS attribution and address ranks with no model execution.
+Target starts are uniquely first in all eight value swaps and 22/23 failed
+nonempty edits, but diffuse off-target contributions dominate first EOS. Select
+one source/math review of neuron-based address competition before payload
+generation. It must preserve direct local learning, the same learning/acting
+system and raw requests. No temperature/WTA policy, implementation or new fit
+is adopted yet. Any successor must declare new withheld cases; v1 endpoints
+are exposed development evidence. Preserve the working action circuit and the
+[current implementation speed](neuronal-splice-online-v1-cost-review.md).
 The completed fixed run is closed: no extra epochs, rate/seed sweep, automatic
 recall change, benchmark advancement or further v6 exposure is selected.
 
