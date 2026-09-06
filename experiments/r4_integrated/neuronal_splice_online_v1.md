@@ -170,3 +170,20 @@ with exact formula results, incomplete-cost rejection, byte-exact alternative
 splice acceptance, and STOP/limit rejection. It makes zero model/checkpoint/
 action calls and does not run the full audit dispatcher. Source review and actual
 integration QA still precede cost; passing this arithmetic node cannot admit it.
+
+That one arithmetic node passed its first run at revision
+`27fa7a4db93b0ddb117bb7b6b933e3142e129fbb` after clean doctor-dh7xx9ww:
+1 passed in 2.45 pytest seconds. The separate
+[audit-helper QA receipt](../../benchmarks/neuronal_splice_online_v1.audit_qa.json)
+records its source, evidence and zero-neural exposure. This does not execute or
+qualify the complete saved-audit dispatcher.
+
+Next work is source review of the new dispatcher and a bounded actual
+worker/prior integration check, followed by final admission-source preparation.
+In particular, verify Windows launcher/worker creation identity, all source-copy
+imports, fresh action initialization reconstructed by the auditor, exact saved
+tensor metadata and complete action/learning/panel record schemas. The checker
+must bind worker launch/completion and all final unchanged-state assertions;
+ordinary arithmetic checks are not substitutes for those integration checks.
+Do not remove either DRAFT guard, load the prior or run cost until that review
+and its prospective QA scope are complete. No new numerical learning has run.

@@ -1,0 +1,41 @@
+{
+  "schema": "neuronal-splice-audit-arithmetic-qa-v1",
+  "status": "passed",
+  "source_revision": "27fa7a4db93b0ddb117bb7b6b933e3142e129fbb",
+  "junit": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "tests": "1",
+    "time": "2.446",
+    "timestamp": "2026-09-06T18:50:11.428443+02:00",
+    "hostname": "gonorrhea"
+  },
+  "coverage": [
+    "completed versus preliminary cost projection",
+    "separate M/A/J and completed audit formula",
+    "budget rejection and incomplete-sample rejection",
+    "alternative exact splice accepted separately from canonical tuple",
+    "explicit STOP cannot solve SET",
+    "missing EOS is rejected"
+  ],
+  "source_sha256": {
+    "experiments/r4_integrated/check_neuronal_splice_online_v1.py": "cb9fa77c37885d7f2a83819f3e4c82e25770806dcc64561311655a2fdb7ea18a",
+    "experiments/r4_integrated/neuronal_splice_receipts_v1.py": "353ceae583c5326a9892c1078d5b771cc86dfbb035d26faebd020d37e2c6f5b5",
+    "tests/test_byte_sequence_decoder.py": "ce67e214f4d7894e9d6ee05dcf4945bd17769e4f84b883c689cbecc21e2b7e8c"
+  },
+  "evidence_sha256": {
+    ".pytest-tmp/neuronal-splice-audit-arithmetic-v1-qa.xml": "52b8e7a457f01e96c76bcbd0c48d37e62eeacc7e34f7ba9af459364c30aa3633",
+    ".pytest-tmp/dev/doctor-dh7xx9ww/receipt.json": "bee4a87652235eb12da40177fd67e70020a56c8a7f9d570d56c9a8c532c5271c"
+  },
+  "exposure": {
+    "models": 0,
+    "checkpoint_loads": 0,
+    "neuronal_forwards": 0,
+    "teachers": 0,
+    "action_children": 0,
+    "complete_audit_dispatcher_calls": 0
+  },
+  "limitation": "Hand-authored helper arithmetic only. Full auditor and parent remain DRAFT; actual worker/prior QA and completed fresh cost admission are outstanding."
+}

@@ -16,7 +16,9 @@ by local correction. The active [online action integration](../../experiments/r4
 fixes one 256-lesson-per-arm comparison, fresh contrasts and reading retention.
 Its three data/receipt/transport checks now pass after correcting a 129-slot
 fixture to fit the 128-slot tape. No model ran in that QA. The standalone
-auditor and actual worker/prior integration QA remain before fresh cost admission.
+auditor now has a complete-stream draft and a passed authored arithmetic check;
+its source review and actual worker/prior integration QA remain before fresh
+cost admission. Both execution and audit retain their DRAFT guards.
 No further v6 exposure or alternate recall policy is selected.
 
 ## Objective
