@@ -1,9 +1,11 @@
 # Neuronal operation intent: direct whole-request input
 
-Status: root-selected source implementation, 2026-09-06. Implement the single
-reviewed branch below in new versioned source, keeping frozen modules unchanged.
-Freeze and review the exact ordinary QA scope before executing it. No standalone
-fit, checkpoint load, genuine endpoint replay or acquisition is authorized here.
+Status: paused before runtime qualification, 2026-09-06, following the user's
+broader-workload direction. The unexecuted source candidate is preserved as
+development work. It is not an active micro-gate or prerequisite for the
+[persistent language/action session](persistent-language-action-development-v1.md).
+No standalone fit, checkpoint load, endpoint replay or acquisition is authorized
+by this historical source proposal.
 No implementation, model/checkpoint load, feature reconstruction, alternative
 decoding, action, test or experiment was performed. Only finalized JSON and
 source were read; saved two-neuron logits were subtracted. Mem0 was searched as
@@ -85,6 +87,8 @@ language understanding.
 Let R be the flattened 576 rail activities. With L raw bytes, its squared norm
 is 9(L+1), including EOS. Define q = sqrt(32) R / sqrt(9(L+1)). Preserve the old
 operation feature vector phi and its separate energy-32 normalization exactly.
+Prefix positions remain fixed when a suffix changes length; normalized amplitudes
+still depend on the full request length. Do not claim identical feature values.
 New logits are W phi + U q + b, with U[2,576] initialized exactly zero as an
 explicit fresh prior. This preserves old logits at initialization in real
 arithmetic while giving each operation neuron direct access to all request
@@ -95,6 +99,11 @@ initial parity. Count the additional 1150 reductions and two current additions.
 Do not concatenate and renormalize the whole bank, which would
 silently rescale the old branch. Start/end features, reader, teacher schedule,
 pending action custody and actual execution remain the same.
+Initialize U after the unchanged seeded initializer without another random draw.
+The branch's raw input during correction is the request retained in the actual
+pending action, including when a SPLICE teacher supplies a corrected span/payload.
+Prepare and validate every new finite parameter proposal before the existing
+reader-teaching publication boundary; all action-freeze controls also freeze U.
 
 Teacher operation error remains e = softmax(logits) - onehot(target). Its local
 synapses receive delta W = -.01 e phi^T, delta U = -.01 e q^T and delta b = -.01 e.

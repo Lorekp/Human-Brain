@@ -9883,3 +9883,124 @@ def test_coincidence_splice_saved_cost_contract(tmp_path, monkeypatch):
             },
             stream,
         )
+
+# Prospective one-node append to tests/test_byte_sequence_decoder.py; unexecuted.
+
+
+def test_persistent_coincidence_512_append_and_reader_regression(tmp_path):
+    """One ordinary capacity regression, no training stream or actual action."""
+    from humanbrain.coincidence_local_memory_learner import CoincidenceLocalMemoryLearner
+    from humanbrain.persistent_coincidence_reader import PersistentCoincidenceReader512
+
+    old = CoincidenceLocalMemoryLearner(seed=733)
+    reader = PersistentCoincidenceReader512(seed=733)
+    for name, value in old.state_dict().items():
+        if isinstance(value, torch.Tensor):
+            assert torch.equal(reader.state_dict()[name], value)
+    state = reader.ingest([b"ab"])
+    old_state = old.ingest([b"ab"])
+    event = reader._query(b"a", state)
+    old_event = old._query(b"a", old_state)
+    assert torch.equal(event.activity, old_event.activity)
+    assert torch.equal(event.address_features, old_event.address_features)
+    assert torch.equal(event.address_scores, old_event.address_scores)
+    assert torch.equal(event.log_prior, old_event.log_prior)
+    for key, value in old_event.work.items():
+        assert event.work[key] == value
+    assert event.work["persistent_feature_block_count"] == 1
+    assert event.work["persistent_feature_assembly_bytes"] == 0
+    # Independent scalar raw coincidence and occupied-count normalization.
+    q = [256, 97]
+    prefixes = ([], [97], [98, 97])
+    for slot, prefix in enumerate(prefixes):
+        gain = math.sqrt(32) / math.sqrt(max(1, len(q) * len(prefix)))
+        for i in range(32):
+            for j in range(32):
+                expected = gain if i < len(q) and j < len(prefix) and q[i] == prefix[j] else 0
+                assert float(event.address_features[slot, i, j]) == pytest.approx(
+                    expected, rel=2e-6, abs=2e-7)
+    del event, old_event
+    initial = state.snapshot()
+    state = reader.ingest([b"a" * 125], state)
+    assert state.used == 129
+    for name in ("keys", "sensory", "successor"):
+        assert torch.equal(getattr(state, name)[:3], initial[name][:3])
+    crossed = reader.memory.advance(state, torch.tensor([127], dtype=torch.int64))
+    assert crossed.tolist() == [128]
+    assert reader.memory.content(state, crossed)[0, 256] == 1
+    middle = state.snapshot()
+    state = reader.ingest([b"b" * 382], state)
+    assert state.used == 512
+    for name in ("keys", "sensory", "successor"):
+        assert torch.equal(getattr(state, name)[:129], middle[name][:129])
+    full = state.snapshot()
+    with pytest.raises(ValueError, match="capacity exceeded"):
+        reader.ingest([b""], state)
+    _assert_nested_equal(state.snapshot(), full)
+    all_cursors = reader.memory.initial_recall(state)
+    assert all_cursors.tolist() == list(range(512))
+    advanced = reader.memory.advance(state, all_cursors)
+    assert torch.equal(advanced, state.successor)
+    assert reader.memory.accounting(state)["state_tensor_bytes"] == 825352
+    with pytest.raises(ValueError):
+        reader.memory.restore_state(old_state.snapshot())
+    restored = reader.memory.restore_state(full)
+    _assert_nested_equal(restored.snapshot(), full)
+    # Fresh authored zero scores exercise full512 competition without a teacher.
+    with torch.no_grad():
+        reader.address_weight.zero_()
+    weights = copy.deepcopy(reader.state_dict())
+    prediction = reader.predict_with_receipt(b"a", state, max_bytes=0)
+    assert len(prediction.steps) == 1
+    assert prediction.competition.winner_index == 0
+    assert prediction.competition.winner_activity.sum() == 1
+    assert prediction.competition.pair_currents.numel() == 130816
+    assert torch.count_nonzero(prediction.competition.pair_currents) == 0
+    assert prediction.work["competition_candidates"] == 512
+    assert prediction.work["competition_pairs"] == 130816
+    assert prediction.work["coincidence_feature_calls"] == 4
+    assert prediction.work["persistent_feature_block_count"] == 4
+    assert prediction.work["coincidence_slots"] == 512
+    assert prediction.work["coincidence_threshold_evaluations"] == 19 * 512 * 1024
+    assert prediction.work["persistent_feature_assembly_bytes"] == 512 * 1024 * 4
+    assert prediction.work["persistent_feature_copy_values"] == 512 * 1024
+    assert prediction.work["branch_cursor_initializations"] == 1
+    assert prediction.work["codec_bank_slot_indices"] == 512
+    _assert_nested_equal(reader.state_dict(), weights)
+    _assert_nested_equal(state.snapshot(), full)
+    # Exercise the inherited all-address teacher at full capacity without publication.
+    feedback = reader.teach(b"a", b"b", state, learning_enabled=False)
+    assert feedback.teacher_count == 2
+    assert [step.observed_token for step in feedback.steps] == [98, 256]
+    assert all(step.branch_cursors.numel() == 512 for step in feedback.steps)
+    assert feedback.work["branch_cursor_initializations"] == 512
+    assert feedback.work["branch_cursor_advances"] == 512
+    assert feedback.work["address_feature_slots"] == 512
+    assert feedback.work["address_local_synapse_contributions"] == 512 * 1024
+    assert feedback.work["address_local_slot_reductions"] == 511 * 1024
+    assert feedback.work["coincidence_feature_calls"] == 4
+    assert feedback.work["coincidence_threshold_evaluations"] == 19 * 512 * 1024
+    assert feedback.work["persistent_feature_copy_values"] == 512 * 1024
+    assert feedback.work["codec_slot_evaluations"] == 512
+    assert feedback.work["codec_output_potentials"] == 512 * 257
+    assert feedback.work["codec_response_gathers"] == 512
+    assert feedback.work["codec_response_bytes_gathered"] == 512 * 257 * 28
+    assert feedback.work["prefix_belief_updates"] == 2 * 512
+    assert feedback.work["enabled_codec_update_groups"] == 0
+    assert feedback.work["enabled_address_update_groups"] == 0
+    assert not feedback.codec_updated and not feedback.address_updated
+    _assert_nested_equal(reader.state_dict(), weights)
+    _assert_nested_equal(state.snapshot(), full)
+    _assert_nested_equal(feedback.state.snapshot(), full)
+    _coincidence_qa_save(tmp_path / "persistent-capacity.json", {
+        "status": "passed", "reader_constructions": 2, "ingest_calls": 4,
+        "successful_ingested_raw_bytes": 511, "successful_ingested_eos": 4,
+        "rejected_ingests": 1, "direct_query_calls": 2, "free_prediction_calls": 1,
+        "free_decisions": 1, "teacher_calls": 1, "teacher_offers": 2,
+        "teacher_work": feedback.work, "learning_enabled": False, "actual_children": 0,
+        "file_checkpoint_loads": 0, "memory_restores": 2, "rejected_memory_restores": 1,
+        "capacity": 512, "state_tensor_bytes": 825352, "work": prediction.work,
+        "winner_index": prediction.competition.winner_index,
+        "metadata": reader.get_extra_state(),
+        "claim": "append/storage/forward regression, not an acquired-skill gate",
+    })

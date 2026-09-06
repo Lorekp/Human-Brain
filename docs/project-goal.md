@@ -15,17 +15,23 @@ learning rules, and grow or redesign the network.
 The main learner must learn online through local cell and synapse rules using
 its own state, pre/post activity, eligibility traces and declared teaching,
 reward or error signals. Do not conceal reverse-mode gradients or externally
-computed per-synapse updates inside those signals. Backpropagation through time,
-Adam and other global weight-fitting methods are comparison tools, not the main
-learning mechanism. Repeated experience and explicit replay are allowed with
+computed per-synapse updates inside those signals. No backpropagation, BPTT,
+Adam/global fitting or manually coded reverse-Jacobian transport is authorized.
+Learning and acting must use the same persistent neuronal system.
+Repeated experience and explicit replay are allowed with
 their exposure and costs reported. Demonstrate language and context learning in
 the neuronal system; locality alone is not evidence of understanding.
 Vectorize faithful implementations of these local rules when useful for speed.
 
 Read docs/research/roadmap-reading-to-coding.md now and after each context
 compaction. Follow its current milestone and linked plan rather than obsolete
-queues. First establish the small persistent reading-to-memory-to-executable-edit
-loop; let its measured failures drive further mechanisms. Use authentic public
+queues. Develop a broader persistent reading-to-memory-to-executable-action
+workload now; do not require perfection on the existing toy cohort. Prioritize
+unseen instruction forms, structural combinations, longer memories and reduced
+teacher dependence. Report supervised acquisition, fresh transfer, retention
+and teacher-free recovery separately, with matched learning-disabled and simple
+retrieval/editing references. Keep old tasks as regressions and move experimental
+chronology out of the main roadmap. Use authentic public
 exam reading comprehension, with official questions and marking guidance, as
 evaluation pressure. LLM-authored questions are not a substitute for that evidence.
 
