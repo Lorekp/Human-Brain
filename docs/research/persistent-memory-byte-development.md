@@ -178,6 +178,17 @@ success earns a return to actual document-derived read/context distinctions.
 Neither outcome automatically selects random activity gating, a sensitivity
 trace or another integrated fit.
 
+The [direct-context result](../../experiments/r4_integrated/local_context_use_v1_result.md)
+now completes in 8.951 seconds with a passing saved audit. Informative context
+fits 4/12 taught pairs versus zero for all controls, but all arms score 0/4
+withheld combinations. Premature EOS occurs on 8/16 informative-context probes;
+EOS teacher loss is substantially below first/second-byte loss. The unchanged
+decoder has a limitation even with explicit factors. Source review finds no
+implementation defect. Close this diagnostic and compare random versus symmetric
+instantaneous readout feedback using the same local eligibility, rate, schedule
+and exposure. Declare weight transport and the previously exposed development
+combinations; no extra epochs, source-reader repair or gate advancement follows.
+
 The [independent preflight review](local-memory-byte-preflight-review.md) records
 two learning risks: averaging byte feedback weakens explicit order credit, and
 correlated write keys may overwrite useful information. These are hypotheses

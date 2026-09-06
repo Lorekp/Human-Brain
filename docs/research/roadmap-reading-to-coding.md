@@ -119,7 +119,12 @@ All updating arms emit one constant phrase across final questions, including
 with writes disabled: useful source conditioning and learned-writing advantage
 remain absent. Preserve the speed improvements, close this fit, and select one
 bounded context-use/local-credit diagnostic from the saved failure distribution
-and primary-source review before returning to the integrated workload. Its byte
+and primary-source review before returning to the integrated workload. The
+[direct-context control](../../experiments/r4_integrated/local_context_use_v1_result.md)
+fits only 4/12 taught pairs and no withheld combination despite answer-revealing
+inputs. The next selected comparison is decoder random versus symmetric
+instantaneous feedback under unchanged local eligibility and exposure; this
+does not yet select an upstream memory change. Its byte
 learner uses no pretrained encoder or LLM. The
 [action-path review](local-memory-byte-preflight-review.md) identifies host-computed
 matching in the legacy edit motor, however. Keep neuron-generated answer bytes

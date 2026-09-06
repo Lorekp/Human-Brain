@@ -54,6 +54,12 @@ every final question, scoring 1/8 fit and zero new-value, delayed or interferenc
 checks. All 5,120 lessons and 102 executions are accounted for. Teacher loss
 improves without useful source conditioning; retained matrices differ across
 contradictory-answer sources. V5 is closed, with no learned-writing advantage.
+The [direct-context decoder control](../experiments/r4_integrated/local_context_use_v1_result.md)
+also misses its positive criterion: informative neuronal rates yield 4/12
+taught and 0/4 withheld pairs; zero/shuffled/frozen controls yield zero. The
+8.951-second run and saved-only audit pass. This isolates a decoder limitation
+under the fixed exposure while showing partial context use, not a reading or
+coding result.
 The official-exam scorer remains ready, with genuine structured learner output
 still pending.
 

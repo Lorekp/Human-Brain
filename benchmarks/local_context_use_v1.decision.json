@@ -1,0 +1,179 @@
+{
+  "schema": "local-context-use-v1-result",
+  "status": "closed_positive_control_failed",
+  "revision": "7bed991a51296fed827fa227db84863e6402ba1b",
+  "recipe": "experiments/r4_integrated/local_context_use_v1.md",
+  "evidence": {
+    "completion": {
+      "path": ".pytest-tmp/local-context-use-v1-run/completion.json",
+      "sha256": "b16857e41f5295abe998903576c3fbb252c1675d1ada75fe3b73349f30491c7e"
+    },
+    "report": {
+      "path": ".pytest-tmp/local-context-use-v1-run/report.json",
+      "sha256": "05cc5ebdd17893d1a8bbde71c7a4774ea7a9789e32b84023c545dfcb6ce4e598"
+    },
+    "launcher": {
+      "path": ".pytest-tmp/local-context-use-v1-run.launch.json",
+      "sha256": "264065a8f3f491feb048475a2a730bcb0e9c677c2ccaa44bdc7af015fc7d948e"
+    },
+    "audit": {
+      "path": ".pytest-tmp/local-context-use-v1-independent-audit.json",
+      "sha256": "2f17fa3dc759bd9f4a1f31581d0934d5a3f257661a348ba61d2f1904ef04f2cb"
+    }
+  },
+  "scores": {
+    "correct": {
+      "heldout": 0,
+      "train": 4
+    },
+    "frozen": {
+      "heldout": 0,
+      "train": 0
+    },
+    "shuffled": {
+      "heldout": 0,
+      "train": 0
+    },
+    "zero": {
+      "heldout": 0,
+      "train": 0
+    }
+  },
+  "context_use_positive": false,
+  "counts": {
+    "byte_offers": 4608,
+    "changed_steps": 3456,
+    "enabled_steps": 3456,
+    "final_generations": 64,
+    "first_attempts": 1536,
+    "generation_decisions": 3449
+  },
+  "acquisition": {
+    "correct": {
+      "all": {
+        "first_exact": 13,
+        "first_stop_reasons": {
+          "eos": 372,
+          "limit": 12
+        },
+        "lessons": 384,
+        "mean_teacher_loss": 2.0413048934424305
+      },
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 116,
+          "limit": 12
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 3.483287648220235
+      },
+      "last128": {
+        "first_exact": 13,
+        "first_stop_reasons": {
+          "eos": 128
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 1.1369339229616648
+      }
+    },
+    "frozen": {
+      "all": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "limit": 384
+        },
+        "lessons": 384,
+        "mean_teacher_loss": 5.6273430056042075
+      },
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "limit": 128
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 5.628322493284943
+      },
+      "last128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "limit": 128
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 5.626327112317087
+      }
+    },
+    "shuffled": {
+      "all": {
+        "first_exact": 1,
+        "first_stop_reasons": {
+          "eos": 372,
+          "limit": 12
+        },
+        "lessons": 384,
+        "mean_teacher_loss": 2.1086170530308874
+      },
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 116,
+          "limit": 12
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 3.517522273119538
+      },
+      "last128": {
+        "first_exact": 1,
+        "first_stop_reasons": {
+          "eos": 128
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 1.234411128175755
+      }
+    },
+    "zero": {
+      "all": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 371,
+          "limit": 13
+        },
+        "lessons": 384,
+        "mean_teacher_loss": 2.1033718247070072
+      },
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 115,
+          "limit": 13
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 3.517088195852312
+      },
+      "last128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 128
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 1.2270670962364727
+      }
+    }
+  },
+  "resources": {
+    "elapsed_seconds": 8.9505521,
+    "observed_tree_peak_sum_mib": 289.21484375,
+    "model_tensor_bytes_per_arm": {
+      "correct": 313732,
+      "frozen": 313732,
+      "shuffled": 313732,
+      "zero": 313732
+    }
+  },
+  "finding": "Informative context fits four taught pairs but none of four held-out combinations; premature one-byte EOS remains common.",
+  "limits": [
+    "Answer-revealing authored context engineering QA",
+    "No reading, memory or coding gate evidence",
+    "No additional fit authorized by this result"
+  ]
+}
