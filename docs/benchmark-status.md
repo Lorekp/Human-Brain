@@ -42,6 +42,10 @@ finishes the disposable workload but has invalid admission timing: a capped
 prediction falls within one coarse Windows clock tick and records zero seconds.
 All unaffected saved-only invariants pass; no duration is imputed and no fit
 starts. A high-resolution elapsed-clock regression is required before a new return.
+The [precisely timed v4 check](../experiments/r4_integrated/local_memory_byte_v4_result.md)
+resolves that failure and passes its strict audit, but still projects 995.972
+seconds against 900 seconds (774.773 MiB peak). All samples are positive; no
+full acquisition runs and no cost limit is waived.
 The official-exam scorer remains ready, with genuine structured learner output
 still pending.
 

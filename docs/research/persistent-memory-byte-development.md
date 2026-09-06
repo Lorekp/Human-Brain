@@ -139,6 +139,15 @@ fine-counter duration after the fix; 40 affected tests pass. Unix deadlines,
 strictly positive samples and the original margins remain unchanged. Its cost
 admission is pending; no earlier invalid or rejected result authorizes a fit.
 
+The [v4 return](../../experiments/r4_integrated/local_memory_byte_v4_result.md)
+now has valid positive timing and a passing strict audit, but its 995.972-second
+projection remains above 900 seconds. No fit starts. The next bounded candidate
+omits unused query eligibility during read-only prediction while preserving
+actual retained/forward-state checks and teaching's local traces. It explicitly
+does not promise the old rejection of overflow in traces it no longer constructs.
+Require exact finite-forward predictions and teacher trajectories, then a fresh
+complete cost return; keep the main local learning rule and margins fixed.
+
 The [independent preflight review](local-memory-byte-preflight-review.md) records
 two learning risks: averaging byte feedback weakens explicit order credit, and
 correlated write keys may overwrite useful information. These are hypotheses
