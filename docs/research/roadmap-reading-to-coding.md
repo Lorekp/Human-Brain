@@ -4,7 +4,35 @@ Status: living decision document. Updated 2026-09-06.
 Owner: orchestrator. This document owns current priorities and architecture policy;
 frozen experiment protocols retain authority over their own evidence.
 
-Current endpoint: the [completed competitive neuronal splice learner](../../experiments/r4_integrated/neuronal_splice_online_v2_result.md)
+Current endpoint: the [completed byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
+solves 4/32 fresh tasks versus 5/32 for its matched graded competitive reference.
+Both retain 14/16 actions and all twenty old reading answers. The strict criterion
+fails. Full run and independent audit total 157.90 seconds at 1,047.44 MiB observed
+owned peak, after completed admission at 673.20 projected seconds and 1,300.06 MiB.
+The [v3 result bank](../../benchmarks/neuronal_splice_online_v3.decision.json)
+preserves all fixed exposures, controls and failed criteria.
+
+The [saved learning review](neuronal-splice-online-v3-learning-review.md) finds
+correct candidate payloads and EOS on all 28 fresh edits, versus 24/28 for the
+reference; all 27 nonempty intended starts are uniquely ranked first and selected.
+However, the candidate chooses STOP on 23 required edits and SPLICE on all four
+KEEP tasks. One further edit has an incorrect span. Thus useful payload transfer
+does not establish complete action superiority. Preserve this distinction and
+close the cohort without additional rounds, endpoint replay or seed/rate sweeps.
+The completed [operation review](neuronal-operation-intent-review-v1.md) selects
+one generic beginning-aligned whole-request rail branch into those same locally
+learned operation neurons. Preserve the old contextual branch and its reduction
+order, with zero-initialized added synapses and separate activity normalization.
+The existing operation head sees request activity only through selected
+context/path correlations; direct request access is the selected hypothesis,
+not a proven explanation. Implement this versioned source while retaining the
+reader, span heads and actual local action/teacher loop. Reviewed ordinary QA
+and a fresh comparison/cost freeze must precede any new acquisition. No host
+verb parser, operation oracle, backward error transport or standalone fit follows.
+The [resource review](neuronal-splice-online-v3-cost-review.md) keeps efficiency
+part of that same integrated workload. Frozen comparison contracts stay unchanged.
+
+The preceding [completed competitive neuronal splice learner](../../experiments/r4_integrated/neuronal_splice_online_v2_result.md)
 solves 20/32 fresh tasks (19 real edits and one explicit STOP), versus 7/32
 for its freshly trained marginal reference and 1/32 for each of three matched
 controls. It retains 14/16 actions and answers all twenty old reader questions
@@ -27,21 +55,21 @@ general software engineering, language understanding or the integrated gate.
 The completed saved-only [learning review](neuronal-splice-online-v2-learning-review.md)
 finds wrong initial address ordering in the payload failures; separate location
 and STOP failures remain. The [resource review](neuronal-splice-online-v2-cost-review.md)
-supports retaining the qualified executor and streamed receipts. The selected
-next change is [generic neuronal byte coincidence](neuronal-byte-coincidence-review-v1.md):
+supports retaining the qualified executor and streamed receipts. Its selected
+successor was [generic neuronal byte coincidence](neuronal-byte-coincidence-review-v1.md):
 fixed dual-rail AND/match cells before the existing locally learned temporal
-address synapses, with Boolean memory keys. Keep neuronal commitment, codec,
+address synapses, with Boolean memory keys. It retains neuronal commitment, codec,
 action heads and the exact same-instance direct local teacher. No error propagates
 backward through the fixed cells. All six ordinary QA nodes and independent
 saved review pass: arithmetic, typed storage, controls and actual execution before
 correction, at 11.08 outer seconds and 278.19 MiB observed peak. The
-[fresh five-arm comparison](neuronal-byte-coincidence-comparison-v1.md) now owns
-source development, with the graded competitive reader as its matched reference.
-The QA pass does not establish acquired skill. The v2 cohort remains closed, exposed
+[fresh five-arm comparison](neuronal-byte-coincidence-comparison-v1.md) subsequently
+completed as v3 above, with the graded competitive reader as its matched reference.
+The QA pass alone does not establish acquired skill. The v2 cohort remains closed, exposed
 development evidence: no additional rounds, endpoint replay or rate/seed sweep.
-A successor requires newly withheld cases, an explicit transferred parameter
-prior with changed feature meaning, and fresh complete cost admission. No prior
-load or benchmark advancement is selected by the source qualification.
+V3 used newly withheld cases, an explicit transferred parameter prior with changed
+feature meaning, and fresh complete cost admission. Neither completed comparison
+advances the general benchmark gates.
 
 The preceding [splice-v1 result](../../experiments/r4_integrated/neuronal_splice_online_v1_result.md)
 and its [saved learning review](neuronal-splice-online-v1-learning-review.md)

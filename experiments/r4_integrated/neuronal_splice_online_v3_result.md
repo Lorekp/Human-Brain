@@ -1,132 +1,145 @@
-# Neuronal splice online v3: result pending
+# Neuronal splice online v3: payload transfer without integrated superiority
 
-Prospective result skeleton, 2026-09-06. Ordinary integration QA is banked;
-the final synthetic admission node passed at source `c083023`. **Measured cost,
-completed admission, acquisition outcomes and independent result review are
-pending in this report.** No measured values or capability conclusions are
-inferred from QA. This document does not authorize execution.
+Completed and independently audited on 2026-09-06 at frozen source
+`4840c24d8e4265eaddeaea032231d52d2af3185d`. The coincidence learner completes
+**4/32 fresh tasks versus 5/32 for the graded competitive reference**. Both
+retain 14/16 actions and answer all twenty old reader questions before and after
+acquisition. The strict integrated criterion and reference-superiority component
+fail. The fixed comparison is closed without extra rounds or endpoint replay.
 
-The [selected comparison](../../docs/research/neuronal-byte-coincidence-comparison-v1.md)
-asks whether generic neuronal byte coincidence before the same locally learned
-temporal address synapses improves complete raw edits over a newly trained
-graded competitive reference. The closed v2 cohort is exposed development
-evidence; its 20/32 score is not a matched baseline for this new cohort.
+The [decision bank](../../benchmarks/neuronal_splice_online_v3.decision.json),
+SHA256 `807e256dbb750a41e24a00997bee89dbfb7ad4d6e2ee7ab3dc556686f93770a8`,
+binds exact source, roster, prior/qualification custody, completed admission,
+full report, audit and monitors. The
+[selected comparison](../../docs/research/neuronal-byte-coincidence-comparison-v1.md)
+retains the acquisition tasks while introducing a new cohort. Closed v2's 20/32
+is not a matched baseline for subtracting scores on these different cases.
 
-## Fixed comparison and decision
+## Executed outcomes
 
-| Arm | Address frontend | Slow publication / memory condition |
-|---|---|---|
-| Learned | Coincidence | Reader and action learning enabled |
-| Action frozen | Coincidence | Action publications disabled |
-| All slow weights frozen | Coincidence | Reader and action publications disabled |
-| Memory disabled | Coincidence | Episodic key/sensory writes disabled |
-| Graded reference | Graded random code | Reader and action learning enabled |
+| Arm | Fresh edits /28 | Fresh STOP /4 | Fresh total /32 | Complete pairs /16 | Retention /16 | Old reader before → after /20 |
+|---|---:|---:|---:|---:|---:|---:|
+| Coincidence learned | 4 | 0 | 4 | 0 | 14 | 20 → 20 |
+| Action frozen | 0 | 1 | 1 | 0 | 4 | 20 → 20 |
+| All slow weights frozen | 0 | 2 | 2 | 0 | 3 | 20 → 20 |
+| Memory disabled | 0 | 1 | 1 | 0 | 8 | 0 → 0 |
+| Graded competitive reference | 5 | 0 | 5 | 1 | 14 | 20 → 20 |
 
-All five use neuronal initial-address competition and one free cursor. Each
-starts from the same authenticated original v6 reader numerical tensors and
-fresh action weights at seed733, eta .01. The coincidence frontend changes the
-meaning of the inherited address weights; matching tensor bytes does not imply
-matching scores or initial ability. The original 33,801,664-byte container is
-decoded once per phase, including historical memories that are never restored
-or used. Every evaluated episode is freshly ingested with its arm's typed keys.
+The learned arm exceeds the three controls' fresh edit counts but does not
+exceed the matched reference. It also regresses on document-order task count,
+0/8 versus 2/8. Its other factors are continuation2/8, value-role0/8 and
+operation/layout2/8; the reference scores1/8,0/8,2/8 respectively. Neither
+learned arm passes any fresh STOP. Reading preservation passes per case in all
+arms; disabled zero/zero supplies no reading-preservation claim. Initial20/20
+in enabled arms is not knowledge acquired during these rounds.
 
-Strict integrated success requires all of the following, with separate component
-results retained even if the conjunction fails:
+The saved [learning review](../../docs/research/neuronal-splice-online-v3-learning-review.md)
+separates an actual payload result from failed action selection. Coincidence
+produces **all 28 fresh edit payloads correctly with EOS**, and the intended
+start for every one of the 27 nonempty payloads is uniquely ranked first and
+actually selected. The graded reference produces 24/28 correct payloads; C1/C3,
+both short and long members, select a wrong record at target rank2 and emit `dd`.
 
-- Learned solves all sixteen fresh contrast pairs: 28 edits and four explicit
-  STOP tasks, plus all sixteen retained actions.
-- Learned post-acquisition old reading is 20/20, preserves the original eighteen
-  correct cases and every pre-correct case. Every arm has per-case pre/post
-  reading nonregression; disabled zero/zero supplies no preservation claim.
-- Learned fresh edit count strictly exceeds each of three controls and the
-  graded reference, with no factor, STOP or retention count regression against
-  that reference for the scoped superiority claim.
-- Same-instance ordering, local learning, source/process custody, complete
-  independent audits and resource admission pass.
+The candidate nevertheless issues STOP on 23 edit tasks and SPLICE on all four
+KEEP tasks. Its remaining fresh failure, O2-0, has the correct operation, file
+and payload but the wrong start/end. It has no fresh path or payload mismatch,
+missing EOS, rejection or process error. All eight D and all eight V tasks
+have correct proposed file/span/payload but fail at operation selection. Those
+payloads are not counted as successful edits. Candidate successes are C0-1,
+C1-1,O1-0,O3-0; reference successes are D0-0,D0-1,C0-1,O1-0,O3-0. Every
+successful learned/reference endpoint also matches its canonical proposal.
 
-Equivalent raw spans count when complete after-files and actual execution are
-correct; canonical tuple agreement is a separate diagnostic. STOP requires the
-explicit operation. An aggregate gain cannot replace a failed strict component.
+Both learned systems fail retention T01 (`cc` instead of `ba`, target rank2)
+and T08 (wrong start/end, correct `aa`). Equivalent raw spans remain eligible
+for success when actual after-files and execution are correct; canonical tuple
+agreement is a separate diagnostic. The absolute28-edit/4-STOP/all16-retention
+criterion remains unmet, despite successful reading preservation.
 
-## Outcomes to bind from finalized evidence
+## Acquisition and same-instance learning
 
-| Arm | Fresh edits /28 | Fresh STOP /4 | Complete pairs /16 | Retention /16 | Old reader pre → post /20 | Acquisition first successes /256 |
-|---|---|---|---|---|---|---|
-| Learned | Pending | Pending | Pending | Pending | Pending | Pending |
-| Action frozen | Pending | Pending | Pending | Pending | Pending | Pending |
-| All slow weights frozen | Pending | Pending | Pending | Pending | Pending | Pending |
-| Memory disabled | Pending | Pending | Pending | Pending | Pending | Pending |
-| Graded reference | Pending | Pending | Pending | Pending | Pending | Pending |
+| Arm | Correct actual first attempts in rounds 1–8, each /32 | Total /256 |
+|---|---|---:|
+| Coincidence learned | 2,6,14,21,23,26,28,28 | 148 |
+| Action frozen | 4,3,3,5,5,5,5,5 | 35 |
+| All slow weights frozen | 4,4,4,4,4,4,4,4 | 32 |
+| Memory disabled | 5,10,10,10,12,14,16,15 | 92 |
+| Graded competitive reference | 2,6,12,15,22,26,28,28 | 139 |
 
-Pending saved review: each factor's eight tasks/four pairs (document order,
-continuation, value role, operation/layout), all eight acquisition rounds,
-individual retained failures and old-panel transitions. Report actual operation,
-file/start/end, payload/EOS, rejection and process outcomes; overlapping error
-counts are not causal attribution. Separate canonical and equivalent successful
-edits, and actual group publications from attempted teachers. Actual payload
-decision counts and work remain pending; no old trajectory is substituted.
+These are executed first attempts before supervision, not corrective outputs.
+The same persistent combined learner proposes, completes actual qualified
+workspace verification, and receives local supervised feedback. The host applies
+only the proposed raw splice; STOP and rejected proposals verify unchanged
+files. No host key parser, substituted edit, escaping or repair fallback runs.
+Endpoint workers receive execution envelopes and acknowledge the same pending
+state without a teacher or external grade.
 
-The fresh cohort has preregistered z00–z19 identities, new paths/values/layouts
-and sixteen fixed contrast pairs. TRAIN and the old reading panel remain exposed
-acquisition/retention material. Once inspected, this cohort also becomes closed
-development evidence: no extra rounds, endpoint-informed changes, alternate
-decoding, best-checkpoint selection or identical timing retry.
+All five arms use neuronal initial-address competition and one free cursor.
+They start from the same authenticated original v6 numerical reader prior and
+fresh action weights at seed 733, eta .01. Coincidence changes the meaning of
+inherited address weights; tensor equality does not establish score/functional
+parity. Its fixed raw-rail AND/match cells feed learned address scoring, with
+Boolean raw-prefix keys. Action heads retain the original random-code inputs.
+Correction reopens all addresses on the same synapses using the unchanged
+local conditional update. No backpropagation passes through gates, history or
+hard commitment, and the teacher is not a derivative of the hard free policy.
+Different payloads can change subsequent operation teaching.
 
-## Declared exposure and learning boundary
+Audited changed-group counts preserve controls: learned/reference each publish
+start/end 192, operation 256 and reader codec/address 192 times; action-frozen
+publishes only the reader groups; slow-frozen publishes none. Disabled address
+weights remain unchanged; its codec group can change through biases. These
+saved publications and endpoint invariants do not reconstruct every unsaved
+intermediate tensor update.
 
-These are protocol counts, **not yet verified executed totals in this report**:
+## Complete scope and resources
 
-| Scope | Cost | Full |
-|---|---:|---:|
-| Regular first-attempt learning actions | 20 | 1,280 |
-| Disposable cap learning actions | 5 | 0 |
-| Teacher-free endpoint verifications | 240 | 240 |
-| Supplied transport-category verifications | 4 | 0 |
-| Total actual verifications | 269 | 1,520 |
-| Separate reader-only panel calls | 200 | 200 |
-| Reader teacher symbol offers | 120 | 2,400 |
-| Action teacher labels | 65 | 3,200 |
+Full execution comprises 1,280 learning actions and 240 teacher-free endpoints,
+**1,520 actual verifications**, plus 200 separate reader-only panel queries.
+It presents 2,400 reader symbol offers and 3,200 action labels. Actual free payload
+decisions are 3,772 during acquisition and 676 at endpoints. Each arm ingests 72
+packages once: 4,022 raw bytes and 168 document EOS, or 20,110/840 across five arms.
+The 360 tapes and five models occupy the exact mixed 109,896,320-byte exported
+payload; this is shape arithmetic, not an RSS bound.
 
-Each phase retains 72 tapes per arm. The complete mixed export is 109,896,320
-bytes: four sets of Boolean coincidence tapes, one graded-key set and five
-combined models. This shape arithmetic is neither an observed RSS nor a speed
-claim. Each phase ingests the same 4,022 raw bytes and 168 document EOS per arm;
-the worker restores exported tapes rather than reingesting. Actual construction,
-load/copy, publication and work ledgers await independent audit.
+The separate completed cost phase covers 20 regular lessons, five disposable
+caps,240 endpoints and four supplied transport categories: 269 verifications,
+200 panel calls,120 reader offers and65 action labels. Its caps/probes establish
+engineering coverage rather than learned skill. Cost traverses the preregistered
+endpoints before full execution; source and training remain frozen afterward.
+Ordinary component/data/receipt/worker/cost QA remains separate exposure.
 
-One persistent combined learner proposes, completes actual qualified workspace
-verification, then receives supervised local correction. The host applies only
-the proposed raw splice; STOP/rejection verifies unchanged files. It supplies
-no substituted edit, key parser or repair fallback. Endpoint workers receive
-the execution envelope and acknowledgement, with no teacher or external grade.
+Each phase decodes the original 33,801,664-byte prior container once, including
+historical memories that are never restored or used; every evaluated episode
+is freshly ingested. Both phases retain/export/load the same complete mixed
+payload. Parent and worker model construction, disposable cap copies and audit
+loads are recorded in the bank; this saved learning review performs none of them.
 
-Raw symbol rails feed actual fixed AND/match thresholds before learned address
-scoring. Correction reopens every address on the same reader synapses and uses
-the unchanged direct local conditional update; no error propagates backward
-through coincidence, lag history or hard competition. The teacher is not a
-gradient through the committed free policy. Different features and free actions
-can change subsequent integrated learning histories despite the shared prior.
+The completed [cost decision](../../benchmarks/neuronal_splice_online_v3.cost_decision.json),
+SHA256 `59120c40d6c91800188c4812f6ddfd9915d1bcd111b659e8d0e05c6b808eeeac`,
+admits **673.2005430127208 seconds and 1,300.0625MiB**: 572.1458468179275 projected
+run seconds plus 101.05469619479335 completed-audit allowance. It retains the
+24MiB buffer and 128/32MiB run/audit reserves and no full-only payload increment.
 
-## Resources, custody and closure pending
+The actual full run takes 136.028661 monitored seconds; its independent audit
+21.8746936, **157.9033546 seconds combined**. Observed owned peak is
+**1,047.4375MiB**, with 444.23828125MiB audit peak. Both admission and completed
+execution pass the unchanged 900-second/2,048MiB ceiling. Sampling and reserves
+are engineering allowances, not a continuous simultaneous-memory proof. Smaller
+tapes do not by themselves establish an execution-speed gain.
 
-Retain 900 seconds including the completed independent audit and 2,048 MiB owned
-memory. Admission requires the completed separate-stage cost projection and
-both monitors, with the fixed 24-MiB allowance and 128/32-MiB run/audit reserves.
-Cost probes/caps provide engineering coverage, not acquired skill. Prior-load,
-gate/codec banks, snapshots, receipts and interpreter overlap remain additional
-to nominal payload bytes. Measured speed and memory comparisons are pending.
+The independent audit SHA256 is
+`0484aeed3f3b1b05a0c0ee357cb846b6c1d8dfa86c83dfc94c2c2915f0b80474`.
+The root-reviewed saved-only extraction is
+`.pytest-tmp/coincidence-saved-learning-summary-v1.json`, SHA256
+`b7eaeb80b649095751b0e6f278d6be885a02e3accd004a933a0ea17515dd1c1d`.
+It authenticates one pass over action and endpoint journals and reports saved
+raw-score ranks; it loads no checkpoint, imports no project helper and makes
+no new prediction, teacher, action or audit replay. Rank annotations use authored
+grammar only in external analysis, not in the learner or action path.
 
-Before reporting a result, bind exact SHA256 identities for: frozen source and
-roster manifests; original prior custody and executor qualifications; cost report,
-completion, admission, monitor, independent audit and audit monitor; completed
-cost decision; full report, completion, monitor, independent audit and audit
-monitor; final decision bank and saved learning/resource reviews. All are
-**pending bindings here**; no placeholder digest represents genuine evidence.
-
-Final closure must state actual cost/full/audit durations and peaks, all criterion
-components and the strict conjunction. A cost rejection closes the attempted
-configuration without acquisition. An admitted but partially successful run
-retains its failures. Saved audits establish recorded arithmetic and custody;
-ordinary source/QA support unsaved local update mechanics, without claiming
-numerical replay of every intermediate tensor. This bounded literal-edit study
-does not establish general coding, language understanding or a SWE advantage.
+The next bounded learning question concerns operation-decision generalization
+across raw contexts, with the reader held fixed for source/math review. It is
+not an authorized repair or experiment. This cohort is now exposed development
+evidence. Correct literal retrieval alongside failed operation transfer does
+not establish reliable general editing, planning, language understanding or a
+SWE advantage.

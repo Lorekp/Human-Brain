@@ -10,7 +10,20 @@ with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. Hybrid permission does not relabel existing
 cell-only evidence or reopen protected evaluations.
 
-The current [competitive neuronal splice result](../experiments/r4_integrated/neuronal_splice_online_v2_result.md)
+The current [byte-coincidence splice result](../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
+solves 4/32 fresh tasks versus 5/32 for its matched graded competitive reference;
+both retain 14/16 actions and all twenty old reading answers. Its strict criterion
+fails. The candidate supplies correct payloads with EOS for all 28 fresh edits,
+versus 24/28 for the reference, but incorrectly selects STOP on 23 required edits
+and misses all four required STOPs. Saved traces therefore distinguish useful
+payload discrimination from failed complete action transfer. Full run and audit
+total 157.90 seconds at 1,047.44 MiB observed owned peak, after completed admission
+at 673.20 projected seconds and 1,300.06 MiB. The new cohort is now closed;
+its score cannot be subtracted from v2's different cohort as a matched comparison.
+The same persistent neuronal system acts before local correction without
+backpropagation. No general software or protected gate advances.
+
+The preceding [competitive neuronal splice result](../experiments/r4_integrated/neuronal_splice_online_v2_result.md)
 solves 20/32 fresh tasks, including 19 edits, versus 7/32 for the matched marginal
 reference and 1/32 for each matched control. It retains 14/16 actions and all
 twenty old reader answers. The same neuronal learner selects and executes each
