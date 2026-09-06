@@ -5902,3 +5902,492 @@ def test_splice_online_saved_cost_decision_custody(tmp_path, monkeypatch):
         altered_sha = save(decision_path, altered_decision)
         with pytest.raises(ValueError, match=message):
             checker.validate_cost_decision(decision_path, altered_sha, config, sources, roster_sha)
+
+
+def test_address_competition_scalar_circuit_contract(tmp_path):
+    import json
+
+    import torch
+
+    from humanbrain.neuronal_address_competition import compete
+
+    maximum = torch.finfo(torch.float32).max
+    fixtures = (
+        ([-3], 0), ([1, -2], 0), ([-3, 0, 5, 2], 2), ([3, 3, 1], 0),
+        ([0] * 128, 0), ([maximum, -maximum, 0], 0),
+        ([1, 1 + 2**-23], 1), (list(range(128)), 127),
+    )
+    for ordinal, (values, expected_winner) in enumerate(fixtures):
+        scores = torch.tensor(values, dtype=torch.float32)
+        before = scores.clone()
+        result = compete(scores)
+        raw = {
+            "fixture": ordinal, "scope": "authored circuit only",
+            "scores": result.scores.tolist(), "pair_currents": result.pair_currents.tolist(),
+            "comparators": result.comparator_activity.tolist(),
+            "winner_currents": result.winner_currents.tolist(),
+            "winners": result.winner_activity.tolist(), "index": result.winner_index,
+            "work": result.work,
+        }
+        with (tmp_path / f"competition-scalar-{ordinal}.json").open("x") as stream:
+            json.dump(raw, stream, allow_nan=False)
+        numbers = [float(value) for value in before.tolist()]
+        n, pairs = len(numbers), len(numbers) * (len(numbers) - 1) // 2
+        currents, activity = [], []
+        winner_currents = [i - (n - 1) for i in range(n)]
+        for i in range(n):
+            for j in range(i + 1, n):
+                current = numbers[i] - numbers[j]
+                firing = int(current >= 0)
+                currents.append(current)
+                activity.append(bool(firing))
+                winner_currents[i] += firing
+                winner_currents[j] -= firing
+        expected_work = {
+            "competition_candidates": n, "competition_pairs": pairs,
+            "competition_threshold_layers": 2,
+            "competition_comparator_neurons": pairs, "competition_winner_neurons": n,
+            "competition_comparator_synapse_applications": 2 * pairs,
+            "competition_winner_synapse_applications": 2 * pairs,
+            "competition_comparator_subtractions": pairs,
+            "competition_winner_accumulations": 2 * pairs,
+            "competition_winner_bias_values": n,
+            "competition_winner_threshold_subtractions": n,
+            "competition_threshold_evaluations": pairs + n,
+            "competition_identity_synapse_applications": n,
+            "competition_identity_reductions": n - 1,
+            "competition_winner_count_reductions": n - 1,
+            "competition_index_values_constructed": 2 * pairs + n,
+            "competition_receipt_tensor_bytes": 13 * n + 9 * pairs,
+            "competition_named_allocated_tensor_bytes": 45 * n + 49 * pairs + 16,
+            "competition_pair_index_bytes": 16 * pairs,
+            "competition_score_gather_bytes": 16 * pairs,
+        }
+        assert torch.equal(scores, before)
+        assert result.scores.data_ptr() != scores.data_ptr()
+        assert result.scores.dtype == torch.float32
+        assert result.pair_currents.dtype == result.winner_currents.dtype == torch.float64
+        assert result.comparator_activity.dtype == result.winner_activity.dtype == torch.bool
+        assert result.pair_currents.tolist() == currents
+        assert result.comparator_activity.tolist() == activity
+        assert result.winner_currents.tolist() == winner_currents
+        assert result.winner_activity.tolist() == [i == expected_winner for i in range(n)]
+        assert result.winner_index == expected_winner
+        assert result.work == expected_work
+        arrays = (result.scores, result.pair_currents, result.comparator_activity,
+                  result.winner_currents, result.winner_activity)
+        assert sum(item.numel() * item.element_size() for item in arrays) == 13 * n + 9 * pairs
+        assert all(item.device.type == "cpu" and not item.requires_grad for item in arrays)
+        if n == 128:
+            assert pairs + n == 8256
+            assert 4 * pairs == 32512
+
+
+def test_address_competition_input_guards(tmp_path):
+    import json
+
+    import torch
+
+    from humanbrain.neuronal_address_competition import compete
+
+    fixtures = (
+        torch.empty(0, dtype=torch.float32),
+        torch.zeros(129, dtype=torch.float32),
+        torch.zeros((1, 1), dtype=torch.float32),
+        torch.zeros(1, dtype=torch.float64),
+        torch.tensor([float("nan")], dtype=torch.float32),
+        torch.tensor([float("inf")], dtype=torch.float32),
+        torch.zeros(1, dtype=torch.float32, requires_grad=True),
+    )
+    for ordinal, scores in enumerate(fixtures):
+        before = scores.detach().clone()
+        error = None
+        try:
+            compete(scores)
+        except ValueError as caught:
+            error = str(caught)
+        raw = {
+            "scope": "authored invalid circuit input", "fixture": ordinal,
+            "dtype": str(scores.dtype), "shape": list(scores.shape),
+            "requires_grad": scores.requires_grad, "input_repr": repr(before.tolist()),
+            "error": error,
+        }
+        with (tmp_path / f"competition-invalid-{ordinal}.json").open("x") as stream:
+            json.dump(raw, stream, allow_nan=False)
+        assert error == "address scores must be finite detached CPU float32 [1..128]"
+        assert torch.equal(torch.isnan(scores), torch.isnan(before))
+        assert torch.equal(scores[~torch.isnan(scores)], before[~torch.isnan(before)])
+        assert scores.grad is None
+
+
+def test_competitive_reader_single_cursor_and_full_bank(tmp_path):
+    import json
+    import math
+    from dataclasses import fields, is_dataclass
+
+    import pytest
+    import torch
+
+    from humanbrain.competitive_local_memory_learner import CompetitiveLocalMemoryLearner
+
+    def plain(value):
+        if isinstance(value, torch.Tensor):
+            return value.tolist()
+        if is_dataclass(value):
+            return {field.name: plain(getattr(value, field.name)) for field in fields(value)}
+        if isinstance(value, dict):
+            return {key: plain(item) for key, item in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [plain(item) for item in value]
+        if isinstance(value, bytes):
+            return {"hex": value.hex()}
+        return value
+
+    model = CompetitiveLocalMemoryLearner(mode="learned", seed=733)
+    with torch.no_grad():
+        model.address_weight.zero_()
+    state = model.ingest([b"ab", b"c"])
+    empty_document = model.ingest([b""])
+    before_parameters = {name: value.detach().clone()
+                         for name, value in model.named_parameters()}
+    for ordinal, (tape, cap, expected, reason, tokens) in enumerate((
+        (state, 16, b"ab", "eos", [97, 98, 256]),
+        (state, 1, b"a", "limit", [97, 98]),
+        (empty_document, 16, b"", "eos", [256]),
+    )):
+        before_tape = tape.snapshot()
+        result = model.predict_with_receipt(b"a", tape, cap)
+        with (tmp_path / f"competitive-free-{ordinal}.json").open("x") as stream:
+            json.dump({"scope": "authored fresh reader", "prediction": plain(result)},
+                      stream, allow_nan=False)
+        n, decisions = tape.used, len(tokens)
+        assert n == (1 if ordinal == 2 else 5)
+        assert result.generation.data == expected
+        assert result.generation.stop_reason == reason
+        assert [step.observed_token for step in result.steps] == tokens
+        assert [step.output_step for step in result.steps] == list(range(decisions))
+        assert [step.branch_cursors.tolist() for step in result.steps] == [
+            [i] for i in range(decisions)
+        ]
+        assert result.initial_log_belief.tolist() == result.final_log_belief.tolist() == [0.0]
+        assert result.diagnostic_log_prior.shape == (n,)
+        assert result.diagnostic_log_prior.tolist() == pytest.approx([-math.log(n)] * n)
+        assert result.competition.winner_index == 0
+        assert result.competition.scores.tolist() == [0.0] * n
+        for step in result.steps:
+            assert step.prior_log_belief.tolist() == step.posterior_log_belief.tolist() == [0.0]
+            assert step.mixture_probabilities.shape == (257,)
+            assert float(step.mixture_probabilities[step.observed_token]) == pytest.approx(.5)
+            assert step.nll == pytest.approx(math.log(2))
+        expected_work = dict.fromkeys(model.WORK_KEYS, 0)
+        expected_work.update({
+            "query_raw_bytes": 1, "query_eos_symbols": 1, "query_lag_shift_steps": 2,
+            "query_population_normalizations": 1, "address_feature_slots": n,
+            "address_feature_products": n * 32768,
+            "address_feature_channel_reductions": n * 31744,
+            "address_score_synapse_evaluations": n * 1024,
+            "address_score_reductions": n * 1023, "address_score_evaluations": n,
+            "address_normalizations": 1, "codec_slot_evaluations": n,
+            "codec_output_potentials": n * 257, "codec_normalizations": n,
+            "codec_response_gathers": decisions,
+            "codec_response_values_gathered": decisions * 257 * 4,
+            "codec_response_bytes_gathered": decisions * 257 * 28,
+            "mixture_output_reductions": decisions * 257,
+            "prefix_belief_updates": decisions, "branch_cursor_initializations": 1,
+            "branch_cursor_advances": decisions - 1, "codec_bank_slot_indices": n,
+        })
+        expected_work.update(result.competition.work)
+        assert result.work == expected_work
+        assert all(torch.equal(value, before_parameters[name])
+                   for name, value in model.named_parameters())
+        assert all(torch.equal(value, before_tape[name])
+                   for name, value in tape.snapshot().items())
+
+
+def test_competitive_reader_inherited_publication_modes(tmp_path):
+    import json
+
+    import torch
+
+    from humanbrain.competitive_local_memory_learner import CompetitiveLocalMemoryLearner
+
+    for mode in ("learned", "address_frozen", "slow_frozen", "writes_disabled"):
+        model = CompetitiveLocalMemoryLearner(mode=mode, seed=733)
+        with torch.no_grad():
+            model.address_weight.zero_()
+        state = model.ingest([b"ab"])
+        before_tape = state.snapshot()
+        enabled_calls = (True, False) if mode == "learned" else (True,)
+        for learning_enabled in enabled_calls:
+            before = {name: value.detach().clone() for name, value in model.named_parameters()}
+            result = model.teach(b"a", b"b", state, .01, learning_enabled=learning_enabled)
+            changed = {name: not torch.equal(value, before[name])
+                       for name, value in model.named_parameters()}
+            raw = {
+                "scope": "authored inherited local teacher", "mode": mode,
+                "learning_enabled": learning_enabled, "teacher_count": result.teacher_count,
+                "total_loss": result.total_loss, "mean_loss": result.mean_loss,
+                "codec_updated": result.codec_updated, "address_updated": result.address_updated,
+                "parameter_changed": changed, "work": result.work,
+                "initial_log_belief": result.initial_log_belief.tolist(),
+                "final_log_belief": result.final_log_belief.tolist(),
+                "address_error": result.address_error.tolist(),
+                "steps": [{"token": step.observed_token,
+                           "prior": step.prior_log_belief.tolist(),
+                           "posterior": step.posterior_log_belief.tolist(),
+                           "cursors": step.branch_cursors.tolist(),
+                           "mixture": step.mixture_probabilities.tolist(), "nll": step.nll}
+                          for step in result.steps],
+            }
+            suffix = "enabled" if learning_enabled else "disabled"
+            with (tmp_path / f"competitive-teacher-{mode}-{suffix}.json").open("x") as stream:
+                json.dump(raw, stream, allow_nan=False)
+            codec_enabled = learning_enabled and mode != "slow_frozen"
+            address_enabled = learning_enabled and mode not in {"address_frozen", "slow_frozen"}
+            codec_changed = changed["codec.weight"] or changed["codec.bias"]
+            assert result.teacher_count == 2
+            assert [step.observed_token for step in result.steps] == [98, 256]
+            assert [step.branch_cursors.tolist() for step in result.steps] == [[0, 1, 2], [1, 2, 2]]
+            assert all(step.prior_log_belief.shape == step.posterior_log_belief.shape == (3,)
+                       for step in result.steps)
+            assert result.codec_updated == codec_changed == codec_enabled
+            assert result.address_updated == changed["address_weight"]
+            assert changed["address_weight"] == (address_enabled and mode != "writes_disabled")
+            if mode == "writes_disabled":
+                assert not state.keys.count_nonzero() and not state.sensory.count_nonzero()
+                assert not changed["codec.weight"] and changed["codec.bias"]
+            expected_work = dict.fromkeys(model.WORK_KEYS, 0)
+            expected_work.update({
+                "query_raw_bytes": 1, "query_eos_symbols": 1, "query_lag_shift_steps": 2,
+                "query_population_normalizations": 1, "address_feature_slots": 3,
+                "address_feature_products": 3 * 32768,
+                "address_feature_channel_reductions": 3 * 31744,
+                "address_score_synapse_evaluations": 3 * 1024,
+                "address_score_reductions": 3 * 1023, "address_score_evaluations": 3,
+                "address_normalizations": 1, "codec_slot_evaluations": 3,
+                "codec_output_potentials": 3 * 257, "codec_normalizations": 3,
+                "codec_response_gathers": 3, "codec_response_values_gathered": 3 * 257 * 4,
+                "codec_response_bytes_gathered": 3 * 257 * 28,
+                "mixture_output_reductions": 2 * 257, "prefix_belief_updates": 6,
+                "branch_cursor_initializations": 3, "branch_cursor_advances": 3,
+                "teacher_offers": 2, "codec_update_group_offers": 1,
+                "address_update_group_offers": 1,
+                "enabled_codec_update_groups": int(codec_enabled),
+                "enabled_address_update_groups": int(address_enabled),
+                "address_local_synapse_contributions": 3 * 1024,
+                "address_local_slot_reductions": 2 * 1024,
+            })
+            assert result.work == expected_work
+            assert not any(name.startswith("competition_") for name in result.work)
+            assert all(torch.equal(value, before_tape[name])
+                       for name, value in state.snapshot().items())
+            assert all(torch.equal(value, before_tape[name])
+                       for name, value in result.state.snapshot().items())
+            assert all(not value.requires_grad and value.grad is None and value.grad_fn is None
+                       for value in model.parameters())
+
+
+def test_competitive_reader_metadata_and_snapshot(tmp_path):
+    import copy
+    import json
+
+    import torch
+
+    from humanbrain.competitive_local_memory_learner import CompetitiveLocalMemoryLearner
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    model = CompetitiveLocalMemoryLearner(mode="learned", seed=733)
+    state = model.ingest([b"ab"])
+    snapshot = model.snapshot(state)
+    pristine = copy.deepcopy(snapshot)
+    damaged_copy = copy.deepcopy(snapshot)
+    with torch.no_grad():
+        model.address_weight.add_(1)
+        damaged_copy["model"]["address_weight"].zero_()
+        damaged_copy["memory"]["keys"].zero_()
+    restored = model.restore_snapshot(snapshot)
+    metadata, accounting = model.get_extra_state(), model.accounting()
+    parameter_equal = {
+        name: torch.equal(value, pristine["model"][name])
+        for name, value in model.state_dict().items() if isinstance(value, torch.Tensor)
+    }
+    tape_equal = {name: torch.equal(value, pristine["memory"][name])
+                  for name, value in restored.snapshot().items()}
+    raw = {
+        "scope": "fresh snapshot only; no checkpoint file or neural query",
+        "metadata": metadata, "accounting": accounting,
+        "parameter_equal": parameter_equal, "tape_equal": tape_equal,
+        "teacher_inherited": CompetitiveLocalMemoryLearner.teach is LocalMemoryLearner.teach,
+        "query_inherited": CompetitiveLocalMemoryLearner._query is LocalMemoryLearner._query,
+    }
+    with (tmp_path / "competitive-metadata-snapshot.json").open("x") as stream:
+        json.dump(raw, stream, allow_nan=False)
+    assert metadata["schema"] == "local-neuronal-competitive-address-learner-v1"
+    assert "one actual cursor" in metadata["recall"]
+    assert "diagnostic only" in metadata["free_belief"]
+    assert "every occupied sensory slot once" in metadata["codec_activity"]
+    assert "reopen all address candidates on the same synapses" in metadata["teacher_phase"]
+    assert "no competition pass" in metadata["teacher_phase"]
+    assert CompetitiveLocalMemoryLearner.teach is LocalMemoryLearner.teach
+    assert CompetitiveLocalMemoryLearner._query is LocalMemoryLearner._query
+    assert CompetitiveLocalMemoryLearner.predict_with_receipt is not (
+        LocalMemoryLearner.predict_with_receipt)
+    assert all(parameter_equal.values()) and all(tape_equal.values())
+    assert accounting["allocated_address_competition_neurons"] == 8256
+    assert accounting["maximum_competition_signed_synapse_applications"] == 32512
+    assert accounting["competition_slow_synapses"] == 0
+    assert accounting["free_active_cursor_count"] == 1
+    assert accounting["free_log_belief_bytes"] == 8
+    assert accounting["maximum_free_diagnostic_log_prior_bytes"] == 1024
+    assert accounting["free_codec_response_gather_bytes"] == 257 * 28
+    assert accounting["maximum_free_overlapping_codec_response_bytes"] == 130 * 257 * 28
+    assert all(not value.requires_grad and value.grad is None and value.grad_fn is None
+               for value in model.parameters())
+    for name, value in model.state_dict().items():
+        if isinstance(value, torch.Tensor):
+            assert torch.equal(snapshot["model"][name], pristine["model"][name])
+            assert value.data_ptr() != snapshot["model"][name].data_ptr()
+    for name, value in vars(restored).items():
+        assert value.data_ptr() != snapshot["memory"][name].data_ptr()
+        assert value.data_ptr() != vars(state)[name].data_ptr()
+        assert torch.equal(snapshot["memory"][name], pristine["memory"][name])
+
+
+def test_competitive_splice_wrong_action_then_teacher_parity(tmp_path):
+    """One actual wrong edit precedes correction on the same persistent reader."""
+    import dataclasses
+    import json
+    from hashlib import sha256
+    from pathlib import Path
+    from time import perf_counter
+
+    from experiments.r4_integrated.neuronal_splice_io_v1 import JsonlJournal
+    from experiments.r4_integrated.neuronal_splice_online_v1 import (
+        SPEC,
+        execute_action,
+        qualified_launch,
+    )
+    from humanbrain.competitive_local_memory_learner import CompetitiveLocalMemoryLearner
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+    from humanbrain.multiscale_opaque_event_tape import OpaqueWorkspaceFile
+    from humanbrain.neuronal_splice_action import SpliceProposal, SpliceWorkspace
+    from humanbrain.neuronal_splice_learner import NeuronalSpliceLearner, _digest
+
+    def numerical(model):
+        return {name: value.clone() for name, value in model.state_dict().items()
+                if isinstance(value, torch.Tensor)}
+
+    def serial(value):
+        if isinstance(value, torch.Tensor):
+            return value.tolist()
+        if isinstance(value, bytes):
+            return value.hex()
+        if dataclasses.is_dataclass(value):
+            return {field.name: serial(getattr(value, field.name))
+                    for field in dataclasses.fields(value)}
+        if isinstance(value, dict):
+            return {key: serial(item) for key, item in value.items()}
+        if isinstance(value, (tuple, list)):
+            return [serial(item) for item in value]
+        return value
+
+    def save(name, value):
+        path = tmp_path / name
+        with path.open("x", encoding="utf-8") as stream:
+            stream.write(json.dumps(value, sort_keys=True, allow_nan=False) + "\n")
+        return sha256(path.read_bytes()).hexdigest()
+
+    root = Path(__file__).resolve().parents[1]
+    launch = qualified_launch(root)
+    reader = CompetitiveLocalMemoryLearner(seed=733)
+    base = LocalMemoryLearner(seed=733)
+    with torch.no_grad():
+        reader.address_weight.zero_()
+        base.address_weight.zero_()
+    model = NeuronalSpliceLearner(seed=733, reader=reader)
+    state, reference_state = model.ingest([b"ab"]), base.ingest([b"ab"])
+    with torch.no_grad():
+        for parameter in model.actions.parameters():
+            parameter.zero_()
+        model.actions.operation_bias[1] = 1
+    workspace = SpliceWorkspace((OpaqueWorkspaceFile("a.py", b"x = 'old'\n"),
+                                 OpaqueWorkspaceFile("main.py", b"import a\nprint(a.x)\n")))
+    before = numerical(reader)
+    _assert_nested_equal(before, numerical(base))
+    _assert_nested_equal(state.snapshot(), reference_state.snapshot())
+    tape_before = state.snapshot()
+    prediction = model.propose(b"a", workspace, state)
+    journal = JsonlJournal(tmp_path / "action.jsonl", SPEC)
+    envelope, action_sha, _, grade = execute_action(
+        task=None, workspace=workspace, proposal=prediction.proposal,
+        attempt_id=prediction.attempt_id, phase="competitive-qa", arm="learned", index=0,
+        output=tmp_path, launch=launch, journal=journal,
+    )
+    journal_summary = journal.close()
+    completed = perf_counter()
+    raw_sha = save("raw.json", {
+        "schema": "competitive-splice-component-raw-v1", "status": "pending_checks",
+        "model_instance": id(model), "reader_instance": id(reader), "state_instance": id(state),
+        "proposal": prediction.proposal.to_record(), "payload": serial(prediction.payload),
+        "envelope": envelope, "action_sha256": action_sha, "journal": journal_summary,
+        "action_completed_perf": completed, "model_before_sha256": prediction.model_sha256,
+        "memory_before_sha256": prediction.memory_sha256,
+    })
+    # These outcome checks deliberately follow the immutable raw action journal.
+    action = json.loads((tmp_path / "action.jsonl").read_bytes())
+    assert grade is None and action["rejection"] is None
+    assert prediction.proposal == SpliceProposal("SPLICE", "a.py", 0, 0, b"ab", "eos", workspace.sha256)
+    assert envelope["execution"]["returncode"] != 0
+    assert type(envelope["execution"]["returncode"]) is int
+    assert b"AttributeError" in bytes.fromhex(envelope["execution"]["stderr_hex"])
+    assert (tmp_path / "executions/competitive-qa-learned-000000/a.py").read_bytes() == b"abx = 'old'\n"
+    assert prediction.attempt_id == f"{id(model)}:1" and model.reader is reader
+    assert prediction.payload.competition.winner_index == 0
+    assert len(prediction.payload.steps) == 3
+    _assert_nested_equal(before, numerical(reader))
+    _assert_nested_equal(tape_before, state.snapshot())
+    teacher = SpliceProposal("SPLICE", "a.py", 5, 8, b"b", "eos", workspace.sha256)
+    teacher_started = perf_counter()
+    feedback = model.teach(prediction, workspace, state, teacher, envelope)
+    reference = base.teach(b"a", b"b", reference_state, .01)
+    actual = feedback.reader_feedback
+    save("teacher-raw.json", {
+        "actual": {field.name: serial(getattr(actual, field.name))
+                   for field in dataclasses.fields(actual) if field.name != "state"},
+        "reference": {field.name: serial(getattr(reference, field.name))
+                      for field in dataclasses.fields(reference) if field.name != "state"},
+        "teacher_started_perf": teacher_started, "teacher_completed_perf": perf_counter(),
+        "reader_after_sha256": _digest(numerical(reader)),
+        "reference_after_sha256": _digest(numerical(base)),
+        "action_work": feedback.work["action"],
+    })
+    for field in dataclasses.fields(actual):
+        if field.name == "state":
+            _assert_nested_equal(actual.state.snapshot(), reference.state.snapshot())
+        elif field.name == "steps":
+            for left, right in zip(actual.steps, reference.steps, strict=True):
+                for step_field in dataclasses.fields(left):
+                    _assert_nested_equal(getattr(left, step_field.name), getattr(right, step_field.name))
+        else:
+            _assert_nested_equal(getattr(actual, field.name), getattr(reference, field.name))
+    _assert_nested_equal(numerical(reader), numerical(base))
+    _assert_nested_equal(state.snapshot(), tape_before)
+    _assert_nested_equal(reference_state.snapshot(), tape_before)
+    assert not torch.equal(before["address_weight"], reader.address_weight)
+    assert actual.address_updated and actual.teacher_count == 2
+    assert actual.work["branch_cursor_initializations"] == 3
+    assert not any(key.startswith("competition_") for key in actual.work)
+    assert set(feedback.teacher_choices) == {"start", "end", "operation"}
+    assert sum(feedback.work["action"][f"{head}_teacher_offers"]
+               for head in ("start", "end", "operation")) == 3
+    assert model._pending is None and model.reader is reader
+    assert teacher_started >= completed
+    assert all(not p.requires_grad and p.grad is None and p.grad_fn is None
+               for p in model.parameters())
+    save("passed.json", {
+        "schema": "competitive-splice-component-qa-v1", "status": "passed",
+        "raw_sha256": raw_sha, "action_sha256": action_sha, "real_children": 1,
+        "free_calls": 1, "free_decisions": 3, "teacher_calls": 2, "teacher_offers": 4,
+        "action_labels": 3, "same_reader_instance": True, "teacher_numerical_parity": True,
+        "address_changed": True, "task_success": False, "historical_checkpoint_loads": 0,
+    })

@@ -18,12 +18,15 @@ and one KEEP missed STOP. All eight value-swap tasks emitted empty payloads.
 The active [learning review](neuronal-splice-online-v1-learning-review.md) now
 completes saved prior/EOS attribution and address ranks with no model execution.
 Target starts are uniquely first in all eight value swaps and 22/23 failed
-nonempty edits, but diffuse off-target contributions dominate first EOS. Select
-one source/math review of neuron-based address competition before payload
-generation. It must preserve direct local learning, the same learning/acting
-system and raw requests. No temperature/WTA policy, implementation or new fit
-is adopted yet. Any successor must declare new withheld cases; v1 endpoints
-are exposed development evidence. Preserve the working action circuit and the
+nonempty edits, but diffuse off-target contributions dominate first EOS. The
+completed source/math and primary-source reviews select
+[initial neuronal address competition](neuronal-address-competition-v1.md) for
+implementation and explicitly scoped ordinary QA. Two fixed threshold layers
+commit free recall; the same reader reopens all candidates for its existing
+direct local corrective surrogate after execution. Preserve raw requests and
+the working action heads. No new fit or checkpoint probe is admitted. Any
+successor must declare new withheld cases; v1 endpoints are exposed development
+evidence. Preserve the
 [current implementation speed](neuronal-splice-online-v1-cost-review.md).
 The completed fixed run is closed: no extra epochs, rate/seed sweep, automatic
 recall change, benchmark advancement or further v6 exposure is selected.
