@@ -12,6 +12,19 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current separate-answerability result
 
+The [multiscale writer comparison](../experiments/r4_integrated/local_memory_multiscale_v1_result.md)
+completes with independent audit in 374.542 seconds after fresh cost admission
+at 862.514 projected seconds. Tagged, aggregate and writer-frozen each solve
+5/8 fit, 2/4 fresh-value, 2/4 delayed and zero interference checks. The scalar
+predecessor reproduces its earlier 5/8, 1/4, 1/4 and zero exactly; writes-disabled
+also passes its prior-trajectory contract. One fresh case and its delayed mate
+improve, but neither source-assignment pair is jointly correct. The new temporal
+prior helps narrowly while learned writing has no correctness advantage over
+the candidate frozen writer. The fit closes without qualification. A bounded
+binding-architecture review follows, with no automatic further training or
+protected gate advancement. The saved auditor's tuple-counting failure and
+versioned correction remain preserved; only one model workload was needed.
+
 The [binding diagnostic](../experiments/r4_integrated/local_memory_binding_v1_result.md)
 and saved audit complete in 16.405 seconds with unchanged weights, 32 free
 queries, exact ordinary/traced ingestion parity and no teaching or actions.

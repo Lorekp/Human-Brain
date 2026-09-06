@@ -43,7 +43,7 @@ separate from earlier variable-length experiments. The legacy Python
 motor supplies a narrow edit-selection schema; learned neuronal action selection
 and learning from execution feedback remain required work.
 
-The next query-credit candidate replaces the fixed random query broadcast with
+The current query-credit implementation replaces the fixed random query broadcast with
 instantaneous transport through the retained read matrix and query map. It
 applies the full normalization error pool once, then uses raw presynaptic
 query-map eligibility and adds the indirect read signal to the query cell's
@@ -54,7 +54,7 @@ The [integrated comparison](../experiments/r4_integrated/local_memory_query_cred
 keeps an explicit experiment-only copy of the old query rule as a matched arm.
 Implementation and arithmetic QA do not establish useful learning.
 
-The selected value-credit candidate also supplies each value neuron with its
+The current value-credit implementation also supplies each value neuron with its
 corresponding read error. Its existing tagged eligibility transports the effect
 of that neuron's value synapses through later overwrites, giving a conditional
 value-map partial derivative with fixed initial memory and slow weights during
@@ -63,6 +63,25 @@ The [writer review](research/local-memory-writer-credit-review.md) defines this
 limited claim and the next integrated comparison; binding and interference
 remain unresolved. The removed random value buffer's initialization draw is
 still consumed to preserve the other feedback matrices exactly.
+
+The writer cell now accepts a fixed scalar or a copied per-neuron update-fraction
+buffer. Its default joined 64-neuron bank uses 32 fractions of 0.5, 16 of 0.125
+and 16 of 0.03125; other writer geometries require explicit fractions. Query
+cells retain scalar 0.5. For neuron j, the forward law is
+`h' = h + alpha_j * (tanh(Wx + Uh + b) - h)`. Its own-synapse eligibility uses
+`d = alpha_j * (1 - activation^2)` and carry `1 - alpha_j + d * U_jj`;
+off-diagonal forward connections remain active while their indirect derivative
+paths remain omitted. All writer maps can read all neurons; no identifier parser
+or privileged address is supplied. The 256-byte fixed vector adds no retained
+activity or credit dimensions. Scalar 0.5 preserves exact predecessor arithmetic
+and state keys, verified against frozen source in both upstream dtypes.
+
+The [multiscale comparison](../experiments/r4_integrated/local_memory_multiscale_v1_result.md)
+finds a narrow fresh-value gain shared by a frozen writer, with no learned-writing
+advantage or interference success. This documents the current implementation,
+not scientific qualification. The generic temporal prior changes both average
+rate and heterogeneity; it does not demonstrate uniquely heterogeneous benefit
+or directly measure improved identifier retention in the completed fit.
 
 ## Existing cell implementations
 

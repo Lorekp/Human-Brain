@@ -207,8 +207,18 @@ Its local eligibility includes the corresponding input susceptibility and
 self-path carry. Slower retention can still mean weaker absolute signals;
 all maps retain generic access and the query cell stays unchanged. Validate
 exact scalar-predecessor parity, fixed-vector state and the fresh complete cost
-before one integrated comparison. No special identifier detector, supplied address, answer factors
-or additional observation sweep is authorized by this result.
+before one integrated comparison. The [completed multiscale return](../../experiments/r4_integrated/local_memory_multiscale_v1_result.md)
+passes corrected saved audit and finishes in 374.542 seconds after admission at
+862.514 projected seconds. Tagged, aggregate and the candidate frozen writer
+each score 5/8 fit, 2/4 new-value, 2/4 delayed and zero interference; the scalar
+reference exactly reproduces 5/8, 1/4, 1/4 and zero. One fresh case and its delayed
+mate improve, but neither assignment-swap pair is jointly correct. The frozen
+writer matches every tagged correctness decision, so the changed dynamics show
+a modest prior benefit without learned-writing qualification. Preserve this
+result and close the fixed fit. Reassess reusable binding representations and
+local learning against primary sources before selecting one next bounded step;
+do not extend epochs or sweep leaks, broadcasts or seeds. No special identifier
+detector, supplied address, answer factors or protected gate follows.
 These byte learners use no pretrained encoder or LLM. The
 [action-path review](local-memory-byte-preflight-review.md) identifies host-computed
 matching in the legacy edit motor, however. Keep neuron-generated answer bytes

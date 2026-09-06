@@ -1,6 +1,21 @@
 # Persistent memory and byte output: parallel development
 
-Current execution: the [binding diagnostic](../../experiments/r4_integrated/local_memory_binding_v1_result.md)
+Current execution: the [multiscale comparison](../../experiments/r4_integrated/local_memory_multiscale_v1_result.md)
+and independent audit complete in 374.542 seconds, after fresh admission at
+862.514 projected seconds. Tagged, aggregate and the candidate frozen writer
+all score 5/8 fit, 2/4 new-value, 2/4 delayed and zero interference. The scalar
+predecessor exactly reproduces its earlier 5/8, 1/4, 1/4 and zero; writes-disabled
+also preserves its prior common-state and output trajectory. The fresh gain is
+one case and its delayed mate, with no jointly correct assignment-swap pair.
+Changing dynamics helps this narrow endpoint, but the frozen writer matches
+all tagged correctness decisions: learned writing remains unqualified. Close
+the fixed fit. The next work is one bounded primary-source binding-architecture
+review, considering reusable representation and local learning rather than
+another automatic leak, feedback or epoch tweak. No new acquisition or protected
+gate is opened by this result. The auditor tuple-counting correction and failed
+receipt remain explicit; the model workload was not rerun.
+
+The preceding [binding diagnostic](../../experiments/r4_integrated/local_memory_binding_v1_result.md)
 completes with independent audit in 16.405 seconds. Identifier activity contrast
 retains about 10% before values arrive; write addresses respond much more to
 values than earlier identifiers, and read changes are largely common across
