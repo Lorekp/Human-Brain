@@ -1,12 +1,11 @@
 # Generic neuronal byte coincidence before address learning
 
-Status: root-reviewed source and six ordinary QA nodes selected, 2026-09-06.
-After a committed source freeze and clean doctor receipt, execute the six nodes
-specified below once under the qualified 60-second/2,048-MiB watchdog. Preserve
-failures and actual exposure. No model construction, feature evaluation, teacher,
-prediction or action outside that authored scope is selected. No historical
-checkpoint load or acquisition experiment is admitted. Root owns the launch,
-qualification result and later complete cost admission.
+Status: completed component qualification, 2026-09-06. All six authored nodes
+and independent saved review passed; the evidence is linked at the end. The
+following records the selected source contract and closed 60-second/2,048-MiB
+ordinary QA scope. No repeat, historical checkpoint load or acquisition is
+admitted by this component result. The linked integrated comparison now owns
+current source work and subsequent complete cost admission.
 The [completed learning review](neuronal-splice-online-v2-learning-review.md)
 motivates discrimination before commitment; its exposed outcomes are not a
 training set or a counterfactual test of this design. The companion

@@ -45,7 +45,10 @@ matching scores, initial reading ability or representation-neutral initializatio
 Do not resume v2's final reader/action checkpoint or silently rewrite an old
 checkpoint schema. A new experiment adapter must authenticate the original
 source/audit/artifact/tensor chain and perform only declared metadata adaptation
-after complete prepublication validation. No old endpoint tapes are loaded.
+after complete prepublication validation. The original authenticated container
+is decoded once, including its historical memory tensors: count the complete
+33,801,664-byte payload and its loading overlap. Those memories are never
+restored or used as episodes; every evaluated tape is freshly ingested.
 
 Keep the same exposed 32 TRAIN tasks, 24 SPLICE and eight explicit KEEP, in the
 same eight cyclic rounds: **256 actual pre-correction proposals per arm**.
