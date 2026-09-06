@@ -12,6 +12,17 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current separate-answerability result
 
+The [value-credit return](../experiments/r4_integrated/local_memory_value_credit_v1_result.md)
+completes its fixed six-arm fit and saved audit in 364.919 seconds, below its
+900-second budget, after admission at 850.126 projected seconds. Direct
+read-neuron error for local value synapses leaves tagged at 5/8 fit, 1/4
+new-value, 1/4 delayed and zero interference success, matching both its
+immediate predecessor and writer-frozen control. Aggregate fits 4/8. Exact
+predecessor and unaffected-control parity passes. The comparison closes with
+no useful-writing gain; the next bounded review examines source identity and
+write addressing. This is exposed synthetic development with a supplied host
+motor, not general software capability or a protected gate pass.
+
 The [query-credit return](../experiments/r4_integrated/local_memory_query_credit_v1_result.md)
 finishes its six-arm fit and saved audit in 369.946 seconds after admission at
 853.567 projected seconds. Actual memory-read error transport improves tagged

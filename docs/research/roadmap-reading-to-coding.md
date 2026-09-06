@@ -179,9 +179,18 @@ the conditional effect of value synapses on retained memory; the corresponding
 read-neuron error completes that path. Keep controller/key/strength approximations,
 the query repair, rate and roster fixed, and compare with the immediate predecessor.
 Ordinary arithmetic/control parity QA and fresh six-arm cost admission precede
-any fit. This conditional derivation does not resolve source binding or prove
-convergence. No additional supplied-factor output diagnostic or protected gate
-is opened.
+any fit. The [completed value-credit comparison](../../experiments/r4_integrated/local_memory_value_credit_v1_result.md)
+passes its fresh 850.126-second cost projection and completes with independent
+audit in 364.919 seconds. Tagged remains at 5/8 fit, 1/4 new-value, 1/4 delayed
+and zero interference success, matching its immediate predecessor and
+writer-frozen control. Aggregate falls to 4/8 fit. The reference reproduces its
+prior trajectory exactly. Conditional value-credit correctness has not produced
+useful binding or a learned-writing advantage. Close this fit without more
+epochs or another automatic error-broadcast change. The next bounded
+[binding review](local-memory-binding-review.md) asks whether record identity
+survives until the value arrives and influences the write address. Use saved
+evidence first, then one declared frozen-checkpoint localization if necessary;
+no further acquisition or protected gate is opened by this negative result.
 These byte learners use no pretrained encoder or LLM. The
 [action-path review](local-memory-byte-preflight-review.md) identifies host-computed
 matching in the legacy edit motor, however. Keep neuron-generated answer bytes

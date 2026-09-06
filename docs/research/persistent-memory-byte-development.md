@@ -1,6 +1,18 @@
 # Persistent memory and byte output: parallel development
 
-Current execution: the [query-credit comparison](../../experiments/r4_integrated/local_memory_query_credit_v1_result.md)
+Current execution: the [value-credit comparison](../../experiments/r4_integrated/local_memory_value_credit_v1_result.md)
+is complete and independently audited in 364.919 seconds after fresh admission
+at 850.126 projected seconds. Tagged remains 5/8 fit, 1/4 new-value, 1/4 delayed
+and zero interference, matching its predecessor and writer-frozen control;
+aggregate fits 4/8. Exact predecessor and unaffected-control parity passes.
+Close the fixed fit without a useful-writing claim or automatic further training.
+The selected [binding review](local-memory-binding-review.md) now distinguishes
+retention of record identity from routing that identity into useful write
+addresses, using saved evidence and a bounded frozen-checkpoint localization.
+Tokenization and cell dynamics remain possible design choices, not selected
+repairs or permission to supply parsed answer factors.
+
+The preceding [query-credit comparison](../../experiments/r4_integrated/local_memory_query_credit_v1_result.md)
 is complete and audited in 369.946 seconds. Actual read-path query feedback raises
 fit from 2/8 to 5/8, but new-value and delayed checks remain 1/4 and interference
 remains zero. The writer-frozen control matches tagged correctness on all twenty
