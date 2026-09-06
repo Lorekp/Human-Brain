@@ -115,6 +115,15 @@ finite checks, selecting one exact CPU finite-predicate optimization using the
 existing NumPy dependency before another measured return. Preserve all checks,
 the local arithmetic, the original timing margin and exposure accounting.
 
+That [finite-validation candidate](local-finite-validation-development.md) now
+passes 62 combined tests and exact comparisons across ninety disposable complete
+lessons. Summed five-arm median time improves 1.441x; no prediction, learned
+weight or state hash changes. The
+[v3 cost return](../../experiments/r4_integrated/local_memory_byte_v3.md) uses one
+shared fixed-workload runner with explicit experiment identity, preserving the
+closed v1/v2 runners. Its full cost admission and acquisition remain pending;
+the isolated timing is not permission to launch training.
+
 The [independent preflight review](local-memory-byte-preflight-review.md) records
 two learning risks: averaging byte feedback weakens explicit order credit, and
 correlated write keys may overwrite useful information. These are hypotheses

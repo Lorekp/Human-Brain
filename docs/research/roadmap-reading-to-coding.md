@@ -113,7 +113,7 @@ specified local online learning. Its frozen recipe remains a possible comparison
 with no acquired-capability result. Reuse appropriate forward/state components
 while developing local learning for the same persistent workload.
 
-The current [local byte-memory successor](../../experiments/r4_integrated/local_memory_byte_v2.md)
+The current [local byte-memory successor](../../experiments/r4_integrated/local_memory_byte_v3.md)
 preserves the local rule while reducing measured simulation overhead. Its byte
 learner uses no pretrained encoder or LLM. The
 [action-path review](local-memory-byte-preflight-review.md) identifies host-computed

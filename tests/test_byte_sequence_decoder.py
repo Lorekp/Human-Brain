@@ -498,8 +498,28 @@ def test_local_composition_source_free_transport_and_disabled_empty_teacher():
         wrong_mode.restore_snapshot(snapshot)
 
 
-def test_local_successor_cost_keeps_original_margin_and_rejects_bad_samples():
-    from experiments.r4_integrated import local_memory_byte_v2 as runner
+@pytest.fixture(params=(2, 3))
+def local_cost_runner(request):
+    if request.param == 2:
+        from experiments.r4_integrated import local_memory_byte_v2 as runner
+
+        return runner, "experiments.r4_integrated.local_memory_byte_v2"
+    from functools import partial
+    from types import SimpleNamespace
+
+    from experiments.r4_integrated import local_memory_byte_harness as harness
+    from experiments.r4_integrated.local_memory_byte_v3 import SPEC
+
+    return SimpleNamespace(
+        ROOT=harness.ROOT, ARMS=harness.ARMS, CONFIG=SPEC.config,
+        file_hash=harness.file_hash, write_json=harness.write_json,
+        project_cost=partial(harness.project_cost, SPEC),
+        validate_cost_launch=partial(harness.validate_cost_launch, SPEC),
+    ), SPEC.module
+
+
+def test_local_successor_cost_keeps_original_margin_and_rejects_bad_samples(local_cost_runner):
+    runner, _ = local_cost_runner
 
     report = {
         "status": "completed", "mode": "cost", "config": runner.CONFIG,
@@ -532,8 +552,8 @@ def test_local_successor_cost_keeps_original_margin_and_rejects_bad_samples():
         runner.project_cost(report, launch)
 
 
-def test_local_successor_cost_binds_redirector_to_observed_owned_tree(tmp_path):
-    from experiments.r4_integrated import local_memory_byte_v2 as runner
+def test_local_successor_cost_binds_redirector_to_observed_owned_tree(tmp_path, local_cost_runner):
+    runner, module = local_cost_runner
 
     admission = tmp_path / "admission.json"
     admission.write_text("{}")
@@ -551,7 +571,7 @@ def test_local_successor_cost_binds_redirector_to_observed_owned_tree(tmp_path):
         "started_unix": 100, "deadline_unix": 1000, "seconds_limit": 900,
         "tree_peak_sum_mib_limit": 2048, "launcher_sha256": "launcher",
         "command": [str(runner.ROOT / ".venv/Scripts/python.exe"), "-X", "utf8", "-m",
-                    "experiments.r4_integrated.local_memory_byte_v2", "cost", "--output",
+                    module, "cost", "--output",
                     str(tmp_path), "--admission", str(admission), "--admission-sha",
                     report["admission_sha256"], "--revision", "revision"],
         "observed_process_peaks_mib": {"11/101": 5, "22/102": 300, "33/103": 400},
@@ -563,6 +583,37 @@ def test_local_successor_cost_binds_redirector_to_observed_owned_tree(tmp_path):
     launch["observed_process_peaks_mib"].update({"22/102": 300, "22/104": 400})
     with pytest.raises(AssertionError, match="PID reused"):
         runner.validate_cost_launch(launch, report)
+
+
+def test_local_harness_spec_binds_source_and_preserves_fixed_workload():
+    from dataclasses import FrozenInstanceError, replace
+
+    from experiments.r4_integrated import local_memory_byte_harness as harness
+    from experiments.r4_integrated import local_memory_byte_v2 as previous
+    from experiments.r4_integrated.local_memory_byte_v3 import SPEC
+
+    assert {**SPEC.config, "schema": previous.CONFIG["schema"]} == previous.CONFIG
+    modified = SPEC.config
+    modified["arms"].clear()
+    modified["seed"] = 0
+    assert SPEC.config["arms"] == list(harness.ARMS) and SPEC.config["seed"] == 733
+    with pytest.raises(FrozenInstanceError):
+        SPEC.schema = "mutated"
+    with pytest.raises(ValueError, match="module and entrypoint"):
+        replace(SPEC, module="experiments.r4_integrated.local_memory_byte_v2")
+    manifest = harness.sources(SPEC)
+    for relative in (
+        "experiments/r4_integrated/local_memory_byte_harness.py",
+        "experiments/r4_integrated/local_memory_byte_v3.py",
+        "experiments/r4_integrated/local_memory_byte_v3.md",
+        "experiments/r4_integrated/local_memory_byte_v2.py",
+        "src/humanbrain/plastic_memory.py",
+        "src/humanbrain/byte_sequence_decoder.py",
+    ):
+        assert manifest[relative] == harness.file_hash(harness.ROOT / relative)
+    candidate = harness.new_model(SPEC, "tagged")
+    baseline = previous.new_model("tagged")
+    _assert_nested_equal(candidate.state_dict(), baseline.state_dict())
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
