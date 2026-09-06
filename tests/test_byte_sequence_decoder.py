@@ -7496,3 +7496,630 @@ def test_competitive_splice_roster_data_contract():
                    raw_receipt_sha256=sha256(raw_receipt.read_bytes()).hexdigest())
     with passed.open("x", encoding="utf-8") as stream:
         json.dump(receipt, stream, sort_keys=True)
+
+
+def _competitive_cost_synthetic_inputs():
+    """Plain authored durations; no production call or experiment artifact."""
+    arms = ("learned", "action_frozen", "slow_frozen", "memory_disabled", "marginal_reference")
+    timing, pairs = {}, {}
+    for arm in arms:
+        timing[arm] = {
+            "regular": {
+                "rows": 4,
+                "model_seconds": 0.04,
+                "model_max_seconds": 0.01,
+                "action_seconds": 0.08,
+                "action_max_seconds": 0.02,
+                "journal_seconds": 0.004,
+                "journal_max_seconds": 0.001,
+            },
+            "cap": {
+                "rows": 1,
+                "model_seconds": 0.04 if arm == arms[-1] else 0.03,
+                "model_max_seconds": 0.04 if arm == arms[-1] else 0.03,
+                "action_seconds": 0.015,
+                "action_max_seconds": 0.015,
+                "journal_seconds": 0.002,
+                "journal_max_seconds": 0.002,
+            },
+        }
+        pairs[arm] = {
+            "regular": {"rows": 4, "seconds": 0.004, "max_seconds": 0.001},
+            "cap": {
+                "rows": 1,
+                "seconds": 0.003 if arm == arms[-1] else 0.002,
+                "max_seconds": 0.003 if arm == arms[-1] else 0.002,
+            },
+        }
+    report = {
+        "mode": "cost",
+        "status": "completed",
+        "timing_summary": timing,
+        "category_probes": [{"action_seconds": 0.025} for _ in range(4)],
+        "memory": {"peak_working_set_mib": 300.0},
+        "worker": {"worker": {"memory": {"peak_working_set_mib": 200.0}}},
+    }
+    outer = _competitive_cost_monitor(101, [], 20.0, 550.0)
+    audit = {"status": "passed", "pid": 202, "learning_pair_timing": pairs}
+    audit_outer = _competitive_cost_monitor(202, [], 5.0, 250.0)
+    return report, outer, audit, audit_outer
+
+
+def _competitive_cost_monitor(pid, command, seconds, peak):
+    return {
+        "status": "passed",
+        "exit_code": 0,
+        "seconds_limit": 900,
+        "tree_peak_sum_mib_limit": 2048,
+        "started_unix": 1000.0,
+        "deadline_unix": 1900.0,
+        "elapsed_seconds": seconds,
+        "observed_tree_peak_sum_mib": peak,
+        "command": command,
+        "child_pid": pid,
+        "launcher_sha256": "a" * 64,
+        "observed_process_peaks_mib": {f"{pid}/{621355968000000000 + 1001 * 10_000_000}": peak},
+    }
+
+
+def _competitive_cost_authored_projection(report, outer, audit, audit_outer, *, finished):
+    """Authored expected JSON, retaining float operation order for exact custody."""
+    maxima = {
+        arm: {
+            "model": 0.04 if arm == "marginal_reference" else 0.03,
+            "action": 0.025,
+            "journal": 0.002,
+        }
+        for arm in report["timing_summary"]
+    }
+    sampled = sum(
+        row["regular"][stage + "_seconds"]
+        for row in report["timing_summary"].values()
+        for stage in ("model", "action", "journal")
+    )
+    run = (
+        512 * sum(sum(row.values()) for row in maxima.values())
+        + 2 * (outer["elapsed_seconds"] - sampled)
+        + 30
+    )
+    sampled_audit = sum(row["regular"]["seconds"] for row in audit["learning_pair_timing"].values())
+    audit_maxima = sum(row["cap"]["max_seconds"] for row in audit["learning_pair_timing"].values())
+    audited = 2 * (256 * audit_maxima + (audit_outer["elapsed_seconds"] - sampled_audit))
+    return {
+        "per_arm": maxima,
+        "category_action_seconds": 0.025,
+        "projected_run_seconds": run,
+        "projected_audit_seconds": audited if finished else None,
+        "projected_seconds": run + audited if finished else run,
+        "run_projected_peak_mib": 702.0,
+        "audit_projected_peak_mib": 306.0 if finished else None,
+        "projected_tree_mib": 702.0,
+        "audit_peak_pending": not finished,
+        "admissible": finished,
+    }
+
+
+def _competitive_cost_save(path, value):
+    import hashlib
+    import json
+
+    raw = (json.dumps(value, sort_keys=True, allow_nan=False) + "\n").encode()
+    path.write_bytes(raw)  # Disposable authored inputs may be restored between variants.
+    return hashlib.sha256(raw).hexdigest()
+
+
+def _competitive_cost_observe(log, label, inputs, call, *args, **kwargs):
+    """Persist actual synthetic inputs/outcome before the caller asserts its grade."""
+    import json
+
+    log.write(
+        json.dumps(
+            {"label": label, "phase": "before", "inputs": inputs}, sort_keys=True, allow_nan=False
+        )
+        + "\n"
+    )
+    log.flush()
+    try:
+        result = call(*args, **kwargs)
+    except Exception as error:
+        log.write(
+            json.dumps(
+                {
+                    "label": label,
+                    "phase": "after",
+                    "exception": type(error).__name__,
+                    "message": str(error),
+                },
+                sort_keys=True,
+            )
+            + "\n"
+        )
+        log.flush()
+        if not isinstance(error, ValueError):
+            raise
+        return {"exception": "ValueError", "message": str(error)}
+    outcome = {"result": result}
+    log.write(
+        json.dumps({"label": label, "phase": "after", **outcome}, sort_keys=True, allow_nan=False)
+        + "\n"
+    )
+    log.flush()
+    return outcome
+
+
+def test_competitive_splice_saved_audit_arithmetic():
+    import copy
+    import hashlib
+    import json
+    from pathlib import Path
+
+    from experiments.r4_integrated import check_neuronal_splice_online_v2 as checker
+
+    report, outer, audit, audit_outer = _competitive_cost_synthetic_inputs()
+    root = Path(__file__).resolve().parents[1]
+    raw = root / ".pytest-tmp/competitive-cost-arithmetic-qa-v1-raw.jsonl"
+    variants = [("preliminary", report, None, None), ("completed", report, audit, audit_outer)]
+    costly = copy.deepcopy(report)
+    costly["category_probes"][0]["action_seconds"] = 0.5
+    large_audit = copy.deepcopy(audit_outer)
+    large_audit["observed_tree_peak_sum_mib"] = 2000.0
+    short = copy.deepcopy(report)
+    short["timing_summary"]["marginal_reference"]["regular"]["rows"] = 3
+    failed = copy.deepcopy(audit_outer)
+    failed["exit_code"] = 1
+    variants += [
+        ("time_budget", costly, audit, audit_outer),
+        ("memory_budget", report, audit, large_audit),
+        ("fifth_incomplete", short, None, None),
+        ("missing_monitor", report, audit, None),
+        ("failed_monitor", report, audit, failed),
+    ]
+    outcomes = {}
+    with raw.open("x", encoding="utf-8") as log:
+        log.write(json.dumps({"schema": "competitive-cost-qa-raw-v1",
+                              "checker_sha256": hashlib.sha256(
+                                  Path(checker.__file__).read_bytes()).hexdigest(),
+                              "test_source_sha256": hashlib.sha256(
+                                  Path(__file__).read_bytes()).hexdigest()}) + "\n")
+        log.flush()
+        for label, candidate, finished, monitor in variants:
+            inputs = {
+                "report": candidate,
+                "outer": outer,
+                "audit": finished,
+                "audit_outer": monitor,
+            }
+            outcomes[label] = _competitive_cost_observe(
+                log,
+                label,
+                inputs,
+                checker.project_cost,
+                candidate,
+                outer,
+                audit=finished,
+                audit_outer=monitor,
+            )
+    preliminary, complete = (outcomes[name]["result"] for name in ("preliminary", "completed"))
+    assert preliminary["projected_run_seconds"] == pytest.approx(219.8)
+    assert preliminary["run_projected_peak_mib"] == 702
+    assert preliminary["audit_peak_pending"] and not preliminary["admissible"]
+    assert complete["projected_audit_seconds"] == pytest.approx(15.592)
+    assert complete["projected_seconds"] == pytest.approx(235.392)
+    assert complete["projected_tree_mib"] == 702 and complete["audit_projected_peak_mib"] == 306
+    assert complete["admissible"] and not complete["audit_peak_pending"]
+    assert list(complete["per_arm"]) == list(checker.ARMS)
+    assert complete["per_arm"]["marginal_reference"]["model"] == 0.04
+    assert not outcomes["time_budget"]["result"]["admissible"]
+    assert outcomes["time_budget"]["result"]["projected_seconds"] > 900
+    assert not outcomes["memory_budget"]["result"]["admissible"]
+    assert outcomes["memory_budget"]["result"]["projected_tree_mib"] == 2056
+    for label in ("fifth_incomplete", "missing_monitor", "failed_monitor"):
+        assert outcomes[label]["exception"] == "ValueError"
+    config = checker.expected_config()
+    assert config["arms"] == list(report["timing_summary"])
+    assert config["reader_policy"] == {
+        arm: "marginal_free" if arm == "marginal_reference" else "competitive_free"
+        for arm in checker.ARMS
+    }
+    assert (config["retained_memories_per_arm"], config["retained_tensor_bytes"]) == (72, 239657600)
+    assert config["receipt_limits"] == {
+        "max_line_bytes": 2**21,
+        "max_row_tree_bytes": 2**21,
+        "max_live_rows": 2,
+        "max_line_copies": 2,
+        "allocation_factor": 2,
+    }
+    assert tuple(
+        config[k]
+        for k in (
+            "buffer_mib",
+            "run_reserve_mib",
+            "audit_reserve_mib",
+            "full_only_tensor_bytes",
+            "seconds",
+            "tree_mib",
+        )
+    ) == (24, 128, 32, 0, 900, 2048)
+    with (root / ".pytest-tmp/competitive-cost-arithmetic-qa-v1.json").open("x") as stream:
+        json.dump(
+            {
+                "status": "passed",
+                "direct_project_cost_calls": 7,
+                "raw_sha256": hashlib.sha256(raw.read_bytes()).hexdigest(),
+                "checker_sha256": hashlib.sha256(Path(checker.__file__).read_bytes()).hexdigest(),
+                "models": 0,
+                "children": 0,
+            },
+            stream,
+        )
+
+
+def test_competitive_splice_saved_cost_decision_custody(tmp_path, monkeypatch):
+    import copy
+    import hashlib
+    import json
+    from pathlib import Path
+
+    from experiments.r4_integrated import check_neuronal_splice_online_v2 as checker
+
+    root = Path(__file__).resolve().parents[1]
+    checker_sha = hashlib.sha256(Path(checker.__file__).read_bytes()).hexdigest()
+    relative = "experiments/r4_integrated/check_neuronal_splice_online_v2.py"
+    fake_checker = tmp_path / relative
+    fake_checker.parent.mkdir(parents=True)
+    source = b"# Authored source identity only; never imported.\n"
+    fake_checker.write_bytes(source)
+    monkeypatch.setattr(checker, "ROOT", tmp_path)
+    monkeypatch.setattr(checker, "__file__", str(fake_checker))
+    config = checker.expected_config()
+    sources = {relative: hashlib.sha256(source).hexdigest()}
+    roster_path = tmp_path / "authored-roster.json"
+    roster_sha = _competitive_cost_save(roster_path, {"schema": "synthetic-only", "tasks": []})
+    cost_dir = tmp_path / "cost"
+    cost_dir.mkdir()
+    paths = {
+        "cost_report": cost_dir / "report.json",
+        "cost_completion": cost_dir / "completion.json",
+        "cost_launch": tmp_path / "cost.launch.json",
+        "cost_admission": tmp_path / "cost-admission.json",
+        "cost_audit": tmp_path / "cost-audit.json",
+        "cost_audit_launch": tmp_path / "cost-audit.launch.json",
+    }
+    report, outer, audit, audit_outer = _competitive_cost_synthetic_inputs()
+    preliminary = _competitive_cost_authored_projection(
+        report, outer, audit, audit_outer, finished=False
+    )
+    final = _competitive_cost_authored_projection(report, outer, audit, audit_outer, finished=True)
+    values, hashes = {}, {}
+    values["cost_admission"] = {
+        "schema": "neuronal-splice-admission-v2",
+        "status": "passed",
+        "authorized_phase": "cost",
+        "qa_passed": True,
+        "config": config,
+        "source_sha256": sources,
+        "roster_path": str(roster_path),
+        "roster_sha256": roster_sha,
+    }
+    hashes["cost_admission"] = _competitive_cost_save(
+        paths["cost_admission"], values["cost_admission"]
+    )
+    report.update(
+        schema="neuronal-splice-online-v2",
+        config=config,
+        source_sha256=sources,
+        source_sha256_after=sources,
+        admission_sha256=hashes["cost_admission"],
+        roster_sha256=roster_sha,
+        pid=101,
+        deadline_unix=1900.0,
+        logs={},
+    )
+    values["cost_report"] = report
+    hashes["cost_report"] = _competitive_cost_save(paths["cost_report"], report)
+    values["cost_completion"] = {
+        "schema": "neuronal-splice-completion-v2",
+        "status": "completed",
+        "mode": "cost",
+        "report_sha256": hashes["cost_report"],
+        "admission_sha256": hashes["cost_admission"],
+        "logs": {},
+    }
+    hashes["cost_completion"] = _competitive_cost_save(
+        paths["cost_completion"], values["cost_completion"]
+    )
+    prefix = [str(tmp_path / ".venv/Scripts/python.exe"), "-X", "utf8", "-m"]
+    outer["command"] = [
+        *prefix,
+        "experiments.r4_integrated.neuronal_splice_online_v2",
+        "cost",
+        "--output",
+        str(cost_dir),
+        "--admission",
+        str(paths["cost_admission"]),
+        "--admission-sha",
+        hashes["cost_admission"],
+    ]
+    values["cost_launch"] = outer
+    hashes["cost_launch"] = _competitive_cost_save(paths["cost_launch"], outer)
+    bound = {
+        str(paths[name]): hashes[name]
+        for name in ("cost_report", "cost_completion", "cost_launch", "cost_admission")
+    }
+    bound.update({str(fake_checker): sources[relative], str(roster_path): roster_sha})
+    audit.update(
+        schema="neuronal-splice-independent-audit-v2",
+        mode="cost",
+        source_sha256=sources,
+        roster_sha256=roster_sha,
+        report_sha256=hashes["cost_report"],
+        completion_sha256=hashes["cost_completion"],
+        launch_sha256=hashes["cost_launch"],
+        admission_sha256=hashes["cost_admission"],
+        input_sha256=bound,
+        projection=preliminary,
+    )
+    values["cost_audit"] = audit
+    hashes["cost_audit"] = _competitive_cost_save(paths["cost_audit"], audit)
+    audit_outer["command"] = [
+        *prefix,
+        "experiments.r4_integrated.check_neuronal_splice_online_v2",
+        "--output",
+        str(paths["cost_audit"]),
+        "--cost-dir",
+        str(cost_dir),
+        "--launch",
+        str(paths["cost_launch"]),
+        "--admission",
+        str(paths["cost_admission"]),
+        "--admission-sha",
+        hashes["cost_admission"],
+    ]
+    values["cost_audit_launch"] = audit_outer
+    hashes["cost_audit_launch"] = _competitive_cost_save(paths["cost_audit_launch"], audit_outer)
+    decision = {
+        "schema": "neuronal-splice-cost-decision-v2",
+        "status": "passed",
+        "config": config,
+        "source_sha256": sources,
+        "roster_sha256": roster_sha,
+        "completed_cost_audit": True,
+        "inputs": {key: {"path": str(path), "sha256": hashes[key]} for key, path in paths.items()},
+        "projection": final,
+        "projected_seconds": final["projected_seconds"],
+        "projected_tree_mib": final["projected_tree_mib"],
+    }
+    raw = root / ".pytest-tmp/competitive-cost-decision-qa-v1-raw.jsonl"
+    outcomes = {}
+    with raw.open("x", encoding="utf-8") as log:
+        log.write(json.dumps({"schema": "competitive-cost-qa-raw-v1", "checker_sha256": checker_sha,
+                              "test_source_sha256": hashlib.sha256(
+                                  Path(__file__).read_bytes()).hexdigest()}) + "\n")
+        log.flush()
+        for label in ("valid", "input", "command", "projection", "source"):
+            altered, selected = copy.deepcopy(values), copy.deepcopy(decision)
+            fake_checker.write_bytes(source + (b"# Changed.\n" if label == "source" else b""))
+            if label == "input":
+                altered["cost_audit"]["input_sha256"][str(paths["cost_report"])] = "b" * 64
+            elif label == "command":
+                altered["cost_audit_launch"]["command"][4] = (
+                    "experiments.r4_integrated.check_neuronal_splice_online_v1"
+                )
+            elif label == "projection":
+                selected["projection"]["projected_seconds"] -= 1
+                selected["projected_seconds"] -= 1
+            for name, value in altered.items():
+                selected["inputs"][name]["sha256"] = _competitive_cost_save(paths[name], value)
+            decision_path = tmp_path / "decision.json"
+            decision_sha = _competitive_cost_save(decision_path, selected)
+            inputs = {
+                "decision": selected,
+                "evidence": altered,
+                "actual_source_sha256": hashlib.sha256(fake_checker.read_bytes()).hexdigest(),
+            }
+            outcomes[label] = _competitive_cost_observe(
+                log,
+                label,
+                inputs,
+                checker.validate_cost_decision,
+                decision_path,
+                decision_sha,
+                config,
+                sources,
+                roster_sha,
+            )
+    assert outcomes["valid"]["result"] == final
+    for label, fragment in (
+        ("input", "audit did not authenticate selected input"),
+        ("command", "different checker"),
+        ("projection", "final admission projection mismatch"),
+        ("source", "not the held source"),
+    ):
+        assert outcomes[label]["exception"] == "ValueError"
+        assert fragment in outcomes[label]["message"]
+    with (root / ".pytest-tmp/competitive-cost-decision-qa-v1.json").open("x") as stream:
+        json.dump(
+            {
+                "status": "passed",
+                "direct_decision_calls": 5,
+                "checker_sha256": checker_sha,
+                "raw_sha256": hashlib.sha256(raw.read_bytes()).hexdigest(),
+                "models": 0,
+                "children": 0,
+            },
+            stream,
+        )
+
+
+def test_competitive_splice_worker_saved_custody(tmp_path, monkeypatch):
+    import copy
+    import hashlib
+    import json
+    from pathlib import Path
+
+    from experiments.r4_integrated import check_neuronal_splice_online_v2 as checker
+
+    root = Path(__file__).resolve().parents[1]
+    monkeypatch.setattr(checker, "ROOT", tmp_path)
+    output = tmp_path / "cost"
+    isolated = output / "endpoint"
+    package = isolated / "package"
+    package.mkdir(parents=True)
+    stderr = isolated / "worker-stderr.bin"
+    stderr.write_bytes(b"")
+
+    def ticks(seconds):
+        return 621355968000000000 + seconds * 10_000_000
+
+    report = {
+        "pid": 101,
+        "deadline_unix": 1900.0,
+        "mode": "cost",
+        "worker": {
+            "checkpoint_sha256": "c" * 64,
+            "requests_sha256": "d" * 64,
+            "worker_stderr_sha256": hashlib.sha256(b"").hexdigest(),
+            "initial_hashes": {arm: {"experience": 4} for arm in checker.ARMS},
+        },
+    }
+    command = [
+        str(tmp_path / ".venv/Scripts/python.exe"),
+        "-I",
+        "-X",
+        "utf8",
+        str(package / checker.WORKER_SOURCE),
+        "--package-root",
+        str(package),
+        "--checkpoint",
+        str(isolated / "source_free.pt"),
+        "--checkpoint-sha",
+        "c" * 64,
+        "--requests",
+        str(isolated / "query_only.json"),
+        "--requests-sha",
+        "d" * 64,
+        "--output",
+        str(isolated / "worker"),
+        "--deadline-unix",
+        repr(1900.0),
+    ]
+    launch = {
+        "parent_pid": 101,
+        "cwd": str(isolated),
+        "started_unix": 1002.0,
+        "command": command,
+        "pid": 301,
+        "process_identity": {"pid": 301, "creation_ticks": ticks(1003)},
+        "checkpoint_sha256": "c" * 64,
+        "requests_sha256": "d" * 64,
+    }
+    lineage = {
+        "final_model_sha256": {arm: "e" * 64 for arm in checker.ARMS},
+        "memory_sha256": {arm: "f" * 64 for arm in checker.ARMS},
+    }
+    worker = {
+        "schema": "neuronal-splice-endpoint-completion-v2",
+        "scope": "integrated",
+        "pid": 302,
+        "parent_pid": 301,
+        "process_identity": {"pid": 302, "creation_ticks": ticks(1004)},
+        "checkpoint_sha256": "c" * 64,
+        "requests_sha256": "d" * 64,
+        "source_origins": {
+            name: str(package / relative) for name, relative in checker.WORKER_MODULES.items()
+        },
+        "final": {
+            arm: {"model_sha256": "e" * 64, "memories_sha256": "f" * 64, "experience": 52}
+            for arm in checker.ARMS
+        },
+        "memory": {"peak_working_set_mib": 200.0},
+    }
+    requests = {
+        "schema": "neuronal-splice-endpoint-request-v2",
+        "checkpoint_sha256": "c" * 64,
+        "source_sha256": {
+            relative: "b" * 64
+            for relative in (*checker.WORKER_MODULES.values(), checker.WORKER_SOURCE)
+        },
+    }
+    outer = _competitive_cost_monitor(101, [], 20.0, 550.0)
+    outer["observed_process_peaks_mib"].update(
+        {f"301/{ticks(1003)}": 5.0, f"302/{ticks(1004)}": 200.0}
+    )
+    raw = root / ".pytest-tmp/competitive-worker-custody-qa-v1-raw.jsonl"
+    outcomes = {}
+    with raw.open("x", encoding="utf-8") as log:
+        log.write(json.dumps({"schema": "competitive-cost-qa-raw-v1",
+                              "checker_sha256": hashlib.sha256(
+                                  Path(checker.__file__).read_bytes()).hexdigest(),
+                              "test_source_sha256": hashlib.sha256(
+                                  Path(__file__).read_bytes()).hexdigest()}) + "\n")
+        log.flush()
+        for label in ("redirector", "direct", "qa_scope", "origin", "creation", "fifth", "command"):
+            candidate, selected_launch = copy.deepcopy(worker), copy.deepcopy(launch)
+            if label == "direct":
+                candidate.update(
+                    pid=301, parent_pid=101, process_identity=launch["process_identity"]
+                )
+            elif label == "qa_scope":
+                candidate["scope"] = "single_exchange_qa"
+            elif label == "origin":
+                candidate["source_origins"]["humanbrain"] = str(tmp_path / "outside.py")
+            elif label == "creation":
+                candidate["process_identity"]["creation_ticks"] = ticks(1001)
+            elif label == "fifth":
+                candidate["final"]["marginal_reference"]["experience"] = 51
+            elif label == "command":
+                selected_launch["command"][
+                    selected_launch["command"].index("--requests-sha") + 1
+                ] = "0" * 64
+            selected_outer = copy.deepcopy(outer)
+            if label == "creation":
+                del selected_outer["observed_process_peaks_mib"][f"302/{ticks(1004)}"]
+                selected_outer["observed_process_peaks_mib"][f"302/{ticks(1001)}"] = 200.0
+            report["worker"]["worker_launch_sha256"] = _competitive_cost_save(
+                isolated / "worker-launch.json", selected_launch
+            )
+            inputs = {
+                "report": report,
+                "worker": candidate,
+                "requests": requests,
+                "lineage": lineage,
+                "outer": selected_outer,
+                "launch": selected_launch,
+            }
+            outcomes[label] = _competitive_cost_observe(
+                log,
+                label,
+                inputs,
+                checker.check_worker_custody,
+                output,
+                report,
+                candidate,
+                requests,
+                lineage,
+                selected_outer,
+            )
+    assert outcomes["redirector"] == outcomes["direct"] == {"result": None}
+    assert len(requests["source_sha256"]) == 16 and len(worker["source_origins"]) == 15
+    for label, fragment in (
+        ("qa_scope", "QA worker scope"),
+        ("origin", "module origins"),
+        ("creation", "worker creation outside"),
+        ("fifth", "final state/experience"),
+        ("command", "actual worker command differs"),
+    ):
+        assert outcomes[label]["exception"] == "ValueError"
+        assert fragment in outcomes[label]["message"]
+    with (root / ".pytest-tmp/competitive-worker-custody-qa-v1.json").open("x") as stream:
+        json.dump(
+            {
+                "status": "passed",
+                "direct_worker_custody_calls": 7,
+                "raw_sha256": hashlib.sha256(raw.read_bytes()).hexdigest(),
+                "checker_sha256": hashlib.sha256(Path(checker.__file__).read_bytes()).hexdigest(),
+                "models": 0,
+                "children": 0,
+            },
+            stream,
+        )
