@@ -1,5 +1,14 @@
 # Lag-query follow-up: share temporal alignment across sensory-code channels
 
+Completed: the [fixed comparison](../../experiments/r4_integrated/local_shared_temporal_query_v1_result.md)
+and independent audit finish in 119.745 seconds at source `82db27e`.
+Learned scores 8/8 taught, 4/4 novel, 4/4 delayed and 2/4 interference;
+controls score zero and the dense reference exactly reproduces 7/4/4/2.
+Strict qualification fails on the two interference checks. Close this fit;
+the design below is its historical contract, not permission to repeat it.
+Saved evidence motivates a bounded review of single-location recall versus
+byte marginalization, with no new policy output or acquisition claim yet.
+
 Root selection: implement this one integrated replacement, then complete ordinary
 QA and fresh cost admission before a single fit. The preceding result is closed
 at `d60ccab68db0fdf76ccc9ee167d399ea19a087c0`. No new cost or fit is admitted by

@@ -1,6 +1,26 @@
 # Persistent memory and byte output: parallel development
 
-Current result: the [lag-query comparison](../../experiments/r4_integrated/local_lag_query_v1_result.md)
+Current user constraint (2026-09-06): no backpropagation. Learning and execution
+must use the same neuronal learner and learned state with local online updates.
+The [roadmap architecture policy](roadmap-reading-to-coding.md#architecture-policy)
+owns this requirement. A frozen policy comparison can isolate a mechanism but
+cannot substitute for the integrated learning-and-action workload.
+
+Current result: the [shared temporal-map comparison](../../experiments/r4_integrated/local_shared_temporal_query_v1_result.md)
+and independent audit complete in 119.745 seconds. Learned solves 8/8 taught,
+4/4 new-value, 4/4 delayed and 2/4 interference checks; controls score zero and
+the dense-map reference exactly reproduces 7/4/4/2. All four taught query pairs
+are correct and the last 128 acquisition first attempts are exact. The two
+remaining interference failures prevent strict qualification. Close the fixed
+fit without an exposure or gain extension. Saved priors rank the correct starts
+first in those cases, while marginal byte competition selects a different record.
+Review latent-start retrieval versus byte marginalization before selecting one
+bounded frozen-checkpoint comparison; no new policy output has been generated.
+Actual run/audit peaks of 665.539/432.832 MiB fit the revised admission estimates.
+The smaller circuit and changed reference roster must remain separate when
+describing speed. Literal storage and the supplied action motor are still limits.
+
+The preceding [lag-query comparison](../../experiments/r4_integrated/local_lag_query_v1_result.md)
 and independent audit pass in 271.806 seconds. Learned reaches 7/8 taught,
 4/4 new-value, 4/4 delayed and 2/4 interference, with zero scores in all three
 candidate controls and exact historical reference parity. Both novel assignment
@@ -136,7 +156,7 @@ original evidence and scope.
 Updated 2026-09-06 after the user required local, online cell/synapse learning
 for the main system. The prepared BPTT/Adam joint fit is **withdrawn before
 execution**. Its original recipe and admission remain preserved, not permission
-to launch it as the main learner. No 256-step joint fit or capability evaluation
+to launch gradient training for this goal. No 256-step joint fit or capability evaluation
 ran; twelve discarded timing updates were separately recorded engineering QA.
 The [withdrawal record](../../benchmarks/source_absent_memory_byte_v1.decision.json)
 distinguishes that preparation from the unstarted run.

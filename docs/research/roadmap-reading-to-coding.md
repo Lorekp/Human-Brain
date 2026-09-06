@@ -31,13 +31,24 @@ change; GLIF and human-data fidelity are not mandatory global constraints.
 by the user on 2026-09-06. Updates may use a synapse's own state, pre/post activity,
 locally maintained eligibility and explicitly declared teaching, reward or error
 signals. Those signals must not conceal reverse-mode gradients through retained
-network history or externally computed per-synapse updates. Backpropagation
-through time, Adam and other global weight-fitting methods belong in separately
-declared comparisons, not the main learner. Repeated experience and explicit
+network history or externally computed per-synapse updates. The user reaffirmed
+**no backpropagation** on 2026-09-06: do not start backpropagation/BPTT or
+Adam/global-fitting runs for this goal. Earlier frozen comparisons remain
+historical evidence, not authorization for new gradient training. Repeated experience and explicit
 replay are allowed; count their exposure and cost. Locality is an architectural
 constraint, not proof of biological fidelity or language understanding.
 Vectorized simulation of these rules is allowed: locality concerns the information
 used by an update, not whether the implementation uses a tensor operation.
+
+**Learning and execution must use the same neuronal system**, also reaffirmed
+by the user on 2026-09-06. The network that chooses an output/action must retain
+and locally update its own learned state from subsequent feedback. Do not train
+a separate model and transfer its solution into a nominal neuronal executor.
+Teacher-driven activity and free action can differ within that same circuit;
+declare those paths and their shared synapses explicitly. Frozen checkpoints
+and source-free workers are diagnostic/custody tools, not a substitute for the
+persistent online learning-and-acting loop. Conventional tool execution does
+not establish learned action selection when a host solver chooses the action.
 
 The complete system need not be cell-only. Tokenization, conventional tooling,
 external or hybrid knowledge stores, and components from other researchers are
@@ -109,8 +120,9 @@ Their focused checks do not establish prose learning, source-absent transfer or
 stable learning from action feedback.
 
 The prepared BPTT/Adam joint fit was withdrawn before training when the user
-specified local online learning. Its frozen recipe remains a possible comparison,
-with no acquired-capability result. Reuse appropriate forward/state components
+specified local online learning. Its frozen recipe remains a historical archive,
+with no acquired-capability result or authorization for gradient training.
+Reuse appropriate forward/state components
 while developing local learning for the same persistent workload.
 
 The [local byte-memory v5 result](../../experiments/r4_integrated/local_memory_byte_v5_result.md)
@@ -280,7 +292,21 @@ superiority to the three matched controls and no regression plus overall gain
 over the dense reference, which already solves all four novel cases. This new
 criterion does not change the closed result. No hard-address or gain sweep is
 queued. Shared-address operation and storage counts shrink; actual whole-workload
-time and memory must still be measured.
+time and memory must still be measured. The
+[completed shared-map comparison](../../experiments/r4_integrated/local_shared_temporal_query_v1_result.md)
+passes its independent audit in 119.745 seconds including the run. Learned now
+solves 8/8 fit, 4/4 new-value, 4/4 delayed and 2/4 interference checks; all three
+controls score zero and the dense reference exactly reproduces 7/4/4/2.
+All four different-question fit pairs are correct, and the last 128 acquisition
+first attempts are all exact. Strict qualification still fails on two interference
+cases. Close this fixed fit; falling loss and perfect late first attempts do not
+authorize more epochs. The saved correct individual starts still lose to pooled
+bytes from several competing records. Review the latent-start retrieval policy
+against marginal byte decoding before selecting a bounded frozen-checkpoint
+comparison; no counterfactual answers or policy success are yet measured.
+Run/audit peaks of 665.539/432.832 MiB fit the revised admission estimates.
+The shorter aggregate duration includes a changed reference roster and must not
+be presented as an isolated circuit speedup.
 Streamed scientific receipts cost 8.693 seconds and remove retained lesson-list
 growth. Run/audit peaks are 907.887/988.676 MiB, below the final 1,617.741-MiB
 admission estimate. The run-specific estimate still understates its peak by
