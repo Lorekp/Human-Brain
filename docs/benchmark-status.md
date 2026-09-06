@@ -1,14 +1,25 @@
 # Benchmark status
 
-Updated 2026-09-06 with the completed no-backpropagation executed-learning result.
+Updated 2026-09-07 with the broader persistent language/action result.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
 experiments; older "next" steps are not a competing work queue. The immediate
-workload is the [small integrated session](research/balanced-evidence-to-action-session-v1.md),
+workload is [persistent language/action development](research/persistent-language-action-development-v1.md),
 with [public-exam comprehension](research/reading-comprehension-evaluation.md)
-as complementary evaluation pressure. Hybrid permission does not relabel existing
-cell-only evidence or reopen protected evaluations.
+as complementary evaluation pressure. No backpropagation is authorized, and
+protected evaluations retain their original access contracts.
+
+The [first broader public session](../experiments/r4_integrated/persistent_language_action_v1_result.md)
+completes 56 episodes per route with one shared 453-slot memory. Both the online
+neuronal learner and matched learning-disabled control score 0/24 acquisition
+first responses, 0/16 fresh transfer, 0/8 delayed retention and 0/8 teacher-free
+recovery. The simple retrieval/editing reference scores 12/24, 9/16, 8/8 and 0/8.
+Four long-request challenges remain in totals; supported fresh scores are 0/12,
+0/12 and 6/12. The run and independent saved review total 19.66 seconds at
+364.92 MiB observed peak. No useful broader neuronal capability is established.
+The final model/tape states are saved for continuation; old toy tasks remain
+regressions without an all-perfect prerequisite.
 
 The current [byte-coincidence splice result](../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 solves 4/32 fresh tasks versus 5/32 for its matched graded competitive reference;

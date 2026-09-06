@@ -1,6 +1,6 @@
 # Public persistent language/action development
 
-Status: root-selected broader development implementation, 2026-09-06.
+Status: first public session completed and independently reviewed, 2026-09-07.
 The byte-coincidence comparison is completed. The proposed five-arm operation
 successor is stopped; its unexecuted source is not the next experiment. This
 document specifies the smallest broader development return using the current
@@ -215,13 +215,24 @@ projection arithmetic whose populations and retries no longer describe this
 stream. A bounded cost admission may price the newly declared complete workload;
 its exact probe exposure must be frozen before execution, not tuned until it fits.
 
-Next: implement the selected 512-slot capacity and 56-episode scope; the team records
-authored data provenance and writes the smallest harness around the banked core,
-with meaningful ordinary transport/data QA. Broader execution need not await a
-new feature architecture or successful recovery mechanism. No further operation
-microbenchmark, toy cohort or standalone fit is a prerequisite. Unsupported challenge outcomes and failed recovery are visible results. Preserve
-them, complete the bounded supported stream, and use its failures to choose any
-later generic change; do not return to another byte-only perfection queue.
+The [first result](../../experiments/r4_integrated/persistent_language_action_v1_result.md)
+is complete: both neuronal routes score zero in all four dimensions, while the
+reference succeeds on some reading, fresh edits and delayed example reuse.
+All unsupported challenges and recovery failures are preserved. This 56-episode
+manifest is now exposed regression/development material, not a new holdout.
+
+Next, review request-conditioned answer construction and termination within the
+same persistent reader/action system. The current decoder traverses a document
+from one selected address; its raw-byte codec cannot condition stopping on the
+request. Any added output/context populations must receive direct local signals
+without host answer parsing, target-address routing or reverse error transport.
+The [saved learning review](persistent-language-action-v1-learning-review.md)
+explains why this is a shared workload problem rather than the old STOP issue.
+Boundary control alone is not assumed to solve address selection, composition,
+edit placement or consumption of public feedback. Keep all these pressures in
+the broader workload and preserve its final checkpoint for continuation.
+Do not turn individual failures into automatic micro-gates, add repetitions until
+this set fits, or require perfect toy scores before the next broader exposure.
 
 ## Implementation verification
 
@@ -240,3 +251,14 @@ failed before entering the teacher. Its receipts remain under
 `.pytest-tmp/dev/doctor-wedcc7f_/receipt.json`. No model acquisition or task
 execution occurred in either test. These receipts do not establish the broader
 session's results, which must be measured separately.
+
+The ordinary execution/data contract test also passed at `a68efd7`: one actual
+child, a correct noncanonical edit, a synthetic protected-file counterexample,
+the baseline possessive-apostrophe case, and exclusion of private observation
+fields. It generated the final manifest before the child ran. The test took
+5.45 seconds; its outer process took 6.77 seconds at 265.49 MiB. Receipts are
+under `.pytest-tmp/persistent-language-action-contract-v1`, with doctor
+`.pytest-tmp/dev/doctor-fgldiil_/receipt.json`. The full run uses source `032d908`
+and doctor `.pytest-tmp/dev/doctor-ipm0t7t6/receipt.json`. Both the broader run
+and independent saved review passed on their first launches; no model replay
+or additional acquisition followed them.

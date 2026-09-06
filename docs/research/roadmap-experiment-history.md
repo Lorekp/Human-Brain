@@ -3341,3 +3341,28 @@ Alongside integration, apply two inexpensive sources of pressure:
   evidence and repeated processing as well as raw data; zero retained documents
   does not imply bounded incremental work or semantic compression.
 
+
+## 2026-09-07 broader persistent language/action return
+
+The prepared byte-coincidence comparison was completed and banked before the
+broader return. The user stopped the automatic operation micro-gate direction;
+its unexecuted source remains paused. The main roadmap was shortened and its
+experimental diary moved here.
+
+At source `032d908`, a 56-episode public stream ran on the same persistent
+neuronal models with a shared 453-slot memory and one-pass local corrections.
+Online and matched learning-disabled routes scored 0/24 acquisition first
+responses, 0/16 fresh transfer, 0/8 delayed retention and 0/8 recovery. The simple
+reference scored 12/24, 9/16, 8/8 and 0/8. Four long-request challenges remained
+visible; within common input bounds the reference scored 6/12 fresh versus zero.
+The run and independent saved review passed first launch, totaling 19.662127
+seconds at 364.921875 MiB observed peak. Both final neuronal states are saved.
+
+The [result](../../experiments/r4_integrated/persistent_language_action_v1_result.md)
+and [bank](../../benchmarks/persistent_language_action_v1.result.json) retain
+all exposure and evidence identities. Saved reviews find broader address,
+answer-boundary and edit-location failures, rather than the old false-STOP issue.
+The next shared source/design priority is request-conditioned answer construction
+and stopping, preserving the broader workload, local learning, matched references
+and honest recovery limits. No toy-perfect prerequisite or automatic extra
+training rounds were selected.

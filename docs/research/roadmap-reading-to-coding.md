@@ -1,6 +1,6 @@
 # Roadmap: persistent language, knowledge and action
 
-Status: living decision document. Updated 2026-09-06 after the user's direction
+Status: living decision document. Updated 2026-09-07 after the user's direction
 to broaden the workload. This roadmap owns priorities; frozen experiments keep
 their original evidence contracts. Read it and the active linked plan before
 choosing work and after every context compaction.
@@ -12,27 +12,34 @@ knowledge, understands language, combines learned structure, acts in software
 workspaces and recovers from failures. Local simulated-neuron learning and useful
 real-world behavior are the central commitments.
 
-The prepared [byte-coincidence comparison is complete](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
-and independently audited. Its learner completes 4/32 fresh tasks versus 5/32
-for the matched graded reference; both retain 14/16 actions and 20/20 old reading
-answers. The candidate produces all 28 edit payloads correctly, but 23 false
-STOPs, four missed STOPs and one span error prevent reliable action transfer.
-The run and audit total 157.90 seconds at 1,047.44 MiB observed peak. These are
-narrow authored tasks, not general language or software-engineering evidence.
+The [first broader persistent session is complete](../../experiments/r4_integrated/persistent_language_action_v1_result.md).
+Both neuronal routes score zero on acquisition first responses, fresh transfer,
+delayed retention and teacher-free recovery. The simple retrieval/editing
+reference scores 12/24, 9/16, 8/8 and 0/8 respectively. The same learner and a
+growing 453-slot tape persist across 56 episodes per route; final state is saved.
+Local updates occur, but useful broader competence is not established.
 
-The [result bank](../../benchmarks/neuronal_splice_online_v3.decision.json),
-[learning review](neuronal-splice-online-v3-learning-review.md) and
-[resource review](neuronal-splice-online-v3-cost-review.md) preserve the findings.
+The prepared [byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
+is also completed and independently audited. Its narrow successes remain
+regression evidence. The [current result bank](../../benchmarks/persistent_language_action_v1.result.json)
+and [learning review](persistent-language-action-v1-learning-review.md) own the
+broader measurements and failure analysis.
 The [experiment history](roadmap-experiment-history.md) owns chronology and retired
 directions. Do not append another experiment diary to this roadmap.
 
 ## Active work: a broader persistent session
 
 The active plan is [persistent language-and-action development](persistent-language-action-development-v1.md).
-Return the existing learner to a continuous workload that combines reading,
+Continue the learner on a workload that combines reading,
 retained knowledge, raw software actions and observation of their consequences.
 Expose it to broader problems now; perfection on the current toy cohort is not
-a prerequisite.
+a prerequisite. The first stream is now exposed development material. Its
+failure motivates a generic request-conditioned answer-construction and
+termination review shared by reading and action payloads; the current codec
+only sees the next stored byte and cannot condition answer boundaries on the
+request. Address selection, composition and feedback use remain separate
+unresolved problems. Choose changes for this broader loop, without another
+automatic operation-only or byte-only comparison.
 
 Prioritize four pressures together:
 
