@@ -6,7 +6,17 @@ The [roadmap architecture policy](roadmap-reading-to-coding.md#architecture-poli
 owns this requirement. A frozen policy comparison can isolate a mechanism but
 cannot substitute for the integrated learning-and-action workload.
 
-Active replacement: the [source-equation review](local-learning-backprop-boundary-review.md)
+Current result: the [joint-address online v6 run](../../experiments/r4_integrated/local_joint_address_online_v6_result.md)
+and independent audit pass in 248.580 seconds, at 620.613 MiB peak, after fresh
+586.173-second cost admission. The same locally updating neuronal system learns
+and executes: 8/8 fit, 4/4 new values, 4/4 delayed and 2/4 interference, versus
+zero for all three controls; 787/1,024 acquisition first attempts succeed.
+No backpropagating reference was run. The scoped constraint repair passes; the
+original 20/20 and general gates remain unmet. Close v6 without more exposure.
+The active [neuronal byte-splice review](neuronal-byte-splice-action-v1.md) specifies
+learned action selection to replace the still-supplied host motor.
+
+Historical constraint repair: the [source-equation review](local-learning-backprop-boundary-review.md)
 found a manual fixed-key error adjoint in the current teacher. It is withdrawn
 from further training, including reference reruns. The
 [local-learning return](local-neuronal-learning-return-review.md) moves fixed
@@ -66,7 +76,7 @@ Its 17.281-ms runpy subtree earns the selected
 Preserve strict output and cleanup semantics; measured authored improvement must
 precede a new integrated cost. No acquisition is admitted yet.
 
-Current result: the [shared temporal-map comparison](../../experiments/r4_integrated/local_shared_temporal_query_v1_result.md)
+Historical result: the [shared temporal-map comparison](../../experiments/r4_integrated/local_shared_temporal_query_v1_result.md)
 and independent audit complete in 119.745 seconds. Learned solves 8/8 taught,
 4/4 new-value, 4/4 delayed and 2/4 interference checks; controls score zero and
 the dense-map reference exactly reproduces 7/4/4/2. All four taught query pairs

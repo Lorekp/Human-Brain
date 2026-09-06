@@ -1,0 +1,329 @@
+{
+  "schema": "local-joint-address-online-v6-decision",
+  "status": "completed_scoped_criterion_passed_strict_qualification_failed",
+  "source_revision": "3f1d6cc3265671554515fae8081f47c3afbf4336",
+  "full_run_started": true,
+  "full_run_completed": true,
+  "full_audit_passed": true,
+  "compliant_executed_learning_preserved": true,
+  "scoped_criterion_passed": true,
+  "qualification": false,
+  "gate_advanced": false,
+  "learned_retrieval_advantage": true,
+  "prospective_cost_decision_preserved": true,
+  "config": {
+    "schema": "local-joint-address-online-v6",
+    "seed": 733,
+    "lessons": 1024,
+    "learning_rate": 0.01,
+    "capacity": 128,
+    "lags": 32,
+    "input_code_size": 32,
+    "query_size": 1024,
+    "query_energy": 32,
+    "output_neurons": 257,
+    "codec_identity_probability": 0.5,
+    "max_bytes": 2,
+    "seconds": 900,
+    "parent_mib": 2048,
+    "cost_lessons_per_arm": 4,
+    "cost_indices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "retained_memories_per_arm": 12,
+    "arms": [
+      "learned",
+      "address_frozen",
+      "slow_frozen",
+      "writes_disabled"
+    ],
+    "loss_kind": "sequence_mixture_negative_log_likelihood",
+    "address_features": "batched_float32_X_before_B_no_hidden_error_transport",
+    "online_order": "predict_execute_grade_supervised_teach_same_instance",
+    "execution_grade_is_numeric_learning_input": false,
+    "receipt_format": "paired_complete_learning_and_action_UTF8_JSONL",
+    "receipt_limits": {
+      "max_line_bytes": 262144,
+      "max_row_tree_bytes": 262144,
+      "max_live_rows": 4,
+      "max_line_copies": 4,
+      "allocation_factor": 2
+    },
+    "run_memory_reserve_bytes": 134217728,
+    "audit_memory_reserve_bytes": 33554432,
+    "full_only_checkpoint_bytes": 0,
+    "cap_document_hex": "2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e",
+    "action_execution_policy": "base_stdlib_python_no_site_v1",
+    "accepted_action_probe": {
+      "generated_hex": "6162",
+      "stop_reason": "eos",
+      "ordinal": 1023
+    },
+    "cost_execution_receipts": 99,
+    "full_execution_receipts": 4178,
+    "action_bootstrap_policy": "regular_source_public_temporary_module_v1",
+    "action_bootstrap_sha256": "7213881ba88871e024789913aa742bba520cc79520b8a7b87292c0d3b2b745b9",
+    "learner_schema": "local-neuronal-joint-address-held-codec-learner-v1",
+    "codec_activity_policy": "per_call_occupied_slot_bank_forward_cursor_gathers"
+  },
+  "scores": {
+    "learned": {
+      "fit": 8,
+      "unseen_value": 4,
+      "delayed": 4,
+      "interference": 2
+    },
+    "address_frozen": {
+      "fit": 0,
+      "unseen_value": 0,
+      "delayed": 0,
+      "interference": 0
+    },
+    "slow_frozen": {
+      "fit": 0,
+      "unseen_value": 0,
+      "delayed": 0,
+      "interference": 0
+    },
+    "writes_disabled": {
+      "fit": 0,
+      "unseen_value": 0,
+      "delayed": 0,
+      "interference": 0
+    }
+  },
+  "counts": {
+    "first_attempts": 4096,
+    "first_generation_decisions": 9018,
+    "teacher_byte_offers": 12288,
+    "enabled_teacher_offers": 9216,
+    "acquisition_actions": 4096,
+    "codec_group_offers": 4096,
+    "codec_enabled_groups": 3072,
+    "codec_changed_groups": 3072,
+    "address_group_offers": 4096,
+    "address_enabled_groups": 2048,
+    "address_changed_groups": 1024,
+    "actions": 80,
+    "motor_demos": 2,
+    "accepted_action_probes": 0,
+    "total_execution_receipts": 4178
+  },
+  "resources": {
+    "status": "passed",
+    "actual_run_seconds": 229.9727896,
+    "actual_audit_seconds": 18.6069963,
+    "actual_combined_seconds": 248.5797859,
+    "actual_run_tree_mib": 620.61328125,
+    "actual_audit_tree_mib": 307.33984375,
+    "actual_peak_mib": 620.61328125,
+    "projected_run_seconds": 546.0997369708938,
+    "projected_audit_seconds": 40.072775220295554,
+    "projected_combined_seconds": 586.1725121911893,
+    "projected_peak_mib": 702.859375,
+    "projection_time_headroom_seconds": 337.5927262911893,
+    "projection_memory_headroom_mib": 82.24609375,
+    "stage_totals_seconds": {
+      "model": 59.938589699959266,
+      "action": 147.0013408996747,
+      "journal": 8.108075900527183
+    },
+    "run_outside_learning_M_A_J_seconds": 14.924783099838862,
+    "per_arm": {
+      "learned": {
+        "rows": 1024,
+        "model": 15.825055500143208,
+        "action": 38.158157800193294,
+        "model_max": 0.029419800004689023,
+        "action_max": 0.14431210000475403,
+        "model_over_sample": 135,
+        "action_over_guard": 407,
+        "journal": 2.360722400160739,
+        "journal_max": 0.006047899994882755,
+        "cost_model_max": 0.017233000005944632,
+        "cost_action_guard": 0.036719299998367205,
+        "cost_journal_max": 0.0025273000064771622
+      },
+      "address_frozen": {
+        "rows": 1024,
+        "model": 15.592776800025604,
+        "action": 36.472054299971205,
+        "model_max": 0.03318700000818353,
+        "action_max": 0.10856079999939539,
+        "model_over_sample": 253,
+        "action_over_guard": 268,
+        "journal": 1.9495290001214016,
+        "journal_max": 0.0044357000006129965,
+        "cost_model_max": 0.01622499999939464,
+        "cost_action_guard": 0.036719299998367205,
+        "cost_journal_max": 0.0026728000084403902
+      },
+      "slow_frozen": {
+        "rows": 1024,
+        "model": 15.706302100006724,
+        "action": 36.32261929978267,
+        "model_max": 0.03635150000627618,
+        "action_max": 0.1502771999948891,
+        "model_over_sample": 626,
+        "action_over_guard": 92,
+        "journal": 2.199300400199718,
+        "journal_max": 0.003399100009119138,
+        "cost_model_max": 0.014775099989492446,
+        "cost_action_guard": 0.041166399998473935,
+        "cost_journal_max": 0.0023072000039974228
+      },
+      "writes_disabled": {
+        "rows": 1024,
+        "model": 12.81445529978373,
+        "action": 36.048509499727516,
+        "model_max": 0.018852999986847863,
+        "action_max": 0.08346219999657478,
+        "model_over_sample": 330,
+        "action_over_guard": 166,
+        "journal": 1.5985241000453243,
+        "journal_max": 0.00494040000194218,
+        "cost_model_max": 0.013182299997424707,
+        "cost_action_guard": 0.03838559999712743,
+        "cost_journal_max": 0.0022440999891841784
+      }
+    },
+    "acquisition_action_counts": {
+      "learned": {
+        "rows": 1024,
+        "emitted": 792,
+        "fallback": 232,
+        "task_success": 787,
+        "executor_seconds": 35.70630499985418,
+        "executor_max": 0.09003690000099596
+      },
+      "address_frozen": {
+        "rows": 1024,
+        "emitted": 0,
+        "fallback": 1024,
+        "task_success": 0,
+        "executor_seconds": 36.12116039948887,
+        "executor_max": 0.10817160000442527
+      },
+      "slow_frozen": {
+        "rows": 1024,
+        "emitted": 0,
+        "fallback": 1024,
+        "task_success": 0,
+        "executor_seconds": 35.97602200022084,
+        "executor_max": 0.14987140000448562
+      },
+      "writes_disabled": {
+        "rows": 1024,
+        "emitted": 0,
+        "fallback": 1024,
+        "task_success": 0,
+        "executor_seconds": 35.70429279997188,
+        "executor_max": 0.08308599999872968
+      }
+    },
+    "counts": {
+      "first_attempts": 4096,
+      "first_generation_decisions": 9018,
+      "teacher_byte_offers": 12288,
+      "enabled_teacher_offers": 9216,
+      "acquisition_actions": 4096,
+      "codec_group_offers": 4096,
+      "codec_enabled_groups": 3072,
+      "codec_changed_groups": 3072,
+      "address_group_offers": 4096,
+      "address_enabled_groups": 2048,
+      "address_changed_groups": 1024,
+      "actions": 80,
+      "motor_demos": 2,
+      "accepted_action_probes": 0,
+      "total_execution_receipts": 4178
+    },
+    "retained_tensor_bytes": 33801664,
+    "receipt_logs": {
+      "lesson_log": {
+        "path": "lessons.jsonl",
+        "rows": 4096,
+        "bytes": 172797062,
+        "sha256": "ae49ba5da62f0aa42cd319055dea16fcb9e9732a4f3c81e11b8ba3e84a634cc2",
+        "max_line_bytes": 52576,
+        "max_row_tree_bytes": 97119
+      },
+      "acquisition_action_log": {
+        "path": "acquisition_actions.jsonl",
+        "rows": 4096,
+        "bytes": 16746202,
+        "sha256": "3f7fb3dfa97321ee703cea78a4964fe7d0daa0f6d57130ce756088ce9c63e90d",
+        "max_line_bytes": 4117,
+        "max_row_tree_bytes": 12712
+      },
+      "final_action_log": {
+        "path": "actions.jsonl",
+        "rows": 80,
+        "bytes": 311600,
+        "sha256": "4658c4b2ff246bac22437cacdd94778b7b3b046f39653971d516ad0106825296",
+        "max_line_bytes": 3918,
+        "max_row_tree_bytes": 12177
+      }
+    },
+    "limits": [
+      "Sample maxima are engineering estimates, not per-execution upper bounds; observed outliers remain included.",
+      "No causal speed attribution from cross-run totals; scope and workload differ from historical runs.",
+      "Owned-tree sampling can miss brief children; process custody is not 4178 individual PID observations.",
+      "Journal per-arm maxima/sums are saved; per-lesson J values are not available.",
+      "Checkpoint bytes were neither loaded nor hashed here; their validation belongs to the bound independent audit."
+    ]
+  },
+  "process_custody": {
+    "run": [
+      "47680/639243025883781614",
+      "33584/639243025884106681",
+      "36512/639243028077064562"
+    ],
+    "run_audit": [
+      "42400/639243028740639052",
+      "44472/639243028740881485"
+    ],
+    "cost": [
+      "42556/639243024120716483",
+      "38856/639243024120962033",
+      "45964/639243024174321823"
+    ],
+    "cost_audit": [
+      "45484/639243024767346510",
+      "43508/639243024767710575"
+    ]
+  },
+  "input_sha256": {
+    ".pytest-tmp/local-joint-address-online-v6-run/report.json": "657322d00f4df61e35cf4c3f230f0a461504711fadd50657fe90d9173c318fde",
+    ".pytest-tmp/local-joint-address-online-v6-run/completion.json": "e4c4836cca69a29dc071097bd4b8afc473f6c521c59731a421be4d462d071b6d",
+    ".pytest-tmp/local-joint-address-online-v6-run-independent-audit.json": "358a7a45c01de58d8d3392717b742a26a91ce63fba123ad639fa8d8e6bfdd0a5",
+    ".pytest-tmp/local-joint-address-online-v6-run.launch.json": "d5db8dba86e88177754094de6b0da077c2f7c254d54f9880ab2fa1c6cc4da470",
+    ".pytest-tmp/local-joint-address-online-v6-run-audit.launch.json": "6aef09e4d40669e7616996f0d534d2964e128fb9537bbd6725ac57c08f22decc",
+    ".pytest-tmp/local-joint-address-online-v6-run-admission.json": "f045f639187a37e32a802bf995827ec832d4e879d3feeef46dcfd00c5031bce3",
+    "benchmarks/local_joint_address_online_v6.cost.decision.json": "f045f639187a37e32a802bf995827ec832d4e879d3feeef46dcfd00c5031bce3",
+    ".pytest-tmp/local-joint-address-online-v6-cost/report.json": "125bdc57bc9c1d61ecef0ffb31c8b4e5e7e53b1379372a14306e56e63a0abddd",
+    ".pytest-tmp/local-joint-address-online-v6-cost/completion.json": "39670fb6c2aaa48aa1fe8b95293f447aec52a53a3272ba56e7d0664bcb0acd97",
+    ".pytest-tmp/local-joint-address-online-v6-cost-independent-audit.json": "d44d35795c73b8e57907233fc3182c45da476811173038fa2139cacdc92be166",
+    ".pytest-tmp/local-joint-address-online-v6-cost.launch.json": "e00935aa8df51e19d9ae8b0a7780d1a947d8a10c8ab55d762ce4e8ea517325c6",
+    ".pytest-tmp/local-joint-address-online-v6-cost-audit.launch.json": "384975cb36155e2dc33865968ea84bbd4ade3cde748d6f89c24c1ff04f8dea49",
+    ".pytest-tmp/stdlib-python-action-v1-qualification.json": "4c3a6438549ce1ecd4c8d92509f1a60753692b8aab1ab9155df00b12db10941c",
+    ".pytest-tmp/temporary-module-bootstrap-v1-qualification.json": "0bb809fd33aee145f169776a03a884fd62daf381ff4e67ed333a2a378c46d92b",
+    ".pytest-tmp/local-joint-address-online-v6-run-audit.py": "0539cba2b21f87eb6e451b057838d7aeec33930b3bfa15a1b3e7ea6d68856179",
+    ".pytest-tmp/local-joint-address-online-v6-qa-admission.json": "cc9a75efc96f81ef032010838a4dcff844f5d871aee47956c438df5fe681850f",
+    ".pytest-tmp/local-joint-address-online-v6-audit.py": "abdb4bf171fed6642ab7a106130a291da3d18f585712849b17ea08463c7de289",
+    ".pytest-tmp/local-joint-address-online-v6-run/lessons.jsonl": "ae49ba5da62f0aa42cd319055dea16fcb9e9732a4f3c81e11b8ba3e84a634cc2",
+    ".pytest-tmp/local-joint-address-online-v6-run/acquisition_actions.jsonl": "3f7fb3dfa97321ee703cea78a4964fe7d0daa0f6d57130ce756088ce9c63e90d",
+    ".pytest-tmp/local-joint-address-online-v6-run/actions.jsonl": "4658c4b2ff246bac22437cacdd94778b7b3b046f39653971d516ad0106825296"
+  },
+  "recorder_sha256": "a9a7a98ddf6eb5a6a41e6bdbfbd6a86e690ed17fc846da0c4f6c60ad3f013d73",
+  "source_files_authenticated": 1158,
+  "evidence_scope": "Authenticated completed audit and scalar/streamed receipts; no model, action, checkpoint or audit reexecution.",
+  "limitations": [
+    "Scoped18-output constraint repair passed; original20-output gate remains unmet.",
+    "The supplied motor remains a host-chosen action interface; external task grade is evidence, not a numerical teaching input.",
+    "No claim of learned general software action selection or completed project goal."
+  ]
+}

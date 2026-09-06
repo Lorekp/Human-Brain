@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-06 with local-learning implementation and cost admission results.
+Updated 2026-09-06 with the completed no-backpropagation executed-learning result.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -10,7 +10,20 @@ with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. Hybrid permission does not relabel existing
 cell-only evidence or reopen protected evaluations.
 
-The current no-backpropagation [joint-address online v5 cost](../experiments/r4_integrated/local_joint_address_online_v5_result.md)
+The current [joint-address online v6 result](../experiments/r4_integrated/local_joint_address_online_v6_result.md)
+passes its scoped executed-learning criterion: 8/8 fit, 4/4 new values, 4/4 delayed
+and 2/4 interference, with zero for every matched control. All 4,096 acquisition
+first attempts execute before correction on the same neuronal learner; the
+learning-enabled arm succeeds on 787/1,024, including the last 128. Learning uses
+direct local output-synapse teaching without backpropagation. Full run plus
+independent audit take 248.580 seconds, at 620.613 MiB peak, after admission at
+586.173 projected seconds. Two interference failures keep strict 20/20 false.
+The host motor still supplies edit selection; supervised correction is not
+autonomous recovery. No general or protected gate advances. The active
+[neuronal byte-splice review](research/neuronal-byte-splice-action-v1.md) addresses
+that action-selection gap without extending this completed fit.
+
+The preceding no-backpropagation [joint-address online v5 cost](../experiments/r4_integrated/local_joint_address_online_v5_result.md)
 and independent audit complete in 21.232 seconds, but the final 956.052-second
 projection exceeds 900. No full acquisition ran. All 96 generated actions in
 this disposable four-lesson-per-arm sample use pending fallback and solve zero

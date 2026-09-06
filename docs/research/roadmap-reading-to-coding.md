@@ -4,6 +4,16 @@ Status: living decision document. Updated 2026-09-06.
 Owner: orchestrator. This document owns current priorities and architecture policy;
 frozen experiment protocols retain authority over their own evidence.
 
+Current endpoint: the [v6 local executed learner](../../experiments/r4_integrated/local_joint_address_online_v6_result.md)
+passes its scoped criterion at 18/20 versus zero for all matched controls;
+787/1,024 learning-stream first attempts succeed. Run and independent audit total
+248.58 seconds with 620.61 MiB peak owned memory. No backpropagation or separate
+training/execution model is used. Two interference failures and the supplied host
+edit motor keep strict qualification and general software capability unmet.
+The active [neuronal byte-splice action review](neuronal-byte-splice-action-v1.md)
+now develops one concrete local-learning interface to replace that selection.
+No further v6 exposure or alternate recall policy is selected.
+
 ## Objective
 
 Build an intelligence network for real-world use that learns continually,
@@ -373,8 +383,10 @@ no neuronal rule change, identical cost retry or admission relaxation follows.
 Both now pass: eight semantic pairs and a twelve-child authored comparison with
 aggregate new/old execution ratio .7172. The prepared
 [v6 return](../../experiments/r4_integrated/local_joint_address_online_v6.md)
-keeps the learning workload unchanged and requires fresh complete cost plus
-independent audit before any full acquisition.
+keeps the learning workload unchanged. Its completed cost admits 586.173 projected
+seconds; the full run and audit finish in 248.580 seconds. The scoped 8/4/4/2
+criterion passes with all controls at zero. Close this fit and pursue the active
+neuronal action-interface review above; the strict 20/20 gate remains unmet.
 Run/audit peaks of 665.539/432.832 MiB fit the revised admission estimates.
 The shorter aggregate duration includes a changed reference roster and must not
 be presented as an isolated circuit speedup.
