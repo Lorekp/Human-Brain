@@ -64,3 +64,23 @@ the never-created output JSON names; use a fresh
 `.pytest-tmp/neuronal-address-competition-data-qa-v2` watchdog/basetemp/JUnit.
 All other exposure and resource limits above remain fixed. The independently
 passed worker check is unaffected and must not be rerun.
+
+## Completed corrected data check
+
+The corrected node passes at `6415d3ac6e04c0e2200612f271eeafa4534353fd` after
+clean doctor `doctor-sio2on5y`. It preserves exact TRAIN, schedule, retention
+and old-panel records and validates all sixteen new structural pairs. The
+generated roster SHA256 is
+`1f76de378e238ddebd6ebcc8dd62f9dffc3187cada1923e794f86e51dfb4440e`.
+Its source SHA256 is
+`4b7f7fd5203462d039a1867d6c4ab23761431e6c85aa81da898d43fbc1eab413`.
+All 178 unaffected test AST nodes, including passed worker QA, remain unchanged.
+
+Pytest takes 2.68 seconds; outer launch takes 3.8214922 seconds with
+225.0859375 MiB observed owned peak. Independent saved-only data review passes;
+root additionally verifies both clean doctor receipts. The
+[integration QA bank](../../benchmarks/neuronal_address_competition_v1.integration_qa.json)
+preserves both data attempts, the worker pass and all source/input/output hashes.
+Total builder calls including the failed assertion are two; no model or program
+execution occurred in either data check. Reuse this exact generated roster in
+parent/auditor integration rather than rebuilding it for another development probe.

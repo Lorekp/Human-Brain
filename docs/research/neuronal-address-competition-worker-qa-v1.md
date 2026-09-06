@@ -92,3 +92,21 @@ selected. A failure is retained before a separately reviewed correction. A pass
 unlocks further parent/auditor integration and a fresh completed cost admission;
 it does not itself admit acquisition. No user approval is needed for this
 already-authorized ordinary QA.
+
+## Completed exchange
+
+The exact node passes at `0a9bac538cac2d4c992b491a5149ba8a04976e56` after clean
+doctor `doctor-t76kmmae`. The original-prior identity, five distinct parent
+models, sixteen-source worker closure and same-pending-object acknowledgement
+pass. Actual address 19 emits `e ab` then EOS in five decisions; the action
+heads choose STOP. One real unchanged-workspace child exits zero and prints
+`old\n`. This establishes custody, not correct payload selection or edit skill.
+The full 25-slot codec bank and 300 comparator traces are retained and checked.
+There are no teacher or old-panel calls. Final weights and tape are unchanged.
+
+Pytest takes 5.32 seconds; outer launch takes 6.4454107 seconds with
+505.94921875 MiB observed owned peak. Independent saved-only review passes.
+The [integration QA bank](../../benchmarks/neuronal_address_competition_v1.integration_qa.json)
+binds source, prior, actual work, raw proposal/action/acknowledgement, monitor,
+JUnit and review. Parent/auditor implementation is now selected; new acquisition
+still requires its own completed resource admission. This passed node is closed.

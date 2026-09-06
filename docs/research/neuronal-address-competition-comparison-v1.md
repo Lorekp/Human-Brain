@@ -183,6 +183,19 @@ format remains v1 inside explicitly bound v2 envelopes.
 The separately selected [one-construction data check](neuronal-address-competition-data-qa-v1.md)
 qualifies and freezes the new roster without models or program execution.
 
+Both now pass, with one preserved data-count assertion failure before its
+reviewed scalar correction. The [integration QA bank](../../benchmarks/neuronal_address_competition_v1.integration_qa.json)
+has SHA256 `d3eaf065bce6354622e8831b74f57886a2e271ce5258bc23e0479b632a11b96e`.
+The frozen generated roster is
+`.pytest-tmp/neuronal-splice-roster-qa-generated-v2.json`, SHA256
+`1f76de378e238ddebd6ebcc8dd62f9dffc3187cada1923e794f86e51dfb4440e`.
+Exact per-arm documents are 4,022 raw bytes plus 168 EOS, maximum occupied
+slots 125 within capacity 128. Preserve the full-cap engineering fixture.
+Proceed with `neuronal_splice_online_v2.py` and
+`check_neuronal_splice_online_v2.py`, their separately scoped non-neural
+source/cost-decision QA and a complete fresh cost/audit freeze. Keep the parent
+draft guard until that review. No additional checkpoint probe is selected.
+
 Exact roster source/data QA, complete source freeze and fresh measured admission
 remain prerequisites. This is one selected integrated
 milestone, not a queue of alternative experiments or a general SWE claim.

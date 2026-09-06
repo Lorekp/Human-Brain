@@ -27,9 +27,11 @@ now passes, including real wrong-action-before-correction custody and exact
 local teacher parity. Successor serialization and independent scalar validation
 also pass [three authored receipt checks](neuronal-address-competition-integration-v1.md#completed-receipt-qa-and-next-integration-step).
 Return to the shared workload through the selected
-[five-arm comparison](neuronal-address-competition-comparison-v1.md): develop
-its worker, prior/factory, parent/auditor and fresh structural cohort; qualify
-their data/custody boundaries and complete cost before acquisition.
+[five-arm comparison](neuronal-address-competition-comparison-v1.md): its
+worker/prior custody and fresh structural roster data checks now pass, with
+[banked receipts](../../benchmarks/neuronal_address_competition_v1.integration_qa.json).
+Implement and qualify its parent/auditor, then complete cost before acquisition.
+The one worker QA chooses STOP and changes no weights; it is not a transfer score.
 Two fixed threshold layers
 commit free recall; the same reader reopens all candidates for its existing
 direct local corrective surrogate after execution. Preserve raw requests and
