@@ -1,0 +1,119 @@
+{
+  "schema": "local-byte-event-preflight-v1-decision",
+  "status": "qualified_for_encoder_integration_qa",
+  "source_revision": "cf5c7a1d7e94550ace99dae75b5a8fe183d34735",
+  "policy": {
+    "actual_neural_steps": 0,
+    "aggregate_seconds_including_audit": 60,
+    "cap_bytes": 16,
+    "conceptual_eos_per_invocation": 1,
+    "documents_per_lesson": 2,
+    "fixture_all_splits_max_bytes": 64,
+    "other_bytes": "singleton",
+    "parent_mib": 2048,
+    "schedule_chunkings": [
+      "single",
+      "bytes"
+    ],
+    "schedule_lessons": 1024,
+    "schema": "local-byte-event-preflight-v1",
+    "seconds": 60,
+    "whitespace_hex": "090a0b0c0d20",
+    "word_bytes": "ASCII A-Z a-z 0-9 underscore"
+  },
+  "evidence_sha256": {
+    ".pytest-tmp/local-byte-event-preflight-v1.admission.json": "5188397765d3805bd1e8cdd7b514897aadedd505b601ac7a446da6ed9abc982a",
+    ".pytest-tmp/local-byte-event-preflight-v1-run/report.json": "43f327143f8d45fb7191edf1a353c29c334de189d4a2fd911d53c57329b7cc49",
+    ".pytest-tmp/local-byte-event-preflight-v1-run/completion.json": "f346b4f07d26e5a44cc9535990b05f3d520bb217248ae1892c2b63a014b90e60",
+    ".pytest-tmp/local-byte-event-preflight-v1-run/records.jsonl": "edb8978adbc571d0a76c3764cf46f685db5a46810feb1baaf4b6312285e5f76a",
+    ".pytest-tmp/local-byte-event-preflight-v1-independent-audit.json": "286b0bffad78fdf7938418aa5f7d1fa08378450e34ff0e4c8556d32e3db76669",
+    ".pytest-tmp/local-byte-event-preflight-v1-watchdog.launch.json": "1ae95dc5d7d1c5e1f7848c7a8cc3f78e5b16b9bfd81f6029f8334d6904e67d88",
+    ".pytest-tmp/local-byte-event-preflight-v1-audit-watchdog.launch.json": "474a876ae42eb87524e7c40e1ac92fd7d46d865dbe9656c42415f6f35ed6fe5a",
+    ".pytest-tmp/byte-event-preflight-v1-audit.py": "42385c0a1c0bb584740c859d272184c58b69508e0b99ee9acd9405817a01bf53",
+    ".pytest-tmp/byte-events-unit-v1.xml": "f01e4042ff01e9b207744ff6a3c2c4e913263863f79ff378513994e543666cd3",
+    ".pytest-tmp/byte-events-unit-exposure.json": "ac9258ce26202abcda72495e82efa96fa23e6da727b32d4cfca7e44efbbf2b5b",
+    ".pytest-tmp/byte-event-preflight-unit-v1.xml": "af7b43a8e37b8a9cae4f392559748dc0f397eb6377537a7866ecf0df14ac7088",
+    ".pytest-tmp/byte-event-audit-helper-qa.json": "ec2bdfcf847ff0197e827ede7d53b20914f1ce16e295d230f8e7bd4e4e7f2ed1",
+    ".pytest-tmp/byte-event-audit-ancestry-qa.json": "b80db708d544368a96374092c5f26d9ccc99213af3aa5a71c74adcffe2374c41"
+  },
+  "preservation_passed": true,
+  "document_event_reduction": true,
+  "qualified_for_encoder_integration_qa": true,
+  "neural_fit_admitted": false,
+  "gate_advanced": false,
+  "run_seconds": 0.612025,
+  "audit_seconds": 0.4765492,
+  "aggregate_seconds": 1.0885742,
+  "run_tree_peak_mib": 35.55078125,
+  "audit_tree_peak_mib": 35.53125,
+  "audit_actual_pid_observed": 33940,
+  "input_records": {
+    "authored": 274,
+    "training": 3072
+  },
+  "all_host_counts": {
+    "conceptual_byte_baseline_steps": 167910,
+    "conceptual_controller_events": 75689,
+    "conceptual_end_events": 7558,
+    "feed_calls": 80680,
+    "finish_calls": 7558,
+    "max_buffered_bytes": 16,
+    "raw_bytes_offered": 160352,
+    "raw_events_emitted": 68131,
+    "segmentation_invocations": 7558
+  },
+  "training_one_shot": {
+    "document": {
+      "segmentation_invocations": 2048,
+      "raw_bytes_offered": 49152,
+      "raw_events_emitted": 20480,
+      "feed_calls": 2048,
+      "finish_calls": 2048,
+      "conceptual_end_events": 2048,
+      "conceptual_byte_baseline_steps": 51200,
+      "conceptual_controller_events": 22528,
+      "max_buffered_bytes": 6,
+      "raw_event_count_distribution": {
+        "10": 2048
+      },
+      "raw_byte_count_distribution": {
+        "24": 2048
+      }
+    },
+    "query": {
+      "segmentation_invocations": 1024,
+      "raw_bytes_offered": 25600,
+      "raw_events_emitted": 12288,
+      "feed_calls": 1024,
+      "finish_calls": 1024,
+      "conceptual_end_events": 1024,
+      "conceptual_byte_baseline_steps": 26624,
+      "conceptual_controller_events": 13312,
+      "max_buffered_bytes": 5,
+      "raw_event_count_distribution": {
+        "12": 1024
+      },
+      "raw_byte_count_distribution": {
+        "25": 1024
+      }
+    }
+  },
+  "actual_model_work": {
+    "actions": 0,
+    "encoder_steps": 0,
+    "output_decisions": 0,
+    "query_steps": 0,
+    "teacher_offers": 0,
+    "writer_steps": 0
+  },
+  "audit_host_work": {
+    "reference_segmentation_inputs": 3346,
+    "reference_segmentation_bytes": 75601,
+    "reference_peak_scan_inputs": 3346,
+    "reference_peak_scan_bytes": 75601,
+    "saved_chunking_receipts_verified": 7558,
+    "neural_model_calls": 0
+  },
+  "distinct_affected_unit_cases": 29,
+  "scope": "Pure byte-segmentation readiness. Exact spans are lossless; future neuronal codes are not thereby lossless or compositional. All model/teacher/action counts zero. Event-count reduction is not a neural speedup or learning gain. Integrate fixed encoder and validate parity/cost next."
+}

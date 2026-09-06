@@ -12,6 +12,13 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current separate-answerability result
 
+The [byte-event preflight](../experiments/r4_integrated/local_byte_event_preflight_v1_result.md)
+passes byte preservation, streaming and count checks with independent audit in
+1.089 seconds. TRAIN document-controller events project to 22,528 versus 51,200
+byte/EOS steps, and question-controller events halve. No neuronal model, teaching
+or action ran. This earns fixed-encoder integration QA and fresh cost assessment,
+not a neural speedup, capability result or benchmark advancement.
+
 The [multiscale writer comparison](../experiments/r4_integrated/local_memory_multiscale_v1_result.md)
 completes with independent audit in 374.542 seconds after fresh cost admission
 at 862.514 projected seconds. Tagged, aggregate and writer-frozen each solve

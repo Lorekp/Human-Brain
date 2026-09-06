@@ -1,6 +1,15 @@
 # Persistent memory and byte output: parallel development
 
-Current execution: the [multiscale comparison](../../experiments/r4_integrated/local_memory_multiscale_v1_result.md)
+Current execution: the [byte-event preprocessing qualification](../../experiments/r4_integrated/local_byte_event_preflight_v1_result.md)
+and independent audit pass in 1.089 seconds. Exact payloads, spans and streaming
+chunk invariance hold; projected TRAIN writer events fall from 51,200 to 22,528,
+and query events halve. All actual neural, teacher and action counts are zero.
+Proceed to the [fixed neuronal encoder integration](local-token-event-interface.md),
+its read-only/state/reference QA and fresh complete cost admission. No additional
+preprocessing or output-only diagnostic is queued; event reduction is not a
+measured neural speedup or useful learned binding.
+
+The preceding [multiscale comparison](../../experiments/r4_integrated/local_memory_multiscale_v1_result.md)
 and independent audit complete in 374.542 seconds, after fresh admission at
 862.514 projected seconds. Tagged, aggregate and the candidate frozen writer
 all score 5/8 fit, 2/4 new-value, 2/4 delayed and zero interference. The scalar
