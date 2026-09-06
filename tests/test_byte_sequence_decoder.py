@@ -4665,3 +4665,569 @@ def test_temporary_module_bootstrap_semantic_pair(tmp_path, case_name):
         raw_evidence={str(path): sha256(path.read_bytes()).hexdigest()
                       for path in raw_paths.values()},
         declared_differences=["bootstrap_wrapper_frames", "import_and_audit_events"]))
+
+
+def _splice_qa_scalar_product(left, right):
+    """Authored scalar forward coincidence oracle, with no learned weights."""
+    import numpy as np
+
+    return np.array([[sum(float(a) * float(b) for a, b in zip(row, other, strict=True))
+                      for other in right] for row in left], dtype=np.float64)
+
+
+def _splice_qa_scalar_population(raw, codes, rows, *, reverse=False, eos=True):
+    import numpy as np
+
+    result = np.zeros((rows, 32), dtype=np.float64)
+    symbols = ([256, *reversed(raw)] if reverse else [*raw, *([256] if eos else [])])
+    assert len(symbols) <= rows
+    for index, symbol in enumerate(symbols):
+        result[index] = codes[symbol]
+    return result
+
+
+def _splice_qa_scalar_context(raw, index, codes):
+    import numpy as np
+
+    result = np.zeros((32, 32), dtype=np.float64)
+    for lag in range(16):
+        if index - lag - 1 >= 0:
+            result[lag] = codes[raw[index - lag - 1]]
+        right = index + lag
+        if right < len(raw):
+            result[16 + lag] = codes[raw[right]]
+        elif right == len(raw):
+            result[16 + lag] = codes[256]
+    return result
+
+
+def _splice_qa_normalized(*blocks):
+    import math
+
+    import numpy as np
+
+    raw = np.concatenate([np.asarray(block).reshape(-1) for block in blocks])
+    return raw * (math.sqrt(32) / max(math.sqrt(sum(float(x) ** 2 for x in raw)), 1e-8))
+
+
+def test_splice_three_leaf_updates_independent_local_oracle():
+    """One action circuit, three direct labels; no reader, proposal or execution."""
+    import math
+
+    import numpy as np
+
+    from humanbrain.neuronal_splice_learner import SpliceActionCircuit
+
+    circuit = SpliceActionCircuit(seed=733)
+    assert all(not value.requires_grad and value.grad is None for value in circuit.parameters())
+    for head, width, target in (("start", 6177, 2), ("end", 2049, 1),
+                                ("operation", 4244, 1)):
+        rows = 1 if head == "operation" else 3
+        features = torch.zeros((rows, width), dtype=torch.float32)
+        for index in range(rows):
+            features[index, index] = 4
+            features[index, width - index - 1] = -4
+        if rows > 1:
+            features[1].copy_(features[0])
+        weight = getattr(circuit, f"{head}_weight")
+        original = weight.detach().numpy().copy()
+        bias = circuit.operation_bias.detach().numpy().copy() if head == "operation" else None
+        phi = features.numpy().astype(np.float64)
+        if head == "operation":
+            logits = np.array([sum(float(original[k, j]) * float(phi[0, j])
+                                   for j in range(width)) + float(bias[k]) for k in range(2)])
+        else:
+            logits = np.array([sum(float(original[j]) * float(row[j])
+                                   for j in range(width)) for row in phi])
+        exponentials = [math.exp(float(item - max(logits))) for item in logits]
+        probabilities = np.array([item / sum(exponentials) for item in exponentials])
+        error = probabilities.copy()
+        error[target] -= 1
+        if head == "operation":
+            gradient = np.array([[float(error[k]) * float(phi[0, j])
+                                  for j in range(width)] for k in range(2)])
+        else:
+            gradient = np.array([sum(float(error[k]) * float(phi[k, j])
+                                     for k in range(rows)) for j in range(width)])
+        expected = original - np.float32(.01) * gradient.astype(np.float32)
+        update = circuit.prepare_update(head, features, target)
+        if rows > 1:
+            assert update.decision.logits[0] == update.decision.logits[1]
+        np.testing.assert_allclose(update.decision.logits.numpy().reshape(-1), logits,
+                                   rtol=2e-6, atol=2e-7)
+        np.testing.assert_allclose(update.decision.probabilities.numpy().reshape(-1),
+                                   probabilities, rtol=2e-6, atol=2e-7)
+        assert update.target == target
+        assert float(update.nll) == pytest.approx(-math.log(probabilities[target]), rel=2e-6)
+        assert update.parameters[0][0] is weight
+        np.testing.assert_allclose(update.parameters[0][1].numpy(), expected,
+                                   rtol=2e-6, atol=2e-7)
+        np.testing.assert_array_equal(weight.numpy(), original)
+        if head == "operation":
+            assert update.parameters[1][0] is circuit.operation_bias
+            np.testing.assert_allclose(update.parameters[1][1].numpy(),
+                                       bias - np.float32(.01) * error.astype(np.float32),
+                                       rtol=2e-6, atol=2e-7)
+            np.testing.assert_array_equal(circuit.operation_bias.numpy(), bias)
+
+
+def _splice_qa_workspace(files=None):
+    from humanbrain.multiscale_opaque_event_tape import OpaqueWorkspaceFile
+    from humanbrain.neuronal_splice_action import SpliceWorkspace
+
+    if files is None:
+        files = (("main.py", b"import a\nprint(a.x)\n"),
+                 ("a.py", b"x = 'pending'\n"), ("b.py", b"x = 'pending'\n"))
+    return SpliceWorkspace(tuple(OpaqueWorkspaceFile(path, raw) for path, raw in files))
+
+
+def _splice_qa_codes():
+    # Authored bounded nonlexical activity, not a learner or a random draw.
+    values = torch.arange(258 * 32, dtype=torch.float32).reshape(258, 32)
+    return ((values * 7 + torch.arange(32).square()) % 43 - 21) / 23
+
+
+def test_splice_raw_abi_bounds_and_stale_workspace():
+    """Literal transport only: three byte edits/five rejections, zero neural calls."""
+    from humanbrain.neuronal_splice_action import SpliceProposal, apply_splice
+
+    workspace = _splice_qa_workspace((("a.py", b"A'B\xffC"), ("b.py", b"untouched")))
+    original = workspace.files
+    for start, end, raw, expected in (
+        (1, 1, b"\x00", b"A\x00'B\xffC"),
+        (1, 4, b"", b"AC"),
+        (1, 4, b"'\\\xfe", b"A'\\\xfeC"),
+    ):
+        proposal = SpliceProposal("SPLICE", "a.py", start, end, raw, "eos", workspace.sha256)
+        result = apply_splice(workspace, proposal)
+        assert result[0].content == expected and result[1] == original[1]
+        assert workspace.files == original
+    invalid = (
+        ("a.py", 0, 1, "eos", "0" * 64),
+        ("missing.py", 0, 1, "eos", workspace.sha256),
+        ("a.py", 3, 2, "eos", workspace.sha256),
+        ("a.py", 0, 6, "eos", workspace.sha256),
+        ("a.py", 0, 1, "limit", workspace.sha256),
+    )
+    for path, start, end, status, digest in invalid:
+        with pytest.raises(ValueError):
+            apply_splice(workspace, SpliceProposal("SPLICE", path, start, end,
+                                                   b"ab", status, digest))
+        assert workspace.files == original
+    stopped = SpliceProposal("STOP", "missing.py", -1, -2, b"ab", "limit", workspace.sha256)
+    assert apply_splice(workspace, stopped) is workspace.files
+    with pytest.raises(ValueError):
+        _splice_qa_workspace((("a.py", b"x" * 129),))
+    with pytest.raises(ValueError):
+        _splice_qa_workspace((("a" * 32, b""),))
+    with pytest.raises(ValueError):
+        _splice_qa_workspace(tuple((f"{i}.py", b"") for i in range(5)))
+    with pytest.raises(ValueError):
+        _splice_qa_workspace((("a.py", b""), ("A.py", b"")))
+
+
+def test_splice_features_independent_scalar_oracle():
+    """Three head banks from authored byte activity; no model or target selection."""
+    import numpy as np
+
+    from humanbrain import neuronal_splice_learner as splice
+
+    codes = _splice_qa_codes()
+    raw_codes = codes.numpy()
+    workspace = _splice_qa_workspace((("z.py", b"\xff\x00A"), ("a.py", b"B'")))
+    request = b"set z.py"
+    encoding = splice.encode(request, workspace, codes)
+    actual_start = splice.start_features(encoding)
+    q = _splice_qa_scalar_population(request, raw_codes, 32, reverse=True)
+    for path, start in (("a.py", 0), ("z.py", 3)):
+        raw = next(item.content for item in workspace.files if item.path == path)
+        p = _splice_qa_scalar_population(path.encode(), raw_codes, 32, reverse=True)
+        f = _splice_qa_scalar_population(raw, raw_codes, 129)
+        c = _splice_qa_scalar_context(raw, start, raw_codes)
+        expected = _splice_qa_normalized(_splice_qa_scalar_product(q, p),
+                                         _splice_qa_scalar_product(q, f),
+                                         _splice_qa_scalar_product(q, c), [start / 128])
+        index = workspace.boundaries.index((path, start))
+        np.testing.assert_allclose(actual_start[index].numpy(), expected,
+                                   rtol=4e-5, atol=3e-6)
+    raw = b"\xff\x00A"
+    start, end = 1, 3
+    c_start = _splice_qa_scalar_context(raw, start, raw_codes)
+    offsets, actual_end = splice.end_features(encoding, "z.py", start)
+    assert offsets == (1, 2, 3)
+    for index, offset in enumerate(offsets):
+        c_end = _splice_qa_scalar_context(raw, offset, raw_codes)
+        expected = _splice_qa_normalized(_splice_qa_scalar_product(q, c_end),
+                                         _splice_qa_scalar_product(c_start, c_end),
+                                         [(offset - start) / 128])
+        np.testing.assert_allclose(actual_end[index].numpy(), expected,
+                                   rtol=4e-5, atol=3e-6)
+    payload = b"'\xff"
+    actual_op = splice.operation_features(encoding, "z.py", start, end, payload, "eos")
+    p = _splice_qa_scalar_population(b"z.py", raw_codes, 32, reverse=True)
+    span = _splice_qa_scalar_population(raw[start:end], raw_codes, 129)
+    emitted = _splice_qa_scalar_population(payload, raw_codes, 17)
+    expected = _splice_qa_normalized(_splice_qa_scalar_product(q, c_start),
+                                     _splice_qa_scalar_product(q, p),
+                                     _splice_qa_scalar_product(span, emitted),
+                                     [(end - start) / 128, len(payload) / 16, 1])
+    np.testing.assert_allclose(actual_op[0].numpy(), expected, rtol=4e-5, atol=3e-6)
+    for features, width in ((actual_start, 6177), (actual_end, 2049), (actual_op, 4244)):
+        assert features.shape[1] == width and features.dtype == torch.float32
+        assert torch.isfinite(features).all()
+        assert (features.double().square().sum(1) <= 32 + 2e-5).all()
+    with pytest.raises(ValueError):
+        splice.encode(b"q" * 32, workspace, codes)
+
+
+def test_splice_all_boundaries_and_file_order_equivariance():
+    """Four pure workspace banks, including all 516 capacity boundaries."""
+    from humanbrain import neuronal_splice_learner as splice
+
+    codes = _splice_qa_codes()
+    request = b"set a.py"
+    base = (("b.py", b"ab"), ("a.py", b"ab"), ("empty.py", b""))
+    workspace = _splice_qa_workspace(base)
+    assert workspace.boundaries == (("a.py", 0), ("a.py", 1), ("a.py", 2),
+                                    ("b.py", 0), ("b.py", 1), ("b.py", 2),
+                                    ("empty.py", 0))
+    features = splice.start_features(splice.encode(request, workspace, codes))
+    reordered = _splice_qa_workspace(tuple(reversed(base)))
+    assert reordered.sha256 == workspace.sha256
+    other = splice.start_features(splice.encode(request, reordered, codes))
+    assert torch.equal(features, other)
+    # Identical local content in different files still receives raw path evidence.
+    assert not torch.equal(features[0], features[3])
+    moved = _splice_qa_workspace((("b.py", b"ab"), ("a.py", b"Xab"), ("empty.py", b"")))
+    moved_features = splice.start_features(splice.encode(request, moved, codes))
+    assert len(moved_features) == len(features) + 1
+    assert not torch.equal(features[1], moved_features[2])
+    assert moved.boundaries[moved_features.shape[0] - 1] == ("empty.py", 0)
+    del other, moved_features, features
+    capacity = _splice_qa_workspace(tuple((f"{index}.py", bytes(
+        (index * 128 + offset) % 256 for offset in range(128))) for index in range(4)))
+    assert len(capacity.boundaries) == 516
+    assert len(set(capacity.boundaries)) == 516
+    maximum = splice.start_features(splice.encode(request, capacity, codes))
+    assert maximum.shape == (516, 6177) and torch.isfinite(maximum).all()
+    assert (maximum.double().square().sum(1) <= 32 + 2e-5).all()
+
+
+def _splice_qa_model(mode="learned"):
+    from humanbrain.neuronal_splice_learner import NeuronalSpliceLearner
+
+    model = NeuronalSpliceLearner(mode=mode, seed=733)
+    return model, model.ingest([b"ab."])
+
+
+def _splice_qa_outcome(prediction, workspace, execution=None):
+    """Default is an explicitly simulated outcome for nonexecution mechanics QA."""
+    return {"attempt_id": prediction.attempt_id,
+            "proposal_sha256": prediction.proposal_sha256,
+            "workspace_sha256": workspace.sha256,
+            "execution": execution if execution is not None else {
+                "returncode": 0, "stdout_hex": "", "stderr_hex": ""}}
+
+
+def _splice_qa_teacher(workspace):
+    from humanbrain.neuronal_splice_action import SpliceProposal
+
+    # Authored corrective label only. Never called to select a free proposal.
+    return SpliceProposal("SPLICE", "a.py", 5, 12, b"ab", "eos", workspace.sha256)
+
+
+def test_splice_same_instance_execution_before_correction(tmp_path):
+    """One actual child, one same-instance correction; no motor or solved edit."""
+    import json
+    from hashlib import sha256
+    from pathlib import Path
+    from time import perf_counter
+
+    from experiments.r4_integrated import temporary_module_action_bridge_v1 as bridge
+    from humanbrain.neuronal_splice_action import apply_splice
+
+    root = Path(__file__).resolve().parents[1]
+    raw_path = root / ".pytest-tmp/neuronal-splice-e2e-v1-raw.json"
+    passed_path = root / ".pytest-tmp/neuronal-splice-e2e-v1.json"
+    assert not raw_path.exists() and not passed_path.exists()
+    runtime = root / ".pytest-tmp/stdlib-python-action-v1-qualification.json"
+    bootstrap = root / ".pytest-tmp/temporary-module-bootstrap-v1-qualification.json"
+    launch = bridge.load_qualified_bootstrap(
+        bootstrap, "0bb809fd33aee145f169776a03a884fd62daf381ff4e67ed333a2a378c46d92b",
+        runtime_qualification_path=runtime,
+        runtime_qualification_sha="4c3a6438549ce1ecd4c8d92509f1a60753692b8aab1ab9155df00b12db10941c",
+        expected_venv=root / ".venv/Scripts/python.exe")
+    source_paths = (Path(__file__).resolve(), root / "src/humanbrain/neuronal_splice_learner.py",
+                    root / "src/humanbrain/neuronal_splice_action.py",
+                    root / "src/humanbrain/local_memory_learner.py", Path(bridge.__file__))
+    source_hashes = {str(path): sha256(path.read_bytes()).hexdigest() for path in source_paths}
+    model, state = _splice_qa_model()
+    workspace = _splice_qa_workspace()
+    original = copy.deepcopy(model.state_dict())
+    state_before = state.snapshot()
+    prediction = model.propose(b"set a.py k00", workspace, state)
+    rejected = None
+    try:
+        after = apply_splice(workspace, prediction.proposal)
+    except ValueError as error:
+        rejected, after = str(error), workspace.files
+    # The old bridge is only process transport: neither Case.files nor actuate is called.
+    # Its expected-output field is deliberately empty; task grading happens below.
+    case = bridge.Case("splice-qa", "unused", "", "__unselected__", "")
+    execution = bridge.execute_utf8(
+        case, after, workspace.files, tmp_path / "action", launch=launch)
+    completed_at = perf_counter()
+    outcome = _splice_qa_outcome(prediction, workspace, execution)
+    record = {"schema": "neuronal-splice-e2e-raw-v1", "status": "pending_checks",
+              "model_instance": id(model), "state_instance": id(state),
+              "proposal": prediction.proposal.to_record(), "outcome": outcome,
+              "before": {item.path: item.content.hex() for item in workspace.files},
+              "after": {item.path: item.content.hex() for item in after},
+              "rejection": rejected, "action_completed_perf": completed_at,
+              "child_executions": 1, "source_sha256": source_hashes}
+    with raw_path.open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps(record, sort_keys=True, allow_nan=False) + "\n")
+    _assert_nested_equal(model.state_dict(), original)
+    _assert_nested_equal(state.snapshot(), state_before)
+    assert execution["returncode"] is None or type(execution["returncode"]) is int
+    assert execution["bootstrap_sha256"] == bridge.BOOTSTRAP_SHA256
+    assert execution["child_command"] == [launch.base_executable, *bridge.FLAGS,
+                                           "-c", bridge.BOOTSTRAP]
+    assert {item.path: (tmp_path / "action" / item.path).read_bytes() for item in after} == {
+        item.path: item.content for item in after}
+    teacher = _splice_qa_teacher(workspace)
+    task_success = (rejected is None and execution["returncode"] == 0
+                    and execution["stdout_hex"] == b"ab\n".hex()
+                    and execution["stderr_hex"] == "" and after == apply_splice(workspace, teacher))
+    actual_teach, calls = model.reader.teach, []
+
+    def observed_teach(request, payload, tape, *args, **kwargs):
+        saved = json.loads(raw_path.read_bytes())
+        assert saved["outcome"] == outcome and saved["model_instance"] == id(model)
+        assert tape is state and request == b"set a.py k00" and payload == b"ab"
+        assert perf_counter() >= completed_at
+        _assert_nested_equal(model.state_dict(), original)
+        calls.append(1)
+        return actual_teach(request, payload, tape, *args, **kwargs)
+
+    teacher_started = perf_counter()
+    with patch.object(model.reader, "teach", side_effect=observed_teach):
+        feedback = model.teach(prediction, workspace, state, teacher, outcome)
+    assert calls == [1] and feedback.reader_feedback.teacher_count == 3
+    assert set(feedback.teacher_choices) == {"start", "end", "operation"}
+    assert model._pending is None
+    _assert_nested_equal(state.snapshot(), state_before)
+    assert source_hashes == {
+        str(path): sha256(path.read_bytes()).hexdigest() for path in source_paths}
+    with passed_path.open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps({"schema": "neuronal-splice-e2e-qa-v1", "status": "passed",
+            "raw_sha256": sha256(raw_path.read_bytes()).hexdigest(), "source_sha256": source_hashes,
+            "task_success": task_success, "child_executions": 1, "free_proposals": 1,
+            "free_payload_decisions": len(prediction.payload.steps), "payload_teacher_offers": 3,
+            "action_teacher_offers": 3, "action_completed_perf": completed_at,
+            "teacher_started_perf": teacher_started, "teacher_completed_perf": perf_counter()},
+            sort_keys=True, allow_nan=False) + "\n")
+
+
+def test_splice_free_end_and_corrected_end_use_distinct_prefixes():
+    """One model, two free proposals, one SPLICE plus one STOP; simulated outcomes."""
+    from humanbrain import neuronal_splice_learner as splice
+    from humanbrain.neuronal_splice_action import SpliceProposal
+
+    model, state = _splice_qa_model()
+    workspace = _splice_qa_workspace()
+    # Explicit mechanics setup: all start scores tie, so raw boundary zero wins.
+    model.actions.start_weight.zero_()
+    end_calls, op_calls = [], []
+    actual_end, actual_op = splice.end_features, splice.operation_features
+
+    def observe_end(encoding, path, start, work=None):
+        result = actual_end(encoding, path, start, work)
+        end_calls.append((path, start, result[0]))
+        return result
+
+    def observe_op(encoding, path, start, end, payload, status, work=None):
+        op_calls.append((path, start, end, payload, status))
+        return actual_op(encoding, path, start, end, payload, status, work)
+
+    with patch.object(splice, "end_features", side_effect=observe_end), \
+            patch.object(splice, "operation_features", side_effect=observe_op):
+        prediction = model.propose(b"set a.py k00", workspace, state)
+        original_proposal = prediction.proposal.to_record()
+        teacher = _splice_qa_teacher(workspace)
+        feedback = model.teach(prediction, workspace, state, teacher,
+                               _splice_qa_outcome(prediction, workspace))
+    assert prediction.proposal.path == "a.py" and prediction.proposal.start == 0
+    assert end_calls[0] == ("a.py", 0, tuple(range(15)))
+    assert end_calls[1] == ("a.py", 5, tuple(range(5, 15)))
+    assert op_calls[0] == (prediction.proposal.path, prediction.proposal.start,
+                           prediction.proposal.end, prediction.proposal.replacement,
+                           prediction.proposal.stop_reason)
+    assert op_calls[1] == ("a.py", 5, 12, b"ab", "eos")
+    assert prediction.proposal.to_record() == original_proposal
+    assert feedback.reader_feedback.teacher_count == 3
+    stopped = model.propose(b"keep a.py", workspace, state)
+    actual = stopped.proposal
+    teacher_stop = SpliceProposal("STOP", "unused.py", -1, -1, b"", "limit", workspace.sha256)
+    op_calls.clear()
+    with patch.object(model.reader, "teach", side_effect=AssertionError("STOP taught reader")), \
+            patch.object(model.reader, "predict_with_receipt",
+                         side_effect=AssertionError("STOP reran reader")), \
+            patch.object(splice, "start_features", side_effect=AssertionError("STOP start")), \
+            patch.object(splice, "end_features", side_effect=AssertionError("STOP end")), \
+            patch.object(splice, "operation_features", side_effect=observe_op):
+        feedback_stop = model.teach(stopped, workspace, state, teacher_stop,
+                                    _splice_qa_outcome(stopped, workspace))
+    assert op_calls == [(actual.path, actual.start, actual.end, actual.replacement,
+                         actual.stop_reason)]
+    assert feedback_stop.reader_feedback is None and feedback_stop.work["reader"] == {}
+    assert set(feedback_stop.teacher_choices) == {"operation"}
+
+
+def test_splice_stop_delete_and_capped_payload_remain_distinct():
+    """One action circuit, three operation forwards, zero readers or teachers."""
+    from humanbrain import neuronal_splice_learner as splice
+    from humanbrain.neuronal_splice_action import SpliceProposal, apply_splice
+
+    workspace = _splice_qa_workspace((("a.py", b"abc"),))
+    encoding = splice.encode(b"edit a.py", workspace, _splice_qa_codes())
+    circuit = splice.SpliceActionCircuit(seed=733)
+    circuit.operation_weight.zero_()
+    for payload, status, operation in ((b"q", "eos", "STOP"),
+                                        (b"", "eos", "SPLICE"),
+                                        (b"x" * 16, "limit", "STOP")):
+        circuit.operation_bias.copy_(torch.tensor([1., 0.] if operation == "STOP" else [0., 1.]))
+        features = splice.operation_features(encoding, "a.py", 1, 2, payload, status)
+        decision = circuit.score("operation", features)
+        selected = "STOP" if decision.selected_index == 0 else "SPLICE"
+        assert selected == operation
+        proposal = SpliceProposal(selected, "a.py", 1, 2, payload, status, workspace.sha256)
+        result = apply_splice(workspace, proposal)
+        assert result[0].content == (b"ac" if operation == "SPLICE" else b"abc")
+        if status == "limit":
+            assert features[0, -1] == 0
+            with pytest.raises(ValueError, match="EOS"):
+                apply_splice(workspace, SpliceProposal("SPLICE", "a.py", 1, 2,
+                                                       payload, status, workspace.sha256))
+
+
+def test_splice_four_publication_modes():
+    """Four fresh modes: four simulated attempts, twelve payload/action labels each."""
+    for mode in ("learned", "action_frozen", "slow_frozen", "memory_disabled"):
+        model, state = _splice_qa_model(mode)
+        workspace = _splice_qa_workspace()
+        before = copy.deepcopy(model.state_dict())
+        tape = state.snapshot()
+        prediction = model.propose(b"set a.py k00", workspace, state)
+        feedback = model.teach(prediction, workspace, state, _splice_qa_teacher(workspace),
+                               _splice_qa_outcome(prediction, workspace))
+        after = model.state_dict()
+        action_changed = any(
+            not torch.equal(before[key], after[key]) for key in before
+            if key.startswith("actions.") and isinstance(before[key], torch.Tensor))
+        reader_changed = any(not torch.equal(before[key], after[key]) for key in before
+                             if key.startswith("reader.") and isinstance(before[key], torch.Tensor))
+        assert action_changed is (mode in {"learned", "memory_disabled"})
+        assert reader_changed is (mode != "slow_frozen")
+        assert any(feedback.action_updates.values()) is action_changed
+        assert feedback.reader_feedback.teacher_count == 3
+        for head in ("start", "end", "operation"):
+            assert feedback.work["action"][f"{head}_teacher_offers"] == 1
+            assert feedback.work["action"][f"{head}_log_softmaxes"] == 1
+            assert feedback.work["action"][f"{head}_enabled_update_groups"] == int(action_changed)
+        assert all(not parameter.requires_grad and parameter.grad is None
+                   for parameter in model.parameters())
+        _assert_nested_equal(state.snapshot(), tape)
+        if mode == "memory_disabled":
+            assert torch.count_nonzero(state.sensory) == torch.count_nonzero(state.keys) == 0
+
+
+def test_splice_learning_disabled_blocks_all_publication():
+    """One full correction offered with both reader/action publication disabled."""
+    model, state = _splice_qa_model()
+    workspace = _splice_qa_workspace()
+    prediction = model.propose(b"set a.py k00", workspace, state)
+    before, tape = copy.deepcopy(model.state_dict()), state.snapshot()
+    feedback = model.teach(prediction, workspace, state, _splice_qa_teacher(workspace),
+                           _splice_qa_outcome(prediction, workspace), learning_enabled=False)
+    _assert_nested_equal(model.state_dict(), before)
+    _assert_nested_equal(state.snapshot(), tape)
+    assert feedback.reader_feedback.teacher_count == 3
+    assert not feedback.reader_feedback.codec_updated
+    assert not feedback.reader_feedback.address_updated
+    assert not any(feedback.action_updates.values()) and model._pending is None
+    model.actions.start_weight.requires_grad_(True)
+    try:
+        with pytest.raises(ValueError, match="non-autograd"):
+            model._check()
+    finally:
+        model.actions.start_weight.requires_grad_(False)
+
+
+def test_splice_late_validation_failure_is_atomic():
+    """Injected final action validation failure: zero reader teacher calls."""
+    from humanbrain import neuronal_splice_learner as splice
+
+    model, state = _splice_qa_model()
+    workspace = _splice_qa_workspace()
+    prediction = model.propose(b"set a.py k00", workspace, state)
+    before, tape = copy.deepcopy(model.state_dict()), state.snapshot()
+    checked, actual_finite = [], splice._finite
+
+    def inject(value, name):
+        actual_finite(value, name)
+        if name == "action parameter proposal":
+            checked.append(tuple(value.shape))
+            if tuple(value.shape) == (2,):
+                assert checked == [(6177,), (2049,), (2, 4244), (2,)]
+                raise ValueError("injected final action validation failure")
+
+    with (
+        patch.object(splice, "_finite", side_effect=inject),
+        patch.object(model.reader, "teach", side_effect=AssertionError("reader published first")),
+        pytest.raises(ValueError, match="injected final action"),
+    ):
+        model.teach(prediction, workspace, state, _splice_qa_teacher(workspace),
+                    _splice_qa_outcome(prediction, workspace))
+    assert checked == [(6177,), (2049,), (2, 4244), (2,)]
+    _assert_nested_equal(model.state_dict(), before)
+    _assert_nested_equal(state.snapshot(), tape)
+    assert model._pending[0] is prediction
+
+
+def test_splice_combined_snapshot_roundtrip_has_no_external_selector():
+    """Two new models, two proposals/acknowledgements, no teachers or stored checkpoint."""
+    from humanbrain.neuronal_splice_learner import NeuronalSpliceLearner
+
+    model, state = _splice_qa_model()
+    workspace = _splice_qa_workspace()
+    snapshot = model.snapshot(state)
+    original = copy.deepcopy(snapshot)
+    prediction = model.propose(b"set a.py k00", workspace, state)
+    with patch.object(model.reader, "teach", side_effect=AssertionError("evaluation teacher")), \
+            patch.object(model.reader, "predict_with_receipt",
+                         side_effect=AssertionError("acknowledgement forward")), \
+            patch.object(model.reader, "_query", side_effect=AssertionError("ack query")), \
+            patch.object(model.actions, "score", side_effect=AssertionError("ack scoring")):
+        work = model.finish_without_teaching(prediction, workspace, state,
+                                              _splice_qa_outcome(prediction, workspace))
+    assert work["reader"] == {} and model._pending is None
+    _assert_nested_equal(model.state_dict(), original["model"])
+    assert model._experience == 1 and snapshot["experience"] == 0
+    model.restore_snapshot(original)
+    assert model._experience == 1  # Numerical restore cannot rewind live attempt identities.
+    restored = NeuronalSpliceLearner(seed=733)
+    restored_state = restored.restore_snapshot(snapshot)
+    again = restored.propose(b"set a.py k00", workspace, restored_state)
+    assert again.proposal == prediction.proposal
+    for head in ("start", "end", "operation"):
+        assert torch.equal(again.choices[head].logits, prediction.choices[head].logits)
+    assert torch.equal(again.payload.initial_log_belief, prediction.payload.initial_log_belief)
+    restored.finish_without_teaching(again, workspace, restored_state,
+                                     _splice_qa_outcome(again, workspace))
+    snapshot["model"]["actions.start_weight"].zero_()
+    snapshot["memory"]["sensory"].zero_()
+    _assert_nested_equal(model.state_dict(), original["model"])
+    _assert_nested_equal(restored.state_dict(), original["model"])
+    _assert_nested_equal(state.snapshot(), original["memory"])
+    _assert_nested_equal(restored_state.snapshot(), original["memory"])
