@@ -45,6 +45,12 @@ It found a 17-ms `pkgutil` subtree; the selected
 [v4 return](../../experiments/r4_integrated/local_joint_address_online_v4.md)
 specializes regular-source loading while retaining the qualified script lifecycle.
 Semantic QA and new complete cost must precede acquisition.
+The [completed v4 cost](../../experiments/r4_integrated/local_joint_address_online_v4_result.md)
+passes its saved audit but projects 1,886.974 seconds against 900. Actual cost and
+audit total 27.597 seconds; memory projects 690.047 MiB. All 96 generated actions
+remain pending. The broad timing slowdown has no established cause. Close this
+cost without acquisition or an identical retry; review concrete execution and
+simulation improvements before selecting the next bounded step.
 
 Current result: the [shared temporal-map comparison](../../experiments/r4_integrated/local_shared_temporal_query_v1_result.md)
 and independent audit complete in 119.745 seconds. Learned solves 8/8 taught,

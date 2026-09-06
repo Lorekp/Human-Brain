@@ -349,6 +349,12 @@ It found a 17-ms `pkgutil` subtree. Select the
 [v4 source bootstrap](../../experiments/r4_integrated/local_joint_address_online_v4.md),
 retaining the existing qualified main-module lifecycle and requiring authored
 semantic QA plus fresh complete cost before learning. No neuronal rule changes.
+The [complete v4 cost](../../experiments/r4_integrated/local_joint_address_online_v4_result.md)
+and audit pass in 27.597 seconds but reject the 1,886.974-second projection.
+The slowdown spans unchanged model work and action execution; no contemporaneous
+host evidence establishes its cause. No full acquisition ran. Preserve this
+failure and review concrete executor/simulation optimizations before selecting
+one bounded next change; no identical timing retry or budget relaxation.
 Run/audit peaks of 665.539/432.832 MiB fit the revised admission estimates.
 The shorter aggregate duration includes a changed reference roster and must not
 be presented as an isolated circuit speedup.

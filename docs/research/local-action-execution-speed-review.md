@@ -26,6 +26,11 @@ That diagnostic found a 17-ms cumulative `pkgutil` subtree. Select the
 [v4 regular-source bootstrap](../../experiments/r4_integrated/local_joint_address_online_v4.md)
 with pinned existing module-lifecycle handling, authored semantic qualification
 and fresh whole-workload cost. Import timing alone is not speed evidence.
+The [completed v4 result](../../experiments/r4_integrated/local_joint_address_online_v4_result.md)
+passes its saved audit but rejects the 1,886.974-second projection. The broad
+timing pattern spans unchanged model work as well as execution; its cause is
+unresolved. No full fit ran. Preserve the failure and review concrete execution
+and simulation improvements before selecting one next step.
 
 ## Concrete finding
 
