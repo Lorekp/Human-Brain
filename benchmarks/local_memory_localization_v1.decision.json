@@ -1,0 +1,280 @@
+{
+  "schema": "local-memory-localization-v1-decision",
+  "status": "completed_audited_diagnostic",
+  "date": "2026-09-06",
+  "source_revision": "d724e06183ea7232f59a506febe2f8f0b02b5b1b",
+  "result": "experiments/r4_integrated/local_memory_localization_v1_result.md",
+  "recipe": "experiments/r4_integrated/local_memory_localization_v1.md",
+  "capability_qualified": false,
+  "architecture_adopted": false,
+  "retained_updates": false,
+  "additional_fit_authorized": false,
+  "gate_advanced": false,
+  "admission_sha256": "853438dfcdfc49dc82d0afb654ccdd04909b7190e4a9f3133be6352a4d4e5668",
+  "evidence_sha256": {
+    ".pytest-tmp/local-memory-localization-v1.admission.json": "853438dfcdfc49dc82d0afb654ccdd04909b7190e4a9f3133be6352a4d4e5668",
+    ".pytest-tmp/local-memory-localization-v1-run/report.json": "835ba4989457005c274d4ae53df46366a470849da38aa84f60be56b2767d2633",
+    ".pytest-tmp/local-memory-localization-v1-run/completion.json": "040faabcc300655c0e3c4e4bb37d90847d163b81ced5d066d846307d7db5fcad",
+    ".pytest-tmp/local-memory-localization-v1-run/roster.json": "18aa0d7a03b38cb63dd0f1fb869340ce4fc748e3b2b453e0c33ef1e32fa9fc6b",
+    ".pytest-tmp/local-memory-localization-v1-run-watchdog.launch.json": "724e2297f2e0a711803e847b2ebc7b3f0c8a4a338682b21be9237b7d2668f220",
+    ".pytest-tmp/local-memory-localization-v1-audit-watchdog.launch.json": "d3c81fa761ba04b2751004212317c41b72872508c0656158842a7c7f65b5bc74",
+    ".pytest-tmp/local-memory-localization-v1-independent-audit.json": "ce18f50ac0d7ffc256b6cbc4a2fb2e8791ad3566ffdac6534010eed11d2897fe",
+    ".pytest-tmp/local-memory-localization-v1-audit.py": "d70eb72a102a053f8129b2d52469b8950b53e3afe015fb15b49f4becaed5a7a8",
+    ".pytest-tmp/local-memory-localization-v1-summary.json": "e1aae1aeacba7af3e0578c54b4f69bbcf9a87166beb82a56bc06538e664c7f58",
+    ".pytest-tmp/summarize-localization.py": "54d8e6a15e5ac083700d9ca9fe8cb00912afb1141c7816c7958cc4a2b55a797a",
+    ".pytest-tmp/localization-source-normalization.json": "b28cea1bbc88997c234c026324c14b01458a79eac714d2137352a06b920c54af",
+    ".pytest-tmp/localization-source-line-endings-before/experiments/r4_integrated/local_memory_two_byte_v1.py": "ddd8a7e55ab0ee56b02b6d604590588c427267394fbf9419438ffdabce18ca24",
+    ".pytest-tmp/localization-source-line-endings-before/experiments/r4_integrated/local_memory_two_byte_v1.md": "37b74aae93bef2be5a9edc4d8236be3810db1c39d67ff26d2f9a42e26f58ac07"
+  },
+  "endpoint_evidence_sha256": {
+    ".pytest-tmp/local-memory-two-byte-v1-run/source-free/source_free.pt": "d05a6a2d78e46619d49f3e7d25999649830d2ed4a545a6a853c62927e7dacca1",
+    ".pytest-tmp/local-memory-two-byte-v1-run/report.json": "57f6ff8330e90c536be40809579ff6c31917ea23076e711a5d61a6d1727c40c5",
+    ".pytest-tmp/local-memory-two-byte-v1-run/completion.json": "a9d34214a8e5ecd227d4496f09e328f80f650411910c64b964e0657b05f28181",
+    ".pytest-tmp/local-memory-two-byte-v1-run-independent-audit.json": "1ef342ddac2cabae3195d23007354ec8dd70b29171a1cc7c56f2bb49216c80a0"
+  },
+  "endpoint_model_sha256": {
+    "tagged": "df6146461af2d25e9936c8084889e6d9af1a11f763be059267d98074734f6014",
+    "writer_maps_frozen": "0a414ddf4b3dc45113952830b4c7e76b00165cc8303984a82cd69077b6ddaa1f"
+  },
+  "source_manifest_sha256": "79af21a208afa0e07abd320567aff9aa140e92bf7bd2d37fd0bd8587e382a991",
+  "source_manifest_hash_encoding": "SHA256 of compact sorted-key JSON UTF-8; full manifest in authenticated report",
+  "sources_unchanged": true,
+  "audit": {
+    "status": "passed",
+    "source_files_verified": 1139,
+    "artifact_hashes_verified": 217,
+    "execution_receipts_verified": 66,
+    "internal_seconds": 3.4855970999997226,
+    "scope_limits": [
+      "Saved receipt algebra and custody only; no model/native module imported and no neural prediction performed.",
+      "Positive block is recorded teacher-after; negative is represented before-minus-delta. No proposed update retained.",
+      "Float64 residual reconstruction uses a fixed numerical tolerance, not an exact-rational proof of all float32 operations.",
+      "Aggregate60second execution budget additionally requires the separately monitored audit-launch receipt.",
+      "No mechanism adoption, learning improvement or general capability follows from an audit pass."
+    ]
+  },
+  "resources": {
+    "aggregate_seconds_limit": 60,
+    "tree_mib_limit": 2048,
+    "run_outer_seconds": 22.1348402,
+    "audit_outer_seconds": 4.1007099,
+    "aggregate_outer_seconds": 26.235550099999998,
+    "run_tree_peak_mib": 822.66015625,
+    "audit_tree_peak_mib": 510.05078125,
+    "audit_remaining_seconds_limit": 37,
+    "memory_method": "Maximum simultaneous sum of live owned process peak working sets, sampled every 500ms. Brief unobserved children may be missed.",
+    "sequential_peaks_summed": false,
+    "separate_audit_launch_reason": "PowerShell launcher exit prevented the following automatic audit command; root launched the same audit once within the remaining aggregate budget. No repeated model run or audit.",
+    "orchestration_gaps_count_as_computation": false
+  },
+  "counts": {
+    "ingestions": 56,
+    "baseline_ingestions": 16,
+    "proposal_ingestions": 8,
+    "perturbed_ingestions": 32,
+    "ingestion_byte_steps": 2800,
+    "free_queries": 64,
+    "free_query_byte_steps": 1664,
+    "teacher_query_traversals": 8,
+    "teacher_query_byte_steps": 208,
+    "free_generation_decisions": 192,
+    "supplemental_phase_evaluations": 0,
+    "free_and_supplemental_phase_advances": 192,
+    "teacher_phase_advances": 24,
+    "teacher_score_validation_reevaluations": 24,
+    "actual_output_score_evaluations": 240,
+    "teacher_offers": 24,
+    "teacher_residual_offers": 6168,
+    "actual_teacher_context_signal_projections": 24,
+    "external_proposal_residual_vectors": 24,
+    "external_proposal_signal_projections": 24,
+    "external_target_scoring_phase_vectors": 192,
+    "query_key_observation_recomputations": 64,
+    "trace_writer_map_observation_recomputations": 800,
+    "action_attempts": 64,
+    "motor_demonstrations": 2
+  },
+  "serialized_tensor_bytes": {
+    "baseline_trace_tensor_bytes": 14348800,
+    "baseline_retained_tensor_bytes": 62056088,
+    "proposal_tensor_bytes": 6709920,
+    "perturbed_retained_tensor_bytes": 146786688,
+    "observation_tensor_bytes": 907264
+  },
+  "action_counts": {
+    "correct": 14,
+    "baseline_correct": 6,
+    "perturbed_correct": 8,
+    "all_lossless_executed": true,
+    "stops": {
+      "eos": 64
+    }
+  },
+  "baseline_contrasts": [
+    {
+      "mode": "tagged",
+      "original_correct": 2,
+      "reversed_correct": 1,
+      "checks_per_order": 8,
+      "outputs_hex": [
+        "6361",
+        "6362",
+        "6361",
+        "6362",
+        "6364",
+        "6361",
+        "6364",
+        "6364",
+        "6361",
+        "6362",
+        "6361",
+        "6362",
+        "6364",
+        "6364",
+        "6364",
+        "6361"
+      ],
+      "assignment_contrasts": 8,
+      "assignment_output_collisions": 6,
+      "order_output_changes": 2,
+      "final_over_maximum_prefix_range": [
+        0.7109377078845476,
+        0.8523009645594097
+      ],
+      "final_matrix_contrast_norm_range": [
+        1.6978583697245453,
+        1.9314723537672893
+      ],
+      "read_contrast_norm_range": [
+        0.17069246760774923,
+        0.3913577627537315
+      ]
+    },
+    {
+      "mode": "writer_maps_frozen",
+      "original_correct": 2,
+      "reversed_correct": 1,
+      "checks_per_order": 8,
+      "outputs_hex": [
+        "6361",
+        "6362",
+        "6361",
+        "6362",
+        "6364",
+        "6361",
+        "6364",
+        "6364",
+        "6361",
+        "6362",
+        "6361",
+        "6362",
+        "6364",
+        "6364",
+        "6364",
+        "6361"
+      ],
+      "assignment_contrasts": 8,
+      "assignment_output_collisions": 6,
+      "order_output_changes": 2,
+      "final_over_maximum_prefix_range": [
+        0.7203655047505105,
+        0.8411447919056161
+      ],
+      "final_matrix_contrast_norm_range": [
+        1.7690491408091757,
+        1.9222385950226502
+      ],
+      "read_contrast_norm_range": [
+        0.1789938010208617,
+        0.4552264846742178
+      ]
+    }
+  ],
+  "finite_update_effects": [
+    {
+      "block": "writer",
+      "sign": 1,
+      "mean_loss_difference": -8.8090665256748e-05,
+      "negative_loss_differences": 8,
+      "positive_loss_differences": 0,
+      "output_changes": 0
+    },
+    {
+      "block": "writer",
+      "sign": -1,
+      "mean_loss_difference": 8.831806812612322e-05,
+      "negative_loss_differences": 0,
+      "positive_loss_differences": 8,
+      "output_changes": 0
+    },
+    {
+      "block": "address",
+      "sign": 1,
+      "mean_loss_difference": -0.00035182798402100257,
+      "negative_loss_differences": 8,
+      "positive_loss_differences": 0,
+      "output_changes": 0
+    },
+    {
+      "block": "address",
+      "sign": -1,
+      "mean_loss_difference": 0.0003524368835029733,
+      "negative_loss_differences": 0,
+      "positive_loss_differences": 8,
+      "output_changes": 0
+    }
+  ],
+  "loss_kind": "mean_of_three_half_sum_squared_potential_errors",
+  "floating_reconstruction_max_abs_residuals": {
+    "matrix_without_residual_max_abs": 1.6376881417645706e-07,
+    "read_without_residual_max_abs": 8.253502450927819e-08,
+    "read_with_recurrence_residual_max_abs": 5.773012487081411e-08,
+    "actual_read_rounding_max_abs": 5.773012484722173e-08,
+    "matrix_with_residual": 4.996003610813204e-16,
+    "read_with_all_residuals": 2.498001805406602e-16
+  },
+  "contribution_ranges": {
+    "first_document_retained_norm_ratio": [
+      0.2968118826625136,
+      0.5392152847526195
+    ],
+    "last_document_over_first_final_norm": [
+      1.949953632600911,
+      3.2297718644484044
+    ]
+  },
+  "source_normalization": {
+    "scope": "Preserve physical source bytes from completed evidence; normalize to existing Git LF blobs before the new diagnostic freeze.",
+    "files": [
+      {
+        "path": "experiments/r4_integrated/local_memory_two_byte_v1.py",
+        "archive": ".pytest-tmp/localization-source-line-endings-before/experiments/r4_integrated/local_memory_two_byte_v1.py",
+        "before_sha256": "ddd8a7e55ab0ee56b02b6d604590588c427267394fbf9419438ffdabce18ca24",
+        "after_sha256": "2018b36faa8a86d5df0b2855d42d29f17d9352d2b734db97bbb41c99eb12642a",
+        "matches_existing_git_blob": true
+      },
+      {
+        "path": "experiments/r4_integrated/local_memory_two_byte_v1.md",
+        "archive": ".pytest-tmp/localization-source-line-endings-before/experiments/r4_integrated/local_memory_two_byte_v1.md",
+        "before_sha256": "37b74aae93bef2be5a9edc4d8236be3810db1c39d67ff26d2f9a42e26f58ac07",
+        "after_sha256": "094ee73de85db7fbfd64936b8182fb8eb450c21eb8c11a2f2909100227d2040e",
+        "matches_existing_git_blob": true
+      }
+    ]
+  },
+  "interpretation": [
+    "Assignment differences reach retained matrices, reads and output potentials; complete forward erasure is not observed.",
+    "Six of eight assignment swaps per endpoint collide; order reversal loses one correct answer per endpoint.",
+    "Actual positive writer and address updates each reduce loss in all eight isolated cases; negative counterparts increase it. No free output changes.",
+    "Finite effects do not certify a derivative, convergence, adequate credit or useful learned binding.",
+    "No diagnostic intervention is retained. Host-authored matching still supplies the narrow action schema.",
+    "Descriptive saved-only summary is external result analysis, separate from the monitored protocol and its audit."
+  ],
+  "scope_limits": [
+    "Ratios compare different linear maps and are descriptive, not information-capacity or success thresholds.",
+    "Contribution magnitudes may cancel; their norms are not additive percentages of useful information.",
+    "Matrix/query/output differences do not establish that a different decoder can recover correct bindings.",
+    "Finite positive/negative update effects do not certify derivatives or convergence; positive uses actual after, negative mirrored represented displacement.",
+    "Frozen checkpoints and exposed TRAIN compositions; no fresh adjudication or mechanism adoption."
+  ]
+}

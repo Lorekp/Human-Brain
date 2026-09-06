@@ -1,12 +1,16 @@
 # Persistent memory and byte output: parallel development
 
-Current execution: the two-byte document fit is closed below. The selected
-[localization review](local-document-memory-return-review.md) now directs one
-[frozen-checkpoint diagnostic](../../experiments/r4_integrated/local_memory_localization_v1.md)
-through actual writes, query reads and output potentials, plus isolated local
-update-effect comparisons. Its 60-second aggregate limit includes saved audit.
-Implementation and ordinary parity QA precede a source freeze; it is not another
-acquisition fit or an authorization to change the main learning rule.
+Current execution: the two-byte document fit and its
+[localization diagnostic](../../experiments/r4_integrated/local_memory_localization_v1_result.md)
+are closed. The diagnostic and audit finish in 26.236 seconds: assignment
+distinctions reach reads and output potentials, and every tested positive block
+update improves loss, but no answer changes. The
+[follow-up review](local-memory-localization-followup.md) selects one direct
+integrated comparison of actual instantaneous read-path error transport into
+query neurons. Preserve writer credit, LMS output, rate and roster. Implement
+and verify the local arithmetic, then freeze a six-arm protocol with the repaired
+five controls and a matched current-rule tagged reference. Fresh complete cost
+admission must pass before acquisition; neither prior admission transfers.
 
 Updated 2026-09-06 after the user required local, online cell/synapse learning
 for the main system. The prepared BPTT/Adam joint fit is **withdrawn before

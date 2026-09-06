@@ -155,8 +155,18 @@ automatic local-rule tweak. The selected
 [localization review](local-document-memory-return-review.md) directs one
 60-second frozen-checkpoint diagnostic of actual writes, query addressing,
 output potentials and isolated local update effects before another acquisition.
-It preserves raw inputs and counts every disposable correction and real action. No
-additional supplied-factor output diagnostic or protected gate is opened.
+The [completed diagnostic](../../experiments/r4_integrated/local_memory_localization_v1_result.md)
+and saved audit take 26.236 seconds. Assignment differences survive into reads
+and output potentials. Positive writer and address updates reduce loss in all
+eight cases per block, but change no answer. Source swaps produce largely
+common-direction read changes for questions requiring opposite answer changes;
+this supports a binding limitation without proving erasure or a wrong update
+sign. The [follow-up review](local-memory-localization-followup.md) selects one
+direct integrated comparison of instantaneous memory-read credit into the query
+map and query cell. Keep writer learning, LMS output, rate and roster fixed;
+compare the repaired five controls with a matched current-rule tagged reference.
+Fresh six-arm cost admission is required before fitting. No additional
+supplied-factor output diagnostic or protected gate is opened.
 These byte learners use no pretrained encoder or LLM. The
 [action-path review](local-memory-byte-preflight-review.md) identifies host-computed
 matching in the legacy edit motor, however. Keep neuron-generated answer bytes

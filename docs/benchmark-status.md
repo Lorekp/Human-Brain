@@ -12,6 +12,16 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current separate-answerability result
 
+The latest [document-memory localization](../experiments/r4_integrated/local_memory_localization_v1_result.md)
+completes with a passing saved audit in 26.236 seconds. Both frozen endpoints
+solve 2/8 original-order and 1/8 reversed-order diagnostic actions. Assignment
+differences survive into reads and output potentials; positive writer and address
+updates each reduce loss in all eight tested cases, without changing any answer.
+The [selected follow-up](research/local-memory-localization-followup.md) tests
+source-dependent query credit in the integrated workload after fresh cost
+admission. This diagnostic establishes neither useful acquisition nor neuronal
+action selection, and advances no protected gate.
+
 The [completed comparison](../experiments/r4_integrated/answerability_pointer_result.md)
 fails acquisition and integration qualification. Development supported/STOP scores
 are cells 25/192 + 8/64, frozen producer 0/192 + 0/64, bypass 15/192 + 9/64, and
