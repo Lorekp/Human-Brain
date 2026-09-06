@@ -85,3 +85,15 @@ complete-workload cost admission. Any successor must preregister new withheld
 cases and matched controls; v1 endpoints remain exposed development evidence.
 No acquisition, checkpoint probe or alternate decoding of saved v1 outputs is
 selected by this document.
+
+## Completed component return
+
+The [six-node component result](neuronal-address-competition-qa-v1-result.md)
+passes at cbf9403, including a genuine wrong action before the same reader's
+local correction and exact inherited-teacher parity. No acquisition or old
+checkpoint ran. Return this mechanism to the shared integrated workload.
+Root selects successor receipt serialization and saved independent competition
+trace validation as the next implementation step. Preserve the completed v1
+experiment and reuse suitable pure helpers. The subsequent source-free worker,
+new withheld comparison and full measured cost are still separate prerequisites;
+passing component QA does not admit a fit.

@@ -21,7 +21,11 @@ Target starts are uniquely first in all eight value swaps and 22/23 failed
 nonempty edits, but diffuse off-target contributions dominate first EOS. The
 completed source/math and primary-source reviews select
 [initial neuronal address competition](neuronal-address-competition-v1.md) for
-implementation and explicitly scoped ordinary QA. Two fixed threshold layers
+implementation and explicitly scoped ordinary QA. The
+[six-node component verification](neuronal-address-competition-qa-v1-result.md)
+now passes, including real wrong-action-before-correction custody and exact
+local teacher parity. Return to integration through successor serialization
+and independent saved competition-trace validation. Two fixed threshold layers
 commit free recall; the same reader reopens all candidates for its existing
 direct local corrective surrogate after execution. Preserve raw requests and
 the working action heads. No new fit or checkpoint probe is admitted. Any

@@ -1,0 +1,257 @@
+{
+  "action": {
+    "address_changed_after_execution": true,
+    "inherited_teacher_numerical_parity": true,
+    "passed": {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-action/test_competitive_splice_wrong_0/passed.json",
+      "sha256": "39c9850a2b7645f19320b3b72316d25125dec431d63f1a5c44f04367047e8b24"
+    },
+    "proposal": {
+      "end": 0,
+      "operation": "SPLICE",
+      "path": "a.py",
+      "replacement_hex": "6162",
+      "start": 0,
+      "stop_reason": "eos",
+      "workspace_sha256": "47ceddd6491e307ffb463b403386a63b2fb54db4f7d849a6584fc17eab98271e"
+    },
+    "raw": {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-action/test_competitive_splice_wrong_0/raw.json",
+      "sha256": "de75b178ec437614f2362164462fb51e23d3a72f689ff96b6537f3a0efd96cb9"
+    },
+    "receipt": {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-action/test_competitive_splice_wrong_0/action.jsonl",
+      "sha256": "7d52ac77b8ed449c063f3cf881fbfc5503ecf172f3f6aa0fe9b706703811e57d"
+    },
+    "returncode": 1,
+    "same_reader_instance": true,
+    "task_success": false
+  },
+  "authored_circuit_totals": {
+    "competition_candidates": 271,
+    "competition_comparator_synapse_applications": 32540,
+    "competition_pairs": 16270,
+    "competition_threshold_evaluations": 16541,
+    "competition_winner_synapse_applications": 32540
+  },
+  "claim_boundary": "Authored component mechanics only. No acquisition, historical checkpoint evaluation, benchmark advancement or simulation speedup established. The wrong action is a preserved failure, followed by the same reader's local all-address correction. No backpropagation. Successor serialization, isolated worker, fresh cohort and complete cost remain unqualified.",
+  "counts": {
+    "action_circuits": 1,
+    "action_teacher_labels": 3,
+    "competitive_readers": 7,
+    "current_base_readers": 1,
+    "direct_valid_competitions": 8,
+    "document_eos": 10,
+    "exposed_endpoint_cases": 0,
+    "free_calls": 4,
+    "free_competitions": 4,
+    "free_decisions": 9,
+    "historical_checkpoint_loads": 0,
+    "ingestion_calls": 9,
+    "pytest_nodes": 6,
+    "query_eos": 11,
+    "query_traversals": 11,
+    "raw_document_bytes": 17,
+    "raw_documents": 10,
+    "raw_query_bytes": 11,
+    "real_verification_children": 1,
+    "rejected_competitions": 7,
+    "source_free_workers": 0,
+    "splice_proposals": 1,
+    "splice_wrappers": 1,
+    "teacher_calls": 7,
+    "teacher_competitions": 0,
+    "teacher_offers": 14
+  },
+  "doctor": {
+    "path": ".pytest-tmp/dev/doctor-xss252w4/receipt.json",
+    "sha256": "0d627ffd521db2753bb999770c2311d638499cb10a9a604da8d4770692bce63f"
+  },
+  "phases": {
+    "action": {
+      "junit": {
+        "path": ".pytest-tmp/neuronal-address-competition-qa-v1-action.xml",
+        "sha256": "21878e4dcd961c93514f966aa8f999b3500a404b225f673c24679ed0d734ba0a"
+      },
+      "monitor": {
+        "path": ".pytest-tmp/neuronal-address-competition-qa-v1-action.launch.json",
+        "sha256": "1118afb7f08d69328ce23732f2ae95b7405cee4d7c613a9e5cecdb127aa68d2c"
+      },
+      "observed_tree_peak_mib": 256.9375,
+      "pytest_seconds": 4.625,
+      "stderr": {
+        "path": ".pytest-tmp/neuronal-address-competition-qa-v1-action.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "path": ".pytest-tmp/neuronal-address-competition-qa-v1-action.stdout",
+        "sha256": "34d3a4f22af3729dc8675425f24b27dff9edbc413d2542b7bf794d235b7d83d8"
+      },
+      "tests": [
+        "test_competitive_splice_wrong_action_then_teacher_parity"
+      ],
+      "watchdog_seconds": 6.0863151
+    },
+    "components": {
+      "junit": {
+        "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components.xml",
+        "sha256": "e8f1b0ff918e2f44551265fdccd1417854333f07524d17a1225fdc539f8e7775"
+      },
+      "monitor": {
+        "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components.launch.json",
+        "sha256": "02f8e1b38ad7ba34b939257e87cfeae04bb68b36f9039fc3ad4faddac3c50cab"
+      },
+      "observed_tree_peak_mib": 236.20703125,
+      "pytest_seconds": 4.685,
+      "stderr": {
+        "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components.stdout",
+        "sha256": "447959b18a912e21e996e7763b1b5f55bdd13ff8a8d1f0c918e7fcd969f4d745"
+      },
+      "tests": [
+        "test_address_competition_scalar_circuit_contract",
+        "test_address_competition_input_guards",
+        "test_competitive_reader_single_cursor_and_full_bank",
+        "test_competitive_reader_inherited_publication_modes",
+        "test_competitive_reader_metadata_and_snapshot"
+      ],
+      "watchdog_seconds": 6.2010459
+    }
+  },
+  "raw_artifacts": [
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_address_competition_input0/competition-invalid-0.json",
+      "sha256": "e6f20e4ae17b9ce1f11ddc7e18148861f654127889f731f64dda3d01f61e7f0a"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_address_competition_input0/competition-invalid-1.json",
+      "sha256": "0b58d720d1f551f1a1c340844759ef1791447ab14d558644e03139c9afb7f2cc"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_address_competition_input0/competition-invalid-2.json",
+      "sha256": "9bea0b5467055bc0f7386b233deb8b77528b283016575bec042fdc7c41034d4e"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_address_competition_input0/competition-invalid-3.json",
+      "sha256": "5427bb2a74287caab53cb162060d35dd637c481f8f5250074088dac77070c30a"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_address_competition_input0/competition-invalid-4.json",
+      "sha256": "ac94a3bb35fe4fad7af4589749c09ebe7a6f2f7371014ee190712dfe93f0c055"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_address_competition_input0/competition-invalid-5.json",
+      "sha256": "073284b414d5b25279f60e141bec33cf6f4616d38bf92ec0a521f3c9f3626e59"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_address_competition_input0/competition-invalid-6.json",
+      "sha256": "cc1a1e8052d760e7054f0c54334a67b56247c7a85ee164063c522b216b80fad2"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_address_competition_scala0/competition-scalar-0.json",
+      "sha256": "a6d3f519d92355dadafee527e005f0326c64e6eccae37cdfaeab40929aeb5378"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_address_competition_scala0/competition-scalar-1.json",
+      "sha256": "cb73a2b56d50f782ba1141e9a23d82fe42dcc9ebe938cbea87d86461718efeec"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_address_competition_scala0/competition-scalar-2.json",
+      "sha256": "e929d0f39a70de451157fb192cebe224d9e53f72a78e15c891e406f38e79fe4e"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_address_competition_scala0/competition-scalar-3.json",
+      "sha256": "ff8fd547701417b72f64d94207c849bf9c16a0901685d101b7f11a3336db4cc8"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_address_competition_scala0/competition-scalar-4.json",
+      "sha256": "4155c4e73a844789154dfaa9ccb6d82aa435658274f3f7593b622ad838b7f6c6"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_address_competition_scala0/competition-scalar-5.json",
+      "sha256": "f0f45b18597c5c3935f6caf41b987b1ae791727c75c828912baf4922f59b5737"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_address_competition_scala0/competition-scalar-6.json",
+      "sha256": "7be30a4030e861532258ec078a8e8c90253ae02d5312e94db9377083193a68df"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_address_competition_scala0/competition-scalar-7.json",
+      "sha256": "364e6c98adc877c4abafa42440d0a03c48a49862c662b91c80ebef5e4095eb83"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_competitive_reader_inheri0/competitive-teacher-address_frozen-enabled.json",
+      "sha256": "4e75af6dce701ff8d8801d425db390130891022d1aad79354502a26e5380cfea"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_competitive_reader_inheri0/competitive-teacher-learned-disabled.json",
+      "sha256": "9ee243fe90874e2de81f03d147ab96fea50d16c665744b21f8bec46bcac2abbe"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_competitive_reader_inheri0/competitive-teacher-learned-enabled.json",
+      "sha256": "5cadba65417d7640061eb9db6a5480821ccba65b30dd3cae1b7e14a37091ea9d"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_competitive_reader_inheri0/competitive-teacher-slow_frozen-enabled.json",
+      "sha256": "2d3a3ae35f4e2e5a2d3bff2deb5945a7e805e43c9f0f22c3879726f73963cf59"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_competitive_reader_inheri0/competitive-teacher-writes_disabled-enabled.json",
+      "sha256": "54cb5a8dd7cb8d109f05f73d51dd45d1fdb527480c5cf6a75b850ea253dd0fba"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_competitive_reader_metada0/competitive-metadata-snapshot.json",
+      "sha256": "6394d152140e644e376d8cec9e1f8d4d953edd9507cbf9d4fa4af17a1ba237aa"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_competitive_reader_single0/competitive-free-0.json",
+      "sha256": "b9ad56d1d9dd39cdaf77c6a04ce6612bf33519164ac71a4593d31831964cad71"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_competitive_reader_single0/competitive-free-1.json",
+      "sha256": "9efbfe714c34619dd75b4bed0883b26dd975de476bdad64c2d4dfd27782d65d8"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-components/test_competitive_reader_single0/competitive-free-2.json",
+      "sha256": "0dfcbd6ed489a191190cbe3164534b961f7f6e7f39df72429858fda46b71429c"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-action/test_competitive_splice_wrong_0/passed.json",
+      "sha256": "39c9850a2b7645f19320b3b72316d25125dec431d63f1a5c44f04367047e8b24"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-action/test_competitive_splice_wrong_0/raw.json",
+      "sha256": "de75b178ec437614f2362164462fb51e23d3a72f689ff96b6537f3a0efd96cb9"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-action/test_competitive_splice_wrong_0/teacher-raw.json",
+      "sha256": "87cbb8c6992fb03bc8923ed889d9f2b1f516554b1064815e5a29ea9a2193bee8"
+    },
+    {
+      "path": ".pytest-tmp/neuronal-address-competition-qa-v1-action/test_competitive_splice_wrong_0/action.jsonl",
+      "sha256": "7d52ac77b8ed449c063f3cf881fbfc5503ecf172f3f6aa0fe9b706703811e57d"
+    }
+  ],
+  "saved_only_bank_script": {
+    "path": ".pytest-tmp/bank-neuronal-address-competition-qa-v1.py",
+    "sha256": "56283f68310d4df2de113467e21b0b84fa93f612f657e3be6447b2fcd6866740"
+  },
+  "schema": "neuronal-address-competition-component-qa-bank-v1",
+  "source_revision": "cbf9403db1bbf62b4853025062ed848ef6c7c3b7",
+  "source_sha256": {
+    "docs/research/neuronal-address-competition-qa-v1.md": "87934c51196039ca955ca16201f4da643428eecbcdec8aa67ee12fc4738f6a39",
+    "experiments/r4_integrated/run_source_absent_memory_byte_v1.ps1": "4f26b669442a596cf3023c8d066ef49ff6231732baa575b8c503ad4ae3d198dd",
+    "experiments/r4_integrated/temporary_module_action_bridge_v1.py": "b2c6822c8c8087cd3ff8af1ba79d79555a2c08b5bbf90e1f9902d117c7d2a10f",
+    "src/humanbrain/competitive_local_memory_learner.py": "379835cb4b53877413aa856a32247bccefb3eed7b8290102c8a53f4b93dc0ee1",
+    "src/humanbrain/local_memory_learner.py": "2a6bfe480757b248c585a00bdc9c79155af6abd3a162b3e93a098d406b73a3b8",
+    "src/humanbrain/neuronal_address_competition.py": "d222dcc41323acb7ef3c82ad54c39c2c72d6f6428587994bea62707d6c65eea3",
+    "src/humanbrain/neuronal_sequence_memory.py": "55a1c561b93921ec9e31dce0ae1216e44423b1b4d3d9cd1525997202624574af",
+    "src/humanbrain/neuronal_splice_action.py": "9a704b4f9527598cbd784f2eaee9472e44a968eb21f97ceabf2ad2dfeb0de13a",
+    "src/humanbrain/neuronal_splice_learner.py": "bb06e074d44431cf2d09d62f7e98119a2a207ed53e7f6d5796bb6c7b274770ab",
+    "tests/test_byte_sequence_decoder.py": "5d9b7203c99262834c62f9bdc8844a562f07d64ef9600bc7b8f44a02915930ed"
+  },
+  "status": "passed"
+}
