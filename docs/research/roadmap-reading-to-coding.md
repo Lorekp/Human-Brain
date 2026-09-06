@@ -34,11 +34,16 @@ signals. Those signals must not conceal reverse-mode gradients through retained
 network history or externally computed per-synapse updates. The user reaffirmed
 **no backpropagation** on 2026-09-06: do not start backpropagation/BPTT or
 Adam/global-fitting runs for this goal. Earlier frozen comparisons remain
-historical evidence, not authorization for new gradient training. Repeated experience and explicit
+historical evidence, not authorization for new backpropagation runs. Repeated experience and explicit
 replay are allowed; count their exposure and cost. Locality is an architectural
 constraint, not proof of biological fidelity or language understanding.
 Vectorized simulation of these rules is allowed: locality concerns the information
 used by an update, not whether the implementation uses a tensor operation.
+This prohibition includes manually coded reverse-Jacobian error transport through
+fixed forward maps. A local final synapse product or absence of autograd does not
+make such an upstream error generator compliant. A synapse's direct output-neuron
+delta rule remains distinct from propagating that error backward through another
+forward stage.
 
 **Learning and execution must use the same neuronal system**, also reaffirmed
 by the user on 2026-09-06. The network that chooses an output/action must retain
@@ -301,9 +306,21 @@ All four different-question fit pairs are correct, and the last 128 acquisition
 first attempts are all exact. Strict qualification still fails on two interference
 cases. Close this fixed fit; falling loss and perfect late first attempts do not
 authorize more epochs. The saved correct individual starts still lose to pooled
-bytes from several competing records. Review the latent-start retrieval policy
-against marginal byte decoding before selecting a bounded frozen-checkpoint
-comparison; no counterfactual answers or policy success are yet measured.
+bytes from several competing records. A proposed frozen single-address policy
+comparison was reviewed but remains unselected and unrun. The user's renewed
+no-backpropagation requirement instead triggered an
+[actual-equation review](local-learning-backprop-boundary-review.md): the existing
+teacher manually returns address error through the fixed key map. Withdraw it
+from further training, including reference reruns. Its completed measurements
+remain historical evidence, not a backpropagation-free capability claim.
+The [local-learning return review](local-neuronal-learning-return-review.md)
+now owns the next change: fixed query/key joint activity before a single learned
+address-output layer, with direct local output error and no reverse key-error
+path. Both free action and teaching must use that actual forward circuit.
+Rejoin real executed first attempts and local feedback on the same learner
+instance; the previous acquisition attempts were byte predictions, with action
+execution measured only at the endpoint. Fresh acquisition and complete cost
+are required. No frozen-checkpoint shortcut substitutes for this repair.
 Run/audit peaks of 665.539/432.832 MiB fit the revised admission estimates.
 The shorter aggregate duration includes a changed reference roster and must not
 be presented as an isolated circuit speedup.

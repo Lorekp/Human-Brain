@@ -9,6 +9,13 @@ interference failures leave the preregistered strict criterion unmet.
 This closes the fixed fit. No additional lessons, gain changes or automatic
 repeat fit are authorized by this result.
 
+Subsequent [mechanism review](../../docs/research/local-learning-backprop-boundary-review.md)
+found explicit manual error transport through the fixed key map. This result
+retains its original learning contract and measurements, but does not establish
+a backpropagation-free learner under the user's renewed prohibition. That teacher
+is withdrawn from further training; the replacement requires fresh acquisition
+with learning and executed first attempts in the same neuronal system.
+
 ## Comparison and criterion
 
 Frozen source: `82db27e847f00fb065f03d5464fc519116e6a6db`.

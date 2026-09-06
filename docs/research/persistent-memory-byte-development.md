@@ -6,6 +6,15 @@ The [roadmap architecture policy](roadmap-reading-to-coding.md#architecture-poli
 owns this requirement. A frozen policy comparison can isolate a mechanism but
 cannot substitute for the integrated learning-and-action workload.
 
+Active replacement: the [source-equation review](local-learning-backprop-boundary-review.md)
+found a manual fixed-key error adjoint in the current teacher. It is withdrawn
+from further training, including reference reruns. The
+[local-learning return](local-neuronal-learning-return-review.md) moves fixed
+query/key interactions before the only learned address-output layer, so its
+synapses receive direct local output error. Free action and teacher feedback must
+use this same circuit and learner instance, with actual first-attempt execution
+during acquisition. The prior single-address frozen-policy proposal is unselected.
+
 Current result: the [shared temporal-map comparison](../../experiments/r4_integrated/local_shared_temporal_query_v1_result.md)
 and independent audit complete in 119.745 seconds. Learned solves 8/8 taught,
 4/4 new-value, 4/4 delayed and 2/4 interference checks; controls score zero and
@@ -14,8 +23,8 @@ are correct and the last 128 acquisition first attempts are exact. The two
 remaining interference failures prevent strict qualification. Close the fixed
 fit without an exposure or gain extension. Saved priors rank the correct starts
 first in those cases, while marginal byte competition selects a different record.
-Review latent-start retrieval versus byte marginalization before selecting one
-bounded frozen-checkpoint comparison; no new policy output has been generated.
+The subsequent user-constraint review above supersedes the proposed frozen
+recall-policy diagnostic; no new policy output has been generated.
 Actual run/audit peaks of 665.539/432.832 MiB fit the revised admission estimates.
 The smaller circuit and changed reference roster must remain separate when
 describing speed. Literal storage and the supplied action motor are still limits.
