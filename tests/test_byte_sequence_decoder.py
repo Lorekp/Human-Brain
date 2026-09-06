@@ -1118,3 +1118,174 @@ def test_context_feedback_comparison_has_exact_inputs_initial_tensors_and_strict
     manifest = runner.sources()
     assert manifest.items() >= previous.sources().items()
     assert "experiments/r4_integrated/local_context_use_v2.md" in manifest
+
+
+
+def test_learnability_bracket_fixed_balanced_orders_certificate_and_decisions():
+    import random
+    from collections import Counter
+
+    from experiments.r4_integrated import local_context_learnability_v1 as runner
+
+    rows = runner.schedule()
+    assert len(rows) == 768 and runner.CONFIG["checkpoints"] == [384, 768]
+    expected_arms = ("decoder_lexical", "decoder_permuted", "reference_lexical",
+                     "reference_permuted", "reference_zero", "reference_frozen")
+    assert runner.ARMS == expected_arms
+    rng = random.Random(734)
+    for cycle in range(64):
+        permuted = list(runner.TRAIN)
+        rng.shuffle(permuted)
+        group = rows[cycle * 12:(cycle + 1) * 12]
+        assert [row["permuted_target"] for row in group] == permuted
+        assert [row["lexical_target"] for row in group] == list(runner.TRAIN)
+        assert Counter(permuted) == Counter(runner.TRAIN)
+        assert set(permuted).isdisjoint(runner.HELDOUT)
+        for row in group:
+            assert runner.assignment("decoder_permuted", row) == runner.assignment("reference_permuted", row)
+            target, supplied = runner.assignment("reference_zero", row)
+            assert target == row["lexical_target"] and supplied is None
+    fake = [{"teacher_losses": [int(index % 12 == 0 and index // 12 < 54), 0, 0]}
+            for index in range(768)]
+    certificate = runner.certificate(fake, 12)
+    assert certificate["passed"] and certificate["teacher_mistakes"] == 54
+    assert certificate["first_zero_mistake_cycle"] == 55
+    assert not runner.certificate(fake, 11)["passed"]
+    fake[54 * 12]["teacher_losses"][0] = 1
+    assert not runner.certificate(fake, 12)["passed"]
+    scores = {arm: {"train": 0, "heldout": 0} for arm in runner.ARMS}
+    scores["decoder_permuted"] = {"train": 12, "heldout": 4}
+    assert runner.useful(scores)["decoder_permuted"]
+    for control in ("reference_zero", "reference_frozen"):
+        changed = copy.deepcopy(scores)
+        changed[control]["heldout"] = 4
+        assert not runner.useful(changed)["decoder_permuted"]
+
+
+def test_learnability_decoder_initialization_and_loss_types_are_explicit():
+    from experiments.r4_integrated import local_context_learnability_v1 as runner
+    from experiments.r4_integrated import local_context_use_v1 as previous
+
+    assert runner.lesson is previous.lesson
+    decoder = runner.new_model("decoder_lexical")
+    assert runner.same_state(decoder.state_dict(), previous.new_decoder().state_dict())
+    assert runner.same_state(decoder.state_dict(), runner.new_model("decoder_permuted").state_dict())
+    initial = runner.new_model("reference_lexical").state_dict()
+    for arm in ("reference_permuted", "reference_zero", "reference_frozen"):
+        assert runner.same_state(initial, runner.new_model(arm).state_dict())
+    fixture = [{"loss_kind": "reference_teacher_mistake", "first": {"exact": False, "stop_reason": "limit"},
+                "mean_loss": 1 / 3, "teacher_losses": [1, 0, 0]}]
+    assert runner.summarize(fixture)["loss_kind"] == "reference_teacher_mistake"
+    assert runner.summarize(fixture)["mean_loss_by_byte1_byte2_eos"] == [1, 0, 0]
+    assert "src/humanbrain/phase_context_perceptron.py" in runner.sources()
+
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_phase_reference_generic_clock_features_and_integer_local_update(dtype):
+    from humanbrain.phase_context_perceptron import PhaseContextPerceptron
+
+    model = PhaseContextPerceptron()
+    context = torch.zeros(1, 96, dtype=dtype)
+    context[0, [13, 72]] = 1
+    initial = copy.deepcopy(model.state_dict())
+    state = None
+    for phase, token in enumerate((BYTE_BOS, 65, 255)):
+        before_phase = None if state is None else state.phase.clone()
+        step = model.local_step(context, torch.tensor([token]), state)
+        expected = torch.zeros(1, 291, dtype=torch.int32)
+        expected[0, [phase, 3 + phase * 96 + 13, 3 + phase * 96 + 72]] = 1
+        assert torch.equal(step.features, expected)
+        assert int(step.features.square().sum()) == 3
+        assert torch.equal(step.scores, torch.zeros(1, 257, dtype=torch.int64))
+        if state is not None:
+            alternative = model.local_step(context, torch.tensor([23]), state)
+            assert torch.equal(alternative.features, step.features)
+            assert torch.equal(state.phase, before_phase)
+        state = step.state
+    assert not state.phase.any()
+    with pytest.raises(ValueError, match="exhausted"):
+        model.local_step(context, torch.tensor([65]), state)
+    _assert_decoder_state_equal(initial, model.state_dict())
+    step = model.local_step(context, torch.tensor([BYTE_BOS]))
+    with patch.object(torch.autograd, "backward", side_effect=AssertionError("no backward")), patch.object(
+        torch.autograd, "grad", side_effect=AssertionError("no gradients")
+    ):
+        receipt = model.teach_local(step, torch.tensor([65]), 0.01)
+    assert (receipt.winner, receipt.target, receipt.phase, receipt.loss) == (0, 65, 0, 1)
+    assert receipt.updated and receipt.teacher_count == 1
+    expected_ticks = torch.zeros(257, 291, dtype=torch.int32)
+    expected_ticks[65] = step.features[0]
+    expected_ticks[0] = -step.features[0]
+    assert torch.equal(model.output_ticks, expected_ticks)
+    with pytest.raises(ValueError, match="stale step"):
+        model.teach_local(step, torch.tensor([65]), 0.01)
+    current = model.local_step(context, torch.tensor([BYTE_BOS]))
+    assert not model.teach_local(current, torch.tensor([65]), 0.01).updated
+    frozen = model.teach_local(current, torch.tensor([66]), 0.01, learning_enabled=False)
+    assert frozen.loss == 1 and not frozen.updated and frozen.teacher_count == 1
+    assert torch.equal(model.output_ticks, expected_ticks)
+    snapshot = current.snapshot()
+    snapshot["features"].zero_()
+    assert current.features.any()
+    assert current.tensor_bytes == 3232 and current.state.tensor_bytes == 12
+    assert model.accounting()["serialized_tensor_bytes"] == sum(
+        value.numel() * value.element_size() for value in model.buffers()
+    ) == 302652
+    assert not list(model.parameters())
+
+
+def test_phase_reference_binary_validation_overflow_and_fixed_state_rejection():
+    from humanbrain.phase_context_perceptron import PhaseContextPerceptron
+
+    model = PhaseContextPerceptron()
+    context = torch.zeros(1, 96)
+    context[0, [13, 72]] = 1
+    for value in (0.5, float("nan"), float("inf")):
+        invalid = context.clone()
+        invalid[0, 0] = value
+        with pytest.raises(ValueError, match="binary"):
+            model.local_step(invalid, torch.tensor([BYTE_BOS]))
+    model.output_ticks[65, 0] = torch.iinfo(torch.int32).max
+    model.output_ticks[65, 3 + 13] = -torch.iinfo(torch.int32).max
+    step = model.local_step(context, torch.tensor([BYTE_BOS]))
+    assert int(step.scores.argmax()) == 0
+    before = copy.deepcopy(model.state_dict())
+    with pytest.raises(ValueError, match="overflow"):
+        model.teach_local(step, torch.tensor([65]), 0.01)
+    _assert_decoder_state_equal(before, model.state_dict())
+    with pytest.raises(ValueError, match="0.01 tick"):
+        model.teach_local(step, torch.tensor([65]), 0.02)
+    model.clock_transition[0, 0] = 1
+    with pytest.raises(ValueError, match="remain fixed"):
+        model.generate(context, 2)
+
+
+def test_phase_reference_lesson_receipts_restore_and_read_only_generation():
+    from experiments.r4_integrated import local_context_learnability_v1 as runner
+    from humanbrain.phase_context_perceptron import PhaseContextPerceptron
+
+    model = PhaseContextPerceptron()
+    baseline = copy.deepcopy(model)
+    value = runner.context("aa")
+    first = runner.reference_lesson(model, value, "aa", enabled=True)
+    ordinary = runner.lesson(baseline, value, "aa", enabled=True)
+    assert {key: value for key, value in first.items() if key != "teachers"} == ordinary
+    assert [row["phase"] for row in first["teachers"]] == [0, 1, 2]
+    assert [row["target"] for row in first["teachers"]] == [97, 97, BYTE_EOS]
+    assert all(row["winner_score"] >= row["target_score"] for row in first["teachers"])
+    assert all(len(row["active_features"]) == 3 for row in first["teachers"])
+    assert first["byte_offers"] == 3 and first["enabled_steps"] == 3
+    buffer = io.BytesIO()
+    torch.save(model.state_dict(), buffer)
+    buffer.seek(0)
+    restored = PhaseContextPerceptron()
+    restored.load_state_dict(torch.load(buffer, weights_only=True))
+    before = runner.state_hash(restored)
+    assert model.generate(value, 2) == restored.generate(value, 2)
+    assert runner.state_hash(restored) == before
+    frozen = runner.reference_lesson(restored, value, "aa", enabled=False)
+    assert frozen["byte_offers"] == 3 and frozen["enabled_steps"] == 0
+    assert frozen["before_sha256"] == frozen["after_teacher_sha256"]
+    with pytest.raises(ValueError, match="configuration mismatch"):
+        restored.set_extra_state({**restored.get_extra_state(), "tick_size": 0.02})

@@ -201,7 +201,8 @@ and credit limits, with a justified locally learned neuronal reference and one
 decisive comparison before any further fit.
 
 The [learnability review](local-decoder-learnability-review.md) now selects one
-six-arm comparison. The existing random-feedback decoder and a declared local
+six-arm [comparison](../../experiments/r4_integrated/local_context_learnability_v1.md).
+The existing random-feedback decoder and a declared local
 phase/context perceptron each receive lexical and fixed permuted streams, with
 zero-context and frozen reference controls. Generic phase-by-all-context neurons
 make TRAIN separable; zero-initialized integer synaptic ticks give a 54-mistake
