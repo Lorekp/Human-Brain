@@ -1,7 +1,7 @@
 # Coincidence comparison: one pure-data roster check
 
-Root-selected ordinary QA scope, 2026-09-06, after source review. Execute once
-after source commit and the selected checkout's clean doctor. Run only
+Completed ordinary QA scope, 2026-09-06. The node below passed once after source
+commit and the selected checkout's clean doctor. The frozen selection was
 `tests/test_byte_sequence_decoder.py::test_coincidence_splice_roster_data_contract`.
 No collection, roster construction or execution occurred while authoring it.
 Preserve all 196 existing top-level AST nodes and their exact source bytes.
@@ -53,3 +53,12 @@ loads its existing library definitions but constructs no learner for this node.
 Root banks source/doctor/JUnit/watchdog evidence after the separately admitted
 ordinary check. A pass freezes task data; it does not establish capability or
 admit the integrated comparison.
+
+The node and independent saved review now pass at source `a925b97`, after clean
+doctor `doctor-qesp0g8h`. Outer duration is 6.320887 seconds and observed owned
+peak is 231.00390625 MiB. The [data QA bank](../../benchmarks/neuronal_byte_coincidence_v1.data_qa.json)
+has SHA256 `7df5ed5c7b694566984927abcdaa81aa868f6805a0bd2ca7e45ba2b38532ebab`.
+The sole generated roster has SHA256
+`9b8f03657c1604b7e8e286e12b7534db750a5ad29ab9c872f3481d58bf2aabd5`.
+The independent review preserves its corrected review-only O-layout assertion;
+neither data construction nor QA was repeated. This node is closed.

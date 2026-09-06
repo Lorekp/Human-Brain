@@ -1,13 +1,15 @@
 # Coincidence prior and isolated worker QA
 
-Prospective ordinary QA, 2026-09-06. Root selected source preparation only under
+Root-selected ordinary QA, 2026-09-06, after root and independent source review under
 [the fresh comparison](neuronal-byte-coincidence-comparison-v1.md). The sole node is
 `tests/test_byte_sequence_decoder.py::test_coincidence_splice_prior_worker_exchange`.
 Its append-ready draft is `.pytest-tmp/coincidence-worker-qa-v1-fragment.py`.
-No test collection, prior load, worker or action is authorized by this draft.
-Root reviews the source, inserts the node without changing existing tests,
-commits, runs the selected checkout's doctor, and separately releases its one
-monitored execution. The worker remains `DRAFT=True` until that source gate.
+Append it without changing existing tests and release only the worker's draft
+guard; parent and genuine-audit guards remain held. Commit and run the selected
+checkout's clean doctor. This node follows the two synthetic receipt nodes in
+one fail-fast 60-second/2,048-MiB launch with fresh basetemp/log/JUnit stem
+`.pytest-tmp/neuronal-byte-coincidence-integration-qa-v1`. Only this node's exact
+prior, model and action scope is selected; no integrated acquisition is admitted.
 
 ## Fixed fixture and exposure
 
@@ -100,7 +102,7 @@ retry is selected.
 
 After reviewed source freeze and clean doctor, root may select this one node
 under the existing owned-process watchdog at 60 seconds and 2,048 MiB. Use fresh
-basetemp/JUnit/log paths under `.pytest-tmp/neuronal-byte-coincidence-worker-qa-v1`
+basetemp/JUnit/log paths under `.pytest-tmp/neuronal-byte-coincidence-integration-qa-v1`
 and the separately exclusive fixture directory
 `.pytest-tmp/coincidence-splice-prior-worker-qa-v1`. Set documented CPU/thread and
 pytest-plugin environment before Python. The worker receives the watchdog's

@@ -14,7 +14,7 @@ from types import SimpleNamespace
 
 # Request validation precedes all project imports and isolated sys.path setup.
 # The imported factory must agree with this frozen wire-level roster.
-DRAFT = True
+DRAFT = False
 ARMS = ("learned", "action_frozen", "slow_frozen", "memory_disabled", "graded_reference")
 IPC_SCHEMA = "neuronal-splice-endpoint-ipc-v3"
 SOURCE_MODULES = {

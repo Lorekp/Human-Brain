@@ -8806,3 +8806,827 @@ def test_coincidence_splice_roster_data_contract():
                    raw_receipt_sha256=sha256(raw_receipt.read_bytes()).hexdigest())
     with passed.open("x", encoding="utf-8") as stream:
         json.dump(receipt, stream, sort_keys=True)
+
+
+# Prospective append fragment; relies on the existing qualified
+# _competitive_receipt_qa_reader/_save helpers in test_byte_sequence_decoder.py.
+# Source only until root reviews, appends, freezes, doctors and selects execution.
+
+
+def _coincidence_receipt_qa_reader(n, decisions, *, kind, frontend, raw):
+    receipt, state = _competitive_receipt_qa_reader(n, decisions, kind=kind)
+    work = receipt.work
+    work["query_raw_bytes"] = raw
+    work["query_lag_shift_steps"] = raw + 1
+    if frontend == "graded_random_code":
+        return receipt, state
+    # Authored scalar table: no production formula helper or kernel invocation.
+    q, f, rows = raw + 1, n * 1024, (n + 1) * 32
+    work.update(
+        {
+            "query_population_normalizations": 0,
+            "address_feature_products": 0,
+            "address_feature_channel_reductions": 0,
+            "rail_encode_symbols": q,
+            "rail_encode_bit_positions": 9,
+            "rail_encode_bit_shifts": 9 * q,
+            "rail_encode_bit_masks": 9 * q,
+            "rail_encode_boolean_cast_values": 9 * q,
+            "rail_encode_complements": 9 * q,
+            "rail_encode_output_values": 18 * q,
+            "rail_encode_named_allocated_bytes": 108 * q + 72,
+            "rail_validation_rows": rows,
+            "rail_validation_complementary_pair_checks": 9 * rows,
+            "rail_validation_special_policy_rows": rows,
+            "coincidence_feature_calls": 1,
+            "coincidence_slots": n,
+            "coincidence_lag_pairs": f,
+            "coincidence_and_cell_evaluations": 18 * f,
+            "coincidence_match_cell_evaluations": f,
+            "coincidence_threshold_evaluations": 19 * f,
+            "coincidence_and_input_applications": 36 * f,
+            "coincidence_match_input_applications": 18 * f,
+            "coincidence_input_applications": 54 * f,
+            "coincidence_pair_additions": 18 * f,
+            "coincidence_rail_sum_additions": 17 * f,
+            "coincidence_operand_cast_values": 18 * rows,
+            "coincidence_match_input_cast_values": 18 * f,
+            "coincidence_occupancy_rail_reductions": 17 * rows,
+            "coincidence_occupancy_count_additions": 31 * (n + 1),
+            "coincidence_population_products": n,
+            "coincidence_population_square_roots": n,
+            "coincidence_population_clamps": n,
+            "coincidence_gain_fills": n,
+            "coincidence_gain_divisions": n,
+            "coincidence_feature_cast_values": f,
+            "coincidence_feature_scalings": f,
+            "coincidence_named_operand_cast_bytes": 18 * rows,
+            "coincidence_named_rail_current_bytes": 18 * f,
+            "coincidence_named_and_activity_bytes": 18 * f,
+            "coincidence_named_match_input_bytes": 18 * f,
+            "coincidence_named_match_current_bytes": f,
+            "coincidence_named_match_activity_bytes": f,
+            "coincidence_named_feature_bytes": 4 * f,
+            "coincidence_named_occupancy_bytes": rows,
+            "coincidence_named_occupied_count_bytes": 4 * (n + 1),
+            "coincidence_named_denominator_bytes": 4 * n,
+            "coincidence_named_gain_bytes": 4 * n,
+            "coincidence_named_allocated_bytes": 60 * f + 612 * (n + 1) + 8 * n,
+            "query_lag_shift_values": 558 * q,
+            "query_lag_shift_copy_values": 558 * q,
+            "query_input_rail_values": 18 * q,
+            "query_token_bytes": 8 * q,
+            "query_raw_lag_bytes": 576,
+        }
+    )
+    return receipt, state
+
+
+def test_coincidence_receipt_maximum_complete_row(tmp_path):
+    import json
+    import math
+    from hashlib import sha256
+    from types import SimpleNamespace as Value
+
+    from experiments.r4_integrated import check_neuronal_byte_coincidence_v1 as checker
+    from experiments.r4_integrated import neuronal_splice_receipts_v3 as writer
+    from experiments.r4_integrated.neuronal_splice_receipts_v1 import proposal_digest, tree_bytes
+
+    free, state = _coincidence_receipt_qa_reader(
+        128, 17, kind="competitive", frontend="coincidence", raw=31
+    )
+    teacher, _ = _coincidence_receipt_qa_reader(
+        128, 17, kind="teacher", frontend="coincidence", raw=31
+    )
+    heads = {
+        head: Value(logits=[0.0] * n, probabilities=[1 / n] * n, selected_index=0)
+        for head, n in (("start", 516), ("end", 129), ("operation", 2))
+    }
+    proposal = dict(
+        operation="STOP",
+        path="a.py",
+        start=0,
+        end=0,
+        replacement_hex=(b"A" * 16).hex(),
+        stop_reason="eos",
+        workspace_sha256="a" * 64,
+    )
+    prediction = Value(
+        proposal=Value(to_record=lambda: dict(proposal)),
+        attempt_id="authored:1",
+        proposal_sha256=proposal_digest(proposal),
+        model_sha256="b" * 64,
+        memory_sha256="c" * 64,
+        choices=heads,
+        payload=free,
+        work={"action": {}, "reader": free.work},
+    )
+    feedback = Value(
+        attempt_id="authored:1",
+        action_updates={head: False for head in heads},
+        action_losses={head: math.log(len(value.logits)) for head, value in heads.items()},
+        teacher_choices=heads,
+        reader_feedback=teacher,
+        work={"action": {}, "reader": teacher.work},
+    )
+    _competitive_receipt_qa_save(
+        tmp_path / "maximum-input-raw.json",
+        {"free": free, "teacher": teacher, "proposal": proposal, "heads": heads},
+    )
+    row = {
+        "prediction": writer.compact_prediction(
+            prediction,
+            state,
+            expected_policy="competitive_free",
+            expected_frontend="coincidence",
+            query_raw_bytes=31,
+        ),
+        "feedback": writer.compact_feedback(
+            feedback, state, expected_frontend="coincidence", query_raw_bytes=31
+        ),
+        "metadata": "x" * 32768,
+        "host_path": "p" * 1024,
+        "executable_path": "e" * 1024,
+        "bootstrap": "b" * 4096,
+        "stdout_hex": "ff" * 16384,
+        "stderr_hex": "ff" * 16384,
+        "diagnostics": ["d" * 1024, "e" * 1024],
+        "ids": ["i" * 128 for _ in range(12)],
+        "hashes": ["a" * 64 for _ in range(16)],
+        "work": [{f"counter_{i:03d}".ljust(96, "x"): 10**12 for i in range(160)} for _ in range(4)],
+    }
+    _competitive_receipt_qa_save(tmp_path / "maximum-result-raw.json", row)
+    encoded = writer.bounded_record(row)
+    with (tmp_path / "maximum.jsonl").open("xb") as stream:
+        stream.write(encoded)
+    parsed = json.loads(encoded)
+    for compact, policy in (
+        (parsed["prediction"]["payload"], "competitive_free"),
+        (parsed["feedback"]["reader"], "all_address_teacher"),
+    ):
+        writer.validate_reader(
+            compact,
+            state.successor,
+            expected_policy=policy,
+            expected_frontend="coincidence",
+            query_raw_bytes=31,
+        )
+        checker.check_reader(
+            compact, state.successor, policy, expected_frontend="coincidence", query_raw_bytes=31
+        )
+    assert parsed == row
+    assert writer.LINE_LIMIT == writer.TREE_LIMIT == 2**21
+    assert len(encoded) <= writer.LINE_LIMIT
+    assert tree_bytes(row) <= writer.TREE_LIMIT
+    assert tree_bytes(parsed) <= writer.TREE_LIMIT
+    compact = parsed["prediction"]["payload"]
+    assert len(compact["competition"]["pair_currents"]) == 8128
+    assert len(compact["competition"]["comparator_activity"]) == 8128
+    assert compact["initial_log_belief"] == [0.0]
+    assert len(parsed["feedback"]["reader"]["initial_log_belief"]) == 128
+    assert all(
+        set(step) == {"token", "nll", "mixture", "posterior"}
+        for part in (compact, parsed["feedback"]["reader"])
+        for step in part["steps"]
+    )
+    _competitive_receipt_qa_save(
+        tmp_path / "maximum-passed.json",
+        {
+            "status": "passed",
+            "line_bytes": len(encoded),
+            "writer_tree_bytes": tree_bytes(row),
+            "parsed_tree_bytes": tree_bytes(parsed),
+            "sha256": sha256(encoded).hexdigest(),
+            "models": 0,
+            "actions": 0,
+            "synthetic_step_records": 34,
+            "direct_calls": {
+                "compact_prediction": 1,
+                "compact_feedback": 1,
+                "bounded_record": 1,
+                "validate_reader": 2,
+                "check_reader": 2,
+            },
+        },
+    )
+
+
+def test_coincidence_receipt_frontend_work_and_query_bindings(tmp_path):
+    import copy
+
+    import pytest
+
+    from experiments.r4_integrated import check_neuronal_byte_coincidence_v1 as checker
+    from experiments.r4_integrated import neuronal_splice_receipts_v3 as writer
+
+    fixtures, rows = {}, {}
+    for frontend in ("coincidence", "graded_random_code"):
+        for phase, kind in (
+            ("competitive_free", "competitive"),
+            ("all_address_teacher", "teacher"),
+        ):
+            raw, state = _coincidence_receipt_qa_reader(2, 2, kind=kind, frontend=frontend, raw=1)
+            fixtures[frontend + "/" + phase] = raw
+    _competitive_receipt_qa_save(tmp_path / "dispatch-input-raw.json", fixtures)
+    for key, raw in fixtures.items():
+        frontend, phase = key.split("/")
+        row = writer.compact_reader(
+            raw, state, expected_policy=phase, expected_frontend=frontend, query_raw_bytes=1
+        )
+        rows[key] = row
+        writer.validate_reader(
+            row,
+            state.successor,
+            expected_policy=phase,
+            expected_frontend=frontend,
+            query_raw_bytes=1,
+        )
+        checker.check_reader(
+            row, state.successor, phase, expected_frontend=frontend, query_raw_bytes=1
+        )
+    _competitive_receipt_qa_save(tmp_path / "dispatch-result-raw.json", rows)
+
+    negatives = []
+
+    def negative(
+        name,
+        *,
+        frontend="coincidence",
+        phase="competitive_free",
+        expected_frontend=None,
+        expected_policy=None,
+        query=1,
+        work_key=None,
+        value=None,
+        remove=False,
+    ):
+        row = copy.deepcopy(rows[frontend + "/" + phase])
+        if work_key is not None:
+            if remove:
+                del row["work"][work_key]
+            else:
+                row["work"][work_key] = value
+        negatives.append(
+            {
+                "name": name,
+                "row": row,
+                "frontend": expected_frontend or frontend,
+                "policy": expected_policy or phase,
+                "query": query,
+            }
+        )
+
+    negative("candidate_as_graded", expected_frontend="graded_random_code")
+    negative("graded_as_candidate", frontend="graded_random_code", expected_frontend="coincidence")
+    negative("teacher_as_free", phase="all_address_teacher", expected_policy="competitive_free")
+    negative("free_as_teacher", expected_policy="all_address_teacher")
+    negative("query_length", query=2)
+    negative("missing_gate_counter", work_key="coincidence_threshold_evaluations", remove=True)
+    negative("retired_dense_products", work_key="address_feature_products", value=1)
+    negative("current_storage", work_key="coincidence_named_rail_current_bytes", value=36865)
+    negative("threshold_work", work_key="coincidence_threshold_evaluations", value=38913)
+    negative("extra_counter", work_key="coincidence_undeclared", value=0)
+    negative("boolean_counter", work_key="coincidence_feature_calls", value=True)
+    negative(
+        "teacher_local_reduction",
+        phase="all_address_teacher",
+        work_key="address_local_slot_reductions",
+        value=1025,
+    )
+    negative("missing_shift_copy", work_key="query_lag_shift_copy_values", remove=True)
+    negative(
+        "graded_extra_gate",
+        frontend="graded_random_code",
+        work_key="coincidence_feature_calls",
+        value=0,
+    )
+    negative(
+        "teacher_enabled_flag",
+        phase="all_address_teacher",
+        work_key="enabled_codec_update_groups",
+        value=2,
+    )
+    negative("teacher_query_length", phase="all_address_teacher", query=2)
+    _competitive_receipt_qa_save(tmp_path / "dispatch-negative-raw.json", negatives)
+    assert len(negatives) == 16
+    for item in negatives:
+        with pytest.raises(ValueError):
+            writer.validate_reader(
+                item["row"],
+                state.successor,
+                expected_policy=item["policy"],
+                expected_frontend=item["frontend"],
+                query_raw_bytes=item["query"],
+            )
+        with pytest.raises(ValueError):
+            checker.check_reader(
+                item["row"],
+                state.successor,
+                item["policy"],
+                expected_frontend=item["frontend"],
+                query_raw_bytes=item["query"],
+            )
+    _competitive_receipt_qa_save(
+        tmp_path / "dispatch-passed.json",
+        {
+            "status": "passed",
+            "synthetic_readers": 4,
+            "synthetic_step_records": 8,
+            "negative_fixtures": 16,
+            "expected_rejections": 32,
+            "direct_calls": {"compact_reader": 4, "validate_reader": 20, "check_reader": 20},
+            "models": 0,
+            "actions": 0,
+            "gate_evaluations": 0,
+            "teacher_executions": 0,
+            "dtype_scope": (
+                "trusted frontend dispatch only; checkpoint dtype is an enclosing audit check"
+            ),
+        },
+    )
+
+
+def test_coincidence_splice_prior_worker_exchange():
+    """Five typed/graded prior continuations; one coincidence worker action, no teaching."""
+    import json
+    import os
+    import shutil
+    import subprocess
+    import sys
+    import time
+    from pathlib import Path
+    from types import SimpleNamespace
+
+    from experiments.r4_integrated.check_neuronal_byte_coincidence_v1 import check_reader
+    from experiments.r4_integrated.check_neuronal_splice_online_v3 import (
+        expected_reader_metadata,
+        initial_action_tensors,
+    )
+    from experiments.r4_integrated.neuronal_splice_endpoint_v3 import (
+        check_acknowledgement,
+        check_proposal,
+    )
+    from experiments.r4_integrated.neuronal_splice_io_v1 import (
+        JsonlJournal,
+        process_identity,
+        read_row,
+        write_message,
+    )
+    from experiments.r4_integrated.neuronal_splice_models_v3 import (
+        ARMS,
+        address_frontend,
+        reader_policy,
+    )
+    from experiments.r4_integrated.neuronal_splice_online_v1 import (
+        execute_action,
+        qualified_launch,
+        workspace_from_records,
+    )
+    from experiments.r4_integrated.neuronal_splice_prior_v3 import initialize_models, tensor_bytes
+    from experiments.r4_integrated.neuronal_splice_receipts_v3 import validate_prediction
+    from experiments.r4_integrated.neuronal_splice_worker_v3 import (
+        LIMITS,
+        SOURCE_MODULES,
+        WORKER_SOURCE,
+        check_requests,
+        file_hash,
+        write_json,
+    )
+    from humanbrain.coincidence_local_memory_learner import CoincidenceLocalMemoryLearner
+    from humanbrain.competitive_local_memory_learner import CompetitiveLocalMemoryLearner
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+    from humanbrain.neuronal_splice_learner import NeuronalSpliceLearner, _digest
+
+    root = Path(__file__).resolve().parents[1]
+    output = root / ".pytest-tmp/coincidence-splice-prior-worker-qa-v1"
+    output.mkdir(exist_ok=False)
+    deadline = float(os.environ["HUMANBRAIN_RUN_DEADLINE_UNIX"])
+    assert 0 < deadline - time.time() <= 60
+    spec = SimpleNamespace(config={"receipt_limits": LIMITS})
+    baseline_paths = {
+        *SOURCE_MODULES.values(),
+        WORKER_SOURCE,
+        "experiments/r4_integrated/neuronal_splice_prior_v3.py",
+        "experiments/r4_integrated/neuronal_splice_prior_v1.py",
+        "experiments/r4_integrated/neuronal_splice_endpoint_v3.py",
+        "experiments/r4_integrated/check_neuronal_address_competition_v1.py",
+        "experiments/r4_integrated/check_neuronal_byte_coincidence_v1.py",
+        "experiments/r4_integrated/check_neuronal_splice_online_v3.py",
+        "experiments/r4_integrated/check_neuronal_splice_online_v1.py",
+        "experiments/r4_integrated/neuronal_splice_online_v1.py",
+    }
+    baseline = {
+        "source_sha256": {name: file_hash(root / name) for name in sorted(baseline_paths)},
+        "test_sha256": file_hash(Path(__file__)),
+        "parent_identity": process_identity(),
+    }
+    write_json(output / "before-initialization.json", baseline)
+    models, custody = initialize_models(root)
+    write_json(output / "prior.json", custody)
+    assert (
+        tuple(models)
+        == ARMS
+        == ("learned", "action_frozen", "slow_frozen", "memory_disabled", "graded_reference")
+    )
+    assert custody["schema"] == "neuronal-splice-prior-custody-v3"
+    assert custody["actual_loaded_payload_tensor_bytes"] == 33801664
+    assert custody["historical_payload_tensor_bytes"] == 33801664
+    assert custody["new_model_tensor_bytes"] == 3172160
+    assert custody["selected_entry"] == "learned.weights"
+    assert custody["reader_policy"] == {arm: reader_policy(arm) for arm in ARMS}
+    initial_actions = initial_action_tensors(torch)
+    original_metadata = LocalMemoryLearner.get_extra_state(models["graded_reference"].reader)
+    assert _digest(original_metadata) == custody["original_reader_metadata_sha256"]
+    assert custody["address_frontend"] == {arm: address_frontend(arm) for arm in ARMS}
+    reader_tensors = {
+        key: value
+        for key, value in models["graded_reference"].reader.state_dict().items()
+        if isinstance(value, torch.Tensor)
+    }
+    assert _digest(reader_tensors) == custody["initial_reader_tensor_sha256"]
+    initial_model_hashes = {}
+    for arm, current in models.items():
+        mode = "learned" if arm == "graded_reference" else arm
+        expected_type = (
+            CompetitiveLocalMemoryLearner
+            if arm == "graded_reference"
+            else CoincidenceLocalMemoryLearner
+        )
+        assert type(current.reader) is expected_type
+        assert current.mode == mode and current.reader.mode == NeuronalSpliceLearner.MODES[mode]
+        assert current._pending is None and current._experience == 0
+        assert all(
+            not value.requires_grad
+            and value.grad is None
+            and value.grad_fn is None
+            and torch.isfinite(value).all()
+            for value in current.parameters()
+        )
+        assert all(
+            torch.equal(current.state_dict()[key], value) for key, value in initial_actions.items()
+        )
+        assert all(
+            torch.equal(current.reader.state_dict()[key], value)
+            for key, value in reader_tensors.items()
+        )
+        metadata = current.reader.get_extra_state()
+        changed = sorted(
+            key
+            for key in set(metadata) | set(original_metadata)
+            if metadata.get(key) != original_metadata.get(key)
+        )
+        assert changed == custody["metadata_fields_changed"][arm]
+        assert metadata == expected_reader_metadata(original_metadata, arm)
+        assert _digest(metadata) == custody["initial_reader_metadata_sha256"][arm]
+        assert _digest(current.actions.state_dict()) == custody["initial_action_tensor_sha256"][arm]
+        assert metadata["mode"] == current.reader.mode
+        assert reader_policy(arm) == "competitive_free"
+        initial_model_hashes[arm] = _digest(current.state_dict())
+    assert initial_model_hashes == custody["initial_model_sha256"]
+    for key in reader_tensors:
+        assert (
+            len({current.reader.state_dict()[key].data_ptr() for current in models.values()}) == 5
+        )
+    for key in initial_actions:
+        assert len({current.state_dict()[key].data_ptr() for current in models.values()}) == 5
+    model = models["learned"]
+    document = b"Record k00 has value ab."
+    state = model.ingest([document])
+    assert len(document) == 24 and state.used == 25
+    assert state.keys.dtype == torch.bool and tuple(state.keys.shape) == (128, 32, 18)
+    assert tensor_bytes(state.snapshot()) == 206344
+    expected_keys = torch.zeros(128, 32, 18, dtype=torch.bool)
+    for position in range(25):
+        for lag, token in enumerate(reversed(document[:position][-32:])):
+            for bit in range(9):
+                expected_keys[position, lag, bit * 2 + ((token >> bit) & 1)] = True
+    assert torch.equal(state.keys, expected_keys)
+    del expected_keys
+    successor = state.successor[: state.used].tolist()
+    model_hash, memory_hash = _digest(model.state_dict()), _digest(state.snapshot())
+    workspace = workspace_from_records(
+        [
+            {"path": "a.py", "content_hex": b"x = 'old'\n".hex()},
+            {"path": "main.py", "content_hex": b"import a\nprint(a.x)\n".hex()},
+        ]
+    )
+    task = {
+        "task_id": "endpoint-0",
+        "memory_id": "qa-memory",
+        "request_hex": b"SET a.py x k00".hex(),
+        "workspace_sha256": workspace.sha256,
+        "files": [
+            {"path": item.path, "content_hex": item.content.hex()} for item in workspace.files
+        ],
+    }
+    package = output / "package"
+    package.mkdir()
+    sources = {}
+    for relative in (*SOURCE_MODULES.values(), WORKER_SOURCE):
+        destination = package / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(root / relative, destination)
+        assert file_hash(destination) == file_hash(root / relative)
+        sources[relative] = file_hash(destination)
+    assert len(sources) == 20
+    assert {path.relative_to(package).as_posix() for path in package.rglob("*.py")} == set(sources)
+    assert all(digest == baseline["source_sha256"][name] for name, digest in sources.items())
+    checkpoint = output / "source_free.pt"
+    payload = {
+        "schema": "neuronal-splice-single-exchange-qa-state-v3",
+        "arms": {
+            "learned": {
+                "weights": model.state_dict(),
+                "memories": {"qa-memory": state.snapshot()},
+                "experience": 0,
+            }
+        },
+    }
+    assert tensor_bytes(payload) == 840776
+    with checkpoint.open("xb") as stream:
+        torch.save(payload, stream)
+    del payload
+    checkpoint_hash = file_hash(checkpoint)
+    requests = {
+        "schema": "neuronal-splice-single-exchange-qa-request-v3",
+        "checkpoint_sha256": checkpoint_hash,
+        "source_sha256": sources,
+        "receipt_limits": LIMITS,
+        "arms": ["learned"],
+        "reading_cases": [],
+        "cases": [
+            {
+                "id": task["task_id"],
+                **{key: task[key] for key in ("memory_id", "request_hex", "files")},
+            }
+        ],
+    }
+    check_requests(requests, single_exchange_qa=True)
+    with pytest.raises(ValueError):
+        check_requests(requests)
+    request_path = output / "query_only.json"
+    write_json(request_path, requests)
+    requests_hash = file_hash(request_path)
+    qualification_paths = {
+        ".pytest-tmp/temporary-module-bootstrap-v1-qualification.json": (
+            "0bb809fd33aee145f169776a03a884fd62daf381ff4e67ed333a2a378c46d92b"
+        ),
+        ".pytest-tmp/stdlib-python-action-v1-qualification.json": (
+            "4c3a6438549ce1ecd4c8d92509f1a60753692b8aab1ab9155df00b12db10941c"
+        ),
+    }
+    assert all(file_hash(root / name) == digest for name, digest in qualification_paths.items())
+    launch = qualified_launch(root)
+    write_json(
+        output / "qualification.json",
+        {
+            "qualification_sha256": qualification_paths,
+            "launch_record": launch.to_record(),
+            "launch_record_sha256": launch.sha256,
+        },
+    )
+    command = [
+        sys.executable,
+        "-I",
+        "-X",
+        "utf8",
+        str(package / WORKER_SOURCE),
+        "--package-root",
+        str(package),
+        "--checkpoint",
+        str(checkpoint),
+        "--checkpoint-sha",
+        checkpoint_hash,
+        "--requests",
+        str(request_path),
+        "--requests-sha",
+        requests_hash,
+        "--output",
+        str(output / "worker"),
+        "--deadline-unix",
+        repr(deadline),
+        "--single-exchange-qa",
+    ]
+    action_journal = JsonlJournal(output / "actions.jsonl", spec)
+    try:
+        with (output / "worker-stderr.bin").open("xb") as stderr:
+            worker_started_unix = time.time()
+            process = subprocess.Popen(
+                command, cwd=output, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=stderr
+            )
+            try:
+                launcher_identity = process_identity(process.pid)
+                write_json(
+                    output / "worker-launch.json",
+                    {
+                        "command": command,
+                        "cwd": str(output),
+                        "pid": process.pid,
+                        "process_identity": launcher_identity,
+                        "parent_pid": os.getpid(),
+                        "baseline_sha256": file_hash(output / "before-initialization.json"),
+                        "parent_identity": baseline["parent_identity"],
+                        "started_unix": worker_started_unix,
+                    },
+                )
+                proposal_row = read_row(process.stdout, spec)
+                write_json(output / "proposal.json", proposal_row)
+                proposal = check_proposal(
+                    proposal_row, "learned", 0, task, model_hash, memory_hash, successor=successor
+                )
+                validate_prediction(
+                    proposal_row["prediction"],
+                    successor,
+                    expected_policy="competitive_free",
+                    expected_frontend="coincidence",
+                    query_raw_bytes=14,
+                    boundaries=workspace.boundaries,
+                )
+                payload_row = proposal_row["prediction"]["payload"]
+                summary = check_reader(
+                    payload_row,
+                    successor,
+                    "competitive_free",
+                    expected_frontend="coincidence",
+                    query_raw_bytes=14,
+                )
+                assert payload_row["work"]["query_raw_bytes"] == 14
+                assert payload_row["work"]["coincidence_threshold_evaluations"] == 19 * 25 * 1024
+                assert payload_row["work"]["coincidence_input_applications"] == 54 * 25 * 1024
+                assert payload_row["work"]["address_feature_products"] == 0
+                assert payload_row["work"]["address_feature_channel_reductions"] == 0
+                assert payload_row["work"]["query_population_normalizations"] == 0
+                assert len(payload_row["competition"]["scores"]) == 25
+                assert len(payload_row["competition"]["pair_currents"]) == 300
+                assert len(summary["final_cursors"]) == 1
+                assert payload_row["work"]["codec_slot_evaluations"] == 25
+                assert payload_row["work"]["codec_response_gathers"] == summary["decisions"]
+                identity = {
+                    key: proposal_row[key]
+                    for key in ("schema", "type", "arm", "index", "id", "attempt_id")
+                }
+                envelope, action_hash, _, _ = execute_action(
+                    task=None,
+                    workspace=workspace,
+                    proposal=proposal,
+                    attempt_id=identity["attempt_id"],
+                    phase="endpoint",
+                    arm="learned",
+                    index=0,
+                    output=output,
+                    launch=launch,
+                    journal=action_journal,
+                )
+                write_message(
+                    process.stdin,
+                    {
+                        **identity,
+                        "type": "executed",
+                        "action_sha256": action_hash,
+                        "outcome": envelope,
+                    },
+                    spec,
+                )
+                acknowledgement = read_row(process.stdout, spec)
+                write_json(output / "acknowledgement.json", acknowledgement)
+                check_acknowledgement(
+                    acknowledgement, identity, action_hash, model_hash, memory_hash
+                )
+                with pytest.raises(ValueError):
+                    check_acknowledgement(
+                        {**acknowledgement, "action_sha256": "0" * 64},
+                        identity,
+                        action_hash,
+                        model_hash,
+                        memory_hash,
+                    )
+                process.stdin.close()
+                process.wait(timeout=max(0.001, deadline - time.time()))
+                assert process.returncode == 0 and read_row(process.stdout, spec) is None
+                worker_finished_unix = time.time()
+            except BaseException:
+                if process.poll() is None:
+                    process.kill()
+                    process.wait()
+                raise
+            finally:
+                process.stdout.close()
+                if not process.stdin.closed:
+                    process.stdin.close()
+    finally:
+        action_log = action_journal.close()
+    completion = json.loads((output / "worker/completion.json").read_bytes())
+    assert completion["schema"] == "neuronal-splice-endpoint-completion-v3"
+    assert completion["scope"] == "single_exchange_qa" and completion["status"] == "passed"
+    assert completion["pid"] == process.pid or completion["parent_pid"] == process.pid
+    worker_identity = completion["process_identity"]
+    assert worker_identity["pid"] == completion["pid"]
+    assert baseline["parent_identity"]["creation_ticks"] <= launcher_identity["creation_ticks"]
+    assert launcher_identity["creation_ticks"] <= worker_identity["creation_ticks"]
+    if completion["pid"] == process.pid:
+        assert worker_identity == launcher_identity and completion["parent_pid"] == os.getpid()
+    else:
+        assert completion["parent_pid"] == launcher_identity["pid"]
+    worker_created_unix = (worker_identity["creation_ticks"] - 621355968000000000) / 10**7
+    assert worker_started_unix - 0.001 <= worker_created_unix <= worker_finished_unix + 0.001
+    assert completion["checkpoint_sha256"] == file_hash(checkpoint) == checkpoint_hash
+    assert completion["requests_sha256"] == file_hash(request_path) == requests_hash
+    assert completion["source_sha256"] == sources
+    assert completion["source_origins"] == {
+        key: str(package / path) for key, path in SOURCE_MODULES.items()
+    }
+    assert completion["final"] == {
+        "learned": {
+            "model_sha256": model_hash,
+            "memories_sha256": {"qa-memory": memory_hash},
+            "experience": 1,
+        }
+    }
+    assert completion["endpoint_log"]["rows"] == 2 and completion["reading_log"]["rows"] == 0
+    for name, filename in (("endpoint_log", "endpoints.jsonl"), ("reading_log", "reading.jsonl")):
+        log = completion[name]
+        log_path = output / "worker" / filename
+        assert set(log) == {
+            "path",
+            "rows",
+            "bytes",
+            "sha256",
+            "max_line_bytes",
+            "max_row_tree_bytes",
+        }
+        assert log["path"] == filename and log["bytes"] == log_path.stat().st_size
+        assert log["sha256"] == file_hash(log_path)
+        assert 0 <= log["max_line_bytes"] <= LIMITS["max_line_bytes"]
+        assert 0 <= log["max_row_tree_bytes"] <= LIMITS["max_row_tree_bytes"]
+        if log["rows"]:
+            assert log["bytes"] > 0 and log["max_line_bytes"] > 0 and log["max_row_tree_bytes"] > 0
+        else:
+            assert log["bytes"] == log["max_line_bytes"] == log["max_row_tree_bytes"] == 0
+    assert (output / "worker-stderr.bin").stat().st_size <= 1024
+    assert _digest(model.state_dict()) == model_hash and _digest(state.snapshot()) == memory_hash
+    assert {
+        arm: _digest(current.state_dict()) for arm, current in models.items()
+    } == initial_model_hashes
+    assert all(current._pending is None and current._experience == 0 for current in models.values())
+    assert all(
+        file_hash(root / relative) == file_hash(package / relative) == digest
+        for relative, digest in sources.items()
+    )
+    assert all(file_hash(root / name) == digest for name, digest in qualification_paths.items())
+    assert {name: file_hash(root / name) for name in baseline["source_sha256"]} == baseline[
+        "source_sha256"
+    ]
+    assert file_hash(Path(__file__)) == baseline["test_sha256"]
+    assert action_log["rows"] == 1
+    assert acknowledgement["work"] == {
+        "action": {"custody_tensor_bytes_hashed": 840776},
+        "reader": {},
+    }
+    steps = proposal_row["prediction"]["payload"]["steps"]
+    assert 1 <= len(steps) <= 17
+    write_json(
+        output / "passed.json",
+        {
+            "schema": "coincidence-splice-prior-worker-qa-v1",
+            "status": "passed",
+            "parent_pid": os.getpid(),
+            "baseline_sha256": file_hash(output / "before-initialization.json"),
+            "launcher_identity": launcher_identity,
+            "worker_identity": completion["process_identity"],
+            "action_log": action_log,
+            "prior": custody,
+            "worker_completion_sha256": file_hash(output / "worker/completion.json"),
+            "source_sha256": sources,
+            "test_sha256": file_hash(Path(__file__)),
+            "combined_model_constructions": 6,
+            "parent_models": 5,
+            "reader_prior_copies": 5,
+            "prior_loads": 1,
+            "worker_checkpoint_loads": 1,
+            "ingests": 1,
+            "document_raw_bytes": len(document),
+            "document_eos": 1,
+            "free_proposals": 1,
+            "actual_payload_decisions": len(steps),
+            "action_children": 1,
+            "worker_processes": 1,
+            "teachers": 0,
+            "reading_panel_calls": 0,
+            "checkpoint_output_probes": 0,
+            "query_raw_bytes": 14,
+            "query_eos": 1,
+            "qualification_sha256": qualification_paths,
+            "launch_record_sha256": launch.sha256,
+            "reader_policy": reader_policy("learned"),
+            "address_frontend": {arm: address_frontend(arm) for arm in ARMS},
+            "tape_tensor_bytes": 206344,
+            "worker_payload_tensor_bytes": 840776,
+            "actual_reader_work": payload_row["work"],
+            "initial_model_sha256": initial_model_hashes,
+            "proposal_sha256": proposal.sha256,
+            "action_line_sha256": action_hash,
+            "qualification_scope": (
+                "Same pending neuronal worker through actual execution; no acquired task skill."
+            ),
+        },
+    )
