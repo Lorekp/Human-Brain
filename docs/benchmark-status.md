@@ -10,16 +10,22 @@ with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. No backpropagation is authorized, and
 protected evaluations retain their original access contracts.
 
-The [first broader public session](../experiments/r4_integrated/persistent_language_action_v1_result.md)
-completes 56 episodes per route with one shared 453-slot memory. Both the online
+The [broader continuation](../experiments/r4_integrated/persistent_language_action_v2_result.md)
+completes 56 episodes per route while continuing the saved model and shared
+memory from 453 to 505 occupied slots. Both the online
 neuronal learner and matched learning-disabled control score 0/24 acquisition
 first responses, 0/16 fresh transfer, 0/8 delayed retention and 0/8 teacher-free
-recovery. The simple retrieval/editing reference scores 12/24, 9/16, 8/8 and 0/8.
+recovery. The simple retrieval/editing reference scores 13/24, 11/16, 8/8 and 0/8.
 Four long-request challenges remain in totals; supported fresh scores are 0/12,
-0/12 and 6/12. The run and independent saved review total 19.66 seconds at
-364.92 MiB observed peak. No useful broader neuronal capability is established.
+0/12 and 8/12. The run and independent saved review total 117.97 seconds at
+406.92 MiB observed peak. No useful broader neuronal capability is established.
 The final model/tape states are saved for continuation; old toy tasks remain
 regressions without an all-perfect prerequisite.
+The request-conditioned output adds local prefix/address and byte/EOS updates,
+with the same system learning and acting. The
+[first session](../experiments/r4_integrated/persistent_language_action_v1_result.md)
+remains separate evidence; the new result is not a matched speed or score
+comparison across identical workloads.
 
 The current [byte-coincidence splice result](../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 solves 4/32 fresh tasks versus 5/32 for its matched graded competitive reference;

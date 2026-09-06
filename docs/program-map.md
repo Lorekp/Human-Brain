@@ -1,15 +1,15 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-06 with neuronal splice learning
-and address competition component verification. This file inventories implementation and
+Maintained by the orchestrator. Updated 2026-09-07 with persistent
+request-conditioned output. This file inventories implementation and
 historical frontiers. The [roadmap](research/roadmap-reading-to-coding.md) owns
 the active queue and architecture policy; [benchmark status](benchmark-status.md)
 owns measured evidence. Older "next" steps below are local historical context.
 
 The active target is [broader persistent language/action](research/persistent-language-action-development-v1.md):
 unseen instruction constructions, new code structures, longer shared memory and
-reduced teacher dependence on the same neuronal learner. The first 56-episode
-session is completed; broader neuronal scores are zero and remain visible.
+reduced teacher dependence on the same neuronal learner. Two broader sessions
+are completed; neuronal scores are zero and remain visible.
 
 ## Goal ladder
 
@@ -30,11 +30,15 @@ R1  Fast, auditable simulated-cell substrate         [continuous; compiled race 
 
 `persistent_coincidence_memory.py` and `persistent_coincidence_reader.py` expand
 the shared append-only tape to 512 slots while retaining full-address competition
-and direct local learning. `persistent_language_action_v1.py` runs one persistent
-session with matched learning-disabled and conventional references, actual Python
+and direct local learning. `request_conditioned_memory_learner.py` adds
+per-byte all-address retrieval using the request and earlier output, fixed mixed
+context threshold cells and direct local output-current learning. The combined
+`RequestConditionedSpliceLearner` preserves the same actual action/correction
+custody. `persistent_language_action_v2.py` continues the saved model and tape
+with matched learning-disabled and conventional references, actual Python
 actions, fixed teacher-free retries and saved continuation state. Its independent
 saved reviewer checks behavior, exposure and custody without model replay. The
-[broader result](../experiments/r4_integrated/persistent_language_action_v1_result.md)
+[broader result](../experiments/r4_integrated/persistent_language_action_v2_result.md)
 establishes a working workload and failed capability, not a solved coding task.
 
 Earlier narrow frontier (historical context):

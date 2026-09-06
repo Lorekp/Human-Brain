@@ -5,8 +5,8 @@ package and neither imports the other.
 
 ## Scope and current direction
 
-Updated policy pointer: 2026-09-06. The
-[roadmap](research/roadmap-reading-to-coding.md#architecture-policy) owns the
+Updated policy pointer: 2026-09-07. The
+[roadmap](research/roadmap-reading-to-coding.md#learning-and-action-architecture) owns the
 simulated-neuron learning commitment and permitted hybrid architecture research.
 Cell equations and GLIF may change. External stores, tokenization, and pretrained
 LLM knowledge components are permitted candidates with disclosed roles and
@@ -18,20 +18,24 @@ their presence does not satisfy that current learning constraint.
 The descriptions below document existing implementations. Their cell-only and
 fidelity constraints apply to those lanes and frozen experiments, not to every
 future architecture. Current integration work follows the
-[neuronal address competition plan](research/neuronal-address-competition-v1.md).
+[persistent language/action plan](research/persistent-language-action-development-v1.md).
 
-The current compliant reader materializes fixed raw-query/key joint activities
-before one learned address-output layer. Its synapses receive their own direct
-output contrast, with no backward error through the query or keys. The same
-`NeuronalSpliceLearner` retains this reader and its locally learned action heads
-through proposal, real execution and subsequent correction. The new
-`CompetitiveLocalMemoryLearner` inherits query construction and teaching while
-adding two fixed threshold layers that select one initial free-recall address.
-It follows one cursor through the same codec and tape; after execution its
-explicit corrective phase reopens all candidates on those same synapses.
-The direct local corrective surrogate is not a derivative of the hard gate.
-The [component result](research/neuronal-address-competition-qa-v1-result.md)
-verifies these mechanics; a successor integrated fit has not run.
+The current `RequestConditionedMemoryLearner` materializes fixed raw-request/key
+and earlier-output/key coincidence activities before learned address cells.
+Two fixed threshold layers select among every occupied address at each output
+step. Fixed mixed context cells then supply a locally learned byte/EOS output
+population, with the old codec retained as a fixed current prior. During
+correction, current-position responsibility supplies direct local address
+credit, and output cells use normalized potential-error products with their
+own inputs. No error travels backward through fixed features or history.
+Sequential corrections stage all new parameters before atomic publication.
+See the [exact selected equations](research/request-conditioned-output-v1.md).
+
+`RequestConditionedSpliceLearner` retains this reader and the existing local
+action heads through proposal, real execution and subsequent correction.
+The [completed broader continuation](../experiments/r4_integrated/persistent_language_action_v2_result.md)
+preserves the prior model and whole accumulated tape, but establishes no useful
+task accuracy. Its state and evidence remain available for continued development.
 
 The following development descriptions retain historical implementation
 contracts. In particular, earlier reverse error-transport paths are not the

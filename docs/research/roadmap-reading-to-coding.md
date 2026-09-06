@@ -12,17 +12,18 @@ knowledge, understands language, combines learned structure, acts in software
 workspaces and recovers from failures. Local simulated-neuron learning and useful
 real-world behavior are the central commitments.
 
-The [first broader persistent session is complete](../../experiments/r4_integrated/persistent_language_action_v1_result.md).
+The [broader persistent continuation is complete](../../experiments/r4_integrated/persistent_language_action_v2_result.md).
 Both neuronal routes score zero on acquisition first responses, fresh transfer,
 delayed retention and teacher-free recovery. The simple retrieval/editing
-reference scores 12/24, 9/16, 8/8 and 0/8 respectively. The same learner and a
-growing 453-slot tape persist across 56 episodes per route; final state is saved.
+reference scores 13/24, 11/16, 8/8 and 0/8 respectively. The same learner continues
+its saved model and memory from 453 to 505 slots across 56 episodes per route;
+final state is saved.
 Local updates occur, but useful broader competence is not established.
 
 The prepared [byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 is also completed and independently audited. Its narrow successes remain
-regression evidence. The [current result bank](../../benchmarks/persistent_language_action_v1.result.json)
-and [learning review](persistent-language-action-v1-learning-review.md) own the
+regression evidence. The [current result bank](../../benchmarks/persistent_language_action_v2.result.json)
+and [learning review](persistent-language-action-v2-learning-review.md) own the
 broader measurements and failure analysis.
 The [experiment history](roadmap-experiment-history.md) owns chronology and retired
 directions. Do not append another experiment diary to this roadmap.
@@ -33,11 +34,16 @@ The active plan is [persistent language-and-action development](persistent-langu
 Continue the learner on a workload that combines reading,
 retained knowledge, raw software actions and observation of their consequences.
 Expose it to broader problems now; perfection on the current toy cohort is not
-a prerequisite. The first stream is now exposed development material. Its
-failure motivates the selected [request-conditioned output implementation](request-conditioned-output-v1.md),
+a prerequisite. Both completed streams are now exposed development material. The
+[request-conditioned output implementation](request-conditioned-output-v1.md) is
 shared by reading and action payloads. It reconsiders all memory addresses at
 each output step using the request and earlier output, with direct local
-output-current learning. Continue the saved model and accumulated memory on
+output-current learning, but the completed continuation still shows no useful
+task competence. The selected next implementation is
+[actual-path output correction with incremental prefix simulation](active-path-output-learning-v1.md).
+It binds one local output correction to the first error in the actual response,
+and reuses unchanged fixed prefix activity. Its effectiveness is unmeasured.
+Continue the saved model and accumulated memory on
 new instruction forms and combinations. Address selection, composition and
 feedback use remain unresolved capability questions. Choose changes for this broader loop, without another
 automatic operation-only or byte-only comparison.

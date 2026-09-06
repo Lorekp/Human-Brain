@@ -1,6 +1,6 @@
 # Public persistent language/action development
 
-Status: first public session completed and independently reviewed, 2026-09-07.
+Status: first public session and second continuation completed and independently reviewed, 2026-09-07.
 The byte-coincidence comparison is completed. The proposed five-arm operation
 successor is stopped; its unexecuted source is not the next experiment. This
 document specifies the smallest broader development return using the current
@@ -221,7 +221,7 @@ reference succeeds on some reading, fresh edits and delayed example reuse.
 All unsupported challenges and recovery failures are preserved. This 56-episode
 manifest is now exposed regression/development material, not a new holdout.
 
-Next, implement the selected [request-conditioned output](request-conditioned-output-v1.md) within the
+The second continuation implemented [request-conditioned output](request-conditioned-output-v1.md) within the
 same persistent reader/action system. The first session's decoder traverses a document
 from one selected address; its raw-byte codec cannot condition stopping on the
 request. Any added output/context populations must receive direct local signals
@@ -248,6 +248,15 @@ There are 24 one-pass corrections per route, offering 98 byte/EOS symbols and
 delayed results with current delayed results, separately from fresh transfer.
 The existing 840-second run plus 60-second saved review and 2048-MiB envelope
 applies to the complete continuation, with no separate fitted cost probe.
+The [completed continuation](../../experiments/r4_integrated/persistent_language_action_v2_result.md)
+still scores zero in all four neuronal outcome groups. The reference scores
+13/24 acquisition, 11/16 transfer, 8/8 retention and 0/8 recovery. The complete
+run and saved review take 117.971022 seconds at 406.921875 MiB observed peak;
+both model/tape states are retained for the next selected development change.
+The next implementation follows [active-path output learning](active-path-output-learning-v1.md),
+selected from the saved learning and cost reviews. Its local correction must
+bind to the real preceding response, and its prefix-activity reuse must preserve
+fixed-gate arithmetic. Neither is a measured capability improvement yet.
 
 ## Implementation verification
 

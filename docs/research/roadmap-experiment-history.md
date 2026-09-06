@@ -3366,3 +3366,30 @@ The next shared source/design priority is request-conditioned answer constructio
 and stopping, preserving the broader workload, local learning, matched references
 and honest recovery limits. No toy-perfect prerequisite or automatic extra
 training rounds were selected.
+
+## 2026-09-07 request-conditioned broader continuation
+
+Source `5d9c302` continues the first session's actual online model, experience46
+and whole453-slot tape. It adds request/prefix-conditioned all-address retrieval
+at every byte, fixed mixed threshold inputs and direct local normalized
+output-current learning. The old codec is held as a numerical prior; its old
+successor traversal is not preserved. Two ordinary mechanics tests pass before
+the complete broader continuation, without a fitted skill threshold.
+
+The 56-episode continuation adds two notes and reaches505slots. Online and the
+matched current-learning-disabled fork score0/24 acquisition first responses,
+0/16 new request/structure transfer,0/8 earlier-session retention and0/8 recovery.
+The reference restores its actual earlier history and scores13/24,11/16,8/8,0/8.
+Each neuronal route receives24corrections,98byte/EOS offers and36actionlabels.
+Across allroutes216responses and144actual executions complete; run and saved
+review pass firstlaunch in117.971022seconds at406.921875MiB observedpeak.
+
+The [result](../../experiments/r4_integrated/persistent_language_action_v2_result.md)
+and [bank](../../benchmarks/persistent_language_action_v2.result.json) preserve
+all measurements and continuation states. The [learning review](persistent-language-action-v2-learning-review.md)
+finds identical reading outputs between neuronal routes, mostly repeated bytes
+to the output limit. Every actual online splice lacks EOS and is rejected.
+Local B/C/U publication and occasional address switching do not establish
+effective sequence learning. The next shared question is alignment of local
+sequence teaching with actual free generation, alongside measured simulation
+cost; no gain sweep, extra fitting rounds or isolated operation gate is selected.
