@@ -16,6 +16,9 @@ The [completed v3 result](../../experiments/r4_integrated/local_joint_address_on
 passes its independent audit but rejects the 996.224-second final projection.
 The next source/timing review must localize action execution cost before selecting
 another optimization; no identical timing retry or relaxed workload is authorized.
+The selected [two-child executor profile](local-action-executor-profile-v1.md)
+uses actual unchanged execution on authored pending/corrected workspaces to
+distinguish the subprocess boundary from parent work. It runs no learner or motor.
 
 ## Concrete finding
 

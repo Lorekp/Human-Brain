@@ -37,6 +37,8 @@ and independent audit now pass in 22.289 seconds, but project 996.224 seconds
 against 900. All 96 generated actions use pending fallback; only the separately
 supplied accepted probe emits. No full fit ran. Review saved action timing and
 executor source for one bounded speed improvement before any new acquisition.
+The selected [two-child profile](local-action-executor-profile-v1.md) localizes
+actual unchanged execution using authored inputs and no neuronal learning.
 
 Current result: the [shared temporal-map comparison](../../experiments/r4_integrated/local_shared_temporal_query_v1_result.md)
 and independent audit complete in 119.745 seconds. Learned solves 8/8 taught,
