@@ -1,6 +1,8 @@
 """Synthetic state and derivative checks; no prose acquisition qualification."""
 
+import ast
 import copy
+import subprocess
 from unittest.mock import patch
 
 import numpy as np
@@ -829,7 +831,8 @@ def test_read_path_nonfinite_intermediate_rejects_without_mutation(failure):
 def test_joined_read_credit_uses_old_query_weights_and_keeps_single_upstream_cast(dtype):
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
-    learner = LocalMemoryLearner(input_code_size=2, value_size=94, hidden_size=3, key_size=2)
+    learner = LocalMemoryLearner(input_code_size=2, value_size=94, hidden_size=3, key_size=2,
+                                 writer_update_fraction=0.5)
     if dtype == torch.float64:
         learner.double()
     with torch.no_grad():
@@ -861,7 +864,7 @@ def test_joined_read_credit_uses_old_query_weights_and_keeps_single_upstream_cas
         assert not torch.equal(expected_value, before["memory." + name])
     assert not hasattr(learner, "query_feedback")
     assert not hasattr(learner, "value_feedback")
-    assert learner.get_extra_state()["schema"] == "local-memory-phase-lms-v3"
+    assert learner.get_extra_state()["schema"] == "local-memory-phase-lms-v4"
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
@@ -934,7 +937,7 @@ def test_direct_value_credit_preserves_feedback_initialization_slots(seed):
 
     global_rng = torch.random.get_rng_state().clone()
     learner = LocalMemoryLearner(input_code_size=2, value_size=94, hidden_size=3,
-                                 key_size=2, seed=seed)
+                                 key_size=2, seed=seed, writer_update_fraction=0.5)
     generator = torch.Generator(device="cpu").manual_seed(seed + 3)
     for name, size in (("controller", 3), ("key", 2), ("value", 94), ("strength", 1)):
         original = torch.randn(size, 96, generator=generator) / np.sqrt(96)
@@ -962,3 +965,173 @@ def test_value_read_signal_nonfinite_rejects_before_memory_group_publication():
     with pytest.raises(ValueError, match="finite"):
         model.apply_local_feedback(state, event, signals, 0.01)
     assert all(torch.equal(value, model.state_dict()[name]) for name, value in before.items())
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_scalar_fraction_exact_frozen_source_forward_trace_and_teacher_parity(dtype):
+    import humanbrain.plastic_memory as memory_module
+
+    # Authenticated predecessor source is a QA oracle only, never evaluation loading.
+    source = subprocess.run(
+        ["git", "show",
+         "86cc7232320cf4cef9337cf4f3b79a017bb55171:src/humanbrain/plastic_memory.py"],
+        check=True, capture_output=True, text=True, timeout=30,
+    ).stdout
+    old_class = next(node for node in ast.parse(source).body
+                     if isinstance(node, ast.ClassDef) and node.name == "StreamingRateCell")
+    namespace = dict(vars(memory_module))
+    code = compile(ast.Module(body=[old_class], type_ignores=[]), "frozen-rate-cell", "exec")
+    exec(code, namespace)
+    old = namespace["StreamingRateCell"](2, 3, seed=7).to(dtype=dtype)
+    models = [StreamingRateCell(2, 3, seed=7).to(dtype=dtype),
+              StreamingRateCell(2, 3, seed=7,
+                                update_fraction=torch.full((3,), 0.5)).to(dtype=dtype)]
+    assert set(models[0].state_dict()) == set(old.state_dict())
+    states = [None, None, None]
+    rng = torch.Generator().manual_seed(19)
+    for _ in range(2):
+        for step in range(5):
+            x = torch.randn(2, 2, generator=rng, dtype=dtype)
+            mask = torch.tensor([step != 2, step != 3])
+            x[~mask] = torch.nan
+            for index, model in enumerate([old, *models]):
+                states[index] = model.local_step(x, states[index], mask=mask)
+            for state in states[1:]:
+                for name, value in states[0].snapshot().items():
+                    assert torch.equal(getattr(state, name), value)
+            clean = torch.where(mask[:, None], x, 0)
+            expected = old(clean, states[0].activity)
+            for model in models:
+                assert torch.equal(model(clean, states[0].activity), expected)
+        signal = torch.tensor([[0.1, -0.3, 0.2], [-0.2, 0.1, 0.3]], dtype=dtype)
+        for model, state in zip([old, *models], states, strict=True):
+            assert model.apply_learning_signal(state, signal, 0.01)
+        for model in models:
+            assert all(torch.equal(value, model.state_dict()[name])
+                       for name, value in old.state_dict().items())
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_multiscale_diagonal_cell_independent_finite_difference_and_local_update(dtype):
+    alpha = np.array([0.5, 0.125, 0.03125])
+    cell = StreamingRateCell(2, 3, update_fraction=torch.tensor(alpha, dtype=torch.float32))
+    cell = cell.to(dtype=dtype)
+    with torch.no_grad():
+        cell.weight.copy_(torch.tensor([[0.2, -0.1], [0.3, 0.2], [-0.2, 0.4]], dtype=dtype))
+        cell.recurrent.copy_(torch.diag(torch.tensor([0.8, -0.3, 0.6], dtype=dtype)))
+        cell.bias.copy_(torch.tensor([0.1, -0.2, 0.05], dtype=dtype))
+    inputs = np.array([[0.2, -0.4], [0.6, 0.1], [np.nan, np.nan], [-0.3, 0.2], [0.5, 0.7]])
+    mask = [True, True, False, True, True]
+    initial = np.array([0.1, -0.2, 0.3])
+    arrays = {name: p.detach().double().numpy().copy() for name, p in cell.named_parameters()}
+
+    def forward():
+        h = initial.copy()
+        for active, x in zip(mask, inputs, strict=True):
+            if active:
+                # Independent scalar drive and neuron update; no model/autograd oracle.
+                activation = np.array([np.tanh(sum(arrays['weight'][j, i] * x[i] for i in range(2))
+                    + sum(arrays['recurrent'][j, k] * h[k] for k in range(3))
+                    + arrays['bias'][j]) for j in range(3)])
+                h = np.array([h[j] + alpha[j] * (activation[j] - h[j]) for j in range(3)])
+        return h
+
+    state = cell.initial_learning_state(1)
+    state.activity.copy_(torch.tensor(initial, dtype=dtype)[None])
+    before = state.snapshot()
+    for active, x in zip(mask, inputs, strict=True):
+        state = cell.local_step(torch.tensor(x, dtype=dtype)[None], state,
+                                mask=torch.tensor([active]))
+    tolerance = 2e-6 if dtype == torch.float32 else 2e-9
+    np.testing.assert_allclose(state.activity[0], forward(), atol=tolerance, rtol=tolerance)
+    gradients = {}
+    for name, trace_name in [('weight', 'input_eligibility'),
+                             ('recurrent', 'recurrent_eligibility'), ('bias', 'bias_eligibility')]:
+        parameter = arrays[name]
+        numerical = np.zeros_like(parameter)
+        for index in np.ndindex(parameter.shape):
+            value = parameter[index]
+            parameter[index] = value + 1e-6
+            plus = forward()
+            parameter[index] = value - 1e-6
+            minus = forward()
+            parameter[index] = value
+            numerical[index] = (plus[index[0]] - minus[index[0]]) / 2e-6
+        np.testing.assert_allclose(getattr(state, trace_name)[0], numerical,
+                                   atol=tolerance, rtol=tolerance)
+        gradients[name] = numerical
+    signal = torch.tensor([[0.3, -0.2, 0.4]], dtype=dtype)
+    assert cell.apply_learning_signal(state, signal, 0.01)
+    for name, parameter in cell.named_parameters():
+        s = signal.numpy()[0] if name == 'bias' else signal.numpy()[0, :, None]
+        np.testing.assert_allclose(parameter.detach(), arrays[name] - 0.01 * s * gradients[name],
+                                   atol=tolerance, rtol=tolerance)
+        assert parameter.grad is None
+    assert torch.equal(before['activity'], torch.tensor(initial, dtype=dtype)[None])
+    assert not cell.update_fraction.requires_grad
+    assert 'update_fraction' not in dict(cell.named_parameters())
+
+
+def test_fixed_fraction_validation_cast_loading_and_caller_ownership():
+    source = torch.tensor([0.5, 0.125, 0.03125])
+    cell = StreamingRateCell(2, 3, update_fraction=source)
+    source.zero_()
+    assert cell.update_fraction.tolist() == [0.5, 0.125, 0.03125]
+    for bad in (0.0, -0.1, 1.1, float('nan'), True,
+                torch.ones(2), torch.ones(3, dtype=torch.int64),
+                torch.ones(3, requires_grad=True), torch.tensor([0.5, float('inf'), 0.1])):
+        with pytest.raises(ValueError, match='fraction'):
+            StreamingRateCell(2, 3, update_fraction=bad)
+    cell.double()
+    restored = StreamingRateCell(2, 3, update_fraction=torch.tensor([0.5, 0.125, 0.03125])).double()
+    restored.load_state_dict(copy.deepcopy(cell.state_dict()))
+    for name, value in cell.state_dict().items():
+        assert torch.equal(value, restored.state_dict()[name])
+        assert value.data_ptr() != restored.state_dict()[name].data_ptr()
+    for bad in (torch.tensor([0.5, 0.25, 0.03125], dtype=torch.float64),
+                torch.ones(2, dtype=torch.float64), torch.ones(3, dtype=torch.float32)):
+        state = copy.deepcopy(cell.state_dict())
+        state['update_fraction'] = bad
+        with pytest.raises(RuntimeError, match='fraction'):
+            restored.load_state_dict(state)
+        assert torch.equal(restored.update_fraction, cell.update_fraction)
+    restored.update_fraction[1] = 0.25
+    with pytest.raises(ValueError, match='fraction'):
+        restored.local_step(torch.zeros(1, 2, dtype=torch.float64))
+    restored.update_fraction = restored.update_fraction.float()
+    with pytest.raises(ValueError, match='fraction'):
+        restored(torch.zeros(1, 2, dtype=torch.float64))
+    # Ordinary dtype casts may round a generic fixed fraction without retraining it.
+    generic = StreamingRateCell(2, 3, update_fraction=torch.tensor([0.1, 0.2, 0.3]))
+    generic.double().float()
+    assert generic.local_step(torch.zeros(1, 2)).activity.shape == (1, 3)
+
+
+def test_multiscale_masked_noop_and_nonfinite_learning_proposal_are_atomic():
+    cell = StreamingRateCell(2, 3, update_fraction=torch.tensor([0.5, 0.125, 0.03125]))
+    state = cell.local_step(torch.ones(1, 2))
+    masked = cell.local_step(torch.full((1, 2), torch.nan), state, mask=torch.tensor([False]))
+    assert all(torch.equal(value, getattr(masked, name))
+               for name, value in state.snapshot().items())
+    state.input_eligibility.fill_(torch.finfo(torch.float32).max)
+    before = copy.deepcopy(cell.state_dict())
+    with pytest.raises(ValueError, match='finite'):
+        cell.apply_learning_signal(state, torch.full((1, 3), 2.0), 1.0)
+    assert all(torch.equal(value, cell.state_dict()[name]) for name, value in before.items())
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_multiscale_controller_traces_reach_unchanged_overwrite_tags(dtype):
+    model = PlasticMemory(
+        2, 3, 2, 2, writer_update_fraction=torch.tensor([0.5, 0.125, 0.03125])
+    ).to(dtype=dtype)
+    inputs = torch.tensor([[[0.1, 0.3], [0.4, -0.2], [float('nan'), 0], [0.1, 0.3]]],
+                          dtype=dtype)
+    mask = torch.tensor([[True, True, False, True]])
+    initial = model.initial_local_state(1)
+    expected = _unbuffered_tag_reference(model, inputs, mask, initial)
+    actual = model.write_local(inputs, mask, initial)
+    assert torch.equal(actual.synapses, expected.synapses)
+    assert all(torch.equal(value, expected.credit[name]) for name, value in actual.credit.items())
+    assert all(torch.equal(value, getattr(expected.cell, name))
+               for name, value in actual.cell.snapshot().items())

@@ -367,7 +367,7 @@ def _set_upstream_dtype(learner, dtype):
 def test_local_composition_one_lesson_control_groups_and_retired_credit(mode):
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
-    learner = LocalMemoryLearner(
+    learner = LocalMemoryLearner(writer_update_fraction=0.5,
         mode=mode, input_code_size=2, hidden_size=3, key_size=2, value_size=94, seed=19
     ).double()
     # First exposure writes output synapses but correctly supplies zero upstream signal.
@@ -432,7 +432,9 @@ def test_local_composition_one_lesson_control_groups_and_retired_credit(mode):
 def test_local_composition_before_update_signals_mean_once_and_upstream_last():
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
-    learner = LocalMemoryLearner(input_code_size=2, hidden_size=3, key_size=2, value_size=94)
+    learner = LocalMemoryLearner(
+        writer_update_fraction=0.5, input_code_size=2, hidden_size=3, key_size=2, value_size=94
+    )
     state = learner.ingest([b"one", b"two"])
     learner.teach(b"q", b"a!", state, 0.01)
     state = learner.ingest([b"one", b"two"])
@@ -491,7 +493,9 @@ def test_local_composition_before_update_signals_mean_once_and_upstream_last():
 def test_local_composition_source_free_transport_and_disabled_teacher():
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
-    learner = LocalMemoryLearner(input_code_size=2, hidden_size=3, key_size=2, value_size=94)
+    learner = LocalMemoryLearner(
+        writer_update_fraction=0.5, input_code_size=2, hidden_size=3, key_size=2, value_size=94
+    )
     rng = torch.random.get_rng_state().clone()
     state = learner.ingest([b"private-source-ONE", b"private-source-TWO"])
     snapshot = learner.snapshot(state)
@@ -499,6 +503,9 @@ def test_local_composition_source_free_transport_and_disabled_teacher():
     def check_transport(value):
         if isinstance(value, dict):
             for item in value.values():
+                check_transport(item)
+        elif isinstance(value, (tuple, list)):
+            for item in value:
                 check_transport(item)
         elif torch.is_tensor(value):
             assert not value.requires_grad and value.grad_fn is None
@@ -510,7 +517,7 @@ def test_local_composition_source_free_transport_and_disabled_teacher():
     buffer = io.BytesIO()
     torch.save(snapshot, buffer)
     buffer.seek(0)
-    restored = LocalMemoryLearner(
+    restored = LocalMemoryLearner(writer_update_fraction=0.5,
         input_code_size=2, hidden_size=3, key_size=2, value_size=94, seed=0
     )
     transported = restored.restore_snapshot(torch.load(buffer, weights_only=True))
@@ -522,14 +529,14 @@ def test_local_composition_source_free_transport_and_disabled_teacher():
     _assert_nested_equal(before, restored.snapshot(transported))
     assert torch.equal(rng, torch.random.get_rng_state())
     assert not hasattr(restored, "documents") and not hasattr(restored, "query")
-    wrong_mode = LocalMemoryLearner(
+    wrong_mode = LocalMemoryLearner(writer_update_fraction=0.5,
         mode="aggregate", input_code_size=2, hidden_size=3, key_size=2, value_size=94
     )
     with pytest.raises(ValueError, match="control mode"):
         wrong_mode.restore_snapshot(snapshot)
 
 
-@pytest.fixture(params=(2, 3, 4, 5, 6, 7, 8))
+@pytest.fixture(params=(2, 3, 4, 5, 6, 7, 8, 9))
 def local_cost_runner(request):
     if request.param == 2:
         from experiments.r4_integrated import local_memory_byte_v2 as runner
@@ -539,7 +546,10 @@ def local_cost_runner(request):
     from types import SimpleNamespace
 
     from experiments.r4_integrated import local_memory_byte_harness as harness
-    if request.param == 8:
+    if request.param == 9:
+        from experiments.r4_integrated import local_memory_multiscale_v1 as harness
+        SPEC = harness.SPEC
+    elif request.param == 8:
         from experiments.r4_integrated import local_memory_value_credit_v1 as harness
         SPEC = harness.SPEC
     elif request.param == 7:
@@ -711,7 +721,7 @@ def test_local_harness_export_uses_same_high_resolution_clock(tmp_path, monkeypa
     from experiments.r4_integrated import local_memory_two_byte_v1 as harness
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
-    model = LocalMemoryLearner(
+    model = LocalMemoryLearner(writer_update_fraction=0.5,
         mode="frozen", input_code_size=2, hidden_size=3, key_size=2, value_size=94
     )
     checks = [
@@ -736,7 +746,7 @@ def test_local_harness_export_uses_same_high_resolution_clock(tmp_path, monkeypa
 def test_local_forward_prediction_matches_full_query_and_subsequent_teaching(dtype, mode):
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
-    candidate = LocalMemoryLearner(
+    candidate = LocalMemoryLearner(writer_update_fraction=0.5,
         mode=mode, input_code_size=2, hidden_size=3, key_size=2, value_size=94, seed=19
     )
     _set_upstream_dtype(candidate, dtype)
@@ -774,7 +784,9 @@ def test_local_forward_prediction_uses_supplied_memory_and_preserves_it():
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
     # Authored transport witness: this tests causal routing, not learned capability.
-    learner = LocalMemoryLearner(input_code_size=1, hidden_size=1, key_size=1, value_size=95)
+    learner = LocalMemoryLearner(
+        writer_update_fraction=0.5, input_code_size=1, hidden_size=1, key_size=1, value_size=95
+    )
     with torch.no_grad():
         learner.query_cell.weight.zero_()
         learner.query_cell.recurrent.zero_()
@@ -803,7 +815,9 @@ def test_local_forward_prediction_rejects_actual_nonfinite_state_and_computation
     from experiments.r4_integrated.local_memory_byte_harness import digest
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
-    learner = LocalMemoryLearner(input_code_size=1, hidden_size=1, key_size=1, value_size=95)
+    learner = LocalMemoryLearner(
+        writer_update_fraction=0.5, input_code_size=1, hidden_size=1, key_size=1, value_size=95
+    )
     state = learner.memory.initial_local_state(1)
     with torch.no_grad():
         if corrupt == "synapses":
@@ -830,7 +844,7 @@ def test_local_forward_prediction_rejects_actual_nonfinite_state_and_computation
 def test_local_forward_prediction_omits_unused_eligibility_overflow_but_teaching_rejects_it(dtype):
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
-    learner = LocalMemoryLearner(
+    learner = LocalMemoryLearner(writer_update_fraction=0.5,
         input_code_size=1, hidden_size=1, key_size=1, value_size=95
     )
     _set_upstream_dtype(learner, dtype)
@@ -900,7 +914,7 @@ def test_decoder_finite_validation_preserves_differentiable_strided_context(dtyp
 def test_frozen_writer_omits_dead_credit_with_exact_forward_and_learning_parity(mode, dtype):
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
-    learner = LocalMemoryLearner(
+    learner = LocalMemoryLearner(writer_update_fraction=0.5,
         mode=mode, input_code_size=4, hidden_size=6, key_size=4, value_size=92, seed=39
     )
     _set_upstream_dtype(learner, dtype)
@@ -959,7 +973,7 @@ def test_frozen_writer_omits_dead_credit_with_exact_forward_and_learning_parity(
 def test_frozen_writer_control_rejects_later_unfreezing_before_ingest_or_teaching():
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
-    learner = LocalMemoryLearner(
+    learner = LocalMemoryLearner(writer_update_fraction=0.5,
         mode="writer_maps_frozen", input_code_size=2, hidden_size=3, key_size=2, value_size=94
     )
     state = learner.ingest([b"a"])
@@ -1595,7 +1609,7 @@ def test_local_lms_owns_old_seed_input_codes_and_rejects_invalid_teacher_before_
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
     rng = torch.random.get_rng_state().clone()
-    model = LocalMemoryLearner(seed=733, hidden_size=3, key_size=2)
+    model = LocalMemoryLearner(writer_update_fraction=0.5, seed=733, hidden_size=3, key_size=2)
     old_codes = ByteSequenceDecoder(96, 3, 32, seed=735).embedding.weight
     assert torch.equal(model.input_codes, old_codes)
     assert not model.input_codes.requires_grad and not hasattr(model.decoder, "embedding")
@@ -1617,7 +1631,9 @@ def test_local_lms_nonfinite_aggregate_rejects_before_upstream_mutation(failure)
 
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
-    model = LocalMemoryLearner(input_code_size=2, value_size=94, hidden_size=3, key_size=2)
+    model = LocalMemoryLearner(
+        writer_update_fraction=0.5, input_code_size=2, value_size=94, hidden_size=3, key_size=2
+    )
     state = model.ingest([b"x=aa"])
     before = model.snapshot(state)
     teach = model.decoder.teach_local
@@ -1689,7 +1705,9 @@ def test_two_byte_lesson_actual_lms_receipts_before_update_and_retirement():
     from experiments.r4_integrated import local_memory_two_byte_v1 as runner
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
-    model = LocalMemoryLearner(input_code_size=2, value_size=94, hidden_size=3, key_size=2)
+    model = LocalMemoryLearner(
+        writer_update_fraction=0.5, input_code_size=2, value_size=94, hidden_size=3, key_size=2
+    )
     episode = {"document_hex": [b"x=aa".hex()], "query_hex": b"x?".hex(), "target_hex": b"aa".hex()}
     with patch.object(model, "predict", wraps=model.predict) as predict, patch.object(
         model, "teach", wraps=model.teach
@@ -1704,7 +1722,7 @@ def test_two_byte_lesson_actual_lms_receipts_before_update_and_retirement():
 
 
 @pytest.mark.parametrize(
-    "runner_module", ["local_memory_value_credit_v1"]
+    "runner_module", ["local_memory_multiscale_v1"]
 )
 def test_two_byte_source_free_worker_fresh_process_read_only_checkpoint(tmp_path, runner_module):
     import importlib
@@ -1800,7 +1818,7 @@ def test_localization_token_trace_matches_whole_ingest_and_single_purge(dtype, m
     from experiments.r4_integrated.local_memory_localization_core import traced_ingest
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
-    model = LocalMemoryLearner(
+    model = LocalMemoryLearner(writer_update_fraction=0.5,
         mode=mode, input_code_size=2, value_size=94, hidden_size=3, key_size=2
     )
     _set_upstream_dtype(model, dtype)
@@ -1834,7 +1852,9 @@ def test_localization_observations_match_prediction_and_count_supplemental_phase
     from experiments.r4_integrated.local_memory_localization_core import observed_query
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
-    model = LocalMemoryLearner(input_code_size=2, value_size=94, hidden_size=3, key_size=2)
+    model = LocalMemoryLearner(
+        writer_update_fraction=0.5, input_code_size=2, value_size=94, hidden_size=3, key_size=2
+    )
     with torch.no_grad():
         model.decoder.output_weights[97, :3] = 1
         if ending != "cap":
@@ -1866,7 +1886,9 @@ def test_localization_proposal_matches_actual_teacher_and_isolates_two_blocks(dt
     )
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
-    model = LocalMemoryLearner(input_code_size=2, value_size=94, hidden_size=3, key_size=2)
+    model = LocalMemoryLearner(
+        writer_update_fraction=0.5, input_code_size=2, value_size=94, hidden_size=3, key_size=2
+    )
     _set_upstream_dtype(model, dtype)
     with torch.no_grad():
         model.decoder.output_weights.copy_(torch.linspace(
@@ -1907,7 +1929,9 @@ def test_localization_positive_block_uses_actual_after_despite_float_cancellatio
     from experiments.r4_integrated.local_memory_localization_core import perturbed_model
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
-    model = LocalMemoryLearner(input_code_size=2, value_size=94, hidden_size=3, key_size=2)
+    model = LocalMemoryLearner(
+        writer_update_fraction=0.5, input_code_size=2, value_size=94, hidden_size=3, key_size=2
+    )
     with torch.no_grad():
         model.memory.strength_bias.fill_(1.0)
     before = model.memory.strength_bias.detach().clone()
@@ -2026,7 +2050,8 @@ def test_localization_worker_fresh_process_empty_memory_query_only(tmp_path):
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
 @pytest.mark.parametrize(
     "reference_module",
-    ["local_memory_query_credit_reference", "local_memory_value_credit_reference"],
+    ["local_memory_query_credit_reference", "local_memory_value_credit_reference",
+     "local_memory_multiscale_reference"],
 )
 def test_local_credit_reference_matches_frozen_git_source_and_trajectories(dtype, reference_module):
     """The experiment adapter must reproduce the old dependency, not only its caller."""
@@ -2086,8 +2111,10 @@ def test_local_credit_reference_matches_frozen_git_source_and_trajectories(dtype
     )
     assert set(overrides) == expected_overrides
     for name, node in old_methods.items():
+        if name == "__init__":
+            continue  # New generic rate argument; scalar dependency trajectory checked below.
         assert ast.dump(node) == ast.dump(overrides.get(name, new_methods[name])), name
-    for name in old_memory.keys() - {"PlasticMemory", "LocalMemoryRead"}:
+    for name in old_memory.keys() - {"PlasticMemory", "LocalMemoryRead", "StreamingRateCell"}:
         assert ast.dump(old_memory[name]) == ast.dump(current_memory[name]), name
     for node in ast.parse(texts["plastic_memory"]).body:
         if isinstance(node, ast.FunctionDef):
@@ -2134,9 +2161,9 @@ def test_local_credit_reference_matches_frozen_git_source_and_trajectories(dtype
                 _assert_nested_equal(actual.state_dict(), expected.state_dict())
 
 
-def test_value_credit_fixed_roster_factory_source_and_strict_endpoint():
+def test_multiscale_fixed_roster_factory_source_and_strict_endpoint():
+    from experiments.r4_integrated import local_memory_multiscale_v1 as runner
     from experiments.r4_integrated import local_memory_two_byte_v1 as previous
-    from experiments.r4_integrated import local_memory_value_credit_v1 as runner
 
     assert (*previous.ARMS, "current_tagged") == runner.ARMS
     train, checks = runner.roster()
@@ -2150,18 +2177,29 @@ def test_value_credit_fixed_roster_factory_source_and_strict_endpoint():
     assert len(runner.SPEC.config["arms"]) == len(runner.SPEC.config["query_credit"]) == 6
     assert len(runner.SPEC.config["value_credit"]) == 6
     manifest = runner.sources()
-    for name in ("local_memory_value_credit_v1.py", "local_memory_value_credit_v1.md",
-                 "local_memory_value_credit_reference.py", "local_memory_two_byte_v1.py"):
+    for name in ("local_memory_multiscale_v1.py", "local_memory_multiscale_v1.md",
+                 "local_memory_multiscale_reference.py", "local_memory_two_byte_v1.py"):
         path = runner.ROOT / "experiments/r4_integrated" / name
         assert manifest[path.relative_to(runner.ROOT).as_posix()] == runner.file_hash(path)
     models = {arm: runner.new_model(runner.SPEC, arm) for arm in runner.ARMS}
-    base = {k: v for k, v in models["tagged"].state_dict().items() if torch.is_tensor(v)}
+    initial = {arm: model.state_dict() for arm, model in models.items()}
+    runner.harness.validate_initial_models(runner.SPEC, initial)
+    rates = torch.tensor([0.5] * 32 + [0.125] * 16 + [0.03125] * 16)
     for arm, model in models.items():
-        tensors = {k: v for k, v in model.state_dict().items() if torch.is_tensor(v)}
-        extra = {"value_feedback"} if arm == "current_tagged" else set()
-        assert set(tensors) == set(base) | extra
-        for key, value in base.items():
-            assert tensors[key].dtype == value.dtype and torch.equal(tensors[key], value)
+        assert model.query_cell.update_fraction == 0.5
+        assert "query_cell.update_fraction" not in model.state_dict()
+        if arm == "current_tagged":
+            assert model.memory.controller.update_fraction == 0.5
+        else:
+            assert torch.equal(model.memory.controller.update_fraction, rates)
+    corrupted = copy.deepcopy(initial)
+    corrupted["frozen"]["memory.controller.update_fraction"][0] = 0.25
+    with pytest.raises(AssertionError):
+        runner.harness.validate_initial_models(runner.SPEC, corrupted)
+    corrupted = copy.deepcopy(initial)
+    corrupted["current_tagged"]["value_feedback"] = torch.zeros(64, 96)
+    with pytest.raises(AssertionError):
+        runner.harness.validate_initial_models(runner.SPEC, corrupted)
     assert models["current_tagged"].mode == "tagged"
     assert models["current_tagged"].get_extra_state() != models["tagged"].get_extra_state()
     with pytest.raises(ValueError, match="configuration mismatch"):
@@ -2177,14 +2215,17 @@ def test_value_credit_fixed_roster_factory_source_and_strict_endpoint():
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
-def test_value_credit_forward_matches_current_reference_before_teaching(dtype):
-    from experiments.r4_integrated.local_memory_value_credit_reference import (
+def test_explicit_scalar_forward_matches_current_reference_before_teaching(dtype):
+    from experiments.r4_integrated.local_memory_multiscale_reference import (
         LocalMemoryLearner as CurrentLearner,
     )
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
     config = dict(input_code_size=2, value_size=94, hidden_size=3, key_size=2, seed=733)
-    repaired, current = LocalMemoryLearner(**config), CurrentLearner(**config)
+    repaired, current = (
+        LocalMemoryLearner(writer_update_fraction=0.5, **config),
+        CurrentLearner(**config),
+    )
     for model in (repaired, current):
         _set_upstream_dtype(model, dtype)
     states = [model.ingest([b"ab", b"cd"]) for model in (repaired, current)]
@@ -2203,23 +2244,26 @@ def test_value_credit_forward_matches_current_reference_before_teaching(dtype):
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
 @pytest.mark.parametrize("mode", ["writer_maps_frozen", "frozen", "writes_disabled"])
-def test_value_credit_controls_preserve_immediate_predecessor_trajectory(dtype, mode):
+def test_explicit_scalar_controls_preserve_immediate_predecessor_trajectory(dtype, mode):
     from dataclasses import fields
 
-    from experiments.r4_integrated.local_memory_value_credit_reference import (
+    from experiments.r4_integrated.local_memory_multiscale_reference import (
         LocalMemoryLearner as PreviousLearner,
     )
     from humanbrain.local_memory_learner import LocalMemoryLearner
 
     config = dict(mode=mode, input_code_size=2, value_size=94, hidden_size=3, key_size=2, seed=733)
-    candidate, previous = LocalMemoryLearner(**config), PreviousLearner(**config)
+    candidate, previous = (
+        LocalMemoryLearner(writer_update_fraction=0.5, **config),
+        PreviousLearner(**config),
+    )
     for model in (candidate, previous):
         _set_upstream_dtype(model, dtype)
 
     def common_weights():
         new = {k: v for k, v in candidate.state_dict().items() if torch.is_tensor(v)}
         old = {k: v for k, v in previous.state_dict().items() if torch.is_tensor(v)}
-        assert set(old) == set(new) | {"value_feedback"}
+        assert set(old) == set(new)
         for key, value in new.items():
             assert value.dtype == old[key].dtype and torch.equal(value, old[key]), key
 
@@ -2309,3 +2353,39 @@ def test_binding_query_stage_fresh_worker_two_modes_empty_memories(tmp_path):
         observation = observations[row["id"]]
         assert observation["phase_scores"].shape == (3, 257)
         assert not observation["phase_scores"].count_nonzero()
+
+
+@pytest.mark.parametrize("mode", ["tagged", "aggregate", "writer_maps_frozen", "frozen",
+                                  "writes_disabled"])
+def test_multiscale_candidate_controls_use_same_bank_and_keep_fractions_fixed(mode):
+    from experiments.r4_integrated import local_memory_multiscale_v1 as runner
+    from experiments.r4_integrated.local_memory_localization_core import traced_ingest
+
+    model = runner.new_model(runner.SPEC, mode)
+    rates = torch.tensor([0.5] * 32 + [0.125] * 16 + [0.03125] * 16)
+    assert torch.equal(model.memory.controller.update_fraction, rates)
+    assert "update_fraction" not in dict(model.memory.controller.named_parameters())
+    before = copy.deepcopy(model.state_dict())
+    for target in (b"aa", b"bc"):
+        state = model.ingest([b"x=a", b"y=b"])
+        traced, _ = traced_ingest(model, [b"x=a", b"y=b"])
+        _assert_nested_equal(state.snapshot(), traced.snapshot())
+        snapshot = model.snapshot(state)
+        model.predict(b"x?", state, 2)
+        _assert_nested_equal(snapshot, model.snapshot(state))
+        with patch.object(torch.autograd, "backward", side_effect=AssertionError("no backward")):
+            feedback = model.teach(b"x?", target, state, 0.01)
+        assert feedback.teacher_count == 3
+        assert torch.equal(model.memory.controller.update_fraction, rates)
+        assert model.query_cell.update_fraction == 0.5
+        if mode == "writes_disabled":
+            assert not state.synapses.count_nonzero() and not feedback.memory_updated
+    if mode == "frozen":
+        _assert_nested_equal(before, model.state_dict())
+    elif mode == "writer_maps_frozen":
+        for key, value in before.items():
+            if key.startswith("memory.") and not key.startswith("memory.query_"):
+                _assert_nested_equal(value, model.state_dict()[key])
+        assert not torch.equal(before["decoder.output_weights"], model.decoder.output_weights)
+    else:
+        assert not torch.equal(before["decoder.output_weights"], model.decoder.output_weights)

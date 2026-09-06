@@ -63,6 +63,9 @@ class LocalMemoryLearner(nn.Module):
     normal(0,1)/sqrt(context_size). The reserved value draw preserves initialization;
     value credit uses the direct read error. LMS error uses pre-update output weights.
     All fixed matrices serialize; controls have identical initial tensor bytes.
+    The default 64-neuron writer has fixed 32/16/16 populations with fractions
+    .5/.125/.03125; explicit scalar/vector fractions support other geometries.
+    Query cells retain their scalar .5 dynamics.
     The output module must stay CPU float64; whole-model .float() violates its
     contract. Upstream dtype conversion must leave that module unchanged.
     """
@@ -78,12 +81,19 @@ class LocalMemoryLearner(nn.Module):
         key_size: int = 64,
         value_size: int = 64,
         seed: int = 0,
+        writer_update_fraction: float | Tensor | None = None,
     ) -> None:
         super().__init__()
         if mode not in self.MODES:
             raise ValueError("unknown local memory control mode")
         if type(seed) is not int:
             raise ValueError("seed must be an integer")
+        if writer_update_fraction is None:
+            if type(hidden_size) is not int or hidden_size != 64:
+                raise ValueError("non-64 writers require an explicit update fraction")
+            writer_update_fraction = torch.tensor(
+                [0.5] * 32 + [0.125] * 16 + [0.03125] * 16, device="cpu"
+            )
         if (
             type(input_code_size) is not int or type(value_size) is not int
             or input_code_size < 1 or value_size < 1 or input_code_size + value_size != 96
@@ -93,7 +103,10 @@ class LocalMemoryLearner(nn.Module):
             )
         self.mode = mode
         self.seed, self.input_code_size, self.query_size = seed, input_code_size, input_code_size
-        self.memory = PlasticMemory(input_code_size, hidden_size, key_size, value_size, seed=seed)
+        self.memory = PlasticMemory(
+            input_code_size, hidden_size, key_size, value_size, seed=seed,
+            writer_update_fraction=writer_update_fraction,
+        )
         self.query_cell = StreamingRateCell(input_code_size, self.query_size, seed=seed + 1)
         code_generator = torch.Generator(device="cpu").manual_seed(seed + 2)
         self.register_buffer(
@@ -128,12 +141,16 @@ class LocalMemoryLearner(nn.Module):
 
     def get_extra_state(self) -> dict:
         return {
-            "schema": "local-memory-phase-lms-v3",
+            "schema": "local-memory-phase-lms-v4",
             "mode": self.mode,
             "seed": self.seed,
             "input_code_size": self.input_code_size,
             "query_size": self.query_size,
             "writer_hidden_size": self.memory.hidden_size,
+            "writer_update_fractions": self.memory.controller._update_fraction_values,
+            "writer_credit": (
+                "fixed-fraction tanh own-neuron eligibility; off-diagonal paths omitted"
+            ),
             "key_size": self.memory.key_size,
             "read_size": self.memory.value_size,
             "input_code": "owned-fixed-normal-codes; private seed+2 first draw; raw-bytes+256",
@@ -248,6 +265,7 @@ class LocalMemoryLearner(nn.Module):
         self._check_state_mode(state)
         values = self._encoded(query)
         self.memory._check_local_state(state)
+        self.query_cell._check_update_fraction()
         if (
             values.ndim != 3 or values.shape[0] != 1
             or values.shape[2] != self.query_cell.input_size

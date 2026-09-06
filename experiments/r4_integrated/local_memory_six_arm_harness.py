@@ -44,6 +44,33 @@ class Experiment:
     new_model: Callable
     sources: Callable
 
+
+def validate_initial_models(spec, initial):
+    """Match common arrays and only the declared fixed writer-rate vector."""
+    import torch
+
+    assert set(initial) == set(ARMS)
+    tensors = {
+        arm: {key: value for key, value in state.items() if isinstance(value, torch.Tensor)}
+        for arm, state in initial.items()
+    }
+    rate_key = spec.config["candidate_only_buffer"]
+    assert rate_key == "memory.controller.update_fraction"
+    reference = tensors["current_tagged"]
+    assert rate_key not in reference
+    assert spec.config["writer_update_fraction"]["current_tagged"] == 0.5
+    for arm in ARMS:
+        current = tensors[arm]
+        assert set(current) == set(reference) | ({rate_key} if arm != "current_tagged" else set())
+        for key, value in reference.items():
+            assert current[key].dtype == value.dtype and same_state(current[key], value)
+        if arm != "current_tagged":
+            expected = torch.tensor([0.5] * 32 + [0.125] * 16 + [0.03125] * 16)
+            assert spec.config["writer_update_fraction"][arm] == expected.tolist()
+            assert current[rate_key].dtype == torch.float32
+            assert same_state(current[rate_key], expected)
+
+
 def worker(experiment: Experiment, args):
     """Query-only fresh process; source authoring and teaching are not invoked."""
     spec = experiment.spec
@@ -252,25 +279,7 @@ def run(experiment: Experiment, args):
         def tensor_only(state):
             return {key: value for key, value in state.items() if isinstance(value, torch.Tensor)}
 
-        assert all(
-            same_state(
-                tensor_only(initial["tagged"]),
-                {k: v for k, v in tensor_only(initial[a]).items()
-                 if k in tensor_only(initial["tagged"])},
-            ) for a in ARMS
-        )
-        assert set(tensor_only(initial["current_tagged"])) - set(
-            tensor_only(initial["tagged"])
-        ) == {spec.config["reference_only_buffer"]}
-        assert all(
-            set(tensor_only(initial[arm])) == set(tensor_only(initial["tagged"]))
-            for arm in ARMS if arm != "current_tagged"
-        )
-        assert all(
-            initial[arm][key].dtype == value.dtype
-            for arm in ARMS
-            for key, value in tensor_only(initial["tagged"]).items()
-        )
+        validate_initial_models(spec, initial)
         torch.save(initial, args.output / "initial_weights.pt")
         report["model_tensor_bytes"] = {a: tensor_bytes(s) for a, s in initial.items()}
         report["output_accounting"] = models["tagged"].decoder.accounting()
@@ -344,6 +353,8 @@ def run(experiment: Experiment, args):
             ("current_fixed_projection_lessons", "query_credit", "current_fixed_projection"),
             ("direct_value_credit_lessons", "value_credit", "direct_read_neuron_error"),
             ("random_value_credit_lessons", "value_credit", "fixed_random_context_projection"),
+            ("multiscale_writer_lessons", "writer_timescale", "fixed_multiscale_32_16_16"),
+            ("scalar_writer_lessons", "writer_timescale", "scalar_half"),
         ):
             report["counts"][field] = len(indices) * sum(
                 value == rule for value in spec.config[rule_map].values()
@@ -358,6 +369,13 @@ def run(experiment: Experiment, args):
         report["value_credit_scope"] = {
             "rules": spec.config["value_credit"],
             "includes_frozen_signal_computation": True,
+            "reference_only_initial_tensor_keys": sorted(initial_reference - initial_repaired),
+        }
+        report["writer_timescale_scope"] = {
+            "rules": spec.config["writer_timescale"],
+            "update_fractions": spec.config["writer_update_fraction"],
+            "includes_frozen_forward_computation": True,
+            "candidate_only_initial_tensor_keys": sorted(initial_repaired - initial_reference),
             "reference_only_initial_tensor_keys": sorted(initial_reference - initial_repaired),
         }
         report["count_scope"] = (

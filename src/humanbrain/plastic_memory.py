@@ -85,14 +85,19 @@ class RateCellLearningState:
 class StreamingRateCell(nn.Module):
     """One leaky tanh step, or its instantaneous producer bypass.
 
-    Cell: h' = h + .5 * (tanh(W*x + U*h + b) - h), U initialized to .9 I.
+    Cell: h' = h + alpha * (tanh(W*x + U*h + b) - h), U initialized to .9 I.
+    Alpha is a fixed scalar (default .5) or one fraction per neuron. Only the
+    vector needs a serialized buffer; neither form is trained.
     Bypass: h' = tanh(W*x + b); it has no recurrent parameter. Input weights
     use Xavier uniform, biases zero. A private CPU generator preserves the
     caller's RNG; construction is on CPU, then normal nn.Module.to() applies.
     No states are retained in the module. There is no implicit normalization.
     """
 
-    def __init__(self, input_size: int, hidden_size: int = 64, kind: str = "cell", seed: int = 0):
+    def __init__(
+        self, input_size: int, hidden_size: int = 64, kind: str = "cell", seed: int = 0,
+        *, update_fraction: float | Tensor = 0.5,
+    ):
         super().__init__()
         self.input_size, self.hidden_size = _size(input_size), _size(hidden_size)
         if kind not in {"cell", "bypass"}:
@@ -104,6 +109,72 @@ class StreamingRateCell(nn.Module):
         nn.init.xavier_uniform_(self.weight, generator=generator)
         if kind == "cell":
             self.recurrent = nn.Parameter(0.9 * torch.eye(hidden_size, device="cpu"))
+        if isinstance(update_fraction, Tensor):
+            if (
+                update_fraction.shape != (hidden_size,)
+                or update_fraction.dtype != self.weight.dtype
+                or update_fraction.device != self.weight.device
+                or update_fraction.requires_grad
+            ):
+                raise ValueError(
+                    "update fractions must be fixed [hidden_size] on the cell dtype/device"
+                )
+            self._update_fraction_values = tuple(update_fraction.tolist())
+            self.register_buffer("update_fraction", update_fraction.detach().clone())
+        else:
+            if type(update_fraction) not in (float, int):
+                raise ValueError("update fraction must be a scalar or fixed neuron vector")
+            self.update_fraction = float(update_fraction)
+            self._update_fraction_values = (self.update_fraction,)
+        if any(not math.isfinite(value) or not 0 < value <= 1
+               for value in self._update_fraction_values):
+            raise ValueError("update fractions must be finite in (0, 1]")
+
+    def _check_update_fraction(self) -> None:
+        fraction = self.update_fraction
+        if isinstance(fraction, Tensor):
+            if (
+                fraction.shape != (self.hidden_size,)
+                or fraction.dtype != self.weight.dtype
+                or fraction.device != self.weight.device
+                or fraction.requires_grad or fraction.grad_fn is not None
+                or tuple(fraction.tolist()) != self._update_fraction_values
+            ):
+                raise ValueError(
+                    "update fractions must retain their fixed configuration and cell dtype/device"
+                )
+        elif type(fraction) is not float or (fraction,) != self._update_fraction_values:
+            raise ValueError("update fraction must retain its fixed configuration")
+
+    def _apply(self, fn, recurse=True):
+        self._check_update_fraction()
+        result = super()._apply(fn, recurse=recurse)
+        if isinstance(self.update_fraction, Tensor):
+            # A normal model cast also rounds the fixed configuration to that dtype.
+            self._update_fraction_values = tuple(self.update_fraction.tolist())
+            if any(not math.isfinite(value) or not 0 < value <= 1
+                   for value in self._update_fraction_values):
+                raise ValueError("cast update fractions must remain finite in (0, 1]")
+        return result
+
+    def _load_from_state_dict(
+        self, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
+    ):
+        if isinstance(self.update_fraction, Tensor):
+            supplied = state_dict.get(prefix + "update_fraction")
+            if (
+                not isinstance(supplied, Tensor)
+                or supplied.shape != self.update_fraction.shape
+                or supplied.dtype != self.update_fraction.dtype
+                or supplied.device != self.update_fraction.device
+                or supplied.requires_grad
+                or tuple(supplied.tolist()) != self._update_fraction_values
+            ):
+                error_msgs.append(prefix + "update fractions do not match the fixed configuration")
+                return
+        super()._load_from_state_dict(
+            state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
+        )
 
     def initial_state(self, batch_size: int, *, device=None, dtype=None) -> Tensor:
         return torch.zeros(
@@ -114,6 +185,7 @@ class StreamingRateCell(nn.Module):
         )
 
     def forward(self, inputs: Tensor, state: Tensor | None = None) -> Tensor:
+        self._check_update_fraction()
         if inputs.ndim != 2 or inputs.shape[1] != self.input_size:
             raise ValueError("inputs must have shape [batch, input_size]")
         if state is None:
@@ -123,13 +195,13 @@ class StreamingRateCell(nn.Module):
         return self._step(inputs, state)[0]
 
     def _step(self, inputs: Tensor, state: Tensor) -> tuple[Tensor, Tensor]:
-        """Shared forward arithmetic for differentiable and local-only paths."""
+        """Shared arithmetic; callers validate fixed fractions at their boundary."""
         drive = F.linear(inputs, self.weight, self.bias)
         if self.kind == "bypass":
             activation = torch.tanh(drive)
             return activation, activation
         activation = torch.tanh(drive + F.linear(state, self.recurrent))
-        return state + 0.5 * (activation - state), activation
+        return state + self.update_fraction * (activation - state), activation
 
     def initial_learning_state(self, batch_size: int) -> RateCellLearningState:
         activity = self.initial_state(batch_size)
@@ -143,6 +215,7 @@ class StreamingRateCell(nn.Module):
         )
 
     def _check_learning_state(self, state: RateCellLearningState) -> int:
+        self._check_update_fraction()
         if not isinstance(state, RateCellLearningState) or state.activity.ndim != 2:
             raise ValueError("state must be a RateCellLearningState")
         batch = _size(state.activity.shape[0])
@@ -209,7 +282,7 @@ class StreamingRateCell(nn.Module):
     ) -> RateCellLearningState:
         """Advance forward activity and approximate, synapse-local self-path traces.
 
-        For cell j, d=.5*(1-tanh(s_j)^2), carry=.5+d*U_jj, and
+        For cell j, d=alpha_j*(1-tanh(s_j)^2), carry=1-alpha_j+d*U_jj, and
         e_ji'=carry*e_ji+d*pre_i (input, previous activity, or one).
         Off-diagonal recurrent paths are deliberately omitted: these are NOT
         full recurrent gradients. Bypass uses instantaneous (1-tanh(s)^2)*pre
@@ -243,8 +316,8 @@ class StreamingRateCell(nn.Module):
         activity, activation = self._step(safe, state.activity)
         derivative = 1 - activation.square()
         if self.kind == "cell":
-            derivative = 0.5 * derivative
-            carry = 0.5 + derivative * self.recurrent.diagonal()
+            derivative = self.update_fraction * derivative
+            carry = (1 - self.update_fraction) + derivative * self.recurrent.diagonal()
             recurrent = (
                 carry[:, :, None] * state.recurrent_eligibility
                 + derivative[:, :, None] * state.activity[:, None, :]
@@ -405,12 +478,16 @@ class PlasticMemory(nn.Module):
         value_size: int = 64,
         kind: str = "cell",
         seed: int = 0,
+        *,
+        writer_update_fraction: float | Tensor = 0.5,
     ):
         super().__init__()
         self.input_size, self.hidden_size = _size(input_size), _size(hidden_size)
         self.key_size, self.value_size = _size(key_size), _size(value_size)
         self.kind, self.seed = kind, seed
-        self.controller = StreamingRateCell(input_size, hidden_size, kind, seed)
+        self.controller = StreamingRateCell(
+            input_size, hidden_size, kind, seed, update_fraction=writer_update_fraction
+        )
         generator = torch.Generator(device="cpu").manual_seed(seed + 1)
         # Direct tensors avoid implicit random draws by nn.Linear constructors.
         for name, output_size, inputs in (
