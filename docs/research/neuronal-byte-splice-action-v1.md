@@ -1,6 +1,6 @@
 # Neuronal byte-splice action: bounded source and learning design
 
-Status: source/math review accepted for implementation and authored QA, 2026-09-06.
+Status: implementation and eleven authored QA nodes passed, 2026-09-06.
 No acquisition protocol is admitted yet. The [roadmap](roadmap-reading-to-coding.md) owns
 priorities; the completed [v6 result](../../experiments/r4_integrated/local_joint_address_online_v6_result.md)
 remains closed at 18/20, with useful no-backpropagation learning and two
@@ -129,3 +129,38 @@ that verification is host testing, not a neuronal RUN or substitute edit.
 Other outcome mappings are explicitly simulated arithmetic/interface fixtures.
 Archive exact tested source and retain any failure before repair. Ordinary QA
 does not authorize acquisition or earn a learned-action capability claim.
+
+## Completed authored QA and next integration
+
+All eleven nodes passed their first execution, with no failures or skips on
+source revision `1a72de7aa8a2f4f58481c0ef5538449c311a9269`. The selected checkout's
+doctor-vhik1hqs receipt is clean. The separate end-to-end node took 6.51 pytest
+seconds; the remaining ten took 4.46. Command durations were 7.9112798 and
+5.6374222 seconds. A read-only Python call/return observer counted the remaining
+suite's actual exposure without modifying outputs or making extra model calls;
+these durations are not simulation-speed evidence.
+
+The one actual free proposal inserted a period at a.py's EOF (14:14), causing
+a real SyntaxError and return code 1. The tool applied that wrong choice exactly;
+no semantic motor or repair intervened. Its raw outcome was saved before the
+same model received the authored correction. This is a passed action/learning
+plumbing test and an unsuccessful software attempt, not acquired edit skill.
+
+Actual combined exposure is eleven free proposals and 37 payload decisions,
+21 reader byte/EOS offers, 28 attempted/27 completed direct action labels, ten
+combined models plus two additional action-only circuits, and one Python child.
+The injected atomic failure made zero reader teacher calls; STOP correction also
+made none. Exact tested sources are archived under `.pytest-tmp/neuronal-splice-v1-tested-*`.
+The committed [QA receipt](../../benchmarks/neuronal_splice_v1.qa.json) binds source,
+doctor, raw execution, both JUnit files and the actual exposure observer.
+
+Next, freeze one standalone integrated comparison with 32 TRAIN tasks offered in
+eight fixed rounds (256 lessons per arm), 32 fresh paired contrasts and sixteen
+early-task retention checks per arm. Every proposal, including STOP or rejected
+SPLICE, gets one real verification of its resulting or unchanged workspace;
+there is no substitute edit. Raw requests explicitly name a path and reach
+action and reader populations unchanged. Payloads remain literal source-copy
+cases. Define exact roster/memory sharing, transferred neuronal reader custody,
+output/receipt bounds, maximum-cost fixtures and independent audit before
+execution. Parallel roster, harness and resource reviews serve this one return.
+No new acquisition, prior checkpoint load or cost probe has run yet.

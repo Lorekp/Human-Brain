@@ -1,0 +1,61 @@
+{
+  "schema": "neuronal-splice-authored-qa-v1",
+  "status": "passed",
+  "source_revision": "1a72de7aa8a2f4f58481c0ef5538449c311a9269",
+  "tests_passed": 11,
+  "tests_failed": 0,
+  "tests_skipped": 0,
+  "first_attempt": true,
+  "acquisition_admitted": false,
+  "learned_action_capability_established": false,
+  "qa_exposure": {
+    "combined_models": 10,
+    "additional_action_only_circuits": 2,
+    "free_proposals": 11,
+    "actual_free_payload_decisions": 37,
+    "successful_splice_corrections": 7,
+    "reader_teacher_byte_offers": 21,
+    "stop_corrections": 1,
+    "atomic_rejected_corrections": 1,
+    "direct_action_labels_attempted": 28,
+    "direct_action_labels_completed": 27,
+    "real_python_children": 1,
+    "old_motor_calls": 0,
+    "trained_checkpoints_loaded": 0
+  },
+  "first_execution": {
+    "operation": "SPLICE",
+    "path": "a.py",
+    "start": 14,
+    "end": 14,
+    "replacement_hex": "2e",
+    "payload_stop_reason": "eos",
+    "returncode": 1,
+    "error": "SyntaxError",
+    "task_success": false,
+    "executed_before_same_instance_correction": true
+  },
+  "pytest_seconds": {"first_end_to_end": 6.51, "remaining_ten": 4.46},
+  "command_seconds": {"first_end_to_end": 7.9112798, "remaining_ten": 5.6374222},
+  "source_sha256": {
+    "src/humanbrain/neuronal_splice_learner.py": "bb06e074d44431cf2d09d62f7e98119a2a207ed53e7f6d5796bb6c7b274770ab",
+    "src/humanbrain/neuronal_splice_action.py": "9a704b4f9527598cbd784f2eaee9472e44a968eb21f97ceabf2ad2dfeb0de13a",
+    "src/humanbrain/local_memory_learner.py": "2a6bfe480757b248c585a00bdc9c79155af6abd3a162b3e93a098d406b73a3b8",
+    "tests/test_byte_sequence_decoder.py": "3d50d11b2f28c7c2b9b39cf66ce6b8ea5be682e6135210a0c5636a479fa6d8ba"
+  },
+  "evidence_sha256": {
+    ".pytest-tmp/dev/doctor-vhik1hqs/receipt.json": "2dc9866a7fcd2f81fcb8da2bc0dbab6b4c7a09f80ccbb5398ec669adeffd2c2a",
+    ".pytest-tmp/neuronal-splice-e2e-v1-raw.json": "cca015eedcc5b831778fc4283db94c84b842058365814740632c0b42333ae8a5",
+    ".pytest-tmp/neuronal-splice-e2e-v1.json": "6ccc4c2591fcf1874afd8f47a6f41cde51cab0f0c64b5969c30356c2e9648426",
+    ".pytest-tmp/neuronal-splice-e2e-v1-qa.xml": "8c2bca6ced3f37b7ac038c000c268cb05fb5906207078f8a4d38148d12ef8129",
+    ".pytest-tmp/neuronal-splice-remaining-v1-qa.xml": "58f485093ebb085806575274cc5f024cb26196d9fcef8ed5c5d31d5975a86dd7",
+    ".pytest-tmp/neuronal-splice-remaining-v1-exposure.json": "43ec18f3daa2b36b03e1226b9bdaabf203dcdfc5fff5de932bd2c6a1b044364e",
+    ".pytest-tmp/run-neuronal-splice-remaining-qa-v1.py": "6dd9778a7638b16e04396d9f68da649be0dde6cf37df1d76b3c5b6460782b4e8"
+  },
+  "limits": [
+    "Authored mechanics QA, not an acquired skill or benchmark comparison.",
+    "Remaining tests use a read-only call/return observer and explicitly simulated outcomes.",
+    "QA durations include different instrumentation and are not simulation speed measurements.",
+    "V6 strict20-output qualification remains unmet; no general or protected gate advances."
+  ]
+}
