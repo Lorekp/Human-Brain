@@ -172,11 +172,16 @@ success remain 1/4 and interference remains zero. Writer-frozen matches tagged
 correctness on all twenty checks; tagged still ignores both assignment swaps.
 The old-rule arm exactly reproduces its prior trajectory. Close this fit with a
 scoped taught-task gain, without useful transfer qualification or an automatic
-epoch/rule sweep. The next bounded source and mathematical review examines
-writer teaching against its existing forward eligibility, with primary-source
-research on local value-credit transport and its limits. Select one justified
-return only after that review. No additional supplied-factor output diagnostic
-or protected gate is opened.
+epoch/rule sweep. The completed [writer-credit review](local-memory-writer-credit-review.md),
+supported by [primary sources](local-memory-writer-credit-sources.md), selects
+one direct-value-credit comparison. Existing tagged value traces already encode
+the conditional effect of value synapses on retained memory; the corresponding
+read-neuron error completes that path. Keep controller/key/strength approximations,
+the query repair, rate and roster fixed, and compare with the immediate predecessor.
+Ordinary arithmetic/control parity QA and fresh six-arm cost admission precede
+any fit. This conditional derivation does not resolve source binding or prove
+convergence. No additional supplied-factor output diagnostic or protected gate
+is opened.
 These byte learners use no pretrained encoder or LLM. The
 [action-path review](local-memory-byte-preflight-review.md) identifies host-computed
 matching in the legacy edit motor, however. Keep neuron-generated answer bytes

@@ -6,11 +6,14 @@ fit from 2/8 to 5/8, but new-value and delayed checks remain 1/4 and interferenc
 remains zero. The writer-frozen control matches tagged correctness on all twenty
 checks; tagged still ignores both assignment swaps. Exact old-rule trajectory
 parity confirms the comparison. This is a scoped fit gain, not useful transfer
-qualification. Close the fixed fit and conduct one bounded source/mathematical
-review of writer teaching and forward eligibility, supported by primary-source
-research. Do not automatically extend exposure or change another learning rule.
-Any selected integrated return needs its own fixed contract and fresh cost
-admission. The [localization diagnostic](../../experiments/r4_integrated/local_memory_localization_v1_result.md)
+qualification. The completed [writer-credit review](local-memory-writer-credit-review.md)
+and [source research](local-memory-writer-credit-sources.md) select one integrated
+comparison using direct read-neuron error for the existing tagged value traces.
+Preserve the query repair, other writer rules, rate, roster and six matched controls;
+the reference is the immediate query-repaired predecessor. Arithmetic/control
+parity QA and fresh complete cost admission must pass before fitting. Conditional
+value-credit exactness does not establish useful binding or convergence. The
+[localization diagnostic](../../experiments/r4_integrated/local_memory_localization_v1_result.md)
 and [query-credit rationale](local-memory-localization-followup.md) retain their
 original evidence and scope.
 
