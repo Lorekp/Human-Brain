@@ -321,6 +321,16 @@ Rejoin real executed first attempts and local feedback on the same learner
 instance; the previous acquisition attempts were byte predictions, with action
 execution measured only at the endpoint. Fresh acquisition and complete cost
 are required. No frozen-checkpoint shortcut substitutes for this repair.
+The [joint-address online cost](../../experiments/r4_integrated/local_joint_address_online_v1_result.md)
+and independent audit pass in 21.506 seconds, but the complete projection of
+1,056.720 seconds exceeds the 900-second ceiling. No full acquisition ran.
+All sampled actions took the pending fallback, so successful subprocesses are
+not successful model actions and accepted motor execution remains unsampled.
+The [execution-speed review](local-action-execution-speed-review.md) selects a
+qualified direct CPython launch using its established Windows virtual-environment
+preservation mechanism, plus one explicit accepted-action cost probe. Keep the
+new local neuronal rule, same-instance action/feedback order and fixed exposure;
+require authored environment/output parity and fresh complete cost before fitting.
 Run/audit peaks of 665.539/432.832 MiB fit the revised admission estimates.
 The shorter aggregate duration includes a changed reference roster and must not
 be presented as an isolated circuit speedup.

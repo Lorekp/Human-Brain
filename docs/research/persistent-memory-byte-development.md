@@ -15,6 +15,16 @@ synapses receive direct local output error. Free action and teacher feedback mus
 use this same circuit and learner instance, with actual first-attempt execution
 during acquisition. The prior single-address frozen-policy proposal is unselected.
 
+The [joint-address online cost](../../experiments/r4_integrated/local_joint_address_online_v1_result.md)
+passes its saved audit but projects 1,056.720 seconds against 900; no full fit
+ran. Its twenty authored QA cases establish the new local arithmetic, controls,
+same-instance action/feedback and transport, not acquired capability. All sampled
+generated actions use fallback. The selected
+[execution-speed return](local-action-execution-speed-review.md) qualifies the
+standard CPython direct Windows launch with virtual-environment preservation and
+adds one explicitly supplied accepted-action cost probe. Preserve neuronal rules
+and lesson count; require paired environment/output QA and a fresh versioned cost.
+
 Current result: the [shared temporal-map comparison](../../experiments/r4_integrated/local_shared_temporal_query_v1_result.md)
 and independent audit complete in 119.745 seconds. Learned solves 8/8 taught,
 4/4 new-value, 4/4 delayed and 2/4 interference checks; controls score zero and
