@@ -206,6 +206,17 @@ class StreamingRateCell(nn.Module):
         safe = torch.where(active[:, None], inputs, 0)
         if not bool(torch.isfinite(safe).all()):
             raise ValueError("active inputs must be finite")
+        return self._local_step_checked_inputs(safe, state, active)
+
+    def _local_step_checked_inputs(
+        self, safe: Tensor, state: RateCellLearningState, active: Tensor
+    ) -> RateCellLearningState:
+        """No-grad caller validates inputs/state/mask; every output stays checked.
+
+        A memory write checks its entire input sequence and initial state once.
+        Each returned cell state is checked here before becoming the next input,
+        so the loop need not repeat the public entry checks for every byte.
+        """
         activity, activation = self._step(safe, state.activity)
         derivative = 1 - activation.square()
         if self.kind == "cell":
@@ -611,11 +622,26 @@ class PlasticMemory(nn.Module):
             raise ValueError("state batch mismatch")
         synapses = state.synapses.clone()
         credit = {name: value.clone() for name, value in state.credit.items()}
-        cell = self.controller.restore_learning_state(state.cell.snapshot())
+        cell = RateCellLearningState(**state.cell.snapshot())
         batch = values.shape[0]
+        # Reuse method-private storage; caller-owned credit remains untouched.
+        # Keep the original elementwise/reduction order rather than changing to
+        # a matrix-vector kernel with a different floating-point reduction.
+        tag_scratch = {}
+        if writes_enabled and state.credit_mode == "tagged" and values.shape[1]:
+            for name, old in credit.items():
+                flat = old.reshape(batch, -1, self.key_size)
+                # reshape can copy a noncontiguous restored tensor. Publish the
+                # owned flat storage, not an earlier clone that it no longer views.
+                credit[name] = flat.reshape_as(old)
+                tag_scratch[name] = (
+                    flat,
+                    torch.empty_like(flat),
+                    flat.new_empty(batch, flat.shape[1]),
+                )
         for position in range(values.shape[1]):
             active = mask[:, position]
-            cell = self.controller.local_step(clean[:, position], cell, mask=active)
+            cell = self.controller._local_step_checked_inputs(clean[:, position], cell, active)
             if not writes_enabled:
                 continue
             h = cell.activity
@@ -639,19 +665,20 @@ class PlasticMemory(nn.Module):
                 traces[name + "_weight"] = gain[:, :, None] * h[:, None, :]
                 traces[name + "_bias"] = gain
             for name, trace in traces.items():
-                old = credit[name]
-                flat = (
-                    old.reshape(batch, -1, self.key_size)
-                    if state.credit_mode == "tagged"
-                    else old.reshape(batch, -1)
-                )
                 e = trace.reshape(batch, -1)
                 if state.credit_mode == "tagged":
-                    prediction = (flat * key[:, None, :]).sum(-1)
-                    updated = flat + (beta * (e - prediction))[:, :, None] * key[:, None, :]
+                    flat, product, correction = tag_scratch[name]
+                    torch.mul(flat, key[:, None, :], out=product)
+                    torch.sum(product, dim=-1, out=correction)
+                    torch.sub(e, correction, out=correction)
+                    torch.mul(beta, correction, out=correction)
+                    torch.mul(correction[:, :, None], key[:, None, :], out=product)
+                    flat.add_(product)
                 else:
+                    old = credit[name]
+                    flat = old.reshape(batch, -1)
                     updated = flat + beta * (e - flat)
-                credit[name] = updated.reshape_as(old)
+                    credit[name] = updated.reshape_as(old)
         result = LocalMemoryState(synapses, cell, credit, state.credit_mode)
         self._check_local_state(result)
         return result

@@ -8,10 +8,136 @@ import pytest
 torch = pytest.importorskip("torch", reason="optional pointer runtime is not installed")
 
 from humanbrain.plastic_memory import (  # noqa: E402
+    LocalMemoryState,
     PlasticMemory,
     PlasticMemoryState,
     StreamingRateCell,
 )
+
+
+def _unbuffered_tag_reference(model, values, mask, state):
+    """Old allocating tag expression; cell/map arithmetic has separate oracle tests."""
+    with torch.no_grad():
+        for index in range(values.shape[1]):
+            stepped = model.write_local(
+                values[:, index : index + 1], mask[:, index : index + 1], state
+            )
+            h = stepped.cell.activity
+            key, gain = model._normalized_local_map(
+                torch.nn.functional.linear(h, model.key_weight, model.key_bias)
+            )
+            value = torch.tanh(torch.nn.functional.linear(h, model.value_weight, model.value_bias))
+            strength = torch.sigmoid(
+                torch.nn.functional.linear(h, model.strength_weight, model.strength_bias)
+            )
+            beta = strength * mask[:, index, None]
+            traces = {
+                "controller.weight": stepped.cell.input_eligibility,
+                "controller.recurrent": stepped.cell.recurrent_eligibility,
+                "controller.bias": stepped.cell.bias_eligibility,
+            }
+            for name, derivative in (
+                ("key", gain),
+                ("value", 1 - value.square()),
+                ("strength", strength * (1 - strength)),
+            ):
+                traces[name + "_weight"] = derivative[:, :, None] * h[:, None, :]
+                traces[name + "_bias"] = derivative
+            credit = {}
+            for name, old in state.credit.items():
+                flat = old.reshape(values.shape[0], -1, model.key_size)
+                prediction = (flat * key[:, None, :]).sum(-1)
+                e = traces[name].reshape(values.shape[0], -1)
+                updated = flat + (beta * (e - prediction))[:, :, None] * key[:, None, :]
+                credit[name] = updated.reshape_as(old)
+                assert torch.equal(stepped.credit[name], credit[name]), name
+            state = LocalMemoryState(stepped.synapses, stepped.cell, credit, "tagged")
+    return state
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_buffered_tags_exact_repeated_write_feedback_and_noncontiguous_restore(dtype):
+    model = PlasticMemory(32, 64, 64, 64, seed=733).to(dtype=dtype)
+    reference_model = copy.deepcopy(model)
+    generator = torch.Generator().manual_seed(57)
+    state = model.initial_local_state(2)
+    reference_state = reference_model.initial_local_state(2)
+    for _ in range(2):
+        # Same logical values with noncontiguous tag storage exercise reshape copies.
+        snapshot = state.snapshot()
+        snapshot["credit"] = {
+            name: value.transpose(-1, -2).contiguous().transpose(-1, -2)
+            for name, value in snapshot["credit"].items()
+        }
+        state = model.restore_local_state(snapshot)
+        reference_state = reference_model.restore_local_state(snapshot)
+        assert any(not value.is_contiguous() for value in state.credit.values())
+        before = state.snapshot()
+        values = torch.randn(2, 8, 32, generator=generator, dtype=dtype) * 0.2
+        mask = torch.tensor([[1, 1, 0, 1, 1, 1, 1, 1], [1, 0, 1, 1, 1, 0, 1, 1]], dtype=torch.bool)
+        values[~mask] = torch.nan
+        result = model.write_local(values, mask, state)
+        reference_state = _unbuffered_tag_reference(reference_model, values, mask, reference_state)
+        assert torch.equal(result.synapses, reference_state.synapses)
+        for name, value in result.credit.items():
+            assert torch.equal(value, reference_state.credit[name]), name
+            assert torch.equal(state.credit[name], before["credit"][name])
+            assert value.data_ptr() != state.credit[name].data_ptr()
+        query = torch.randn(2, 32, generator=generator, dtype=dtype)
+        signals = {
+            name: torch.randn(2, size, generator=generator, dtype=dtype) * 0.1
+            for name, size in {
+                "controller": 64,
+                "key": 64,
+                "value": 64,
+                "strength": 1,
+                "query": 64,
+            }.items()
+        }
+        model.apply_local_feedback(result, model.read_local(query, result), signals, 0.001)
+        reference_model.apply_local_feedback(
+            reference_state, reference_model.read_local(query, reference_state), signals, 0.001
+        )
+        assert all(
+            torch.equal(value, reference_model.state_dict()[name])
+            for name, value in model.state_dict().items()
+        )
+        state = model.purge_local_writer(result)
+        reference_state = reference_model.purge_local_writer(reference_state)
+
+
+def test_buffered_tag_nonfinite_rejection_preserves_caller_state_and_slow_weights():
+    model = PlasticMemory(2, 2, 2, 2, seed=13)
+    with torch.no_grad():
+        model.key_weight.zero_()
+        model.key_bias.fill_(1)
+    state = model.initial_local_state(1)
+    state.credit["controller.weight"].fill_(torch.finfo(torch.float32).max)
+    before = state.snapshot()
+    parameters = copy.deepcopy(model.state_dict())
+    with pytest.raises(ValueError, match="finite"):
+        model.write_local(torch.ones(1, 1, 2), torch.ones(1, 1, dtype=torch.bool), state)
+    assert torch.equal(state.synapses, before["synapses"])
+    assert all(torch.equal(value, before["credit"][name]) for name, value in state.credit.items())
+    assert all(torch.equal(value, parameters[name]) for name, value in model.state_dict().items())
+
+
+def test_local_write_rejects_intermediate_cell_overflow_before_masked_suffix():
+    model = PlasticMemory(2, 2, 2, 2, seed=13)
+    with torch.no_grad():
+        model.controller.recurrent.copy_(torch.eye(2) * torch.finfo(torch.float32).max)
+    state = model.initial_local_state(1)
+    state.cell.input_eligibility.fill_(4)
+    before = state.snapshot()
+    # Output validation still runs at every private step, even with writes off.
+    with pytest.raises(ValueError, match="finite"):
+        model.write_local(
+            torch.zeros(1, 2, 2), torch.tensor([[True, False]]), state, writes_enabled=False
+        )
+    for name, value in vars(state.cell).items():
+        assert torch.equal(value, before["cell"][name])
+    assert torch.equal(state.synapses, before["synapses"])
+    assert all(torch.equal(value, before["credit"][name]) for name, value in state.credit.items())
 
 
 @pytest.mark.parametrize("credit_mode", ["tagged", "aggregate"])

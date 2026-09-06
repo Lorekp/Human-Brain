@@ -96,6 +96,26 @@ buffers and redundant validation at checked public boundaries. Preserve the loca
 rule, state independence, finite-state guarantees and original timing margin;
 verify any changed numerical reduction order before claiming equivalent behavior.
 
+The [bounded writer optimization](local-writer-speed-development.md) preserves
+the arithmetic order and checks exact float32/float64 state and feedback parity.
+Its first paired measurements improve complete tagged lessons by 1.093x and
+aggregate lessons by 1.128x; this alone is insufficient for cost admission.
+The [v2 return](../../experiments/r4_integrated/local_memory_byte_v2.md) also omits
+unused writer-credit arithmetic in the two permanently frozen writer controls,
+while retaining allocated zero tag tensors and checking identical forward and
+enabled learning behavior. It requires its own complete-workload cost decision
+under the original ceiling and margin. No acquired capability follows from these
+engineering checks.
+
+The [independent preflight review](local-memory-byte-preflight-review.md) records
+two learning risks: averaging byte feedback weakens explicit order credit, and
+correlated write keys may overwrite useful information. These are hypotheses
+pending acquisition evidence. It also identifies host-computed matching in the
+legacy motor: exact neural answer bytes used by that narrow scaffold cannot
+establish an entirely neuron-learned action policy. Keep this boundary explicit
+and replace motor selection in a subsequent integrated action interface once
+useful byte acquisition merits that return.
+
 Before the next learning experiment, fix its roster, local rule, feedback,
 update budget, stopping criteria and measured cost ceiling. Return to new-value,
 delay, interference and real action checks after its focused test. Keep the

@@ -368,7 +368,10 @@ def test_local_composition_one_lesson_control_groups_and_retired_credit(mode):
         assert all(torch.count_nonzero(credit) == 0 for credit in state.credit.values())
     else:
         assert torch.count_nonzero(state.synapses) > 0
-        assert any(torch.count_nonzero(credit) > 0 for credit in state.credit.values())
+        if mode in {"writer_maps_frozen", "frozen"}:
+            assert all(torch.count_nonzero(credit) == 0 for credit in state.credit.values())
+        else:
+            assert any(torch.count_nonzero(credit) > 0 for credit in state.credit.values())
     persistent = state.snapshot()
     first = learner.predict(b"x?", state, max_bytes=3)
     assert isinstance(first, ByteGeneration)
@@ -493,3 +496,146 @@ def test_local_composition_source_free_transport_and_disabled_empty_teacher():
     )
     with pytest.raises(ValueError, match="control mode"):
         wrong_mode.restore_snapshot(snapshot)
+
+
+def test_local_successor_cost_keeps_original_margin_and_rejects_bad_samples():
+    from experiments.r4_integrated import local_memory_byte_v2 as runner
+
+    report = {
+        "status": "completed", "mode": "cost", "config": runner.CONFIG,
+        "selected_lesson_indices": [3, 4, 5, 6],
+        "lessons": [
+            {"arm": arm, "index": index, "seconds": 0.01}
+            for index in [3, 4, 5, 6] for arm in runner.ARMS
+        ],
+        "cap_generation": {
+            arm: {"seconds": 0.02, "stop_reason": "limit", "decisions": 33,
+                  "generated_hex": bytes(32).hex()} for arm in runner.ARMS
+        },
+        "actions": [{}] * 100, "motor_demonstrations": [{}, {}],
+        "counts": {"first_attempts": 20, "teacher_byte_offers": 200,
+                   "enabled_decoder_step_opportunities": 160},
+        "memory": {"peak_working_set_mib": 300},
+        "worker": {"memory": {"peak_working_set_mib": 400}},
+    }
+    launch = {"elapsed_seconds": 10.0, "observed_tree_peak_sum_mib": 750}
+    result = runner.project_cost(report, launch)
+    assert result["projected_seconds"] == pytest.approx(2 * 1024 * 5 * 0.03 + 2 * 9.8 + 30)
+    assert result["peak_upper_mib"] == 750 and result["admissible"]
+    launch["observed_tree_peak_sum_mib"] = 2049
+    assert not runner.project_cost(report, launch)["admissible"]
+    launch["observed_tree_peak_sum_mib"] = 750
+    report["lessons"][0]["seconds"] = 1.0
+    assert not runner.project_cost(report, launch)["admissible"]
+    report["lessons"][0]["seconds"] = float("nan")
+    with pytest.raises(AssertionError):
+        runner.project_cost(report, launch)
+
+
+def test_local_successor_cost_binds_redirector_to_observed_owned_tree(tmp_path):
+    from experiments.r4_integrated import local_memory_byte_v2 as runner
+
+    admission = tmp_path / "admission.json"
+    admission.write_text("{}")
+    report = {
+        "pid": 22, "worker": {"worker_pid": 33},
+        "launch_started_unix": 100, "deadline_unix": 1000,
+        "source_revision": "revision", "admission_sha256": runner.file_hash(admission),
+        "source_sha256": {
+            "experiments/r4_integrated/run_source_absent_memory_byte_v1.ps1": "launcher"
+        },
+    }
+    runner.write_json(tmp_path / "report.json", report)
+    launch = {
+        "status": "passed", "exit_code": 0, "child_pid": 11,
+        "started_unix": 100, "deadline_unix": 1000, "seconds_limit": 900,
+        "tree_peak_sum_mib_limit": 2048, "launcher_sha256": "launcher",
+        "command": [str(runner.ROOT / ".venv/Scripts/python.exe"), "-X", "utf8", "-m",
+                    "experiments.r4_integrated.local_memory_byte_v2", "cost", "--output",
+                    str(tmp_path), "--admission", str(admission), "--admission-sha",
+                    report["admission_sha256"], "--revision", "revision"],
+        "observed_process_peaks_mib": {"11/101": 5, "22/102": 300, "33/103": 400},
+    }
+    runner.validate_cost_launch(launch, report)
+    del launch["observed_process_peaks_mib"]["22/102"]
+    with pytest.raises(AssertionError, match="process absent"):
+        runner.validate_cost_launch(launch, report)
+    launch["observed_process_peaks_mib"].update({"22/102": 300, "22/104": 400})
+    with pytest.raises(AssertionError, match="PID reused"):
+        runner.validate_cost_launch(launch, report)
+
+
+@pytest.mark.parametrize("mode", ["writer_maps_frozen", "frozen"])
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_frozen_writer_omits_dead_credit_with_exact_forward_and_learning_parity(mode, dtype):
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    learner = LocalMemoryLearner(
+        mode=mode, embedding_size=4, hidden_size=6, key_size=4, value_size=6, seed=39
+    ).to(dtype=dtype)
+    reference = copy.deepcopy(learner)
+    state = learner.memory.initial_local_state(1)
+    reference_state = reference.memory.initial_local_state(1)
+    for documents in ([b"first red", b"second blue"], [b"third green"], [b"first orange"]):
+        previous = state
+        before = learner.snapshot(previous)
+        state = learner.ingest(documents, state)
+        _assert_nested_equal(before["memory"], previous.snapshot())
+        with torch.no_grad():
+            for document in documents:
+                values = reference._encoded(document)
+                reference_state = reference.memory.write_local(
+                    values, torch.ones(values.shape[:2], dtype=torch.bool), reference_state
+                )
+            reference_state = reference.memory.purge_local_writer(reference_state)
+        assert torch.equal(state.synapses, reference_state.synapses)
+        _assert_nested_equal(state.cell.snapshot(), reference_state.cell.snapshot())
+        assert all(not tensor.count_nonzero() for tensor in state.credit.values())
+        assert any(tensor.count_nonzero() for tensor in reference_state.credit.values())
+        assert {
+            name: (value.shape, value.numel() * value.element_size())
+            for name, value in state.credit.items()
+        } == {
+            name: (value.shape, value.numel() * value.element_size())
+            for name, value in reference_state.credit.items()
+        }
+        assert learner.predict(b"which?", state, 7) == reference.predict(
+            b"which?", reference_state, 7
+        )
+        feedback = learner.teach(b"which?", b"blue", state, 0.003)
+        reference_feedback = reference.teach(b"which?", b"blue", reference_state, 0.003)
+        assert feedback.mean_loss == reference_feedback.mean_loss
+        assert torch.equal(feedback.mean_context_signal, reference_feedback.mean_context_signal)
+        assert feedback.teacher_count == reference_feedback.teacher_count == 5
+        _assert_nested_equal(learner.state_dict(), reference.state_dict())
+        # Retirement makes both full states equal again; fresh-process transport
+        # preserves the fixed mode and permits the next cumulative ingestion.
+        _assert_nested_equal(feedback.state.snapshot(), reference_feedback.state.snapshot())
+        snapshot = learner.snapshot(feedback.state)
+        restored = copy.deepcopy(learner)
+        state = restored.restore_snapshot(snapshot)
+        learner = restored
+        reference_state = reference_feedback.state
+        assert state.synapses.data_ptr() != snapshot["memory"]["synapses"].data_ptr()
+        assert all(
+            value.data_ptr() != snapshot["memory"]["credit"][name].data_ptr()
+            for name, value in state.credit.items()
+        )
+        # The supplied snapshot remains an independent object through writes.
+        assert before["memory"]["synapses"].data_ptr() != state.synapses.data_ptr()
+
+
+def test_frozen_writer_control_rejects_later_unfreezing_before_ingest_or_teaching():
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    learner = LocalMemoryLearner(
+        mode="writer_maps_frozen", embedding_size=2, hidden_size=3, key_size=2, value_size=3
+    )
+    state = learner.ingest([b"a"])
+    learner.memory.key_weight.requires_grad_(True)
+    before = copy.deepcopy(learner.state_dict())
+    with pytest.raises(ValueError, match="remain frozen"):
+        learner.ingest([b"b"], state)
+    with pytest.raises(ValueError, match="remain frozen"):
+        learner.teach(b"q", b"a", state, 0.01)
+    _assert_nested_equal(before, learner.state_dict())

@@ -113,6 +113,16 @@ specified local online learning. Its frozen recipe remains a possible comparison
 with no acquired-capability result. Reuse appropriate forward/state components
 while developing local learning for the same persistent workload.
 
+The current [local byte-memory successor](../../experiments/r4_integrated/local_memory_byte_v2.md)
+preserves the local rule while reducing measured simulation overhead. Its byte
+learner uses no pretrained encoder or LLM. The
+[action-path review](local-memory-byte-preflight-review.md) identifies host-computed
+matching in the legacy edit motor, however. Keep neuron-generated answer bytes
+and that supplied action schema separate in claims. The exclusive-neuron goal
+still requires learned neuronal action selection; a final physical race does
+not establish it. Return useful acquisition to a direct learned action-output
+interface before treating this as general software capability.
+
 The closed acquisition diagnostics use explicit answer/STOP supervision over retained
 raw sources and a frozen external encoder. These are not answer-free internalization,
 fresh transfer, or a pass of the general integrated gate. Keep its controls and

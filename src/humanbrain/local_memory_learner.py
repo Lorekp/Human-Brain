@@ -16,7 +16,12 @@ from torch import Tensor, nn
 from torch.nn import functional as F
 
 from humanbrain.byte_sequence_decoder import BYTE_BOS, BYTE_EOS, ByteGeneration, ByteSequenceDecoder
-from humanbrain.plastic_memory import LocalMemoryState, PlasticMemory, StreamingRateCell
+from humanbrain.plastic_memory import (
+    LocalMemoryState,
+    PlasticMemory,
+    PlasticMemoryState,
+    StreamingRateCell,
+)
 
 
 @dataclass(frozen=True)
@@ -122,6 +127,10 @@ class LocalMemoryLearner(nn.Module):
         return self.decoder.embedding(tokens)[None]
 
     def _check_state_mode(self, state: LocalMemoryState) -> None:
+        if self.mode == "writer_maps_frozen" and any(
+            parameter.requires_grad for parameter in self.memory._writer_parameters().values()
+        ):
+            raise ValueError("writer_maps_frozen requires writer/controller/maps to remain frozen")
         expected = "aggregate" if self.mode == "aggregate" else "tagged"
         if (
             not isinstance(state, LocalMemoryState)
@@ -149,6 +158,25 @@ class LocalMemoryLearner(nn.Module):
                 1, credit_mode="aggregate" if self.mode == "aggregate" else "tagged"
             )
         self._check_state_mode(state)
+        if self.mode in {"writer_maps_frozen", "frozen"}:
+            # These fixed control modes cannot consume writer eligibility. Keep
+            # the allocated tag schema but omit dead trace/tag arithmetic. Mode
+            # validation rejects later writer unfreezing, which would require
+            # credit from writes that deliberately did not record it.
+            self.memory._check_local_state(state)
+            forward = PlasticMemoryState(state.synapses, state.cell.activity)
+            for document in documents:
+                values = self._encoded(document)
+                mask = torch.ones(values.shape[:2], dtype=torch.bool, device=values.device)
+                forward = self.memory.write(values, mask, forward)
+            result = LocalMemoryState(
+                forward.synapses.clone(),
+                self.memory.controller.initial_learning_state(1),
+                {name: torch.zeros_like(value) for name, value in state.credit.items()},
+                state.credit_mode,
+            )
+            self.memory._check_local_state(result)
+            return result
         for document in documents:
             values = self._encoded(document)
             mask = torch.ones(values.shape[:2], dtype=torch.bool, device=values.device)
