@@ -10119,3 +10119,254 @@ def test_public_language_action_execution_contract(tmp_path):
         assert set(observation(episode)) == {"kind", "request_hex", "files"}
         assert all(len(bytes.fromhex(file["content_hex"])) <= 128 for file in episode["files"])
         assert episode["teacher"] is None or episode["phase"] == "acquisition"
+
+
+# Prospective ordinary QA append to tests/test_byte_sequence_decoder.py.
+# UNEXECUTED. Two nodes, two new readers total (one inside one combined model),
+# two fixed-cell modules, one action circuit, two ingests (3raw+2EOS), no prior
+# or file-checkpoint loads. Three free calls / five decisions; four teacher
+# invocations / seven actual offers, including the second offer rejected by a
+# declared late finite-check fault. Three successful teachers / five offers.
+# Four extra fixed-helper calls over two authored rows each; sixteen helper
+# calls including reader activity / thirty-three candidate populations total.
+# One actual qualified child, one same-pending action correction. No task fit,
+# public stream, acquired-skill threshold or repeated model experiment.
+
+
+def test_request_conditioned_cells_and_weighted_local_update(tmp_path):
+    import copy
+    import math
+    from unittest.mock import patch
+
+    import torch
+
+    from humanbrain.request_conditioned_memory_learner import RequestConditionedMemoryLearner
+
+    def rails(tokens, width):
+        result = torch.zeros(width, 18, dtype=torch.bool)
+        for row, token in enumerate(tokens):
+            for bit in range(9):
+                result[row, 2 * bit + ((token >> bit) & 1)] = True
+        return result
+
+    reader = RequestConditionedMemoryLearner(seed=733)
+    cells = reader.context
+    contexts = torch.zeros(2, 64, 18, dtype=torch.bool)
+    contexts[0, 32:] = rails([97, *([256] * 31)], 32)
+    contexts[1, 32:] = rails([256] * 32, 32)
+    outputs = []
+    fixtures = ((b"a" * 31, b"a" * 16), (b"z" * 31, b"a" * 16),
+                (b"a" * 31, b"z" * 16), (b"", b""))
+    for query, prefix in fixtures:
+        q, p = rails([*query, 256], 32), rails([257, *prefix], 17)
+        work = {}
+        actual = cells(q, p, contexts, contexts[:, 32], len(prefix), work=work)
+        expected = []
+        for candidate in range(2):
+            position = [int(i == len(prefix)) for i in range(17)]
+            raw = [*q.flatten().tolist(), *p.flatten().tolist(),
+                   *contexts[candidate].flatten().tolist(), *position]
+            thresholds = [
+                int(sum(int(raw[i]) * sign for i, sign in zip(indices, signs, strict=True)) >= 0)
+                for indices, signs in zip(cells.indices.tolist(), cells.signs.tolist(), strict=True)
+            ]
+            feature = [*thresholds, *contexts[candidate, 32].tolist(), *position, 1]
+            scale = math.sqrt(32) / math.sqrt(sum(float(v) ** 2 for v in feature))
+            expected.append([float(v) * scale for v in feature])
+        torch.testing.assert_close(actual, torch.tensor(expected, dtype=torch.float64),
+                                   rtol=2e-15, atol=2e-15)
+        assert work["output_context_threshold_evaluations"] == 512
+        assert work["output_context_signed_input_applications"] == 2 * 256 * 32
+        outputs.append(actual)
+    # These authored broad contrasts exercise the fixed mixed cells; collisions
+    # for arbitrary unseen inputs remain permitted by the architecture.
+    assert not torch.equal(outputs[0], outputs[1])
+    assert not torch.equal(outputs[0], outputs[2])
+    fixed_before = copy.deepcopy(cells.state_dict())
+    changed = copy.deepcopy(fixed_before)
+    changed["signs"][0, 0] *= -1
+    with pytest.raises(ValueError, match="wiring identity"):
+        cells.load_state_dict(changed)
+    _assert_nested_equal(cells.state_dict(), fixed_before)
+
+    state = reader.ingest([b"a"])
+    before, tape_before = copy.deepcopy(reader.state_dict()), state.snapshot()
+    captured = {}
+    original_address, original_conditional = reader._address, reader._conditional
+
+    def address(*args, **kwargs):
+        result = original_address(*args, **kwargs)
+        captured["xq"] = args[2].clone()
+        captured["xp"] = result[1].clone()
+        captured["prior"] = result[3].clone()
+        return result
+
+    def conditional(*args, **kwargs):
+        result = original_conditional(*args, **kwargs)
+        captured["x"], captured["logits"] = result[0].clone(), result[1].clone()
+        return result
+
+    with patch.object(reader, "_address", side_effect=address), patch.object(
+        reader, "_conditional", side_effect=conditional
+    ):
+        feedback = reader.teach(b"a", b"", state, learning_rate=0.01)
+    assert feedback.teacher_count == 1 and feedback.steps[0].prefix == b""
+    assert feedback.steps[0].observed_token == 256
+    x, z = captured["x"].tolist(), captured["logits"].tolist()
+    prior_log = captured["prior"].tolist()
+    prior = [math.exp(v) for v in prior_log]
+    likelihood = []
+    for row in z:
+        peak = max(row)
+        likelihood.append(math.exp(row[256] - peak) / sum(math.exp(v - peak) for v in row))
+    normalizer = sum(p * c for p, c in zip(prior, likelihood, strict=True))
+    responsibility = [p * c / normalizer for p, c in zip(prior, likelihood, strict=True)]
+    energy = [sum(v * v for v in row) for row in x]
+    target = [math.log(256) if c == 256 else 0.0 for c in range(257)]
+    delta = [[sum(responsibility[s] * (target[c] - z[s][c]) * x[s][j] / energy[s]
+                  for s in range(2)) for j in range(292)] for c in range(257)]
+    expected_u = before["output_weight"] + torch.tensor(delta, dtype=torch.float64)
+    torch.testing.assert_close(reader.output_weight, expected_u, rtol=2e-13, atol=2e-13)
+    for name, field in (("address_weight", "xq"), ("prefix_weight", "xp")):
+        feature = captured[field].tolist()
+        change = [[sum((prior[s] - responsibility[s]) * feature[s][i][j]
+                       for s in range(2)) for j in range(32)] for i in range(32)]
+        expected = before[name] - 0.01 * torch.tensor(change, dtype=torch.float32)
+        torch.testing.assert_close(reader.state_dict()[name], expected, rtol=0, atol=2e-7)
+    # The isolated single-feature rule is an algebraic oracle, not another
+    # teacher call or a claim that the weighted two-address update clamps both.
+    isolated = [[(target[c] - z[0][c]) * v / energy[0] for v in x[0]] for c in range(257)]
+    corrected = [z[0][c] + sum(a * b for a, b in zip(isolated[c], x[0], strict=True))
+                 for c in range(257)]
+    assert corrected == pytest.approx(target, rel=2e-13, abs=2e-13)
+    for name in ("codec.weight", "codec.bias", "input_codes", "context.indices", "context.signs"):
+        assert torch.equal(reader.state_dict()[name], before[name])
+    assert feedback.output_updated and not feedback.legacy_codec_updated
+    _assert_nested_equal(state.snapshot(), tape_before)
+    _coincidence_qa_save(tmp_path / "conditioned-cells-local.json", {
+        "status": "passed", "extra_helper_calls": 4, "helper_candidate_populations": 8,
+        "reader_constructions": 1, "ingests": 1, "teacher_calls": 1, "teacher_offers": 1,
+        "actual_children": 0, "checkpoint_loads": 0,
+        "responsibility": responsibility, "work": feedback.work,
+        "claim": "fixed currents and direct local arithmetic; no acquired-skill threshold",
+    })
+
+
+def test_request_conditioned_prefix_atomicity_and_actual_action(tmp_path):
+    import copy
+    import json
+    import time
+    from pathlib import Path
+    from unittest.mock import patch
+
+    import torch
+
+    from experiments.r4_integrated.persistent_language_action_execution_v1 import (
+        execute_proposal,
+        qualified_launch,
+        workspace_from_records,
+    )
+    from humanbrain import request_conditioned_memory_learner as implementation
+    from humanbrain.neuronal_splice_action import SpliceProposal
+    from humanbrain.request_conditioned_splice_learner import RequestConditionedSpliceLearner
+
+    model = RequestConditionedSpliceLearner(seed=733)
+    reader = model.reader
+    state = model.ingest([b"ab"])
+    with torch.no_grad():
+        reader.address_weight.zero_()
+        reader.prefix_weight.zero_()
+        reader.prefix_weight[0, 1] = 1
+        reader.output_weight.zero_()
+        model.actions.operation_weight.zero_()
+        model.actions.operation_bias.copy_(torch.tensor([1.0, 0.0]))
+    before, tape_before = copy.deepcopy(model.state_dict()), state.snapshot()
+    free = reader.predict_with_receipt(b"", state, max_bytes=16)
+    assert free.generation.data == b"a" and free.generation.stop_reason == "eos"
+    assert [s.selected_index for s in free.steps] == [0, 2]
+    assert [s.prefix for s in free.steps] == [b"", b"a"]
+    assert [s.observed_token for s in free.steps] == [97, 256]
+    assert all(s.competition is not None and s.posterior_log_belief is None for s in free.steps)
+    limited = reader.predict_with_receipt(b"", state, max_bytes=0)
+    assert limited.generation.data == b"" and limited.generation.stop_reason == "limit"
+    assert len(limited.steps) == 1 and limited.steps[0].observed_token == 97
+    disabled = reader.teach(b"", b"b", state, learning_rate=0.01, learning_enabled=False)
+    assert [s.prefix for s in disabled.steps] == [b"", b"b"]
+    assert all(s.selected_index is None and s.logits.shape == (3, 257) for s in disabled.steps)
+    assert all(s.posterior_log_belief.shape == (3,) for s in disabled.steps)
+    assert not disabled.output_updated and not disabled.address_updated
+    assert disabled.work["output_staged_update_steps"] == 0
+    _assert_nested_equal(model.state_dict(), before)
+    _assert_nested_equal(state.snapshot(), tape_before)
+
+    finite, offers = implementation._finite, []
+
+    def reject_late(value, name):
+        if name == "conditioned output parameter proposal":
+            offers.append(name)
+            if len(offers) == 2:
+                raise ValueError("authored late finite rejection")
+        return finite(value, name)
+
+    with patch.object(implementation, "_finite", side_effect=reject_late), pytest.raises(
+        ValueError, match="authored late finite rejection"
+    ):
+        reader.teach(b"", b"b", state, learning_rate=0.01)
+    assert len(offers) == 2
+    _assert_nested_equal(model.state_dict(), before)
+    _assert_nested_equal(state.snapshot(), tape_before)
+    tampered = copy.deepcopy(before)
+    tampered["reader.context.indices"][0, 0] ^= 1
+    with pytest.raises(ValueError, match="fixed reader wiring"):
+        model.load_state_dict(tampered)
+    _assert_nested_equal(model.state_dict(), before)
+
+    workspace = workspace_from_records([{"path": "main.py", "content_hex": b"print('a')\n".hex()}])
+    prediction = model.propose(b"", workspace, state)
+    assert prediction.proposal.operation == "STOP"
+    assert model._pending[0] is prediction
+    _assert_nested_equal(model.state_dict(), before)
+    root = Path(__file__).resolve().parents[1]
+    launch = qualified_launch(root)
+    _, execution = execute_proposal(
+        workspace, prediction.proposal, tmp_path / "actual-action", launch=launch,
+        deadline=time.perf_counter() + 10,
+    )
+    completed = time.perf_counter()
+    raw = tmp_path / "actual-action.json"
+    _coincidence_qa_save(raw, execution)
+    assert execution["returncode"] == 0 and execution["stdout_hex"] == b"a\n".hex()
+    assert execution["capture_complete"] and not execution["timeout"]
+    envelope = {
+        "attempt_id": prediction.attempt_id, "proposal_sha256": prediction.proposal_sha256,
+        "workspace_sha256": workspace.sha256, "execution": execution,
+    }
+    teacher = SpliceProposal("SPLICE", "main.py", 7, 8, b"b", "eos", workspace.sha256)
+    actual_teach, calls = reader.teach, []
+
+    def observed_teach(query, target, tape, *args, **kwargs):
+        assert json.loads(raw.read_text()) == execution
+        assert model._pending[0] is prediction and tape is state
+        assert query == b"" and target == b"b" and time.perf_counter() >= completed
+        _assert_nested_equal(model.state_dict(), before)
+        calls.append(1)
+        return actual_teach(query, target, tape, *args, **kwargs)
+
+    with patch.object(reader, "teach", side_effect=observed_teach):
+        feedback = model.teach(prediction, workspace, state, teacher, envelope)
+    assert calls == [1] and feedback.reader_feedback.teacher_count == 2
+    assert model._pending is None and feedback.reader_feedback.output_updated
+    assert not feedback.reader_feedback.legacy_codec_updated
+    for name in ("reader.codec.weight", "reader.codec.bias"):
+        assert torch.equal(model.state_dict()[name], before[name])
+    _assert_nested_equal(state.snapshot(), tape_before)
+    _coincidence_qa_save(tmp_path / "conditioned-prefix-action.json", {
+        "status": "passed", "combined_models": 1, "readers": 1, "ingests": 1,
+        "free_calls_including_action": 3, "free_decisions": 5,
+        "teacher_invocations": 3, "actual_offers_including_rejected": 6,
+        "successful_teacher_calls": 2, "successful_offers": 4,
+        "late_failed_offers": len(offers), "actual_children": 1, "checkpoint_loads": 0,
+        "free_selected_addresses": [s.selected_index for s in free.steps],
+        "disabled_work": disabled.work, "action_feedback_work": feedback.work,
+        "claim": "causal prefixes, atomic local publication and real execution custody only",
+    })

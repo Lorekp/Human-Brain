@@ -221,8 +221,8 @@ reference succeeds on some reading, fresh edits and delayed example reuse.
 All unsupported challenges and recovery failures are preserved. This 56-episode
 manifest is now exposed regression/development material, not a new holdout.
 
-Next, review request-conditioned answer construction and termination within the
-same persistent reader/action system. The current decoder traverses a document
+Next, implement the selected [request-conditioned output](request-conditioned-output-v1.md) within the
+same persistent reader/action system. The first session's decoder traverses a document
 from one selected address; its raw-byte codec cannot condition stopping on the
 request. Any added output/context populations must receive direct local signals
 without host answer parsing, target-address routing or reverse error transport.
@@ -233,6 +233,21 @@ edit placement or consumption of public feedback. Keep all these pressures in
 the broader workload and preserve its final checkpoint for continuation.
 Do not turn individual failures into automatic micro-gates, add repetitions until
 this set fits, or require perfect toy scores before the next broader exposure.
+
+The second continuation retains the first session's complete online model,
+453 occupied memory slots and experience count. New prefix/address and output
+synapses start at zero with fixed mixed context cells; changed retrieval means
+old free-generation parity is not claimed. Both neuronal controls share this
+initialization with independent storage. The simple reference restores its
+actually observed 16 documents and 12 edit demonstrations from saved history.
+The frozen v2 data has the same 56-episode phase counts, with new instruction
+forms, composition tasks, four visible long-query challenges and eight exact
+previous-session regressions. Two new documents grow memory to 505 slots.
+There are 24 one-pass corrections per route, offering 98 byte/EOS symbols and
+36 action labels per neuronal route. Retention compares previous-session
+delayed results with current delayed results, separately from fresh transfer.
+The existing 840-second run plus 60-second saved review and 2048-MiB envelope
+applies to the complete continuation, with no separate fitted cost probe.
 
 ## Implementation verification
 

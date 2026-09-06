@@ -34,11 +34,12 @@ Continue the learner on a workload that combines reading,
 retained knowledge, raw software actions and observation of their consequences.
 Expose it to broader problems now; perfection on the current toy cohort is not
 a prerequisite. The first stream is now exposed development material. Its
-failure motivates a generic request-conditioned answer-construction and
-termination review shared by reading and action payloads; the current codec
-only sees the next stored byte and cannot condition answer boundaries on the
-request. Address selection, composition and feedback use remain separate
-unresolved problems. Choose changes for this broader loop, without another
+failure motivates the selected [request-conditioned output implementation](request-conditioned-output-v1.md),
+shared by reading and action payloads. It reconsiders all memory addresses at
+each output step using the request and earlier output, with direct local
+output-current learning. Continue the saved model and accumulated memory on
+new instruction forms and combinations. Address selection, composition and
+feedback use remain unresolved capability questions. Choose changes for this broader loop, without another
 automatic operation-only or byte-only comparison.
 
 Prioritize four pressures together:
