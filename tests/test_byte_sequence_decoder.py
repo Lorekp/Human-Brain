@@ -376,6 +376,7 @@ def test_local_composition_one_lesson_control_groups_and_retired_credit(mode):
     first = learner.predict(b"x?", state, max_bytes=3)
     assert isinstance(first, ByteGeneration)
     _assert_nested_equal(before, learner.state_dict())
+
     _assert_nested_equal(persistent, state.snapshot())
     with patch.object(torch.autograd, "backward", side_effect=AssertionError("no backward")):
         receipt = learner.teach(b"x?", b"a", state, 0.001)
@@ -916,3 +917,104 @@ def test_frozen_writer_control_rejects_later_unfreezing_before_ingest_or_teachin
     with pytest.raises(ValueError, match="remain frozen"):
         learner.teach(b"q", b"a", state, 0.01)
     _assert_nested_equal(before, learner.state_dict())
+
+
+def test_direct_context_roster_balances_factors_and_excludes_heldout_training():
+    import random
+    from collections import Counter
+
+    from experiments.r4_integrated import local_context_use_v1 as runner
+
+    rows = runner.schedule()
+    assert len(rows) == 384
+    assert rows == runner.schedule()
+    assert set(runner.TRAIN).isdisjoint(runner.HELDOUT)
+    assert len(runner.TRAIN) == 12 and len(runner.HELDOUT) == 4
+    rng = random.Random(734)
+    for cycle in range(32):
+        selected = rows[cycle * 12:(cycle + 1) * 12]
+        shuffled = list(runner.TRAIN)
+        rng.shuffle(shuffled)
+        assert [row["contexts"]["shuffled"] for row in selected] == shuffled
+        assert Counter(shuffled) == Counter(runner.TRAIN)
+        for position in (0, 1):
+            assert Counter(row["target"][position] for row in selected) == dict.fromkeys("abcd", 3)
+        for row in selected:
+            assert row["contexts"]["correct"] == row["contexts"]["frozen"] == row["target"]
+            assert row["contexts"]["zero"] is None
+            assert row["contexts"]["shuffled"] in runner.TRAIN
+    for pair in runner.TRAIN + runner.HELDOUT:
+        value = runner.context(pair)
+        assert value.shape == (1, 96) and value.sum() == 2
+        assert value[0, "abcd".index(pair[0])] == 1
+        assert value[0, 4 + "abcd".index(pair[1])] == 1
+        assert not value[0, 8:].any()
+        assert torch.equal(runner.final_context("shuffled", pair), value)
+        assert not runner.final_context("zero", pair).any()
+
+
+def test_direct_context_matched_initialization_and_one_lesson_accounting():
+    from experiments.r4_integrated import local_context_use_v1 as runner
+
+    models = {arm: runner.new_decoder() for arm in runner.ARMS}
+    initial = copy.deepcopy(models["correct"].state_dict())
+    assert all(runner.same_state(initial, model.state_dict()) for model in models.values())
+    assert runner.CONFIG["decoder_seed"] == runner.CONFIG["seed"] + 2 == 735
+    row = runner.schedule()[0]
+    for arm, model in models.items():
+        with patch.object(model, "generate", wraps=model.generate) as generate, patch.object(
+            model, "teach_local", wraps=model.teach_local
+        ) as teach:
+            receipt = runner.lesson(model, runner.context(row["contexts"][arm]), row["target"],
+                                    enabled=arm != "frozen")
+        assert generate.call_count == 1 and teach.call_count == 3
+        assert receipt["byte_offers"] == 3
+        assert receipt["enabled_steps"] == (0 if arm == "frozen" else 3)
+        assert len(receipt["teacher_losses"]) == 3
+        assert receipt["mean_loss"] == pytest.approx(sum(receipt["teacher_losses"]) / 3)
+        assert receipt["before_sha256"] == receipt["after_first_sha256"]
+        assert receipt["after_teacher_sha256"] == runner.state_hash(model)
+        assert (receipt["before_sha256"] == receipt["after_teacher_sha256"]) == (arm == "frozen")
+        assert all(parameter.grad is None for parameter in model.parameters())
+    assert runner.same_state(initial, models["frozen"].state_dict())
+
+
+def test_direct_context_first_generation_precedes_teacher_and_final_is_read_only():
+    from experiments.r4_integrated import local_context_use_v1 as runner
+
+    model = runner.new_decoder()
+    order = []
+    original_generate, original_teach = model.generate, model.teach_local
+
+    def generate(*args, **kwargs):
+        order.append("generate")
+        return original_generate(*args, **kwargs)
+
+    def teach(*args, **kwargs):
+        order.append("teach")
+        return original_teach(*args, **kwargs)
+
+    with patch.object(model, "generate", side_effect=generate), patch.object(
+        model, "teach_local", side_effect=teach
+    ):
+        runner.lesson(model, runner.context("aa"), "aa", enabled=True)
+    assert order == ["generate", "teach", "teach", "teach"]
+    before = runner.state_hash(model)
+    generated = runner.generation(model, runner.context("aa"))
+    assert runner.state_hash(model) == before
+    assert generated["decisions"] == len(bytes.fromhex(generated["hex"])) + 1 <= 3
+
+
+def test_direct_context_manifest_binds_seed_rule_and_rejects_wrong_source_before_allocation(tmp_path):
+    from experiments.r4_integrated import local_context_use_v1 as runner
+
+    sources = runner.sources()
+    assert "src/humanbrain/local_memory_learner.py" in sources
+    assert "experiments/r4_integrated/local_context_use_v1.md" in sources
+    assert "experiments/r4_integrated/run_source_absent_memory_byte_v1.ps1" in sources
+    output = tmp_path / "no-run"
+    with patch.object(runner.subprocess, "check_output", return_value="revision\n"), patch.object(
+        runner, "new_decoder", side_effect=AssertionError("must not allocate")
+    ), pytest.raises(ValueError, match="source manifest"):
+        runner.run(output, "revision", "wrong")
+    assert not output.exists()

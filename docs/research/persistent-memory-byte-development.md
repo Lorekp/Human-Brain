@@ -167,6 +167,17 @@ fit or automatic order-credit modification. The immediate next step is a bounded
 primary-source/local-credit review and diagnostic that separates failure to learn
 context use from inadequate fact representation, then one return to integration.
 
+The [primary-source failure review](local-memory-context-failure-review.md)
+selects one [unchanged-decoder positive control](../../experiments/r4_integrated/local_context_use_v1.md)
+before any feedback-rule change:
+explicit factorized neuronal context codes, twelve taught two-byte combinations
+and four withheld combinations, with zero, shuffled and frozen controls. Fix
+384 lessons per arm and a 120-second limit. These answer-revealing inputs are
+engineering QA only. Failure directs diagnosis to local decoder learning;
+success earns a return to actual document-derived read/context distinctions.
+Neither outcome automatically selects random activity gating, a sensitivity
+trace or another integrated fit.
+
 The [independent preflight review](local-memory-byte-preflight-review.md) records
 two learning risks: averaging byte feedback weakens explicit order credit, and
 correlated write keys may overwrite useful information. These are hypotheses
