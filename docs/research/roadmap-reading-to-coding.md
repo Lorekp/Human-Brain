@@ -232,10 +232,15 @@ writes-disabled, solves only 1/8 taught checks and none of the new-value, delaye
 or interference checks. The byte-stream reference exactly reproduces 5/8, 2/4,
 2/4 and zero. Total run time is lower than the preceding comparison, but this
 fixed representation regresses useful behavior and is not adopted. Close this
-fixed fit. One bounded architecture review must now resolve the association of
-a cue with later content and its local learning path before another acquisition.
-Compare structural replacements rather than retaining ineffective writer-credit
-complexity by default; do not infer the cause from this endpoint alone. No encoder learning
+fixed fit. The completed [sequence-memory review](local-sequence-memory-review.md)
+selects an explicit neuronal byte sequence, learned shared query-to-start
+addressing and forward sequential recall. A smooth generic copying prior and
+causal prefix beliefs give current teacher signals a direct retrieval path;
+codec credit remains a declared local filtering approximation. Retire the old
+writer/tag machinery from this main path. Literal sensory storage is counted,
+not claimed as semantic compression or learned byte identity. Implement and
+validate this one integrated replacement, then require fresh five-arm cost
+admission before its fixed fit. No encoder learning
 or output-only diagnostic is added. Segmentation must not
 supply identifier/value roles or answer factors. Do not extend epochs or sweep
 leaks, broadcasts or seeds. No special identifier

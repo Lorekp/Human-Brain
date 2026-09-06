@@ -6,9 +6,14 @@ and independent audit complete in 314.136 seconds after fresh admission at
 scores 1/8 taught and zero new-value, delayed or interference success. The byte
 reference exactly reproduces its prior 5/8, 2/4, 2/4 and zero. Event encoding
 regresses useful behavior despite fewer writer events and a shorter total run.
-Close the fit without adoption. The next bounded architecture review must select
-one structural account of cue-to-later-content association and local learning,
-considering retirement of ineffective writer/tag complexity. No automatic code
+Close the fit without adoption. The completed
+[sequence-memory review](local-sequence-memory-review.md) selects explicit
+neuronal sensory storage, learned query-to-start addressing and forward recall
+with causal prefix beliefs. It replaces the ineffective writer/tag composition
+and static output interface. Its generic copying prior, literal content and local
+codec-credit approximation remain explicit. Implement the integrated design and
+its ordinary state/math/control QA, then require fresh five-arm cost admission
+before one fixed fit. No automatic code
 rescaling, learning-rate change, extra epochs or output-only diagnostic follows.
 
 The preceding [byte-event preprocessing qualification](../../experiments/r4_integrated/local_byte_event_preflight_v1_result.md)
