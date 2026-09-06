@@ -168,3 +168,57 @@ It records the performance-counter identity and optional contemporaneous
 GetSystemTimes counters, preserves all twelve observations, and uses the fixed
 criteria above. Qualification permits this diagnostic; its outcome still must
 earn integration before a new scientific harness or cost is executed.
+
+## Authored timing outcome and integrated return
+
+The one fixed comparison passed all semantics and its preregistered timing
+criteria. Across six executions per runtime, new total complete execution time
+is 0.3197405000 seconds versus old 0.3572715000, ratio 0.8949510387. Pending
+medians are 53.0101 versus 57.8297 ms; corrected medians are 53.5667 versus
+58.0082 ms. This is a 10.5% aggregate reduction in this small authored sample,
+not an end-to-end learner speedup or a claim that the entire site subtree was
+removed from elapsed cost. One corrected pair was slightly slower on the new
+runtime. All twelve observations are retained. Within each case the route order
+is fixed by the prospective alternating schedule; order and environmental
+variation remain limitations on causal interpretation.
+
+The complete owned-process monitor passed in 2.7144727 seconds at 79.44921875
+MiB. No neuronal model, teacher or motor ran. Source revision is
+`587afa0f3d345324a360e12cb3f4d978743cf9e0`; clean doctor receipt is
+`.pytest-tmp/dev/doctor-liqlf0fz/receipt.json`. Saved evidence:
+
+- `.pytest-tmp/stdlib-python-action-timing-v1/report.json`, SHA256
+  `d8ac9291bd61841f9fa0de73e05c8879e91a46f6949f204315851b9db1be9bf8`;
+- its `executions.jsonl`, SHA256
+  `78e182d3eef91e2787a24817a4c7c7cc4d5a7becd9a5e0dff566c2b706b36d35`;
+- `.pytest-tmp/stdlib-python-action-timing-v1.launch.json`, SHA256
+  `160e7065d591b665a1a0241896b916d58dfff3f92670dec6dedbc21de449ac61`.
+
+This earns the [v5 integrated return](../../experiments/r4_integrated/local_joint_address_online_v5.md).
+The dedicated runtime and held codec work must now satisfy the complete workload
+and saved independent audit under the unchanged admission formula. No full fit
+is authorized by authored timing alone.
+
+V5 source/AST review passed ten checks, including exact export, worker,
+same-instance lesson, probe, final-action and main bodies. Receipt
+`.pytest-tmp/joint-online-v5-source-parity.json` is SHA256
+`a00f184724f7018d34d470823bbb8072d9df3cf215258f15ab6290cd01fd5a03`.
+Runner SHA256 is `616e5e9fca99498d0dd5d74bfea00bb11df82a343a7809b2093a69809b2d3e8c`;
+recipe SHA256 is `b305cd53a6a9a1f9938ee449497b9ae5d6f62186684bfb3bab69775eb57e3594`.
+Independent source reviews also passed the new runtime/held-work clauses and
+the narrowly changed preparation and final admission drivers.
+
+The independent auditors passed all seventy authored helper checks on their
+first attempt, with zero failures, 0.1701763 internal seconds and 0.3365557
+process seconds. No model, tensor, action, real qualification or checkpoint was
+read/executed by that helper. Unchanged historical helper suites were not repeated.
+Receipt `.pytest-tmp/local-joint-address-online-v5-helper-qa-v1.json` is SHA256
+`4749f403921b9d234ebc47a113a7ea990b05b3bf3c4fccc15914a2c1983ae489`.
+Exact tested checker source is preserved; only each DRAFT guard was then disabled.
+Frozen cost checker SHA256 is
+`b97d73eee4614a69c3cfaada8ff4c0fd0695c0ceaa5ef6edfdc0d4373045ddf8`;
+run checker is `7d98ae6885d28776d94f5ba4ab0d7445fa4fdf541868f635460b24003cc05259`.
+Readiness `.pytest-tmp/local-joint-address-online-v5-readiness.json` is SHA256
+`85bab90708d8a1c27933bbe295181c73f4b50558b7cdcbf087baa774c56165ca`.
+This closes source/QA preparation and permits the one fresh v5 cost after a clean
+commit and admission preparation. It does not admit full learning.
