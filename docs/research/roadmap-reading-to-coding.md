@@ -24,15 +24,21 @@ reference. Document-order transfer is 6/8, continuation 8/8, value-role transfer
 interference pairs do not. These narrow literal-splice tasks do not establish
 general software engineering, language understanding or the integrated gate.
 
-The immediate next work is the bounded, saved-only
-[learning review](neuronal-splice-online-v2-learning-review.md) and
-[resource review](neuronal-splice-online-v2-cost-review.md), returning one selected
-change to the shared workload. Preserve useful neuronal commitment, local
-same-instance learning and complete resource accounting. Do not add rounds,
-sweep rates/seeds, replay endpoints, alter decoding, or load another checkpoint
-while reviewing. The v2 cohort is now exposed development evidence; a successor
-requires new withheld cases and fresh complete cost admission. No benchmark
-advancement is selected by this partial gain.
+The completed saved-only [learning review](neuronal-splice-online-v2-learning-review.md)
+finds wrong initial address ordering in the payload failures; separate location
+and STOP failures remain. The [resource review](neuronal-splice-online-v2-cost-review.md)
+supports retaining the qualified executor and streamed receipts. The selected
+next change is [generic neuronal byte coincidence](neuronal-byte-coincidence-review-v1.md):
+fixed dual-rail AND/match cells before the existing locally learned temporal
+address synapses, with Boolean memory keys. Keep neuronal commitment, codec,
+action heads and the exact same-instance direct local teacher. No error propagates
+backward through the fixed cells. Six reviewed ordinary QA nodes qualify source
+arithmetic, typed storage, controls and actual execution before correction.
+They do not establish acquired skill. The v2 cohort remains closed, exposed
+development evidence: no additional rounds, endpoint replay or rate/seed sweep.
+A successor requires newly withheld cases, an explicit transferred parameter
+prior with changed feature meaning, and fresh complete cost admission. No prior
+load or benchmark advancement is selected by the source qualification.
 
 The preceding [splice-v1 result](../../experiments/r4_integrated/neuronal_splice_online_v1_result.md)
 and its [saved learning review](neuronal-splice-online-v1-learning-review.md)

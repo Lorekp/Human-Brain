@@ -8123,3 +8123,436 @@ def test_competitive_splice_worker_saved_custody(tmp_path, monkeypatch):
             },
             stream,
         )
+
+
+def _coincidence_qa_plain(value):
+    import dataclasses
+
+    if isinstance(value, torch.Tensor):
+        return value.tolist()
+    if isinstance(value, bytes):
+        return {"hex": value.hex()}
+    if dataclasses.is_dataclass(value):
+        return {field.name: _coincidence_qa_plain(getattr(value, field.name))
+                for field in dataclasses.fields(value)}
+    if isinstance(value, dict):
+        return {key: _coincidence_qa_plain(item) for key, item in value.items()}
+    if isinstance(value, (tuple, list)):
+        return [_coincidence_qa_plain(item) for item in value]
+    return value
+
+
+def _coincidence_qa_save(path, value):
+    import hashlib
+    import json
+
+    with path.open("x", encoding="utf-8") as stream:
+        json.dump(_coincidence_qa_plain(value), stream, sort_keys=True, allow_nan=False)
+        stream.write("\n")
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _coincidence_qa_authored_rails(symbols):
+    """Independent fixture construction; never calls the production encoder."""
+    rows = []
+    for symbol in symbols:
+        rows.append([False] * 18 if symbol is None else [
+            bool(((symbol >> bit) & 1) == rail) for bit in range(9) for rail in (0, 1)
+        ])
+    return torch.tensor(rows, dtype=torch.bool)
+
+
+def test_coincidence_all_symbol_truth(tmp_path):
+    from humanbrain.neuronal_byte_coincidence import coincidence_features, encode_symbol_rails
+
+    encode_work = {}
+    encoded = encode_symbol_rails(torch.arange(258, dtype=torch.int64), work=encode_work)
+    populations = torch.zeros(288, 18, dtype=torch.bool)
+    populations[:258] = encoded
+    keys = populations.reshape(9, 32, 18)
+    identities = list(range(258)) + [None] * 30
+    kernel_work = {}
+    for block in range(9):
+        query = populations[block * 32:(block + 1) * 32]
+        actual = coincidence_features(query, keys, work=kernel_work)
+        query_ids = identities[block * 32:(block + 1) * 32]
+        qn = sum(symbol is not None for symbol in query_ids)
+        expected = []
+        for key_block in range(9):
+            key_ids = identities[key_block * 32:(key_block + 1) * 32]
+            kn = sum(symbol is not None for symbol in key_ids)
+            gain = math.sqrt(32) / math.sqrt(qn * kn)
+            expected.append([[gain if q is not None and q == k else 0.0
+                              for k in key_ids] for q in query_ids])
+        target = torch.tensor(expected, dtype=torch.float32)
+        _coincidence_qa_save(tmp_path / f"truth-{block}.json", {
+            "scope": "authored complete symbol truth", "block": block,
+            "actual": actual, "expected": target, "work": kernel_work,
+        })
+        assert torch.equal(actual != 0, target != 0)
+        assert torch.allclose(actual, target, rtol=1e-6, atol=1e-7)
+    assert torch.equal(encoded, _coincidence_qa_authored_rails(range(258)))
+    assert encode_work["rail_encode_symbols"] == 258
+    assert kernel_work["coincidence_feature_calls"] == 9
+    assert kernel_work["coincidence_lag_pairs"] == 82_944
+    assert kernel_work["coincidence_threshold_evaluations"] == 19 * 82_944
+    assert kernel_work["coincidence_input_applications"] == 54 * 82_944
+    assert int((encoded.sum(1) == 9).sum()) == 258
+    assert not populations[258:].any()
+
+
+def test_coincidence_occupancy_and_collision_arithmetic(tmp_path):
+    from humanbrain.neuronal_byte_coincidence import coincidence_features
+
+    query = _coincidence_qa_authored_rails([65, 66] + [None] * 30)
+    keys = torch.stack([_coincidence_qa_authored_rails(items + [None] * (32 - len(items)))
+                        for items in ([65], [65, 66], [65, 66], [])])
+    work = {}
+    actual = coincidence_features(query, keys, work=work)
+    repeated = _coincidence_qa_authored_rails([65, 65] + [None] * 30)
+    saturated = coincidence_features(repeated, repeated[None], work=work)
+    outcomes = {}
+    for name in ("partial", "dtype"):
+        candidate = query.clone()
+        if name == "partial":
+            candidate[0, 0:2] = False
+        else:
+            candidate = candidate.to(torch.float32)
+        try:
+            coincidence_features(candidate, keys)
+        except ValueError as exc:
+            outcomes[name] = str(exc)
+        else:
+            outcomes[name] = None
+    _coincidence_qa_save(tmp_path / "occupancy.json", {
+        "actual": actual, "saturated": saturated, "rejections": outcomes, "work": work,
+    })
+    expected = torch.zeros(4, 32, 32)
+    expected[0, 0, 0] = 4
+    expected[1, 0, 0] = expected[1, 1, 1] = math.sqrt(8)
+    expected[2] = expected[1]
+    assert torch.allclose(actual, expected, atol=1e-7, rtol=1e-6)
+    assert torch.equal(actual[1], actual[2]) and not actual[3].any()
+    assert float(saturated.square().sum()) == pytest.approx(32, rel=1e-6)
+    assert torch.count_nonzero(saturated) == 4
+    assert "one active rail per bit" in outcomes["partial"]
+    assert "torch.bool" in outcomes["dtype"]
+    assert work["coincidence_feature_calls"] == 2
+    assert work["coincidence_lag_pairs"] == 5 * 1024
+
+
+def test_coincidence_raw_tape_publication(tmp_path):
+    from humanbrain.coincidence_sequence_memory import TAPE_BYTES, CoincidenceSequenceMemory
+    from humanbrain.neuronal_sequence_memory import TapeState
+
+    enabled, disabled = CoincidenceSequenceMemory(), CoincidenceSequenceMemory()
+    work_on, work_off = {}, {}
+    documents = (b"\x00A", b"", b"B")
+    state = enabled.ingest(documents, work=work_on)
+    blank = disabled.ingest(documents, writes_enabled=False, work=work_off)
+    original = state.snapshot()
+    restored = enabled.restore_state(original)
+    legacy = TapeState(torch.zeros(128, 1024), state.sensory.clone(),
+                       state.successor.clone(), state.write_index.clone())
+    overflow_work, outcomes = {}, {}
+    for name in ("overflow", "legacy"):
+        try:
+            if name == "overflow":
+                enabled.ingest([b"x" * 128], work=overflow_work)
+            else:
+                enabled.check_state(legacy)
+        except ValueError as exc:
+            outcomes[name] = str(exc)
+        else:
+            outcomes[name] = None
+    _coincidence_qa_save(tmp_path / "tape.json", {
+        "state": state, "disabled": blank, "work_on": work_on, "work_off": work_off,
+        "overflow_work": overflow_work, "rejections": outcomes,
+        "accounting": enabled.accounting(state),
+    })
+    assert state.used == blank.used == 6
+    assert state.keys.shape == (128, 32, 18) and state.keys.dtype == torch.bool
+    assert state.successor[:6].tolist() == [1, 2, 2, 3, 5, 5]
+    assert torch.equal(state.successor, blank.successor)
+    assert state.sensory[:6].argmax(1).tolist() == [0, 65, 256, 256, 66, 256]
+    for slot, prefix in enumerate(([], [0], [65, 0], [], [], [66])):
+        expected = _coincidence_qa_authored_rails(prefix + [None] * (32 - len(prefix)))
+        assert torch.equal(state.keys[slot], expected)
+    assert not state.keys[..., 17].any()  # Raw prefixes never store EOS/BOS.
+    assert not blank.keys.any() and not blank.sensory.any()
+    assert sum(v.numel() * v.element_size() for v in vars(state).values()) == TAPE_BYTES == 206344
+    assert work_on["coincidence_ingest_allocation_steps"] == 6
+    assert work_off["coincidence_ingest_allocation_steps"] == 6
+    assert work_on["coincidence_ingest_key_publications"] == 6 * 576
+    assert work_on["coincidence_ingest_sensory_publications"] == 6
+    assert work_off.get("coincidence_ingest_key_publications", 0) == 0
+    assert work_on["rail_encode_symbols"] == work_off["rail_encode_symbols"] == 3
+    assert overflow_work == {}
+    assert "capacity" in outcomes["overflow"] and "geometry" in outcomes["legacy"]
+    _assert_nested_equal(state.snapshot(), original)
+    _assert_nested_equal(restored.snapshot(), original)
+    assert all(value.data_ptr() != original[name].data_ptr()
+               and value.data_ptr() != vars(state)[name].data_ptr()
+               for name, value in vars(restored).items())
+
+
+def test_coincidence_direct_local_delta(tmp_path, monkeypatch):
+    from humanbrain.coincidence_local_memory_learner import CoincidenceLocalMemoryLearner
+
+    model = CoincidenceLocalMemoryLearner(seed=733)
+    state = model.ingest([b"A"])
+    before = {name: value.detach().clone() for name, value in model.named_parameters()}
+    before_tape = state.snapshot()
+    events = []
+    original_query = model._query
+
+    def capture(query, tape):
+        event = original_query(query, tape)
+        events.append(event)
+        return event
+
+    monkeypatch.setattr(model, "_query", capture)
+    result = model.teach(b"A", b"A", state, .01)
+    event = events[0]
+    features = event.address_features.tolist()
+    errors = result.address_error.tolist()
+    local = torch.tensor([[sum(features[s][i][j] * errors[s] for s in range(2))
+                           for j in range(32)] for i in range(32)], dtype=torch.float64)
+    address_expected = before["address_weight"] - .01 * local.to(torch.float32)
+
+    # Scalar held-codec reference: no second codec/query/teacher invocation.
+    weight_before = before["codec.weight"].tolist()
+    bias_before = before["codec.bias"].tolist()
+    probabilities = {}
+    for token in (65, 256):
+        logits = [weight_before[row][token] + bias_before[row] for row in range(257)]
+        largest = max(logits)
+        unnormalized = [math.exp(value - largest) for value in logits]
+        total = sum(unnormalized)
+        probabilities[token] = [value / total for value in unnormalized]
+    weight_error = [[0.0] * 257 for _ in range(257)]
+    bias_error = [0.0] * 257
+    prior = [math.exp(value) for value in event.log_prior.tolist()]
+    expected_steps = []
+    for position, target in enumerate((65, 256)):
+        sensory_tokens = (65, 256) if position == 0 else (256, 256)
+        mixture = [sum(prior[s] * probabilities[token][row]
+                       for s, token in enumerate(sensory_tokens)) for row in range(257)]
+        posterior = [prior[s] * probabilities[token][target] / mixture[target]
+                     for s, token in enumerate(sensory_tokens)]
+        for s, token in enumerate(sensory_tokens):
+            for row in range(257):
+                error = posterior[s] * (probabilities[token][row] - int(row == target))
+                weight_error[row][token] += error
+                bias_error[row] += error
+        expected_steps.append({"mixture": mixture, "posterior": posterior})
+        prior = posterior
+    codec_expected = before["codec.weight"] - .01 * torch.tensor(weight_error, dtype=torch.float64)
+    bias_expected = before["codec.bias"] - .01 * torch.tensor(bias_error, dtype=torch.float64)
+    _coincidence_qa_save(tmp_path / "local-delta.json", {
+        "teacher": result, "query": event, "scalar_address_delta": local,
+        "expected_steps": expected_steps,
+        "address_expected": address_expected, "codec_expected": codec_expected,
+        "bias_expected": bias_expected, "after": dict(model.named_parameters()),
+    })
+    assert len(events) == 1 and result.teacher_count == 2
+    assert torch.equal(model.address_weight, address_expected)
+    assert torch.allclose(model.codec.weight, codec_expected, rtol=1e-12, atol=1e-12)
+    assert torch.allclose(model.codec.bias, bias_expected, rtol=1e-12, atol=1e-12)
+    for actual, expected in zip(result.steps, expected_steps, strict=True):
+        assert actual.mixture_probabilities.tolist() == pytest.approx(expected["mixture"])
+        assert actual.posterior_log_belief.exp().tolist() == pytest.approx(expected["posterior"])
+    assert event.activity.shape == (1, 576) and event.activity.dtype == torch.bool
+    assert not event.address_features[:, 0].any()
+    assert torch.equal(before["address_weight"][0], model.address_weight[0])
+    assert not torch.equal(before["address_weight"], model.address_weight)
+    assert result.work["address_local_synapse_contributions"] == 2 * 1024
+    assert result.work["address_local_slot_reductions"] == 1024
+    assert result.work["coincidence_feature_calls"] == 1
+    assert result.work["coincidence_threshold_evaluations"] == 19 * 2 * 1024
+    assert result.work["address_feature_products"] == 0
+    assert result.work["address_feature_channel_reductions"] == 0
+    assert result.work["query_population_normalizations"] == 0
+    assert not any(key.startswith("competition_") for key in result.work)
+    _assert_nested_equal(state.snapshot(), before_tape)
+
+
+def test_coincidence_controls_and_atomicity(tmp_path, monkeypatch):
+    import humanbrain.local_memory_learner as local_module
+    from humanbrain.coincidence_local_memory_learner import CoincidenceLocalMemoryLearner
+    from humanbrain.competitive_local_memory_learner import CompetitiveLocalMemoryLearner
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    learned = learned_state = None
+    for mode in ("learned", "address_frozen", "slow_frozen", "writes_disabled"):
+        model = CoincidenceLocalMemoryLearner(mode=mode, seed=733)
+        state = model.ingest([b"A"])
+        before = {name: value.detach().clone() for name, value in model.named_parameters()}
+        tape_before = state.snapshot()
+        result = model.teach(b"A", b"A", state, .01)
+        changed = {name: not torch.equal(value, before[name])
+                   for name, value in model.named_parameters()}
+        _coincidence_qa_save(tmp_path / f"control-{mode}.json", {
+            "mode": mode, "teacher": result, "changed": changed,
+            "metadata": model.get_extra_state(), "accounting": model.accounting(),
+        })
+        assert changed["address_weight"] == (mode == "learned")
+        assert (changed["codec.weight"] or changed["codec.bias"]) == (mode != "slow_frozen")
+        if mode == "writes_disabled":
+            assert not state.keys.any() and not state.sensory.any()
+            assert not changed["codec.weight"] and changed["codec.bias"]
+        assert result.teacher_count == 2
+        assert result.work["coincidence_feature_calls"] == 1
+        assert result.work["coincidence_threshold_evaluations"] == 19 * 2 * 1024
+        _assert_nested_equal(state.snapshot(), tape_before)
+        assert all(not p.requires_grad and p.grad is None and p.grad_fn is None
+                   for p in model.parameters())
+        if mode == "learned":
+            learned, learned_state = model, state
+
+    pristine = learned.snapshot(learned_state)
+    with torch.no_grad():
+        learned.address_weight.add_(1)
+    restored = learned.restore_snapshot(pristine)
+    _assert_nested_equal(learned.snapshot(restored), pristine)
+    assert all(v.data_ptr() != pristine["memory"][name].data_ptr()
+               for name, v in vars(restored).items())
+    invalid = {}
+    for name in ("metadata", "fixed_codes"):
+        snapshot = copy.deepcopy(pristine)
+        if name == "metadata":
+            snapshot["model"]["_extra_state"]["schema"] = "legacy-graded-reader"
+        else:
+            snapshot["model"]["input_codes"][0, 0] += 1
+        try:
+            learned.restore_snapshot(snapshot)
+        except ValueError as exc:
+            invalid[name] = str(exc)
+        else:
+            invalid[name] = None
+    calls = []
+    actual_finite = local_module._finite
+
+    def fail_late(value, name):
+        actual_finite(value, name)
+        if name == "codec parameter proposal":
+            calls.append(name)
+        if name == "address parameter proposal":
+            calls.append(name)
+            raise ValueError("authored late address validation fault")
+
+    with monkeypatch.context() as context:
+        context.setattr(local_module, "_finite", fail_late)
+        try:
+            learned.teach(b"A", b"A", learned_state, .01)
+        except ValueError as exc:
+            fault = str(exc)
+        else:
+            fault = None
+    _coincidence_qa_save(tmp_path / "atomicity.json", {
+        "fault": fault, "validation_calls": calls, "invalid": invalid,
+        "before": pristine, "after": learned.snapshot(learned_state),
+        "metadata": learned.get_extra_state(),
+    })
+    assert fault == "authored late address validation fault"
+    assert calls == ["codec parameter proposal", "codec parameter proposal",
+                     "address parameter proposal"]
+    assert "configuration mismatch" in invalid["metadata"]
+    assert "fixed input codes" in invalid["fixed_codes"]
+    _assert_nested_equal(learned.snapshot(learned_state), pristine)
+    assert CoincidenceLocalMemoryLearner.teach is LocalMemoryLearner.teach
+    assert CoincidenceLocalMemoryLearner.predict_with_receipt is (
+        CompetitiveLocalMemoryLearner.predict_with_receipt)
+    assert all(not p.requires_grad and p.grad is None and p.grad_fn is None
+               for p in learned.parameters())
+
+
+def test_coincidence_same_instance_action_then_correction(tmp_path):
+    import json
+    from pathlib import Path
+    from time import get_clock_info, perf_counter
+
+    from experiments.r4_integrated.neuronal_splice_io_v1 import JsonlJournal
+    from experiments.r4_integrated.neuronal_splice_online_v1 import (
+        SPEC,
+        execute_action,
+        qualified_launch,
+    )
+    from humanbrain.coincidence_local_memory_learner import CoincidenceLocalMemoryLearner
+    from humanbrain.multiscale_opaque_event_tape import OpaqueWorkspaceFile
+    from humanbrain.neuronal_splice_action import SpliceProposal, SpliceWorkspace
+    from humanbrain.neuronal_splice_learner import NeuronalSpliceLearner, _digest
+
+    root = Path(__file__).resolve().parents[1]
+    launch = qualified_launch(root)
+    reader = CoincidenceLocalMemoryLearner(seed=733)
+    model = NeuronalSpliceLearner(seed=733, reader=reader)
+    state = model.ingest([b"ab"])
+    with torch.no_grad():
+        reader.address_weight.zero_()
+        model.actions.operation_weight.zero_()
+        model.actions.operation_bias.zero_()
+        model.actions.operation_bias[0] = 1
+    workspace = SpliceWorkspace((OpaqueWorkspaceFile("a.py", b"x = 'old'\n"),
+                                 OpaqueWorkspaceFile("main.py", b"import a\nprint(a.x)\n")))
+    before = model.snapshot(state)
+    prediction = model.propose(b"a", workspace, state)
+    journal = JsonlJournal(tmp_path / "action.jsonl", SPEC)
+    try:
+        envelope, action_sha, _, grade = execute_action(
+            task=None, workspace=workspace, proposal=prediction.proposal,
+            attempt_id=prediction.attempt_id, phase="coincidence-qa", arm="learned", index=0,
+            output=tmp_path, launch=launch, journal=journal,
+        )
+    finally:
+        journal_summary = journal.close()
+    completed = perf_counter()
+    raw_sha = _coincidence_qa_save(tmp_path / "action-raw.json", {
+        "status": "pending_checks", "prediction": prediction, "envelope": envelope,
+        "action_sha256": action_sha, "journal": journal_summary,
+        "model_instance": id(model), "reader_instance": id(reader), "state_instance": id(state),
+        "completed_perf": completed, "clock": vars(get_clock_info("perf_counter")),
+    })
+    action = json.loads((tmp_path / "action.jsonl").read_bytes())
+    assert grade is None and action["rejection"] is None
+    assert prediction.proposal.operation == "STOP"
+    assert prediction.payload.generation.data == b"ab"
+    assert prediction.payload.generation.stop_reason == "eos"
+    assert len(prediction.payload.steps) == 3
+    assert prediction.payload.competition.winner_index == 0
+    assert envelope["execution"]["returncode"] == 0
+    assert bytes.fromhex(envelope["execution"]["stdout_hex"]) == b"old\n"
+    for item in workspace.files:
+        assert (tmp_path / "executions/coincidence-qa-learned-000000" / item.path).read_bytes() == (
+            item.content)
+    assert prediction.model_sha256 == _digest(model.state_dict())
+    assert prediction.memory_sha256 == _digest(state.snapshot())
+    _assert_nested_equal(model.snapshot(state)["model"], before["model"])
+    _assert_nested_equal(state.snapshot(), before["memory"])
+    teacher = SpliceProposal("SPLICE", "a.py", 5, 8, b"ab", "eos", workspace.sha256)
+    started = perf_counter()
+    feedback = model.teach(prediction, workspace, state, teacher, envelope)
+    _coincidence_qa_save(tmp_path / "teacher-raw.json", {
+        "feedback": feedback, "before": before, "after": model.snapshot(state),
+        "teacher_started_perf": started, "action_completed_perf": completed,
+        "same_model": id(model), "same_reader": id(reader), "same_state": id(state),
+    })
+    assert started >= completed and model.reader is reader and model._pending is None
+    assert feedback.reader_feedback.teacher_count == 3
+    assert [step.observed_token for step in feedback.reader_feedback.steps] == [97, 98, 256]
+    assert feedback.reader_feedback.work["branch_cursor_initializations"] == 3
+    assert feedback.reader_feedback.work["coincidence_feature_calls"] == 1
+    assert not any(key.startswith("competition_") for key in feedback.reader_feedback.work)
+    assert set(feedback.teacher_choices) == {"start", "end", "operation"}
+    assert sum(feedback.work["action"][f"{head}_teacher_offers"]
+               for head in ("start", "end", "operation")) == 3
+    _assert_nested_equal(state.snapshot(), before["memory"])
+    assert all(not p.requires_grad and p.grad is None and p.grad_fn is None
+               for p in model.parameters())
+    _coincidence_qa_save(tmp_path / "passed.json", {
+        "status": "passed", "raw_sha256": raw_sha, "action_sha256": action_sha,
+        "reader_constructions": 1, "combined_constructions": 1, "free_calls": 1,
+        "free_decisions": 3, "teacher_calls": 1, "teacher_offers": 3,
+        "action_labels": 3, "actual_children": 1, "historical_checkpoint_loads": 0,
+        "claim": "authored STOP execution then same-instance local correction, not learned skill",
+    })
