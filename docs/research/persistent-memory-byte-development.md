@@ -1,6 +1,17 @@
 # Persistent memory and byte output: parallel development
 
-Current execution: the [byte-event preprocessing qualification](../../experiments/r4_integrated/local_byte_event_preflight_v1_result.md)
+Current execution: the [fixed event-encoder comparison](../../experiments/r4_integrated/local_memory_event_v1_result.md)
+and independent audit complete in 314.136 seconds after fresh admission at
+773.893 projected seconds. Every updating candidate, including writes-disabled,
+scores 1/8 taught and zero new-value, delayed or interference success. The byte
+reference exactly reproduces its prior 5/8, 2/4, 2/4 and zero. Event encoding
+regresses useful behavior despite fewer writer events and a shorter total run.
+Close the fit without adoption. The next bounded architecture review must select
+one structural account of cue-to-later-content association and local learning,
+considering retirement of ineffective writer/tag complexity. No automatic code
+rescaling, learning-rate change, extra epochs or output-only diagnostic follows.
+
+The preceding [byte-event preprocessing qualification](../../experiments/r4_integrated/local_byte_event_preflight_v1_result.md)
 and independent audit pass in 1.089 seconds. Exact payloads, spans and streaming
 chunk invariance hold; projected TRAIN writer events fall from 51,200 to 22,528,
 and query events halve. All actual neural, teacher and action counts are zero.

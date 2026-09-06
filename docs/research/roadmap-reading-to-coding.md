@@ -224,8 +224,18 @@ The [preprocessing qualification](../../experiments/r4_integrated/local_byte_eve
 now passes with independent audit in 1.089 seconds. Every source byte and span
 is preserved; TRAIN document events project to 22,528 versus 51,200 byte/EOS
 steps, and query events halve. No neuronal model ran, so these counts establish
-neither a simulation speedup nor binding. Integrate and validate the fixed
-encoder now, then require fresh complete cost admission. No encoder learning
+neither a simulation speedup nor binding. The
+[completed event-encoder comparison](../../experiments/r4_integrated/local_memory_event_v1_result.md)
+passes fresh cost admission at 773.893 projected seconds and completes with
+independent audit in 314.136 seconds. Every updating event arm, including
+writes-disabled, solves only 1/8 taught checks and none of the new-value, delayed
+or interference checks. The byte-stream reference exactly reproduces 5/8, 2/4,
+2/4 and zero. Total run time is lower than the preceding comparison, but this
+fixed representation regresses useful behavior and is not adopted. Close this
+fixed fit. One bounded architecture review must now resolve the association of
+a cue with later content and its local learning path before another acquisition.
+Compare structural replacements rather than retaining ineffective writer-credit
+complexity by default; do not infer the cause from this endpoint alone. No encoder learning
 or output-only diagnostic is added. Segmentation must not
 supply identifier/value roles or answer factors. Do not extend epochs or sweep
 leaks, broadcasts or seeds. No special identifier

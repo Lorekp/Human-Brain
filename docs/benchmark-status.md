@@ -12,6 +12,16 @@ cell-only evidence or reopen protected evaluations.
 
 ## Current separate-answerability result
 
+The [fixed event-encoder comparison](../experiments/r4_integrated/local_memory_event_v1_result.md)
+completes with independent audit in 314.136 seconds after fresh admission at
+773.893 projected seconds. Its four updating candidates all score 1/8 fit and
+zero fresh-value, delayed and interference success, including writes-disabled.
+The byte-stream reference exactly reproduces 5/8, 2/4, 2/4 and zero across its
+full trajectory and twenty outputs. The representation regresses useful behavior;
+fewer controller events and lower total run time do not earn adoption. Close this
+fit and review structural cue/content association with a local learning path.
+No additional fit, protected gate or neuronal action-policy claim follows.
+
 The [byte-event preflight](../experiments/r4_integrated/local_byte_event_preflight_v1_result.md)
 passes byte preservation, streaming and count checks with independent audit in
 1.089 seconds. TRAIN document-controller events project to 22,528 versus 51,200
