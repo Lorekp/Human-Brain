@@ -228,6 +228,34 @@ saved-failure and primary-source review must resolve the learning objective and
 actual-memory interface before selecting the next integrated return; more
 identical no-mistake perceptron lessons cannot change its learned synapses.
 
+The [composition review](local-composition-return-review.md) now selects one
+local LMS output comparison. All 257 output neurons learn their prescribed
+potentials from local presynaptic activity and neuron-level residuals, including
+when the greedy winner is already correct. The connected TRAIN factor graph
+forces composition at exact potential fit; an independently checked contraction
+bound motivates one 160-cycle endpoint at rate 0.01. Use fresh float64 weights,
+continuous generic phase-by-all-context features and four lexical/permuted/zero/
+frozen arms. Separate numerical exact outputs and margins from the real-arithmetic
+proof; preserve all prior failed checkpoints. A useful result earns one narrowed
+two-byte raw-document/action return. The current joined learner needs an explicit
+decoder/input-code and upstream-feedback interface; do not invent embeddings or
+silently disable writer learning to make the new output module fit its API.
+
+The conditional integrated return keeps the existing five learning controls and
+source-free worker/execution custody, but uses a newly declared two-byte value
+roster. Start its output weights fresh; do not port weights fitted to authored
+factor inputs. Document/query byte codes must become an explicitly owned fixed
+input component, retaining the old seed's code values for comparability. The
+new output module must supply its actual pre-update context-neuron signal for
+the existing local upstream traces. Keep query/read dimensions and metadata
+explicit instead of masquerading as the old recurrent decoder. Vary document
+key/value assignments so the same question requires different retained answers;
+preserve fresh swaps, delay/interference and real Python actions. Requalify the
+complete disposable workload under the existing 2x safety margin, 30-second
+overhead allowance and 900-second/2,048-MiB ceiling. The old admission does not
+transfer. This return still separates byte-label corrections from execution
+feedback and discloses the host motor's supplied matching schema.
+
 The [independent preflight review](local-memory-byte-preflight-review.md) records
 two learning risks: averaging byte feedback weakens explicit order credit, and
 correlated write keys may overwrite useful information. These are hypotheses

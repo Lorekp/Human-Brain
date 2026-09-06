@@ -131,10 +131,15 @@ now fits all twelve TRAIN pairs in the local phase/context reference, with
 only 5/12 under either order at 768 lessons. The reference transfers to only
 2/4 or 3/4 withheld compositions, so neither architecture meets the useful
 endpoint. Exact old-checkpoint parity and the reference certificate pass.
-Retire further tuning of this decoder candidate. Review the distinction between
-fitting winner inequalities and learning a reusable compositional mapping before
-selecting one scoped return toward actual document memory and actions. Do not
-silently teach the probes, add epochs or wire factor selection into the model.
+Retire further tuning of this decoder candidate. The
+[composition review](local-composition-return-review.md) selects one local
+potential-error (LMS) comparison: generic continuous phase/context neurons,
+zero output synapses, four correct/permuted/zero/frozen arms and one analytically
+motivated 160-cycle endpoint. Check numerical margins separately from its
+real-arithmetic bound. Useful exact composition earns a limited two-byte return
+to actual document memory and executed actions, with an explicit upstream
+teaching interface. Do not silently teach the probes or wire factor selection
+into the model.
 These byte learners use no pretrained encoder or LLM. The
 [action-path review](local-memory-byte-preflight-review.md) identifies host-computed
 matching in the legacy edit motor, however. Keep neuron-generated answer bytes
