@@ -1,0 +1,101 @@
+{
+  "schema": "neuronal-splice-harness-data-qa-v1",
+  "status": "passed",
+  "source_revision": "7581c7216e59bde8dda7cdf29c204c0d10049a0c",
+  "tests": 3,
+  "first_batch": {
+    "status": "failed",
+    "executed_tests": 1,
+    "reason": "Original quoted five-document package required129 slots; no roster published. Other two tests not started."
+  },
+  "correction": "Third V2/V3 distractor shortened from dd to d; target pairs unchanged; raw counts corrected.",
+  "final_batch": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "tests": "3",
+    "time": "2.342",
+    "timestamp": "2026-09-06T18:37:49.842990+02:00",
+    "hostname": "gonorrhea"
+  },
+  "maximum_receipt": {
+    "authored_vector_numbers": 14640,
+    "children": 0,
+    "journal": {
+      "bytes": 311522,
+      "max_line_bytes": 311522,
+      "max_row_tree_bytes": 735558,
+      "path": "maximum.jsonl",
+      "rows": 1,
+      "sha256": "7c59e66df7035d679623850490a93c05d7c3de5a43954cb1107a082e50fd7b91"
+    },
+    "line_bytes": 311522,
+    "models": 0,
+    "tree_bytes": 735558
+  },
+  "roster": {
+    "children": 0,
+    "completed_roster_generations": 1,
+    "counts": {
+      "action_teacher_labels_per_arm": 640,
+      "after_learning_packages": 16,
+      "before_learning_packages": 48,
+      "document_eos_per_arm": 152,
+      "document_raw_bytes_per_arm": 3638,
+      "documents_per_arm": 152,
+      "fresh_tasks": 32,
+      "full_action_teacher_labels": 2560,
+      "full_action_verifications": 1216,
+      "full_reader_teacher_offers": 1920,
+      "ingestion_symbols_per_arm": 3790,
+      "lessons_per_arm": 256,
+      "maximum_memory_slots": 128,
+      "memory_packages_per_arm": 64,
+      "old_panel_reader_calls": 160,
+      "reader_teacher_offers_per_arm": 480,
+      "retention_tasks": 16,
+      "tasks": 64,
+      "train_tasks": 32
+    },
+    "generated_roster_sha256": "245a0d908ded5d4bbf4216028d062a9609597561d4c63c67c50f69fd164de5e9",
+    "models": 0,
+    "rejected_old_json": 1,
+    "schema": "neuronal-splice-roster-data-qa-v1",
+    "source_sha256": "b814edae2d3bc0da5d6be85ef1adb36f85b411522b189ee376617c192f194d77",
+    "status": "passed",
+    "teachers": 0,
+    "test_sha256": "2c03521803b28277fa1e099407520d6ac13bde22ea0e00bb31bb8a361ae69cd5"
+  },
+  "exposure": {
+    "neural_models": 0,
+    "checkpoint_loads": 0,
+    "neural_forwards": 0,
+    "teachers": 0,
+    "action_children": 0,
+    "completed_roster_qa_generations": 1,
+    "additional_data_only_arithmetic_reconstruction": 1,
+    "authored_protocol_messages": 4
+  },
+  "source_sha256": {
+    "experiments/r4_integrated/neuronal_splice_endpoint_v1.py": "bffca3c9a99e75968bdf3798fe4582b34211ff866a57d80f365baffb0337b656",
+    "experiments/r4_integrated/neuronal_splice_io_v1.py": "6a3e2d032c1f734eead46664a0809ce579f3836c96e8b32ecaf3e04057952290",
+    "experiments/r4_integrated/neuronal_splice_online_v1.py": "41e55ab854e985dfa5847be74936f28509c310bce35462261fa4f0b6def421b6",
+    "experiments/r4_integrated/neuronal_splice_prior_v1.py": "dc8d247c23ba5690495a3f1d800ef6b58696abcd82bdfd8345cb8ec63b74356c",
+    "experiments/r4_integrated/neuronal_splice_receipts_v1.py": "353ceae583c5326a9892c1078d5b771cc86dfbb035d26faebd020d37e2c6f5b5",
+    "experiments/r4_integrated/neuronal_splice_roster_v1.py": "b814edae2d3bc0da5d6be85ef1adb36f85b411522b189ee376617c192f194d77",
+    "experiments/r4_integrated/neuronal_splice_worker_v1.py": "fa61e09cf8c64456885d00a24343109b8b4dc6c6afd9f39f1f02177ffc0efb9d",
+    "experiments/r4_integrated/check_neuronal_splice_online_v1.py": "794baf83ca1ae42287d58791cd4aa2e72f95576add5de0313c0d8bb9e967a6e9",
+    "tests/test_byte_sequence_decoder.py": "2c03521803b28277fa1e099407520d6ac13bde22ea0e00bb31bb8a361ae69cd5"
+  },
+  "evidence_sha256": {
+    ".pytest-tmp/neuronal-splice-harness-data-v1-qa.xml": "6fa8692f84cd457e80da31c7a8052697f5963c46b338f6e97b31fe7aea029b85",
+    ".pytest-tmp/neuronal-splice-harness-data-v1b-qa.xml": "0c30dc13c4495358f6482bae5f247a82b1359b686ce66ba6090a6370d4977eba",
+    ".pytest-tmp/dev/doctor-r7o66ukj/receipt.json": "b5a114d23df8ae642d428e3ebbb92889b56768f9af10ffdf23c6e01953c482f0",
+    ".pytest-tmp/dev/doctor-sfliq3hm/receipt.json": "bf12212ad771bccc61e65e05452d8099cfcfa96b6baf1f34878296be34f6a5c4",
+    ".pytest-tmp/neuronal-splice-roster-data-qa-v1.json": "9b19060540eb5cc66402660e50175454e43133bbfe5b456ebde02f1c016e9f3a",
+    ".pytest-tmp/neuronal-splice-roster-qa-generated-v1.json": "245a0d908ded5d4bbf4216028d062a9609597561d4c63c67c50f69fd164de5e9",
+    ".pytest-tmp/neuronal-splice-harness-data-v1b-tmp/test_splice_online_receipt_max0/maximum-summary.json": "ef9de6cfa2410f71f826fe1eff25a2f4a65dbf8e2b5bd55c49c4a9124350e4a3"
+  },
+  "remaining": "Draft auditor dispatcher, actual IPC/prior QA, source freeze and fresh completed cost admission remain; no acquired action capability claimed."
+}

@@ -14,7 +14,9 @@ The [neuronal byte-splice interface](neuronal-byte-splice-action-v1.md) now pass
 eleven authored mechanics checks, including one unsuccessful real edit followed
 by local correction. The active [online action integration](../../experiments/r4_integrated/neuronal_splice_online_v1.md)
 fixes one 256-lesson-per-arm comparison, fresh contrasts and reading retention.
-Its source/data/transport QA and fresh cost admission precede acquisition.
+Its three data/receipt/transport checks now pass after correcting a 129-slot
+fixture to fit the 128-slot tape. No model ran in that QA. The standalone
+auditor and actual worker/prior integration QA remain before fresh cost admission.
 No further v6 exposure or alternate recall policy is selected.
 
 ## Objective

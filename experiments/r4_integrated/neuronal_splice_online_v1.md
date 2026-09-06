@@ -150,3 +150,13 @@ Preserve the generated roster and raw QA receipts, including any failure before
 repair. This batch does not qualify the still-unfinished auditor, actual worker
 startup, prior deserialization or new cost. Those remaining integration boundaries
 need review and their own explicitly bounded QA before the final source freeze.
+
+The corrected three-node batch now passes at revision
+`7581c7216e59bde8dda7cdf29c204c0d10049a0c`, with a clean doctor-sfliq3hm receipt:
+3 passed in 2.34 pytest seconds. The maximum authored receipt has 311,522
+serialized bytes and 735,558 decoded-tree bytes, below both 1 MiB guards.
+The generated corrected roster hash is
+`245a0d908ded5d4bbf4216028d062a9609597561d4c63c67c50f69fd164de5e9`.
+The [data QA receipt](../../benchmarks/neuronal_splice_online_v1.data_qa.json)
+preserves the original failed batch, corrected source, both doctor/JUnit records
+and actual zero-model exposure. Do not repeat these unaffected tests.
