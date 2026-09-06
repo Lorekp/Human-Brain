@@ -195,6 +195,9 @@ Proceed with `neuronal_splice_online_v2.py` and
 `check_neuronal_splice_online_v2.py`, their separately scoped non-neural
 source/cost-decision QA and a complete fresh cost/audit freeze. Keep the parent
 draft guard until that review. No additional checkpoint probe is selected.
+The [three-node synthetic cost/custody contract](neuronal-address-competition-cost-qa-v1.md)
+selects the next ordinary QA. It performs nineteen top-level scalar/file
+validation calls, with no neuronal or genuine audit execution.
 
 Exact roster source/data QA, complete source freeze and fresh measured admission
 remain prerequisites. This is one selected integrated
