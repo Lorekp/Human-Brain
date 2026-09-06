@@ -154,15 +154,15 @@ def export_and_evaluate(root, output, models, states, roster, launch, action_jou
     with stderr_path.open("xb") as stderr:
         process = subprocess.Popen(command, cwd=isolated, stdin=subprocess.PIPE,
                                    stdout=subprocess.PIPE, stderr=stderr)
-        pid = process.pid
-        launch_record["pid"] = pid
         try:
-            launch_record["process_identity"] = process_identity(pid)
-        except OSError as error:
-            launch_record["process_identity"] = None
-            launch_record["identity_read_error"] = str(error)[:1024]
-        write_json(isolated / "worker-launch.json", launch_record)
-        try:
+            pid = process.pid
+            launch_record["pid"] = pid
+            try:
+                launch_record["process_identity"] = process_identity(pid)
+            except OSError as error:
+                launch_record["process_identity"] = None
+                launch_record["identity_read_error"] = str(error)[:1024]
+            write_json(isolated / "worker-launch.json", launch_record)
             for arm in ARMS:
                 actions[arm], canonical[arm] = [], []
                 for index, task_id in enumerate(task_ids):
@@ -210,6 +210,7 @@ def export_and_evaluate(root, output, models, states, roster, launch, action_jou
     completion = json.loads(completion_path.read_bytes())
     if (completion["schema"] != "neuronal-splice-endpoint-completion-v1"
             or completion["status"] != "passed"
+            or completion["scope"] != "integrated"
             or not (completion["pid"] == pid or completion["parent_pid"] == pid)
             or completion["process_identity"]["pid"] != completion["pid"]
             or completion["checkpoint_sha256"] != checkpoint_sha

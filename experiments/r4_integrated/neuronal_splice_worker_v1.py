@@ -84,12 +84,15 @@ def check_origins(root):
     return origins
 
 
-def check_requests(requests):
+def check_requests(requests, *, single_exchange_qa=False):
+    arms = ("learned",) if single_exchange_qa else ARMS
+    schema = "neuronal-splice-single-exchange-qa-request-v1" if single_exchange_qa else "neuronal-splice-endpoint-request-v1"
+    counts = (1, 0) if single_exchange_qa else (48, 20)
     if (set(requests) != {"schema", "checkpoint_sha256", "source_sha256", "receipt_limits",
                           "arms", "cases", "reading_cases"}
-            or requests["schema"] != "neuronal-splice-endpoint-request-v1"
-            or requests["arms"] != list(ARMS) or requests["receipt_limits"] != LIMITS
-            or len(requests["cases"]) != 48 or len(requests["reading_cases"]) != 20):
+            or requests["schema"] != schema
+            or requests["arms"] != list(arms) or requests["receipt_limits"] != LIMITS
+            or (len(requests["cases"]), len(requests["reading_cases"])) != counts):
         raise ValueError("endpoint request contract mismatch")
     for field, keys in (("cases", {"id", "memory_id", "request_hex", "files"}),
                         ("reading_cases", {"id", "memory_id", "request_hex"})):
@@ -194,7 +197,7 @@ def run(args):
             or file_hash(checkpoint_path) != args.checkpoint_sha):
         raise ValueError("worker input bytes changed")
     requests = json.loads(request_path.read_bytes())
-    check_requests(requests)
+    check_requests(requests, single_exchange_qa=args.single_exchange_qa)
     if requests["checkpoint_sha256"] != args.checkpoint_sha:
         raise ValueError("requests bind another checkpoint")
     check_sources(root, requests["source_sha256"])
@@ -213,18 +216,21 @@ def run(args):
     origins = check_origins(root)
     spec = SimpleNamespace(config={"receipt_limits": requests["receipt_limits"]})
     payload = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+    arms = ("learned",) if args.single_exchange_qa else ARMS
+    state_schema = "neuronal-splice-single-exchange-qa-state-v1" if args.single_exchange_qa else "neuronal-splice-endpoint-state-v1"
+    memory_count = 1 if args.single_exchange_qa else 64
     if (set(payload) != {"schema", "arms"}
-            or payload["schema"] != "neuronal-splice-endpoint-state-v1"
-            or set(payload["arms"]) != set(ARMS)):
+            or payload["schema"] != state_schema
+            or set(payload["arms"]) != set(arms)):
         raise ValueError("endpoint checkpoint schema mismatch")
     journal = JsonlJournal(output / "endpoints.jsonl", spec)
     reading_journal = JsonlJournal(output / "reading.jsonl", spec)
     final, timings, custody_work = {}, {}, {}
     try:
-        for arm in ARMS:
+        for arm in arms:
             entry = payload["arms"][arm]
             if (set(entry) != {"weights", "memories", "experience"}
-                    or len(entry["memories"]) != 64
+                    or len(entry["memories"]) != memory_count
                     or type(entry["experience"]) is not int or entry["experience"] < 0):
                 raise ValueError("endpoint arm state is incomplete")
             model = NeuronalSpliceLearner(mode=arm, seed=733)
@@ -232,6 +238,7 @@ def run(args):
             states = {first: model.restore_snapshot(dict(
                 model=entry["weights"], memory=entry["memories"][first],
                 experience=entry["experience"]))}
+            state = states[first]
             for memory_id, snapshot in entry["memories"].items():
                 if memory_id != first:
                     state = model.reader.memory.restore_state(snapshot)
@@ -278,7 +285,8 @@ def run(args):
             del model, states, state
     finally:
         endpoint_log, reading_log = journal.close(), reading_journal.close()
-    if (endpoint_log["rows"] != 384 or reading_log["rows"] != 80
+    if (endpoint_log["rows"] != 2 * len(arms) * len(requests["cases"])
+            or reading_log["rows"] != len(arms) * len(requests["reading_cases"])
             or file_hash(checkpoint_path) != args.checkpoint_sha
             or file_hash(request_path) != args.requests_sha):
         raise ValueError("endpoint completion custody mismatch")
@@ -288,6 +296,7 @@ def run(args):
     clock = time.get_clock_info("perf_counter")
     write_json(output / "completion.json", dict(
         schema="neuronal-splice-endpoint-completion-v1", status="passed", pid=os.getpid(),
+        scope="single_exchange_qa" if args.single_exchange_qa else "integrated",
         parent_pid=os.getppid(), process_identity=process_identity(),
         checkpoint_sha256=args.checkpoint_sha, requests_sha256=args.requests_sha,
         source_sha256=requests["source_sha256"], source_origins=origins,
@@ -304,6 +313,7 @@ def main():
                  "output"):
         parser.add_argument("--" + name, required=True)
     parser.add_argument("--deadline-unix", type=float, required=True)
+    parser.add_argument("--single-exchange-qa", action="store_true")
     args = parser.parse_args()
     args.output_created = False
     try:

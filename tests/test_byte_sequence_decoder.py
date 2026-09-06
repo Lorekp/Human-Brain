@@ -5214,6 +5214,169 @@ def test_splice_online_saved_audit_arithmetic():
     assert not audit.task_grade(task, limited, after, rejection, execution)["task_success"]
 
 
+def test_splice_online_prior_worker_exchange():
+    """One actual teacher-free IPC action; its success is not a task-skill claim."""
+    import json
+    import os
+    import shutil
+    import subprocess
+    import sys
+    import time
+    from pathlib import Path
+
+    from experiments.r4_integrated.check_neuronal_splice_online_v1 import initial_action_tensors
+    from experiments.r4_integrated.neuronal_splice_endpoint_v1 import (
+        check_acknowledgement,
+        check_proposal,
+    )
+    from experiments.r4_integrated.neuronal_splice_io_v1 import (
+        JsonlJournal,
+        process_identity,
+        read_row,
+        write_message,
+    )
+    from experiments.r4_integrated.neuronal_splice_online_v1 import (
+        SPEC,
+        execute_action,
+        qualified_launch,
+        workspace_from_records,
+    )
+    from experiments.r4_integrated.neuronal_splice_prior_v1 import initialize_models, tensor_bytes
+    from experiments.r4_integrated.neuronal_splice_receipts_v1 import validate_prediction
+    from experiments.r4_integrated.neuronal_splice_worker_v1 import (
+        LIMITS,
+        SOURCE_MODULES,
+        WORKER_SOURCE,
+        check_requests,
+        file_hash,
+        write_json,
+    )
+    from humanbrain.neuronal_splice_learner import _digest
+
+    root = Path(__file__).resolve().parents[1]
+    output = root / ".pytest-tmp/neuronal-splice-prior-worker-qa-v1"
+    output.mkdir(exist_ok=False)
+    deadline = float(os.environ["HUMANBRAIN_RUN_DEADLINE_UNIX"])
+    assert 0 < deadline - time.time() <= 60
+    models, custody = initialize_models(root)
+    write_json(output / "prior.json", custody)
+    initial_actions = initial_action_tensors(torch)
+    for model in models.values():
+        assert all(torch.equal(model.state_dict()[key], value) for key, value in initial_actions.items())
+        assert all(torch.equal(value, models["learned"].reader.state_dict()[key])
+                   for key, value in model.reader.state_dict().items() if isinstance(value, torch.Tensor))
+    model = models["learned"]
+    document = b"Record k00 has value ab."
+    state = model.ingest([document])
+    model_hash, memory_hash = _digest(model.state_dict()), _digest(state.snapshot())
+    workspace = workspace_from_records([
+        {"path": "a.py", "content_hex": b"x = 'old'\n".hex()},
+        {"path": "main.py", "content_hex": b"import a\nprint(a.x)\n".hex()}])
+    task = {"task_id": "endpoint-0", "memory_id": "qa-memory", "request_hex": b"SET a.py x k00".hex(),
+            "workspace_sha256": workspace.sha256,
+            "files": [{"path": item.path, "content_hex": item.content.hex()} for item in workspace.files]}
+    package = output / "package"
+    package.mkdir()
+    sources = {}
+    for relative in (*SOURCE_MODULES.values(), WORKER_SOURCE):
+        destination = package / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(root / relative, destination)
+        assert file_hash(destination) == file_hash(root / relative)
+        sources[relative] = file_hash(destination)
+    checkpoint = output / "source_free.pt"
+    payload = {"schema": "neuronal-splice-single-exchange-qa-state-v1", "arms": {"learned": {
+        "weights": model.state_dict(), "memories": {"qa-memory": state.snapshot()}, "experience": 0}}}
+    assert tensor_bytes(payload) == 1291336
+    with checkpoint.open("xb") as stream:
+        torch.save(payload, stream)
+    del payload
+    checkpoint_hash = file_hash(checkpoint)
+    requests = {"schema": "neuronal-splice-single-exchange-qa-request-v1",
+                "checkpoint_sha256": checkpoint_hash, "source_sha256": sources,
+                "receipt_limits": LIMITS, "arms": ["learned"], "reading_cases": [],
+                "cases": [{"id": task["task_id"], **{key: task[key] for key in ("memory_id", "request_hex", "files")}}]}
+    check_requests(requests, single_exchange_qa=True)
+    with pytest.raises(ValueError):
+        check_requests(requests)
+    request_path = output / "query_only.json"
+    write_json(request_path, requests)
+    requests_hash = file_hash(request_path)
+    launch = qualified_launch(root)
+    command = [sys.executable, "-I", "-X", "utf8", str(package / WORKER_SOURCE),
+               "--package-root", str(package), "--checkpoint", str(checkpoint),
+               "--checkpoint-sha", checkpoint_hash, "--requests", str(request_path),
+               "--requests-sha", requests_hash, "--output", str(output / "worker"),
+               "--deadline-unix", repr(deadline), "--single-exchange-qa"]
+    action_journal = JsonlJournal(output / "actions.jsonl", SPEC)
+    try:
+        with (output / "worker-stderr.bin").open("xb") as stderr:
+            process = subprocess.Popen(command, cwd=output, stdin=subprocess.PIPE,
+                                       stdout=subprocess.PIPE, stderr=stderr)
+            try:
+                launcher_identity = process_identity(process.pid)
+                write_json(output / "worker-launch.json", {"command": command, "cwd": str(output),
+                           "pid": process.pid, "process_identity": launcher_identity, "parent_pid": os.getpid()})
+                proposal_row = read_row(process.stdout, SPEC)
+                write_json(output / "proposal.json", proposal_row)
+                proposal = check_proposal(proposal_row, "learned", 0, task, model_hash, memory_hash)
+                validate_prediction(proposal_row["prediction"], state.successor[:state.used].tolist(),
+                                    boundaries=workspace.boundaries)
+                identity = {key: proposal_row[key] for key in ("schema", "type", "arm", "index", "id", "attempt_id")}
+                envelope, action_hash, _, _ = execute_action(
+                    task=None, workspace=workspace, proposal=proposal, attempt_id=identity["attempt_id"],
+                    phase="endpoint", arm="learned", index=0, output=output, launch=launch, journal=action_journal)
+                write_message(process.stdin, {**identity, "type": "executed", "action_sha256": action_hash, "outcome": envelope}, SPEC)
+                acknowledgement = read_row(process.stdout, SPEC)
+                write_json(output / "acknowledgement.json", acknowledgement)
+                check_acknowledgement(acknowledgement, identity, action_hash, model_hash, memory_hash)
+                process.stdin.close()
+                process.wait(timeout=max(.001, deadline - time.time()))
+                assert process.returncode == 0 and read_row(process.stdout, SPEC) is None
+            except BaseException:
+                if process.poll() is None:
+                    process.kill()
+                    process.wait()
+                raise
+            finally:
+                process.stdout.close()
+                if not process.stdin.closed:
+                    process.stdin.close()
+    finally:
+        action_log = action_journal.close()
+    completion = json.loads((output / "worker/completion.json").read_bytes())
+    assert completion["scope"] == "single_exchange_qa" and completion["status"] == "passed"
+    assert completion["pid"] == process.pid or completion["parent_pid"] == process.pid
+    assert completion["process_identity"]["pid"] == completion["pid"]
+    assert completion["checkpoint_sha256"] == file_hash(checkpoint) == checkpoint_hash
+    assert completion["requests_sha256"] == file_hash(request_path) == requests_hash
+    assert completion["source_sha256"] == sources
+    assert completion["source_origins"] == {key: str(package / path) for key, path in SOURCE_MODULES.items()}
+    assert completion["final"] == {"learned": {"model_sha256": model_hash,
+               "memories_sha256": {"qa-memory": memory_hash}, "experience": 1}}
+    assert completion["endpoint_log"]["rows"] == 2 and completion["reading_log"]["rows"] == 0
+    for name, filename in (("endpoint_log", "endpoints.jsonl"), ("reading_log", "reading.jsonl")):
+        assert completion[name]["sha256"] == file_hash(output / "worker" / filename)
+    assert (output / "worker-stderr.bin").stat().st_size <= 1024
+    assert _digest(model.state_dict()) == model_hash and _digest(state.snapshot()) == memory_hash
+    assert action_log["rows"] == 1
+    assert acknowledgement["work"] == {"action": {"custody_tensor_bytes_hashed": 1291336}, "reader": {}}
+    steps = proposal_row["prediction"]["payload"]["steps"]
+    assert 1 <= len(steps) <= 17
+    write_json(output / "passed.json", {
+        "schema": "neuronal-splice-prior-worker-qa-v1", "status": "passed",
+        "parent_pid": os.getpid(), "launcher_identity": launcher_identity,
+        "worker_identity": completion["process_identity"], "action_log": action_log,
+        "prior": custody, "worker_completion_sha256": file_hash(output / "worker/completion.json"),
+        "source_sha256": sources, "test_sha256": file_hash(Path(__file__)),
+        "combined_model_constructions": 5, "prior_loads": 1, "worker_checkpoint_loads": 1,
+        "ingests": 1, "document_raw_bytes": len(document), "document_eos": 1,
+        "free_proposals": 1, "actual_payload_decisions": len(steps), "action_children": 1,
+        "worker_processes": 1, "teachers": 0, "reading_panel_calls": 0,
+        "proposal_sha256": proposal.sha256, "action_line_sha256": action_hash,
+        "qualification_scope": "Same pending neuronal worker through actual execution; no acquired task skill."})
+
+
 def test_splice_free_end_and_corrected_end_use_distinct_prefixes():
     """One model, two free proposals, one SPLICE plus one STOP; simulated outcomes."""
     from humanbrain import neuronal_splice_learner as splice

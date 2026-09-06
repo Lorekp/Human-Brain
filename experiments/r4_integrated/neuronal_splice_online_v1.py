@@ -363,11 +363,11 @@ def run_experiment(root, output, mode, admission_path, admission_sha, deadline):
     if admission["source_sha256"] != current_sources:
         raise ValueError("admitted source changed")
     if mode == "run":
-        cost = authenticated_json(Path(admission["cost_decision_path"]), admission["cost_decision_sha256"])
-        if (cost["status"] != "passed" or cost["source_sha256"] != current_sources
-                or cost["completed_cost_audit"] is not True
-                or cost["projected_seconds"] > 900 or cost["projected_tree_mib"] > 2048):
-            raise ValueError("full acquisition lacks completed fresh cost admission")
+        from experiments.r4_integrated.check_neuronal_splice_online_v1 import validate_cost_decision
+
+        validate_cost_decision(Path(admission["cost_decision_path"]),
+                               admission["cost_decision_sha256"], CONFIG,
+                               current_sources, admission["roster_sha256"])
     roster = authenticated_json(Path(admission["roster_path"]), admission["roster_sha256"])
     if roster["schema"] != "neuronal-splice-roster-v1":
         raise ValueError("admitted roster schema changed")
@@ -468,19 +468,23 @@ def run_experiment(root, output, mode, admission_path, admission_sha, deadline):
 
 def main():
     import argparse
+    import os
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=("cost", "run"))
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--admission", type=Path, required=True)
     parser.add_argument("--admission-sha", required=True)
-    parser.add_argument("--deadline-unix", type=float, required=True)
+    parser.add_argument("--deadline-unix", type=float)
     args = parser.parse_args()
     for path in (args.output, args.admission):
         if not path.is_absolute():
             raise ValueError("all execution paths must be absolute")
     root = Path(__file__).resolve().parents[2]
-    run_experiment(root, args.output, args.mode, args.admission, args.admission_sha, args.deadline_unix)
+    deadline = args.deadline_unix
+    if deadline is None:
+        deadline = float(os.environ["HUMANBRAIN_RUN_DEADLINE_UNIX"])
+    run_experiment(root, args.output, args.mode, args.admission, args.admission_sha, deadline)
 
 
 if __name__ == "__main__":

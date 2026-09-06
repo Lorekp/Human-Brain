@@ -187,3 +187,44 @@ must bind worker launch/completion and all final unchanged-state assertions;
 ordinary arithmetic checks are not substitutes for those integration checks.
 Do not remove either DRAFT guard, load the prior or run cost until that review
 and its prospective QA scope are complete. No new numerical learning has run.
+
+## Selected actual prior/worker QA
+
+After source review, commit and clean doctor, run only
+`test_splice_online_prior_worker_exchange` under the existing process-tree
+watchdog at 60 seconds and 2,048 MiB. This explicitly authorizes its one
+authenticated historical prior load. It constructs the four current combined
+learners, copies only the same v6 learned reader tensors with declared mode
+metadata, and checks their fresh action tensors against a separately expressed
+private-seed Xavier construction. No learning or free prediction runs in these
+four parent models.
+
+The learned arm ingests the single raw document
+`b"Record k00 has value ab."` once (24 raw bytes and one EOS). Export only that
+model and one tape. The isolated worker constructs one more combined model and
+loads this new QA checkpoint once. It receives `b"SET a.py x k00"` and the raw
+files `a.py = b"x = 'old'\n"`,
+`main.py = b"import a\nprint(a.x)\n"`. It proposes once, at most seventeen payload
+decisions. The parent applies that actual proposal or records rejection, then
+verifies the resulting or unchanged workspace exactly once with the held
+qualified executor. Save the actual proposal/action before subsequent assertions;
+do not require or substitute a correct edit. The same worker pending object
+receives only the real execution envelope and acknowledges without teaching.
+
+Total planned exposure: five combined-model constructions, one old prior load,
+one new worker-checkpoint load, one ingestion, one free proposal, one worker
+process and one action subprocess (Windows redirectors counted separately),
+zero teachers and zero reading-panel calls. This qualifies plumbing, not learned
+action success. The source-free request/checkpoint have separate
+`neuronal-splice-single-exchange-qa-*-v1` schemas and require the explicit
+`--single-exchange-qa` worker flag. They cannot satisfy the integrated schema;
+normal execution remains exactly four arms, 48 actions, 20 post-panel reads
+and 64 tapes per arm. The same endpoint function handles both scopes. Integrated
+parents and auditors reject a worker completion whose scope is not `integrated`.
+
+Retain the actual worker import origins, package inventory, PID/creation ticks,
+launcher relationship, unchanged weights/tape and ordinal, raw outputs, work
+counts and every completion/hash. The external watchdog bounds blocking pipe
+reads; an internal absolute deadline alone does not. No parent/auditor DRAFT
+guard is removed for this QA. Failures preserve partial output; no automatic
+repeat or task-changing repair is allowed on the basis of an incorrect action.
