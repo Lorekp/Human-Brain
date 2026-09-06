@@ -4,8 +4,8 @@ Selected implementation contract, 2026-09-06. The neuronal action circuit's
 [eleven authored checks](../../benchmarks/neuronal_splice_v1.qa.json) pass; learned
 edit selection is not yet established. This protocol authorizes implementation
 and reviewed ordinary harness QA. Complete source/roster/receipt freeze and
-fresh measured admission must precede any acquisition. No trained prior has
-been loaded for this experiment yet.
+fresh measured admission must precede any acquisition. The bounded worker QA
+below now authenticates and loads the prior once; no cost or acquisition ran.
 
 ## Fixed system and workload
 
@@ -228,3 +228,23 @@ counts and every completion/hash. The external watchdog bounds blocking pipe
 reads; an internal absolute deadline alone does not. No parent/auditor DRAFT
 guard is removed for this QA. Failures preserve partial output; no automatic
 repeat or task-changing repair is allowed on the basis of an incorrect action.
+
+### Completed worker QA and remaining admission QA
+
+The selected node passed on its first execution at source `741d5cb`. The
+[banked receipt](../../benchmarks/neuronal_splice_online_v1.worker_qa.json)
+records 31.264547 monitored seconds and 824.359375 MiB observed owned peak.
+Actual exposure matches the declared five combined constructions, one prior
+load, one worker checkpoint load, one document ingestion and one free action.
+The reader made one EOS decision; the action was STOP and unchanged execution
+printed `old`. The requested edit was not solved. Zero teachers or panel reads
+ran; numerical reader/action/tape custody passed. The monitor observed 21 OS
+process identities, including runtime/setup descendants; the one worker and
+one action counts describe roles, not the entire process tree.
+
+Next run only `test_splice_online_saved_cost_decision_custody` after reviewed
+source commit and doctor. Its synthetic saved JSON exercises one accepted
+completed admission and three rehashed but inconsistent variants: audit PID,
+bound report input and final projection. Four validator calls, zero models,
+checkpoint loads, neural forwards, teachers or child verifications. It does
+not run the complete audit dispatcher or create a real cost admission.

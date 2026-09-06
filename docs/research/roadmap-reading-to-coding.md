@@ -17,7 +17,10 @@ fixes one 256-lesson-per-arm comparison, fresh contrasts and reading retention.
 Its three data/receipt/transport checks now pass after correcting a 129-slot
 fixture to fit the 128-slot tape. No model ran in that QA. The standalone
 auditor now has a complete-stream draft and a passed authored arithmetic check;
-its source review and actual worker/prior integration QA remain before fresh
+its source review has closed the launch/final-state/admission bindings. The
+single-exchange worker/prior QA now passes in 31.26 monitored seconds at
+824.36 MiB observed peak. It emitted STOP and did not solve the requested edit;
+zero teachers ran. Authored completed-admission custody QA remains before fresh
 cost admission. Both execution and audit retain their DRAFT guards.
 No further v6 exposure or alternate recall policy is selected.
 

@@ -1,0 +1,123 @@
+{
+  "schema": "neuronal-splice-prior-worker-qa-bank-v1",
+  "status": "passed",
+  "source_revision": "741d5cba08195d8788baa1beff1fe683d6332e71",
+  "junit": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "tests": "1",
+    "time": "29.716",
+    "timestamp": "2026-09-06T19:16:29.102152+02:00",
+    "hostname": "gonorrhea"
+  },
+  "receipt": {
+    "schema": "neuronal-splice-prior-worker-qa-v1",
+    "status": "passed",
+    "parent_pid": 44996,
+    "launcher_identity": {
+      "pid": 45328,
+      "creation_ticks": 639243118156587852
+    },
+    "worker_identity": {
+      "pid": 35300,
+      "creation_ticks": 639243118156782345
+    },
+    "action_log": {
+      "path": "actions.jsonl",
+      "rows": 1,
+      "bytes": 3354,
+      "sha256": "bfe9028f4c55a0572dd626da453598e89f238606d176aabcea71a660e8498188",
+      "max_line_bytes": 3354,
+      "max_row_tree_bytes": 11582
+    },
+    "prior": {
+      "schema": "neuronal-splice-prior-custody-v1",
+      "decision_path": "benchmarks/local_joint_address_online_v6.decision.json",
+      "decision_sha256": "f9b3b02b3bacf9977bb990f115072d41a043adeb074283d390bf45b5a0bf7a97",
+      "evidence_sha256": {
+        ".pytest-tmp/local-joint-address-online-v6-run/report.json": "657322d00f4df61e35cf4c3f230f0a461504711fadd50657fe90d9173c318fde",
+        ".pytest-tmp/local-joint-address-online-v6-run/completion.json": "e4c4836cca69a29dc071097bd4b8afc473f6c521c59731a421be4d462d071b6d",
+        ".pytest-tmp/local-joint-address-online-v6-run-independent-audit.json": "358a7a45c01de58d8d3392717b742a26a91ce63fba123ad639fa8d8e6bfdd0a5"
+      },
+      "reader_source_sha256": "2a6bfe480757b248c585a00bdc9c79155af6abd3a162b3e93a098d406b73a3b8",
+      "checkpoint_path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\local-joint-address-online-v6-run\\source-free\\source_free.pt",
+      "checkpoint_sha256": "03654f61af4cccb93688a75e75a84c089800672530cdaffdc7a30f7cc5181180",
+      "historical_payload_tensor_bytes": 33801664,
+      "selected_entry": "learned.weights",
+      "metadata_adaptation": "mode only; all numerical tensors identical",
+      "actual_loaded_payload_tensor_bytes": 33801664,
+      "initial_model_sha256": {
+        "learned": "51e2f7253bbd4339125791ce208fad59decf11dd86e6aa6b9d26eb9badcf1d9f",
+        "action_frozen": "85bab14f6879206c3168e7acdc0dff8d88c3b5c552820c01d98606b8e6356a14",
+        "slow_frozen": "cd4a9850518e1daa07a0f7ac319e87fe8034ea8061f40b1393098d366ff3f587",
+        "memory_disabled": "a5dc8c930831929d612612abdd8dff67bd07bc773df8fe9655febe42f0d62162"
+      },
+      "initial_reader_tensor_sha256": "e281467a8225ff9d53c66d55e65ea7b84bd0b6135797e842a9b80a3ec02e9f84",
+      "new_model_tensor_bytes": 2537728
+    },
+    "worker_completion_sha256": "a49eddf371dd14e6fc8784f056fb814168807362257a36ccd4a95449095082e0",
+    "source_sha256": {
+      "src/humanbrain/__init__.py": "b327d4b0b4c8784f3e2f92a87afb763a77f11a9dd34524d2700d3b191f14b9a4",
+      "src/humanbrain/neuronal_splice_learner.py": "bb06e074d44431cf2d09d62f7e98119a2a207ed53e7f6d5796bb6c7b274770ab",
+      "src/humanbrain/neuronal_splice_action.py": "9a704b4f9527598cbd784f2eaee9472e44a968eb21f97ceabf2ad2dfeb0de13a",
+      "src/humanbrain/local_memory_learner.py": "2a6bfe480757b248c585a00bdc9c79155af6abd3a162b3e93a098d406b73a3b8",
+      "src/humanbrain/neuronal_sequence_memory.py": "55a1c561b93921ec9e31dce0ae1216e44423b1b4d3d9cd1525997202624574af",
+      "src/humanbrain/byte_sequence_decoder.py": "a9e3ba4d50f8936b9e87ce7199b0f31ba2308213788815ad0bcd5b44d04d005c",
+      "src/humanbrain/plastic_memory.py": "2f2df2c41ee7e50e5310c85c286ede7b90362958f5aedd2f9c616698567bf2b9",
+      "src/humanbrain/multiscale_opaque_event_tape.py": "0e608ea64133dc783bb715f6dcedd471da134897a540b440f35283e08dd8899a",
+      "experiments/r4_integrated/__init__.py": "7456726a8fbf66eed6ea1000d14fd05ae0081a893954a489af4188ab6de8daec",
+      "experiments/r4_integrated/neuronal_splice_io_v1.py": "6a3e2d032c1f734eead46664a0809ce579f3836c96e8b32ecaf3e04057952290",
+      "experiments/r4_integrated/neuronal_splice_receipts_v1.py": "353ceae583c5326a9892c1078d5b771cc86dfbb035d26faebd020d37e2c6f5b5",
+      "experiments/r4_integrated/neuronal_splice_worker_v1.py": "5fe0986d15382ec9b6b228dc4d389f2fe304eae5f47a8a827796a3502805c42e"
+    },
+    "test_sha256": "9966bff3d87288a11dcf628f9c7f99d5ac44e6f47b4c2e21f1d473f2a2dc4e0a",
+    "combined_model_constructions": 5,
+    "prior_loads": 1,
+    "worker_checkpoint_loads": 1,
+    "ingests": 1,
+    "document_raw_bytes": 24,
+    "document_eos": 1,
+    "free_proposals": 1,
+    "actual_payload_decisions": 1,
+    "action_children": 1,
+    "worker_processes": 1,
+    "teachers": 0,
+    "reading_panel_calls": 0,
+    "proposal_sha256": "9daf0c57c3537a06cdad14de0c91290766cbf0f3e858b35b20ebd46af2cadc7a",
+    "action_line_sha256": "bfe9028f4c55a0572dd626da453598e89f238606d176aabcea71a660e8498188",
+    "qualification_scope": "Same pending neuronal worker through actual execution; no acquired task skill."
+  },
+  "monitor": {
+    "elapsed_seconds": 31.264547,
+    "observed_tree_peak_sum_mib": 824.359375,
+    "observed_process_identities": 21,
+    "limit_seconds": 60,
+    "limit_mib": 2048,
+    "limitations": "Maximum simultaneous sum of live owned process peak working sets, sampled every 500ms. Brief unobserved children may be missed."
+  },
+  "evidence_sha256": {
+    ".pytest-tmp/neuronal-splice-prior-worker-qa-v1/passed.json": "aae9525d08a3991b224c47c0b31d04f88e168dae0cb307ecaf29544329d9f62b",
+    ".pytest-tmp/neuronal-splice-prior-worker-qa-v1/prior.json": "c50f1ea2f8c58479864cafa80cfca4072e0b554d24ee7b2c00944c29ccf284c6",
+    ".pytest-tmp/neuronal-splice-prior-worker-qa-v1/worker/completion.json": "a49eddf371dd14e6fc8784f056fb814168807362257a36ccd4a95449095082e0",
+    ".pytest-tmp/neuronal-splice-prior-worker-qa-v1/worker-launch.json": "3d7ded39ce96ba37d436d0ed20ecd3e25e1f0c22ac95e68809fd9d168372d16e",
+    ".pytest-tmp/neuronal-splice-prior-worker-qa-v1/query_only.json": "8b459b9336e107ef22cb5dde1f9e91045377557b343804628cc335e0eebf9c42",
+    ".pytest-tmp/neuronal-splice-prior-worker-qa-v1/proposal.json": "9b2b9243b442675b24b9531f6e63459098b66f9a290bb70ab2c28946cf539e1c",
+    ".pytest-tmp/neuronal-splice-prior-worker-qa-v1/acknowledgement.json": "b37f22aa8907bd371e3bf4263615107d5846627a08602ef1f48a120a493ec46c",
+    ".pytest-tmp/neuronal-splice-prior-worker-qa-v1/actions.jsonl": "bfe9028f4c55a0572dd626da453598e89f238606d176aabcea71a660e8498188",
+    ".pytest-tmp/neuronal-splice-prior-worker-qa-v1/worker/endpoints.jsonl": "437e8e2e8d11cde1309c90c922b4bb6f9176d9c1e8a0540e8ad4929bce98d7fa",
+    ".pytest-tmp/neuronal-splice-prior-worker-qa-v1/worker/reading.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".pytest-tmp/neuronal-splice-prior-worker-v1-qa.launch.json": "c6475ad7e905a51ed9c0b9130c22588236594e0625ff8c11763cce80bcdcc202",
+    ".pytest-tmp/neuronal-splice-prior-worker-v1-qa.xml": "2f6872530899c6edaa1d4cc484c8481147b5e9af7904d0f4f09fb5d5d897d174",
+    ".pytest-tmp/dev/doctor-p_veegm2/receipt.json": "2068dff244b50955c25102fd2bc98a69bd9d4932d4d190e38aa82ee3333a9046"
+  },
+  "actual_action": {
+    "operation": "STOP",
+    "payload_decisions": 1,
+    "returncode": 0,
+    "stdout_hex": "6f6c640a",
+    "requested_edit_solved": false
+  },
+  "limitation": "One plumbing exchange, zero teachers. Does not establish learned edit selection or admit acquisition. Monitor includes runtime/setup descendants; action and worker process counts are roles, not total operating-system processes."
+}

@@ -5757,3 +5757,148 @@ def test_splice_online_roster_data_contract(tmp_path):
                 Path(__file__).read_bytes()).hexdigest(), "completed_roster_generations": 1,
             "rejected_old_json": 1, "models": 0, "children": 0, "teachers": 0},
             sort_keys=True, allow_nan=False) + "\n")
+
+
+def test_splice_online_saved_cost_decision_custody(tmp_path, monkeypatch):
+    """One synthetic admission and three authenticated-but-inconsistent variants."""
+    import copy
+    import hashlib
+    import json
+
+    from experiments.r4_integrated import check_neuronal_splice_online_v1 as checker
+
+    # Only source identity and pathname context are synthetic. The production
+    # readers, hashes, monitor checks and projection validator run unchanged.
+    fake_checker = tmp_path / "experiments/r4_integrated/check_neuronal_splice_online_v1.py"
+    fake_checker.parent.mkdir(parents=True)
+    fake_checker.write_text("# Authored source identity; never imported.\n", encoding="utf-8")
+    monkeypatch.setattr(checker, "ROOT", tmp_path)
+    monkeypatch.setattr(checker, "__file__", str(fake_checker))
+
+    def save(path, value):
+        raw = (json.dumps(value, sort_keys=True, allow_nan=False) + "\n").encode()
+        path.write_bytes(raw)
+        return hashlib.sha256(raw).hexdigest()
+
+    config = checker.expected_config()
+    sources = {"experiments/r4_integrated/check_neuronal_splice_online_v1.py":
+               hashlib.sha256(fake_checker.read_bytes()).hexdigest()}
+    roster_path = tmp_path / "authored-roster.json"
+    roster_sha = save(roster_path, {"schema": "authored-no-neural-roster", "tasks": []})
+    cost_dir = tmp_path / "cost"
+    cost_dir.mkdir()
+    paths = {
+        "cost_report": cost_dir / "report.json",
+        "cost_completion": cost_dir / "completion.json",
+        "cost_launch": tmp_path / "cost.launch.json",
+        "cost_admission": tmp_path / "cost-admission.json",
+        "cost_audit": tmp_path / "cost-audit.json",
+        "cost_audit_launch": tmp_path / "cost-audit.launch.json",
+    }
+    values, hashes = {}, {}
+    values["cost_admission"] = {
+        "schema": "neuronal-splice-admission-v1", "status": "passed",
+        "authorized_phase": "cost", "qa_passed": True, "config": config,
+        "source_sha256": sources, "roster_path": str(roster_path), "roster_sha256": roster_sha,
+    }
+    hashes["cost_admission"] = save(paths["cost_admission"], values["cost_admission"])
+    summary = {}
+    for arm in checker.ARMS:
+        summary[arm] = {}
+        for phase, count, durations in (("regular", 4, (.001, .002, .0005)),
+                                         ("cap", 1, (.003, .004, .001))):
+            row = {"rows": count}
+            for stage, maximum in zip(("model", "action", "journal"), durations, strict=True):
+                row[stage + "_seconds"] = count * maximum
+                row[stage + "_max_seconds"] = maximum
+            summary[arm][phase] = row
+    values["cost_report"] = {
+        "schema": "neuronal-splice-online-v1", "status": "completed", "mode": "cost",
+        "config": config, "source_sha256": sources, "source_sha256_after": sources,
+        "admission_sha256": hashes["cost_admission"], "roster_sha256": roster_sha,
+        "pid": 101, "deadline_unix": 1900.0, "logs": {}, "timing_summary": summary,
+        "category_probes": [{"action_seconds": value} for value in (.002, .003, .004, .005)],
+        "memory": {"peak_working_set_mib": 100.0},
+        "worker": {"worker": {"memory": {"peak_working_set_mib": 150.0}}},
+    }
+    hashes["cost_report"] = save(paths["cost_report"], values["cost_report"])
+    values["cost_completion"] = {
+        "schema": "neuronal-splice-completion-v1", "status": "completed", "mode": "cost",
+        "report_sha256": hashes["cost_report"], "admission_sha256": hashes["cost_admission"], "logs": {},
+    }
+    hashes["cost_completion"] = save(paths["cost_completion"], values["cost_completion"])
+
+    def monitor(pid, command, seconds, peak):
+        # Actual watchdog schema: .NET DateTime UTC ticks, not FILETIME.
+        ticks = 621355968000000000 + 1001 * 10_000_000
+        return {"status": "passed", "exit_code": 0, "seconds_limit": 900,
+                "tree_peak_sum_mib_limit": 2048, "started_unix": 1000.0,
+                "deadline_unix": 1900.0, "elapsed_seconds": seconds,
+                "observed_tree_peak_sum_mib": peak, "command": command,
+                "child_pid": pid, "observed_process_peaks_mib": {f"{pid}/{ticks}": peak},
+                "launcher_sha256": "a" * 64}
+
+    prefix = [str(tmp_path / ".venv/Scripts/python.exe"), "-X", "utf8", "-m"]
+    cost_command = prefix + ["experiments.r4_integrated.neuronal_splice_online_v1", "cost",
+                             "--output", str(cost_dir), "--admission", str(paths["cost_admission"]),
+                             "--admission-sha", hashes["cost_admission"]]
+    values["cost_launch"] = monitor(101, cost_command, 5.0, 300.0)
+    hashes["cost_launch"] = save(paths["cost_launch"], values["cost_launch"])
+    preliminary = checker.project_cost(values["cost_report"], values["cost_launch"])
+    assert preliminary["projected_run_seconds"] == pytest.approx(58.32)
+    assert preliminary["audit_peak_pending"] and not preliminary["admissible"]
+    bound_inputs = {str(paths[name]): hashes[name] for name in
+                    ("cost_report", "cost_completion", "cost_launch", "cost_admission")}
+    bound_inputs.update({str(fake_checker): sources[next(iter(sources))], str(roster_path): roster_sha})
+    values["cost_audit"] = {
+        "schema": "neuronal-splice-independent-audit-v1", "status": "passed", "mode": "cost",
+        "pid": 202, "source_sha256": sources, "roster_sha256": roster_sha,
+        "report_sha256": hashes["cost_report"], "completion_sha256": hashes["cost_completion"],
+        "launch_sha256": hashes["cost_launch"], "admission_sha256": hashes["cost_admission"],
+        "input_sha256": bound_inputs, "projection": preliminary,
+        "learning_pair_timing": {arm: {
+            "regular": {"rows": 4, "seconds": .0004, "max_seconds": .0001},
+            "cap": {"rows": 1, "seconds": .0003, "max_seconds": .0003},
+        } for arm in checker.ARMS},
+    }
+    hashes["cost_audit"] = save(paths["cost_audit"], values["cost_audit"])
+    audit_command = prefix + ["experiments.r4_integrated.check_neuronal_splice_online_v1",
+                              "--output", str(paths["cost_audit"]), "--cost-dir", str(cost_dir),
+                              "--launch", str(paths["cost_launch"]),
+                              "--admission", str(paths["cost_admission"]),
+                              "--admission-sha", hashes["cost_admission"]]
+    values["cost_audit_launch"] = monitor(202, audit_command, 2.0, 120.0)
+    hashes["cost_audit_launch"] = save(paths["cost_audit_launch"], values["cost_audit_launch"])
+    final = checker.project_cost(values["cost_report"], values["cost_launch"],
+                                 audit=values["cost_audit"], audit_outer=values["cost_audit_launch"])
+    assert final["projected_audit_seconds"] == pytest.approx(4.6112)
+    assert final["projected_seconds"] == pytest.approx(62.9312)
+    assert final["projected_tree_mib"] == 440.0
+    decision = {
+        "schema": "neuronal-splice-cost-decision-v1", "status": "passed", "config": config,
+        "source_sha256": sources, "roster_sha256": roster_sha, "completed_cost_audit": True,
+        "inputs": {name: {"path": str(paths[name]), "sha256": hashes[name]} for name in paths},
+        "projection": final, "projected_seconds": final["projected_seconds"],
+        "projected_tree_mib": final["projected_tree_mib"],
+    }
+    decision_path = tmp_path / "decision.json"
+    decision_sha = save(decision_path, decision)
+    assert checker.validate_cost_decision(decision_path, decision_sha, config, sources, roster_sha) == final
+
+    for mutation, message in (("pid", "actual process absent"),
+                               ("input", "audit did not authenticate selected input"),
+                               ("projection", "final admission projection mismatch")):
+        altered_audit, altered_decision = copy.deepcopy(values["cost_audit"]), copy.deepcopy(decision)
+        if mutation == "pid":
+            altered_audit["pid"] = 999
+        elif mutation == "input":
+            altered_audit["input_sha256"][str(paths["cost_report"])] = "b" * 64
+        else:
+            altered_decision["projection"]["projected_seconds"] -= 1.0
+            altered_decision["projected_seconds"] -= 1.0
+        # Reauthenticate altered bytes so rejection exercises inner custody/
+        # independent arithmetic, rather than merely an outer file-hash mismatch.
+        altered_decision["inputs"]["cost_audit"]["sha256"] = save(paths["cost_audit"], altered_audit)
+        altered_sha = save(decision_path, altered_decision)
+        with pytest.raises(ValueError, match=message):
+            checker.validate_cost_decision(decision_path, altered_sha, config, sources, roster_sha)
