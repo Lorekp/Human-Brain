@@ -60,6 +60,11 @@ taught and 0/4 withheld pairs; zero/shuffled/frozen controls yield zero. The
 8.951-second run and saved-only audit pass. This isolates a decoder limitation
 under the fixed exposure while showing partial context use, not a reading or
 coding result.
+The [symmetric-feedback comparison](../experiments/r4_integrated/local_context_use_v2_result.md)
+likewise fails its criterion: correct-context symmetric feedback scores 3/12
+taught and 0/4 withheld, versus random's reproduced 4/12 and zero. It removes
+premature EOS but does not improve exact endpoint answers. The eight-arm run
+and parity/audit pass in 13.965 seconds at 295.367 MiB; no rule is adopted.
 The official-exam scorer remains ready, with genuine structured learner output
 still pending.
 

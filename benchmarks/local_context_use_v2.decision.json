@@ -1,0 +1,309 @@
+{
+  "schema": "local-context-use-v2-result",
+  "status": "closed_symmetric_comparison_failed",
+  "revision": "a879c4ea678e64a70b906702397048c96775d64f",
+  "recipe": "experiments/r4_integrated/local_context_use_v2.md",
+  "evidence": {
+    "report": {
+      "path": ".pytest-tmp/local-context-use-v2-run/report.json",
+      "sha256": "405fccbe936525a8ec91ce6e16c2a6d14371a3f99a746fc27fc82e1817bfbb76"
+    },
+    "completion": {
+      "path": ".pytest-tmp/local-context-use-v2-run/completion.json",
+      "sha256": "a43f6af85074428b66346027a17546ea968f0e6855d4386559d8ed0573d957bd"
+    },
+    "launcher": {
+      "path": ".pytest-tmp/local-context-use-v2-run.launch.json",
+      "sha256": "5998946680284ef1cd264b9b07c9f03cbc48bc3af3734f0a9439df43081eb237"
+    },
+    "audit": {
+      "path": ".pytest-tmp/local-context-use-v2-independent-audit.json",
+      "sha256": "ff2bb87f7f83042fcf49504ad09e907c99e853c33138a42410c3d3ddd6cebbf2"
+    }
+  },
+  "scores": {
+    "random_correct": {
+      "heldout": 0,
+      "train": 4
+    },
+    "random_frozen": {
+      "heldout": 0,
+      "train": 0
+    },
+    "random_shuffled": {
+      "heldout": 0,
+      "train": 0
+    },
+    "random_zero": {
+      "heldout": 0,
+      "train": 0
+    },
+    "symmetric_correct": {
+      "heldout": 0,
+      "train": 3
+    },
+    "symmetric_frozen": {
+      "heldout": 0,
+      "train": 0
+    },
+    "symmetric_shuffled": {
+      "heldout": 0,
+      "train": 1
+    },
+    "symmetric_zero": {
+      "heldout": 0,
+      "train": 1
+    }
+  },
+  "context_use_positive": false,
+  "counts": {
+    "byte_offers": 9216,
+    "changed_steps": 6912,
+    "enabled_steps": 6912,
+    "final_generations": 128,
+    "first_attempts": 3072,
+    "generation_decisions": 7291
+  },
+  "acquisition": {
+    "random_correct": {
+      "all": {
+        "first_exact": 13,
+        "first_stop_reasons": {
+          "eos": 372,
+          "limit": 12
+        },
+        "lessons": 384,
+        "mean_teacher_loss": 2.0413048934424305
+      },
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 116,
+          "limit": 12
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 3.483287648220235
+      },
+      "last128": {
+        "first_exact": 13,
+        "first_stop_reasons": {
+          "eos": 128
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 1.1369339229616648
+      }
+    },
+    "random_frozen": {
+      "all": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "limit": 384
+        },
+        "lessons": 384,
+        "mean_teacher_loss": 5.6273430056042075
+      },
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "limit": 128
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 5.628322493284943
+      },
+      "last128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "limit": 128
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 5.626327112317087
+      }
+    },
+    "random_shuffled": {
+      "all": {
+        "first_exact": 1,
+        "first_stop_reasons": {
+          "eos": 372,
+          "limit": 12
+        },
+        "lessons": 384,
+        "mean_teacher_loss": 2.1086170530308874
+      },
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 116,
+          "limit": 12
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 3.517522273119538
+      },
+      "last128": {
+        "first_exact": 1,
+        "first_stop_reasons": {
+          "eos": 128
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 1.234411128175755
+      }
+    },
+    "random_zero": {
+      "all": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 371,
+          "limit": 13
+        },
+        "lessons": 384,
+        "mean_teacher_loss": 2.1033718247070072
+      },
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 115,
+          "limit": 13
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 3.517088195852312
+      },
+      "last128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 128
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 1.2270670962364727
+      }
+    },
+    "symmetric_correct": {
+      "all": {
+        "first_exact": 20,
+        "first_stop_reasons": {
+          "eos": 377,
+          "limit": 7
+        },
+        "lessons": 384,
+        "mean_teacher_loss": 1.6718553146541428
+      },
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 121,
+          "limit": 7
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 2.755302541578811
+      },
+      "last128": {
+        "first_exact": 20,
+        "first_stop_reasons": {
+          "eos": 128
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 1.0242525329231282
+      }
+    },
+    "symmetric_frozen": {
+      "all": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "limit": 384
+        },
+        "lessons": 384,
+        "mean_teacher_loss": 5.6273430056042075
+      },
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "limit": 128
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 5.628322493284943
+      },
+      "last128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "limit": 128
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 5.626327112317087
+      }
+    },
+    "symmetric_shuffled": {
+      "all": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 376,
+          "limit": 8
+        },
+        "lessons": 384,
+        "mean_teacher_loss": 1.7335718983344528
+      },
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 120,
+          "limit": 8
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 2.7860064544559773
+      },
+      "last128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 128
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 1.1180676449633515
+      }
+    },
+    "symmetric_zero": {
+      "all": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 377,
+          "limit": 7
+        },
+        "lessons": 384,
+        "mean_teacher_loss": 1.734240512408884
+      },
+      "first128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 121,
+          "limit": 7
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 2.801327132464696
+      },
+      "last128": {
+        "first_exact": 0,
+        "first_stop_reasons": {
+          "eos": 128
+        },
+        "lessons": 128,
+        "mean_teacher_loss": 1.1106914670478236
+      }
+    }
+  },
+  "resources": {
+    "elapsed_seconds": 13.9652281,
+    "observed_tree_peak_sum_mib": 295.3671875,
+    "model_tensor_bytes_per_arm": {
+      "random_correct": 313732,
+      "random_frozen": 313732,
+      "random_shuffled": 313732,
+      "random_zero": 313732,
+      "symmetric_correct": 313732,
+      "symmetric_frozen": 313732,
+      "symmetric_shuffled": 313732,
+      "symmetric_zero": 313732
+    }
+  },
+  "finding": "Symmetric feedback removes premature EOS but gives no exact endpoint advantage; random arms reproduce v1 numerically.",
+  "limits": [
+    "Previously exposed development probes withheld from TRAIN",
+    "Answer-revealing context engineering QA",
+    "No adopted feedback rule or reading/coding gate advancement"
+  ]
+}

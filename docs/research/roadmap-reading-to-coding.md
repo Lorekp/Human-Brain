@@ -122,9 +122,12 @@ bounded context-use/local-credit diagnostic from the saved failure distribution
 and primary-source review before returning to the integrated workload. The
 [direct-context control](../../experiments/r4_integrated/local_context_use_v1_result.md)
 fits only 4/12 taught pairs and no withheld combination despite answer-revealing
-inputs. The next selected comparison is decoder random versus symmetric
-instantaneous feedback under unchanged local eligibility and exposure; this
-does not yet select an upstream memory change. Its byte
+inputs. The [symmetric-feedback comparison](../../experiments/r4_integrated/local_context_use_v2_result.md)
+also fails: 3/12 taught and no withheld success versus random's 4/12 and zero.
+Lower teacher loss and corrected EOS do not earn adoption. The current next
+step is one bounded learnability review separating exposure/stability from
+temporal representation and credit limits, followed by one justified local
+neuronal comparison; no automatic epoch or feedback sweep. Its byte
 learner uses no pretrained encoder or LLM. The
 [action-path review](local-memory-byte-preflight-review.md) identifies host-computed
 matching in the legacy edit motor, however. Keep neuron-generated answer bytes

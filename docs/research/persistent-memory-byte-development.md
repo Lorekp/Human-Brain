@@ -190,6 +190,16 @@ using the same local eligibility, rate, schedule
 and exposure. Declare weight transport and the previously exposed development
 combinations; no extra epochs, source-reader repair or gate advancement follows.
 
+The [symmetric comparison](../../experiments/r4_integrated/local_context_use_v2_result.md)
+now closes after a passing audit in 13.965 seconds. Random arms exactly reproduce
+v1. Symmetric correct context solves 3/12 taught pairs versus random's 4/12,
+with no withheld success for either. Premature EOS disappears and teacher loss
+falls, but the required endpoint advantage is absent. Do not adopt it or launch
+another feedback tweak. The current priority is one bounded learnability review
+against saved curves: distinguish exposure/stability from temporal representation
+and credit limits, with a justified locally learned neuronal reference and one
+decisive comparison before any further fit.
+
 The [independent preflight review](local-memory-byte-preflight-review.md) records
 two learning risks: averaging byte feedback weakens explicit order credit, and
 correlated write keys may overwrite useful information. These are hypotheses
