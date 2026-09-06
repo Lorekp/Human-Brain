@@ -1,7 +1,7 @@
 # Active-path output correction and incremental prefix simulation
 
-Status: root-selected next implementation, 2026-09-07. The v2 broader session
-is complete; this design has not been implemented or measured. It continues
+Status: implementation in source review and ordinary QA, 2026-09-07. The v2 broader session
+is complete; this design has not been measured on the broader workload. It continues
 the [persistent language/action plan](persistent-language-action-development-v1.md)
 and the same saved neuronal model, memory and action loop. It is not a new
 toy-perfection prerequisite or authorization for an epoch/gain sweep.
@@ -120,6 +120,51 @@ Freeze the next public stream and complete budget before running it, then
 measure useful accuracy, memory and elapsed cost together.
 
 ## Source review evidence
+
+### Selected third public continuation
+
+The reviewed third-session manifest is
+`.pytest-tmp/persistent-language-action-v3-manifest.json`, SHA256
+`fc83513a6d6accee744c5d03188bc9cec75022db3cd00ff5c49f561745aa3056`.
+It contains 24 acquisition, 16 transfer, eight recovery and eight retention
+episodes per route. Acquisition interleaves six requirements through reading
+and actions, then revisits them in different instruction forms after twelve
+episodes. Report these two blocks of twelve separately; there is no immediate
+post-correction probe or response-conditioned task selection.
+
+Continue the completed v2 online state with all numerical tensors intact,
+505 occupied slots and 92 action experiences. Both neuronal routes start from
+independent identical copies. The active-path rule changes teaching; incremental
+prefix activity preserves the free equations. No new document is appended or
+evicted. This tests longer retention age, not increased memory capacity. The
+reference restores its actually observed 18 documents and 24 edit demonstrations
+without replaying predictions or executions. Its new corrections remain matched.
+
+Each neuronal route receives 24 corrections containing 148 raw bytes plus 24
+EOS symbols and 36 action labels. All 172 reader symbols feed the existing B/C
+teaching path; at most 24 actual-event U clamps are offered. The full teacher
+exposure is greater than v2's 98 symbols, despite fewer U updates. Fresh tasks
+include negation, reversed ordering, arithmetic and composed suffixes with new
+code structures. Four long instructions remain explicit unsupported challenges.
+Eight retention items repeat the previous delayed regressions exactly. The
+public constructions are authored judgments, not a protected language-family
+holdout. Three fixed attempts on each recovery task remain teacher-free; the
+current model still has no tool-output encoder or consequence-learning rule.
+
+Freeze source before the single full continuation. The complete budget remains
+840 seconds for all three routes, actual child execution, serialization and
+checkpointing, plus 60 seconds for an independent saved-record audit; peak
+process-tree allowance is 2048 MiB. Expected maxima are 216 responses, 144
+actual children, 72 correction records and zero ingestion records. One prior
+checkpoint load and two combined-model constructions are included. No isolated
+cost fit, discarded warm-up or automatic toy successor is selected.
+
+Ordinary verification uses the already passed incremental-parity node plus
+two reviewed actual-path nodes in the existing decoder test file: one local
+clamp/custody/atomicity fixture and one actual execution/STOP/acknowledgement
+fixture. Their tiny authored state and deliberate fixture reloads are QA,
+not new task acquisition or transfer evidence. Preserve failed launches and
+all actual offers if a check fails; do not silently retry an experiment.
 
 The saved Bayes extraction is
 `.pytest-tmp/request-conditioned-saved-credit-analysis-v1.json`, SHA256
