@@ -250,7 +250,15 @@ all four different-question fit pairs still share an answer. Learning in the
 addressing path contributes useful behavior, but reliable question-to-record
 binding and the strict completion criterion remain absent. Close this fixed fit
 and use its saved prefix beliefs, outputs and work receipts for one bounded
-follow-up review before selecting another integrated change. Do not infer
+follow-up review before selecting another integrated change. The completed
+[query-interface review](local-lag-query-review.md) selects a generic 32-by-32
+byte-lag query population with fixed total squared activity 32 and one learned
+1024-by-1024 address projection. This tests direct feature access and exact
+local projection credit; saved outputs do not prove that recurrent compression
+destroyed identity information. Keep tape and codec unchanged, preserve both
+the current sequence and strongest byte references, and require ordinary QA
+and fresh six-arm admission before one fixed comparison. Retire the obsolete
+query cell, its traces and unused upstream feedback in this candidate. Do not infer
 convergence or extend training automatically. The full process-tree peak is
 1,094.074 MiB, above the disposable estimate of 734.363 MiB but below the
 2,048-MiB ceiling; future admission must account for growing retained receipts.

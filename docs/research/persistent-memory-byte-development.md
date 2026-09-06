@@ -10,7 +10,13 @@ and all four different-question fit pairs retain identical answers. This is a
 useful contribution from the learning-enabled addressing path, not reliable
 question-to-record binding or strict qualification. Close the fixed fit. Review
 the saved prefix beliefs, outputs and resource receipts before selecting one
-next integrated change; no extra epochs, rate sweep or endpoint run follows.
+next integrated change. The completed [query-interface review](local-lag-query-review.md)
+selects generic raw-byte lag features with fixed squared activity 32 and one
+learned 1024-by-1024 address projection. This removes recurrent query compression
+and its approximate credit, keeping tape/codec rules unchanged. Implement this
+one comparison with exact current-sequence and byte references, ordinary QA and
+fresh six-arm cost admission. The conditional descent bound is not a whole-system
+learning guarantee; no extra epochs, rate sweep or endpoint run follows.
 The actual 1,094.074-MiB tree peak exceeds the disposable 734.363-MiB estimate
 but remains within 2,048 MiB. Growing saved receipts need explicit future cost
 accounting. Literal neuronal sensory storage and the host action motor remain
