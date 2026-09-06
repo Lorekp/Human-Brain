@@ -1,8 +1,10 @@
 # Prospective integrated address-competition comparison
 
-Proposal for root selection, 2026-09-06. This document generates no task data and
-authorizes no model, checkpoint, action, test or acquisition. Component QA is not
-integrated admission. The [selected mechanism](neuronal-address-competition-v1.md)
+Selected for source/roster development by root, 2026-09-06, after the six
+neuronal component and three authored receipt checks passed. This protocol does
+not itself admit model, checkpoint, action, test or acquisition execution;
+freeze exact ordinary QA exposures and obtain the required complete admission.
+Component QA is not integrated admission. The [selected mechanism](neuronal-address-competition-v1.md)
 and its [learning contract](neuronal-address-competition-learning-v1.md) stay
 fixed: initial neuronal competition, one free cursor, and the same persistent
 reader's inherited all-address local corrective surrogate at eta .01.
@@ -171,6 +173,6 @@ audit. Reuse the existing declared run/audit reserve policy only after its
 accounting is recomputed for the fifth arm and 360 tapes. A rejected cost closes
 this attempted configuration; it does not authorize retries or ceiling changes.
 
-Root selection, exact roster source/data QA, complete source freeze and fresh
-measured admission remain prerequisites. This is one proposed integrated
+Exact roster source/data QA, complete source freeze and fresh measured admission
+remain prerequisites. This is one selected integrated
 milestone, not a queue of alternative experiments or a general SWE claim.

@@ -92,12 +92,12 @@ The [six-node component result](neuronal-address-competition-qa-v1-result.md)
 passes at cbf9403, including a genuine wrong action before the same reader's
 local correction and exact inherited-teacher parity. No acquisition or old
 checkpoint ran. Return this mechanism to the shared integrated workload.
-Root selects successor receipt serialization and saved independent competition
-trace validation under the [integration contract](neuronal-address-competition-integration-v1.md)
-as the next implementation step. Separate writer and saved scalar checker
-implementations share the strict schema, with expected policy supplied by frozen
-arm metadata. The two-mebibyte size guard remains prospective until authored
-maximum-row QA. Preserve the completed v1
-experiment and reuse suitable pure helpers. The subsequent source-free worker,
-new withheld comparison and full measured cost are still separate prerequisites;
-passing component QA does not admit a fit.
+Successor serialization and independent saved scalar validation also pass their
+three authored checks under the [integration contract](neuronal-address-competition-integration-v1.md#completed-receipt-qa-and-next-integration-step).
+The complete parsed row is 1,266,531 bytes, qualifying the selected 2 MiB guard
+for that representation. Expected free/teacher phase is explicit. Preserve the
+completed v1 experiment and reuse suitable pure helpers.
+Root selects the [five-arm integrated comparison](neuronal-address-competition-comparison-v1.md)
+for source/roster development and separately scoped worker, data and custody QA.
+Actual acquisition remains conditional on complete fresh measured cost and
+independent audit; no new checkpoint probe or endpoint prediction is admitted yet.

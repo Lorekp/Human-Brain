@@ -1,15 +1,12 @@
 # Competitive reader receipts: successor integration contract
 
-2026-09-06. Prospective source contract for root review. The
+2026-09-06. Selected source contract with completed authored QA. The
 [component QA bank](../../benchmarks/neuronal_address_competition_v1.qa.json)
 establishes the six selected mechanics checks, including a preserved wrong
 action followed by inherited same-instance correction. It does not admit a
-successor benchmark. Root has selected implementation of receipt serialization
-and independent saved-trace validation only. The first authorized source slice
-is the v2 serializer; the independently implemented saved checker follows under
-separate ownership.
-No model, checkpoint, action, test, roster generation or exposed endpoint was
-executed/read to prepare it.
+successor benchmark. The v2 serializer and independently implemented saved
+checker now pass the authored checks below. Preparing the source contract used
+no model, checkpoint, action, roster generation or exposed endpoint.
 
 ## Smallest first implementation
 
@@ -181,3 +178,47 @@ numerical identity and permitted metadata adaptation; test independent cost
 decision/source/PID bindings with synthetic artifacts; freeze new withheld
 cases, matched policies and memory/timing formulas; then obtain fresh completed
 cost and independent-audit admission. Preserve v1's closed outcomes throughout.
+
+## Completed receipt QA and next integration step
+
+All three selected authored tests pass at source
+`cfef29ae4c771eeead0525a8a43a96fae34286ca`, after a clean selected-checkout doctor.
+Ruff passes. All 170 prior decoder-test AST nodes are unchanged; four fixture
+helpers and three test functions were appended. The
+[receipt QA bank](../../benchmarks/neuronal_address_competition_v1.receipt_qa.json)
+has SHA256 `64f11152f7cca021d8cf59303c6a01cd836c263e9f14273a875d203a6c5b3ac6`
+and binds exact source, doctor, selection, monitor, JUnit and raw artifacts.
+
+The complete authored maximum retains every score, all 8,128 pair currents and
+activities, all winner activity, seventeen free and seventeen teacher steps,
+both full head sets and the declared text/output/path/hash/work reserve. Its
+encoded line is 431,484 bytes, writer tree 1,266,515 bytes and parsed tree 1,266,531
+bytes. The parsed tree exceeds the old 1 MiB guard and fits the selected 2 MiB
+guard. Its line SHA256 is
+`36bf3e5942e46637e9d5ecf818caa06292f238a09079789f88397cc81bf65a09`.
+The guard is now qualified for this authored representation; it is not a
+measured process-memory or complete-workload admission.
+
+Both writer and independent checker accept the six explicit valid reader
+combinations and reject the sixteen malformed compact combinations. The writer
+also rejects three inconsistent raw fields before omission and two independent
+line/tree overflows. Large tied float32 scores retain the correct normalized
+diagnostic prior. The fixed source ledger is six authored raw receipts,
+42 synthetic steps, nine top-level compactions, 22 explicit writer validations,
+22 independent validations and three bounded-record calls. These are ordinary
+data operations: zero models, Tensor constructions, production competitors,
+actual teachers, checkpoints, real actions or source-free workers ran.
+
+Pytest takes 3.441 seconds; the bounded outer launch takes 4.8257618 seconds with
+232.3984375 MiB observed owned peak. A separate saved-only review confirms the
+record hash, complete reserved fields, parsed-tree size, outcomes and AST custody.
+No passed neuronal component check was rerun.
+
+Root selects return to the integrated comparison: develop the successor
+worker/endpoint, explicit prior/model factory, parent/auditor and freshly frozen
+roster under the [five-arm comparison protocol](neuronal-address-competition-comparison-v1.md).
+Keep the same local rule and action circuit. First qualify a separately scoped
+single isolated exchange and authored data/custody/cost-decision checks. Freeze
+their exact exposures before execution, then require fresh completed measured
+cost and independent audit before acquisition. No fit, historical checkpoint
+probe or fresh endpoint prediction is admitted by this receipt QA result.

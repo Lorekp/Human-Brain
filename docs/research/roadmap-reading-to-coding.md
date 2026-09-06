@@ -24,8 +24,13 @@ completed source/math and primary-source reviews select
 implementation and explicitly scoped ordinary QA. The
 [six-node component verification](neuronal-address-competition-qa-v1-result.md)
 now passes, including real wrong-action-before-correction custody and exact
-local teacher parity. Return to integration through successor serialization
-and independent saved competition-trace validation. Two fixed threshold layers
+local teacher parity. Successor serialization and independent scalar validation
+also pass [three authored receipt checks](neuronal-address-competition-integration-v1.md#completed-receipt-qa-and-next-integration-step).
+Return to the shared workload through the selected
+[five-arm comparison](neuronal-address-competition-comparison-v1.md): develop
+its worker, prior/factory, parent/auditor and fresh structural cohort; qualify
+their data/custody boundaries and complete cost before acquisition.
+Two fixed threshold layers
 commit free recall; the same reader reopens all candidates for its existing
 direct local corrective surrogate after execution. Preserve raw requests and
 the working action heads. No new fit or checkpoint probe is admitted. Any
