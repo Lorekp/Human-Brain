@@ -240,7 +240,21 @@ codec credit remains a declared local filtering approximation. Retire the old
 writer/tag machinery from this main path. Literal sensory storage is counted,
 not claimed as semantic compression or learned byte identity. Implement and
 validate this one integrated replacement, then require fresh five-arm cost
-admission before its fixed fit. No encoder learning
+admission before its fixed fit. The [completed sequence return](../../experiments/r4_integrated/local_sequence_memory_v1_result.md)
+passes its fresh 518.720-second projection and independent audit, completing
+the run and audit in 213.521 seconds. Learned scores 4/8 fit, 2/4 new-value,
+2/4 delayed and 1/4 interference; each candidate control scores zero. The byte
+reference exactly reproduces 5/8, 2/4, 2/4 and zero. One new-value assignment
+swap is correct in both directions, while the other selects the wrong values;
+all four different-question fit pairs still share an answer. Learning in the
+addressing path contributes useful behavior, but reliable question-to-record
+binding and the strict completion criterion remain absent. Close this fixed fit
+and use its saved prefix beliefs, outputs and work receipts for one bounded
+follow-up review before selecting another integrated change. Do not infer
+convergence or extend training automatically. The full process-tree peak is
+1,094.074 MiB, above the disposable estimate of 734.363 MiB but below the
+2,048-MiB ceiling; future admission must account for growing retained receipts.
+No encoder learning
 or output-only diagnostic is added. Segmentation must not
 supply identifier/value roles or answer factors. Do not extend epochs or sweep
 leaks, broadcasts or seeds. No special identifier

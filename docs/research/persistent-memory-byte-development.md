@@ -1,6 +1,22 @@
 # Persistent memory and byte output: parallel development
 
-Current execution: the [fixed event-encoder comparison](../../experiments/r4_integrated/local_memory_event_v1_result.md)
+Current execution: the [sequence-memory comparison](../../experiments/r4_integrated/local_sequence_memory_v1_result.md)
+and independent audit complete in 213.521 seconds after fresh admission at
+518.720 projected seconds. Learned scores 4/8 taught, 2/4 new-value, 2/4 delayed
+and 1/4 interference, while all three candidate controls score zero. The byte
+reference exactly reproduces its prior 5/8, 2/4, 2/4 and zero. One novel
+assignment-swap pair is correct in both directions; the other is wrong in both,
+and all four different-question fit pairs retain identical answers. This is a
+useful contribution from the learning-enabled addressing path, not reliable
+question-to-record binding or strict qualification. Close the fixed fit. Review
+the saved prefix beliefs, outputs and resource receipts before selecting one
+next integrated change; no extra epochs, rate sweep or endpoint run follows.
+The actual 1,094.074-MiB tree peak exceeds the disposable 734.363-MiB estimate
+but remains within 2,048 MiB. Growing saved receipts need explicit future cost
+accounting. Literal neuronal sensory storage and the host action motor remain
+declared limits.
+
+The preceding [fixed event-encoder comparison](../../experiments/r4_integrated/local_memory_event_v1_result.md)
 and independent audit complete in 314.136 seconds after fresh admission at
 773.893 projected seconds. Every updating candidate, including writes-disabled,
 scores 1/8 taught and zero new-value, delayed or interference success. The byte
