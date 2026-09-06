@@ -1135,3 +1135,139 @@ def test_multiscale_controller_traces_reach_unchanged_overwrite_tags(dtype):
     assert all(torch.equal(value, expected.credit[name]) for name, value in actual.credit.items())
     assert all(torch.equal(value, getattr(expected.cell, name))
                for name, value in actual.cell.snapshot().items())
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_fixed_event_encoder_matches_independent_serial_formula_and_retains_no_state(dtype):
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    model = LocalMemoryLearner(
+        input_code_size=2, hidden_size=3, key_size=2, value_size=94,
+        writer_update_fraction=0.5, seed=29,
+    )
+    if dtype == torch.float64:
+        model.double()
+    encoder = model.event_encoder
+    before = copy.deepcopy(model.state_dict())
+    attributes = set(vars(encoder)), set(vars(model))
+    arrays = {name: p.detach().double().numpy().copy()
+              for name, p in encoder.named_parameters()}
+    codes = model.input_codes.double().numpy()
+    # Authored event spans, independent of the production segmenter.
+    fixtures = [
+        (b"", []), (b"ab", [b"ab"]), (b"ba", [b"ba"]),
+        (b"ab ab", [b"ab", b" ", b"ab"]),
+        (b"a" * 17, [b"a" * 16, b"a"]),
+        (b"\xff\x00\t", [b"\xff", b"\x00", b"\t"]),
+    ]
+    outputs = []
+    with (
+        patch.object(encoder, "_step", wraps=encoder._step) as steps,
+        patch.object(encoder, "local_step", side_effect=AssertionError("no eligibility")),
+        patch.object(encoder, "initial_learning_state", side_effect=AssertionError("no traces")),
+    ):
+        for raw, events in fixtures:
+            expected = []
+            for event in [*events, (256,)]:
+                activity = np.zeros(2)
+                for token in event:
+                    activation = np.array([
+                        np.tanh(sum(arrays['weight'][j, i] * codes[token, i] for i in range(2))
+                                + arrays['bias'][j]
+                                + sum(arrays['recurrent'][j, i] * activity[i] for i in range(2)))
+                        for j in range(2)
+                    ])
+                    activity = activity + 0.5 * (activation - activity)
+                expected.append(activity)
+            actual = model._encoded(raw)
+            assert actual.shape == (1, len(events) + 1, 2)
+            assert not actual.requires_grad and actual.grad_fn is None
+            tolerance = 1e-6 if dtype == torch.float32 else 1e-12
+            np.testing.assert_allclose(actual[0].numpy(), expected,
+                                       atol=tolerance, rtol=tolerance)
+            outputs.append(actual)
+        assert steps.call_count == 35  # 29 authored raw bytes + six EOS steps.
+    assert not torch.equal(outputs[1][:, 0], outputs[2][:, 0])  # Order is represented.
+    assert torch.equal(outputs[1][:, 0], outputs[3][:, 0])
+    assert torch.equal(outputs[1][:, 0], outputs[3][:, 2])  # Reset, not carried activity.
+    assert all(torch.equal(outputs[0][:, -1], value[:, -1]) for value in outputs)
+    assert attributes == (set(vars(encoder)), set(vars(model)))
+    for name, value in before.items():
+        if isinstance(value, torch.Tensor):
+            assert torch.equal(value, model.state_dict()[name])
+        else:
+            assert value == model.state_dict()[name]
+    assert set(encoder.state_dict()) == {'weight', 'recurrent', 'bias'}
+    assert all(not p.requires_grad and p.grad is None for p in encoder.parameters())
+
+
+@pytest.mark.parametrize("fault", [
+    "raw_type", "code_nan", "bias_inf", "weight_dtype", "recurrent_shape",
+    "weight_grad", "code_grad", "query_dtype", "fraction", "activity_nan",
+])
+def test_fixed_event_encoder_rejects_invalid_boundary_and_actual_activity(fault):
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    model = LocalMemoryLearner(
+        input_code_size=2, hidden_size=3, key_size=2, value_size=94,
+        writer_update_fraction=0.5, seed=29,
+    )
+    encoder = model.event_encoder
+    raw = b"a"
+    if fault == "raw_type":
+        raw = "a"
+    elif fault == "code_nan":
+        model.input_codes[257, 0] = torch.nan  # Full fixed table, including unused BOS.
+    elif fault == "bias_inf":
+        encoder.bias[0] = torch.inf
+    elif fault == "weight_dtype":
+        encoder.weight.data = encoder.weight.double()
+    elif fault == "recurrent_shape":
+        encoder.recurrent.data = encoder.recurrent[:1].clone()
+    elif fault == "weight_grad":
+        encoder.weight.requires_grad_(True)
+    elif fault == "code_grad":
+        model.input_codes.requires_grad_(True)
+    elif fault == "query_dtype":
+        model.query_cell.double()
+    elif fault == "fraction":
+        encoder.update_fraction = 0.25
+    elif fault == "activity_nan":
+        limit = torch.finfo(torch.float32).max
+        model.input_codes.fill_(limit)
+        encoder.weight.copy_(torch.tensor([[limit, -limit], [limit, -limit]]))
+    weights = {name: p.detach().clone() for name, p in model.named_parameters()}
+    with patch.object(encoder, "_step", wraps=encoder._step) as steps:
+        with pytest.raises(ValueError):
+            model._encoded(raw)
+        assert steps.call_count == (1 if fault == "activity_nan" else 0)
+    for name, parameter in model.named_parameters():
+        torch.testing.assert_close(parameter, weights[name], rtol=0, atol=0, equal_nan=True)
+
+
+def test_fixed_event_encoder_private_initialization_preserves_shared_arrays():
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    rng = torch.random.get_rng_state().clone()
+    model = LocalMemoryLearner(
+        input_code_size=2, hidden_size=3, key_size=2, value_size=94,
+        writer_update_fraction=0.5, seed=29,
+    )
+    assert torch.equal(torch.random.get_rng_state(), rng)
+    memory = PlasticMemory(2, 3, 2, 94, seed=29, writer_update_fraction=0.5)
+    query = StreamingRateCell(2, 2, seed=30)
+    encoder = StreamingRateCell(2, 2, seed=33)
+    for expected, actual in ((memory, model.memory), (query, model.query_cell),
+                             (encoder, model.event_encoder)):
+        assert all(torch.equal(value, actual.state_dict()[name])
+                   for name, value in expected.state_dict().items())
+    codes = torch.empty(258, 2).normal_(generator=torch.Generator().manual_seed(31))
+    assert torch.equal(codes, model.input_codes)
+    generator = torch.Generator().manual_seed(32)
+    for name, size in [('controller', 3), ('key', 2), ('value', 94), ('strength', 1)]:
+        expected = torch.randn(size, 96, generator=generator) / np.sqrt(96)
+        if name != 'value':
+            assert torch.equal(expected, getattr(model, name + '_feedback'))
+    assert torch.equal(torch.random.get_rng_state(), rng)
+    assert model.get_extra_state()['schema'] == 'local-memory-phase-lms-v5'
+    assert sum(p.numel() for p in model.event_encoder.parameters()) == 10

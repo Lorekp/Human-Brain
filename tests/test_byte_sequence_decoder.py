@@ -536,7 +536,7 @@ def test_local_composition_source_free_transport_and_disabled_teacher():
         wrong_mode.restore_snapshot(snapshot)
 
 
-@pytest.fixture(params=(2, 3, 4, 5, 6, 7, 8, 9))
+@pytest.fixture(params=(2, 3, 4, 5, 6, 7, 8, 9, 10))
 def local_cost_runner(request):
     if request.param == 2:
         from experiments.r4_integrated import local_memory_byte_v2 as runner
@@ -546,7 +546,10 @@ def local_cost_runner(request):
     from types import SimpleNamespace
 
     from experiments.r4_integrated import local_memory_byte_harness as harness
-    if request.param == 9:
+    if request.param == 10:
+        from experiments.r4_integrated import local_memory_event_v1 as harness
+        SPEC = harness.SPEC
+    elif request.param == 9:
         from experiments.r4_integrated import local_memory_multiscale_v1 as harness
         SPEC = harness.SPEC
     elif request.param == 8:
@@ -856,7 +859,8 @@ def test_local_forward_prediction_omits_unused_eligibility_overflow_but_teaching
     state = learner.memory.initial_local_state(1)
     before = learner.snapshot(state)
     # h stays zero while unused bias eligibility doubles per step and overflows.
-    query = b"x" * (130 if dtype == torch.float32 else 1030)
+    # Singleton punctuation keeps the declared number of query-cell events.
+    query = b"!" * (130 if dtype == torch.float32 else 1030)
     assert isinstance(learner.predict(query, state, 1), ByteGeneration)
     _assert_nested_equal(before, learner.snapshot(state))
     with pytest.raises(ValueError, match="finite"):
@@ -1722,7 +1726,7 @@ def test_two_byte_lesson_actual_lms_receipts_before_update_and_retirement():
 
 
 @pytest.mark.parametrize(
-    "runner_module", ["local_memory_multiscale_v1"]
+    "runner_module", ["local_memory_event_v1"]
 )
 def test_two_byte_source_free_worker_fresh_process_read_only_checkpoint(tmp_path, runner_module):
     import importlib
@@ -1798,6 +1802,10 @@ def test_two_byte_source_free_worker_fresh_process_read_only_checkpoint(tmp_path
     )
     assert result["query_byte_steps"] == 2 * len(runner.ARMS) * (len(b"same question") + 1)
     assert len(result["outputs"]) == 2 * len(runner.ARMS)
+    for arm, work in result["input_work"].items():
+        assert work["raw_bytes"] == 26 and work["string_eos"] == 2
+        assert work["encoder_steps"] == (0 if arm == "current_tagged" else 28)
+        assert work["controller_events"] == (28 if arm == "current_tagged" else 8)
     for row in result["outputs"]:
         assert (
             row["generated_hex"] == "0000"
@@ -1815,8 +1823,8 @@ def test_two_byte_source_free_worker_fresh_process_read_only_checkpoint(tmp_path
     "mode", ["tagged", "aggregate", "writer_maps_frozen", "frozen", "writes_disabled"]
 )
 def test_localization_token_trace_matches_whole_ingest_and_single_purge(dtype, mode):
+    from experiments.r4_integrated.local_memory_event_reference import LocalMemoryLearner
     from experiments.r4_integrated.local_memory_localization_core import traced_ingest
-    from humanbrain.local_memory_learner import LocalMemoryLearner
 
     model = LocalMemoryLearner(writer_update_fraction=0.5,
         mode=mode, input_code_size=2, value_size=94, hidden_size=3, key_size=2
@@ -1849,8 +1857,8 @@ def test_localization_token_trace_matches_whole_ingest_and_single_purge(dtype, m
 
 @pytest.mark.parametrize("ending", ["first_eos", "second_eos", "full_eos", "cap"])
 def test_localization_observations_match_prediction_and_count_supplemental_phases(ending):
+    from experiments.r4_integrated.local_memory_event_reference import LocalMemoryLearner
     from experiments.r4_integrated.local_memory_localization_core import observed_query
-    from humanbrain.local_memory_learner import LocalMemoryLearner
 
     model = LocalMemoryLearner(
         writer_update_fraction=0.5, input_code_size=2, value_size=94, hidden_size=3, key_size=2
@@ -1879,12 +1887,12 @@ def test_localization_observations_match_prediction_and_count_supplemental_phase
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
 def test_localization_proposal_matches_actual_teacher_and_isolates_two_blocks(dtype):
+    from experiments.r4_integrated.local_memory_event_reference import LocalMemoryLearner
     from experiments.r4_integrated.local_memory_localization_core import (
         observed_query,
         perturbed_model,
         propose_blocks,
     )
-    from humanbrain.local_memory_learner import LocalMemoryLearner
 
     model = LocalMemoryLearner(
         writer_update_fraction=0.5, input_code_size=2, value_size=94, hidden_size=3, key_size=2
@@ -1926,8 +1934,8 @@ def test_localization_proposal_matches_actual_teacher_and_isolates_two_blocks(dt
 
 
 def test_localization_positive_block_uses_actual_after_despite_float_cancellation():
+    from experiments.r4_integrated.local_memory_event_reference import LocalMemoryLearner
     from experiments.r4_integrated.local_memory_localization_core import perturbed_model
-    from humanbrain.local_memory_learner import LocalMemoryLearner
 
     model = LocalMemoryLearner(
         writer_update_fraction=0.5, input_code_size=2, value_size=94, hidden_size=3, key_size=2
@@ -2051,7 +2059,7 @@ def test_localization_worker_fresh_process_empty_memory_query_only(tmp_path):
 @pytest.mark.parametrize(
     "reference_module",
     ["local_memory_query_credit_reference", "local_memory_value_credit_reference",
-     "local_memory_multiscale_reference"],
+     "local_memory_multiscale_reference", "local_memory_event_reference"],
 )
 def test_local_credit_reference_matches_frozen_git_source_and_trajectories(dtype, reference_module):
     """The experiment adapter must reproduce the old dependency, not only its caller."""
@@ -2135,6 +2143,8 @@ def test_local_credit_reference_matches_frozen_git_source_and_trajectories(dtype
         )
         exec(compile(source, "<frozen-learner-QA>", "exec"), old_learner.__dict__)
         config = dict(input_code_size=2, value_size=94, hidden_size=3, key_size=2, seed=733)
+        if reference_module == "local_memory_event_reference":
+            config = {"seed": 733}  # Actual 64-neuron multiscale byte comparator.
         expected = old_learner.LocalMemoryLearner(**config)
         actual = reference.LocalMemoryLearner(**config)
         for model in (actual, expected):
@@ -2161,8 +2171,8 @@ def test_local_credit_reference_matches_frozen_git_source_and_trajectories(dtype
                 _assert_nested_equal(actual.state_dict(), expected.state_dict())
 
 
-def test_multiscale_fixed_roster_factory_source_and_strict_endpoint():
-    from experiments.r4_integrated import local_memory_multiscale_v1 as runner
+def test_event_fixed_roster_factory_source_and_strict_endpoint():
+    from experiments.r4_integrated import local_memory_event_v1 as runner
     from experiments.r4_integrated import local_memory_two_byte_v1 as previous
 
     assert (*previous.ARMS, "current_tagged") == runner.ARMS
@@ -2177,8 +2187,8 @@ def test_multiscale_fixed_roster_factory_source_and_strict_endpoint():
     assert len(runner.SPEC.config["arms"]) == len(runner.SPEC.config["query_credit"]) == 6
     assert len(runner.SPEC.config["value_credit"]) == 6
     manifest = runner.sources()
-    for name in ("local_memory_multiscale_v1.py", "local_memory_multiscale_v1.md",
-                 "local_memory_multiscale_reference.py", "local_memory_two_byte_v1.py"):
+    for name in ("local_memory_event_v1.py", "local_memory_event_v1.md",
+                 "local_memory_event_reference.py", "local_memory_two_byte_v1.py"):
         path = runner.ROOT / "experiments/r4_integrated" / name
         assert manifest[path.relative_to(runner.ROOT).as_posix()] == runner.file_hash(path)
     models = {arm: runner.new_model(runner.SPEC, arm) for arm in runner.ARMS}
@@ -2188,10 +2198,8 @@ def test_multiscale_fixed_roster_factory_source_and_strict_endpoint():
     for arm, model in models.items():
         assert model.query_cell.update_fraction == 0.5
         assert "query_cell.update_fraction" not in model.state_dict()
-        if arm == "current_tagged":
-            assert model.memory.controller.update_fraction == 0.5
-        else:
-            assert torch.equal(model.memory.controller.update_fraction, rates)
+        assert torch.equal(model.memory.controller.update_fraction, rates)
+        assert hasattr(model, "event_encoder") == (arm != "current_tagged")
     corrupted = copy.deepcopy(initial)
     corrupted["frozen"]["memory.controller.update_fraction"][0] = 0.25
     with pytest.raises(AssertionError):
@@ -2216,10 +2224,10 @@ def test_multiscale_fixed_roster_factory_source_and_strict_endpoint():
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
 def test_explicit_scalar_forward_matches_current_reference_before_teaching(dtype):
+    from experiments.r4_integrated.local_memory_event_reference import LocalMemoryLearner
     from experiments.r4_integrated.local_memory_multiscale_reference import (
         LocalMemoryLearner as CurrentLearner,
     )
-    from humanbrain.local_memory_learner import LocalMemoryLearner
 
     config = dict(input_code_size=2, value_size=94, hidden_size=3, key_size=2, seed=733)
     repaired, current = (
@@ -2247,10 +2255,10 @@ def test_explicit_scalar_forward_matches_current_reference_before_teaching(dtype
 def test_explicit_scalar_controls_preserve_immediate_predecessor_trajectory(dtype, mode):
     from dataclasses import fields
 
+    from experiments.r4_integrated.local_memory_event_reference import LocalMemoryLearner
     from experiments.r4_integrated.local_memory_multiscale_reference import (
         LocalMemoryLearner as PreviousLearner,
     )
-    from humanbrain.local_memory_learner import LocalMemoryLearner
 
     config = dict(mode=mode, input_code_size=2, value_size=94, hidden_size=3, key_size=2, seed=733)
     candidate, previous = (
@@ -2357,9 +2365,8 @@ def test_binding_query_stage_fresh_worker_two_modes_empty_memories(tmp_path):
 
 @pytest.mark.parametrize("mode", ["tagged", "aggregate", "writer_maps_frozen", "frozen",
                                   "writes_disabled"])
-def test_multiscale_candidate_controls_use_same_bank_and_keep_fractions_fixed(mode):
-    from experiments.r4_integrated import local_memory_multiscale_v1 as runner
-    from experiments.r4_integrated.local_memory_localization_core import traced_ingest
+def test_event_candidate_controls_keep_encoder_and_writer_rates_fixed(mode):
+    from experiments.r4_integrated import local_memory_event_v1 as runner
 
     model = runner.new_model(runner.SPEC, mode)
     rates = torch.tensor([0.5] * 32 + [0.125] * 16 + [0.03125] * 16)
@@ -2368,8 +2375,8 @@ def test_multiscale_candidate_controls_use_same_bank_and_keep_fractions_fixed(mo
     before = copy.deepcopy(model.state_dict())
     for target in (b"aa", b"bc"):
         state = model.ingest([b"x=a", b"y=b"])
-        traced, _ = traced_ingest(model, [b"x=a", b"y=b"])
-        _assert_nested_equal(state.snapshot(), traced.snapshot())
+        repeated = model.ingest([b"x=a", b"y=b"])
+        _assert_nested_equal(state.snapshot(), repeated.snapshot())
         snapshot = model.snapshot(state)
         model.predict(b"x?", state, 2)
         _assert_nested_equal(snapshot, model.snapshot(state))
@@ -2378,6 +2385,9 @@ def test_multiscale_candidate_controls_use_same_bank_and_keep_fractions_fixed(mo
         assert feedback.teacher_count == 3
         assert torch.equal(model.memory.controller.update_fraction, rates)
         assert model.query_cell.update_fraction == 0.5
+        for key, value in before.items():
+            if key.startswith("event_encoder."):
+                assert torch.equal(value, model.state_dict()[key])
         if mode == "writes_disabled":
             assert not state.synapses.count_nonzero() and not feedback.memory_updated
     if mode == "frozen":
@@ -2387,5 +2397,55 @@ def test_multiscale_candidate_controls_use_same_bank_and_keep_fractions_fixed(mo
             if key.startswith("memory.") and not key.startswith("memory.query_"):
                 _assert_nested_equal(value, model.state_dict()[key])
         assert not torch.equal(before["decoder.output_weights"], model.decoder.output_weights)
+
+
     else:
         assert not torch.equal(before["decoder.output_weights"], model.decoder.output_weights)
+
+
+def test_event_input_work_separates_raw_encoder_controller_and_extra_host_counts():
+    from experiments.r4_integrated import local_memory_event_v1 as runner
+
+    actual = runner.harness.input_work(runner.SPEC, "tagged", b"ab !", repeats=2)
+    assert actual == {
+        "raw_bytes": 8, "string_eos": 2, "encoder_steps": 10, "controller_events": 8,
+        "encoding_host_segmentations": 2, "encoding_host_bytes": 8,
+        "accounting_host_segmentations": 1, "accounting_host_bytes": 4,
+    }
+    old = runner.harness.input_work(runner.SPEC, "current_tagged", b"ab !", repeats=2)
+    assert old == {
+        "raw_bytes": 8, "string_eos": 2, "encoder_steps": 0, "controller_events": 10,
+        "encoding_host_segmentations": 0, "encoding_host_bytes": 0,
+        "accounting_host_segmentations": 0, "accounting_host_bytes": 0,
+    }
+    assert runner.harness.sum_input_work([actual, old])["controller_events"] == 18
+
+
+def test_event_complete_lesson_counts_actual_traversals_without_encoder_replay():
+    from experiments.r4_integrated import local_memory_event_v1 as runner
+
+    model = runner.new_model(runner.SPEC, "tagged")
+    documents, query = [b"alpha=ab", b"beta=ba"], b"alpha?"
+    calls = []
+    encoded = model._encoded
+
+    def record(raw):
+        values = encoded(raw)
+        calls.append((raw, values.shape[1]))
+        return values
+
+    episode = {"document_hex": [raw.hex() for raw in documents],
+               "query_hex": query.hex(), "target_hex": b"ab".hex()}
+    with patch.object(model, "_encoded", side_effect=record), patch.object(
+        torch.autograd, "backward", side_effect=AssertionError("local only")
+    ):
+        receipt = runner.harness.event_lesson(runner.SPEC, "tagged", model, episode, lambda: None)
+    assert calls == [(documents[0], 4), (documents[1], 4), (query, 3), (query, 3)]
+    assert receipt["teacher_count"] == 3
+    docs, queries = receipt["input_work"]["document"], receipt["input_work"]["query"]
+    assert docs["raw_bytes"] == 15 and docs["string_eos"] == 2
+    assert docs["encoder_steps"] == 17 and docs["controller_events"] == 8
+    assert queries["raw_bytes"] == 12 and queries["string_eos"] == 2
+    assert queries["encoder_steps"] == 14 and queries["controller_events"] == 6
+    assert queries["accounting_host_segmentations"] == 1
+    assert receipt["seconds"] > 0

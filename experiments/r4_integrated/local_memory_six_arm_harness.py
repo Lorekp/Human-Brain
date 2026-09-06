@@ -46,7 +46,7 @@ class Experiment:
 
 
 def validate_initial_models(spec, initial):
-    """Match common arrays and only the declared fixed writer-rate vector."""
+    """Match all common arrays and only the three actual fixed encoder tensors."""
     import torch
 
     assert set(initial) == set(ARMS)
@@ -54,21 +54,80 @@ def validate_initial_models(spec, initial):
         arm: {key: value for key, value in state.items() if isinstance(value, torch.Tensor)}
         for arm, state in initial.items()
     }
-    rate_key = spec.config["candidate_only_buffer"]
-    assert rate_key == "memory.controller.update_fraction"
+    extra = set(spec.config["candidate_only_initial_tensor_keys"])
+    assert extra == {"event_encoder.weight", "event_encoder.bias", "event_encoder.recurrent"}
     reference = tensors["current_tagged"]
-    assert rate_key not in reference
-    assert spec.config["writer_update_fraction"]["current_tagged"] == 0.5
+    assert not extra.intersection(reference)
+    rate_key = "memory.controller.update_fraction"
+    rates = torch.tensor([0.5] * 32 + [0.125] * 16 + [0.03125] * 16)
     for arm in ARMS:
         current = tensors[arm]
-        assert set(current) == set(reference) | ({rate_key} if arm != "current_tagged" else set())
+        assert set(current) == set(reference) | (extra if arm != "current_tagged" else set())
         for key, value in reference.items():
             assert current[key].dtype == value.dtype and same_state(current[key], value)
+        assert spec.config["writer_update_fraction"][arm] == rates.tolist()
+        assert current[rate_key].dtype == torch.float32 and same_state(current[rate_key], rates)
         if arm != "current_tagged":
-            expected = torch.tensor([0.5] * 32 + [0.125] * 16 + [0.03125] * 16)
-            assert spec.config["writer_update_fraction"][arm] == expected.tolist()
-            assert current[rate_key].dtype == torch.float32
-            assert same_state(current[rate_key], expected)
+            for key in extra:
+                assert current[key].dtype == torch.float32
+                assert same_state(current[key], tensors["tagged"][key])
+            assert sum(tensor_bytes(current[key]) for key in extra) == 8320
+
+
+def input_work(spec, arm, raw, repeats=1):
+    """Count a declared input without rerunning its neuronal encoder.
+
+    The extra host segmentation occurs once here; actual model repetitions are
+    separately multiplied. No raw/event cache is retained by the learner.
+    """
+    from humanbrain.byte_events import segment_bytes
+
+    assert repeats >= 1
+    eventized = spec.config["input_encoding"][arm] == "fixed_rate_cell_byte_events"
+    raw_events = len(segment_bytes(raw)) if eventized else len(raw)
+    return {
+        "raw_bytes": repeats * len(raw), "string_eos": repeats,
+        "encoder_steps": repeats * (len(raw) + 1) if eventized else 0,
+        "controller_events": repeats * (raw_events + 1),
+        "encoding_host_segmentations": repeats if eventized else 0,
+        "encoding_host_bytes": repeats * len(raw) if eventized else 0,
+        "accounting_host_segmentations": int(eventized),
+        "accounting_host_bytes": len(raw) if eventized else 0,
+    }
+
+
+def sum_input_work(rows):
+    rows = list(rows)
+    assert rows
+    return {key: sum(row[key] for row in rows) for key in rows[0]}
+
+
+def event_lesson(spec, arm, model, episode, guard):
+    begin = time.perf_counter()
+    record = lesson(spec, model, episode, guard)
+    record["input_work"] = {
+        "document": sum_input_work(input_work(spec, arm, bytes.fromhex(raw))
+                                   for raw in episode["document_hex"]),
+        "query": input_work(spec, arm, bytes.fromhex(episode["query_hex"]), repeats=2),
+    }
+    record["seconds"] = time.perf_counter() - begin
+    return record
+
+
+def event_export(spec, models, checks, isolated, report, guard):
+    export_memories(models, checks, isolated, report, guard)
+    begin = time.perf_counter()
+    report["final_ingestion_input_work"] = {}
+    for arm in models:
+        seen, work = set(), []
+        for case in checks:
+            if case["memory_id"] in seen:
+                continue
+            seen.add(case["memory_id"])
+            field = "additional_document_hex" if case["base_memory_id"] else "document_hex"
+            work.extend(input_work(spec, arm, bytes.fromhex(raw)) for raw in case[field])
+        report["final_ingestion_input_work"][arm] = sum_input_work(work)
+    report["final_ingestion_seconds"] += time.perf_counter() - begin
 
 
 def worker(experiment: Experiment, args):
@@ -87,7 +146,7 @@ def worker(experiment: Experiment, args):
     assert requests["source_sha256"] == experiment.sources(spec)
     saved = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
     assert set(saved) == set(ARMS)
-    rows, query_steps = [], 0
+    rows, query_steps, work_by_arm = [], 0, {}
     for arm in ARMS:
         entry = saved[arm]
         assert set(entry) == {"weights", "memories"}
@@ -97,6 +156,7 @@ def worker(experiment: Experiment, args):
         states = {
             key: model.memory.restore_local_state(value) for key, value in entry["memories"].items()
         }
+        arm_work = []
         for request in requests["cases"]:
             assert set(request) == {"id", "memory_id", "query_hex", "delay_reads"}
             if time.time() > args.deadline_unix:
@@ -113,6 +173,12 @@ def worker(experiment: Experiment, args):
                 begin = time.perf_counter()
                 generated = model.predict(query, state, spec.config["max_bytes"])
                 query_steps += len(query) + 1
+            work = [input_work(spec, arm, query)]
+            if request["delay_reads"]:
+                work.append(input_work(spec, arm, b"What is the value of k99?",
+                                       repeats=request["delay_reads"]))
+            request_work = sum_input_work(work)
+            arm_work.append(request_work)
             assert digest(state.snapshot()) == before
             rows.append(
                 {
@@ -121,9 +187,11 @@ def worker(experiment: Experiment, args):
                     **generation_record(generated),
                     "seconds": time.perf_counter() - begin,
                     "memory_sha256": before,
+                    "input_work": request_work,
                 }
             )
         assert same_state(entry["weights"], model.state_dict())
+        work_by_arm[arm] = sum_input_work(arm_work)
     assert file_hash(args.checkpoint) == args.checkpoint_sha
     assert file_hash(args.requests) == args.requests_sha
     assert experiment.sources(spec) == requests["source_sha256"]
@@ -133,6 +201,8 @@ def worker(experiment: Experiment, args):
             "status": "completed",
             "outputs": rows,
             "query_byte_steps": query_steps,
+            "input_work": work_by_arm,
+            "query_byte_steps_scope": "raw query bytes plus EOS, not controller events",
             "checkpoint_sha256": args.checkpoint_sha,
             "requests_sha256": args.requests_sha,
             "worker_pid": os.getpid(),
@@ -286,7 +356,7 @@ def run(experiment: Experiment, args):
         report["input_code_tensor_bytes"] = tensor_bytes(models["tagged"].input_codes)
         for completed_indices, index in enumerate(indices, 1):
             for arm in ARMS:
-                record = lesson(spec, models[arm], schedule[index], guard)
+                record = event_lesson(spec, arm, models[arm], schedule[index], guard)
                 report["lessons"].append({"arm": arm, "index": index, **record})
             if completed_indices % 128 == 0:
                 print(
@@ -307,18 +377,40 @@ def run(experiment: Experiment, args):
             for k in fixed
         )
         report["frozen_invariants"] = {"all_frozen": True, "writer_maps_frozen_keys": fixed}
+        encoder_keys = spec.config["candidate_only_initial_tensor_keys"]
+        assert all(same_state(initial[arm][key], models[arm].state_dict()[key])
+                   for arm in ARMS[:-1] for key in encoder_keys)
+        report["frozen_invariants"]["event_encoder_fixed_keys"] = encoder_keys
         if args.mode == "cost":
             report["cap_generation"] = {}
             for arm, model in models.items():
                 guard()
                 report["cap_generation"][arm] = capped_prediction(spec, arm, model)
+                begin = time.perf_counter()
+                report["cap_generation"][arm]["input_work"] = input_work(
+                    spec, arm, b"What is the value of k00?")
+                report["cap_generation"][arm]["seconds"] += time.perf_counter() - begin
         isolated = args.output / "source-free"
         isolated.mkdir()
-        export_memories(models, checks, isolated, report, guard)
+        event_export(spec, models, checks, isolated, report, guard)
         initial_reference = set(tensor_only(initial["current_tagged"]))
         initial_repaired = set(tensor_only(initial["tagged"]))
         del models, initial
         final_actions(spec, args, checks, report, guard)
+        generated = json.loads((isolated / "generated.json").read_bytes())
+        report["worker"]["input_work"] = generated["input_work"]
+        report["input_work"] = {
+            arm: {
+                "acquisition_document": sum_input_work(
+                    row["input_work"]["document"] for row in report["lessons"]
+                    if row["arm"] == arm),
+                "acquisition_query": sum_input_work(
+                    row["input_work"]["query"] for row in report["lessons"] if row["arm"] == arm),
+                "final_document": report["final_ingestion_input_work"][arm],
+                "final_query": generated["input_work"][arm],
+                **({"cost_cap_query": report["cap_generation"][arm]["input_work"]}
+                   if args.mode == "cost" else {}),
+            } for arm in ARMS}
         report["counts"] = {
             "first_attempts": len(report["lessons"]),
             "teacher_byte_offers": sum(x["teacher_count"] for x in report["lessons"]),
@@ -332,6 +424,30 @@ def run(experiment: Experiment, args):
             "actions": len(report["actions"]),
             "motor_demos": 2,
         }
+        all_work = [work for stages in report["input_work"].values() for work in stages.values()]
+        total_work = sum_input_work(all_work)
+        for key in ("raw_bytes", "string_eos", "encoder_steps", "encoding_host_segmentations",
+                    "encoding_host_bytes", "accounting_host_segmentations",
+                    "accounting_host_bytes"):
+            report["counts"]["input_" + key] = total_work[key]
+        for kind in ("document", "query"):
+            report["counts"]["writer_controller_events" if kind == "document"
+                             else "query_controller_events"] = sum(
+                work["controller_events"] for stages in report["input_work"].values()
+                for stage, work in stages.items() if kind in stage)
+        for counter, excluded in (
+            ("memory_write_event_opportunities", {"writes_disabled"}),
+            ("writer_controller_eligibility_events", {"writer_maps_frozen", "frozen"}),
+            ("writer_credit_transport_event_opportunities",
+             {"writer_maps_frozen", "frozen", "writes_disabled"}),
+        ):
+            report["counts"][counter] = sum(
+                work["controller_events"] for arm, stages in report["input_work"].items()
+                for stage, work in stages.items() if "document" in stage and arm not in excluded)
+        for arm, stages in report["input_work"].items():
+            final_doc = stages["final_document"]
+            assert final_doc["raw_bytes"] + final_doc["string_eos"] == (
+                report["final_ingestion_byte_steps"][arm])
         report["counts"]["enabled_decoder_step_opportunities"] = sum(
             row["teacher_count"] for row in report["lessons"] if row["arm"] != "frozen"
         )
@@ -375,14 +491,28 @@ def run(experiment: Experiment, args):
             "rules": spec.config["writer_timescale"],
             "update_fractions": spec.config["writer_update_fraction"],
             "includes_frozen_forward_computation": True,
-            "candidate_only_initial_tensor_keys": sorted(initial_repaired - initial_reference),
+            "candidate_only_initial_tensor_keys": [],
             "reference_only_initial_tensor_keys": sorted(initial_reference - initial_repaired),
+        }
+        report["input_encoding_scope"] = {
+            "rules": spec.config["input_encoding"], "encoder": spec.config["event_encoder"],
+            "candidate_only_initial_tensor_keys": sorted(initial_repaired - initial_reference),
+            "reference_only_initial_tensor_keys": [],
+            "byte_steps_mean": "raw bytes plus EOS, not writer/query controller events",
+            "extra_host_accounting": "segment once per distinct call; no encoder/query replay",
         }
         report["count_scope"] = (
             "Decoder changed flags are lesson-level ORs; "
             "decoder_changed_steps counts actual byte updates. "
             "Teacher bytes and all-257 residual opportunities include frozen offers. "
-            "Acquisition is byte-supervised, without action feedback."
+            "Acquisition is byte-supervised, without action feedback. "
+            "Memory-write and writer-credit event opportunities include final ingestion; "
+            "they are not changed-matrix or slow-parameter update counts. "
+            "Writes-disabled retains controller eligibility steps "
+            "but skips writes/credit transport. "
+            "Writer-frozen and frozen perform writes without writer eligibility/credit transport. "
+            "Worker per-output seconds excludes preceding distractor reads; "
+            "worker.package_seconds includes those reads and all input accounting."
         )
         assert len(report["lessons"]) == len(indices) * len(ARMS) and len(report["actions"]) == 120
         assert loaded_library_identity().to_record() == report["native"]

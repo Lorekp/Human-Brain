@@ -1,7 +1,7 @@
 """Local document writing, question addressing and raw-byte teacher feedback.
 
 This composition owns no corpus, answer inventory, optimizer or action solver.
-Fixed byte codes feed learned writer/query cells. First generation is separate
+Fixed neuronal byte-event codes feed learned writer/query cells. First generation is separate
 from explicitly supplied teacher bytes; every byte/EOS teacher event is counted.
 LMS supplies its actual immediate context gradient. Query learning uses the
 instantaneous memory-read return path; value synapses use the read error with
@@ -18,6 +18,7 @@ import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
+from humanbrain.byte_events import MAX_EVENT_BYTES, segment_bytes
 from humanbrain.byte_sequence_decoder import BYTE_BOS, BYTE_EOS, ByteGeneration
 from humanbrain.phase_context_lms import PhaseContextLMS
 from humanbrain.plastic_memory import (
@@ -55,8 +56,10 @@ class LocalMemoryLearner(nn.Module):
     ``frozen`` fixes every slow parameter, while ``writes_disabled`` permits
     local slow teaching but cannot change fast synapses or write credit.
 
-    Owned fixed input codes are shared for documents and queries. Each raw
-    input is followed by one terminator (256); no textual normalization is applied.
+    Owned fixed input codes and a fixed recurrent event encoder are shared for
+    documents and queries. The encoder resets for each generic capped byte event;
+    its final activity feeds one writer/query step. Each raw input is followed by
+    one separately encoded terminator (256); no textual normalization is applied.
     Memory/query seeds are seed/seed+1; input codes use the old decoder embedding's
     first normal draw at seed+2. Fresh LMS output weights start at zero. Upstream feedback
     uses a private seed+3 stream, controller/key/reserved-value/strength order,
@@ -66,6 +69,8 @@ class LocalMemoryLearner(nn.Module):
     The default 64-neuron writer has fixed 32/16/16 populations with fractions
     .5/.125/.03125; explicit scalar/vector fractions support other geometries.
     Query cells retain their scalar .5 dynamics.
+    The event encoder uses the separate seed+4, scalar .5 dynamics and no learning
+    traces or teaching. Its fixed representation is not guaranteed lossless.
     The output module must stay CPU float64; whole-model .float() violates its
     contract. Upstream dtype conversion must leave that module unchanged.
     """
@@ -116,6 +121,9 @@ class LocalMemoryLearner(nn.Module):
                 dtype=self.memory.controller.weight.dtype, device="cpu",
             ).normal_(generator=code_generator),
         )
+        self.event_encoder = StreamingRateCell(
+            input_code_size, input_code_size, seed=seed + 4
+        ).requires_grad_(False)
         self.decoder = PhaseContextLMS()
         generator = torch.Generator(device="cpu").manual_seed(seed + 3)
         for name, size in (
@@ -141,7 +149,7 @@ class LocalMemoryLearner(nn.Module):
 
     def get_extra_state(self) -> dict:
         return {
-            "schema": "local-memory-phase-lms-v4",
+            "schema": "local-memory-phase-lms-v5",
             "mode": self.mode,
             "seed": self.seed,
             "input_code_size": self.input_code_size,
@@ -155,6 +163,22 @@ class LocalMemoryLearner(nn.Module):
             "read_size": self.memory.value_size,
             "input_code": "owned-fixed-normal-codes; private seed+2 first draw; raw-bytes+256",
             "input_code_rows": BYTE_BOS + 1,
+            "input_events": {
+                "word_bytes": "ASCII A-Z a-z 0-9 underscore",
+                "whitespace_hex": "090a0b0c0d20",
+                "other_bytes": "singletons",
+                "max_bytes": MAX_EVENT_BYTES,
+                "end": "one separate symbol 256 event per document/query",
+            },
+            "event_encoder": {
+                "kind": "StreamingRateCell",
+                "input_size": self.input_code_size,
+                "hidden_size": self.input_code_size,
+                "seed": self.seed + 4,
+                "update_fraction": 0.5,
+                "learning": "fixed parameters; no eligibility or feedback",
+                "state": "zero per event; ordered bytes; final activity only; no cache",
+            },
             "upstream_dtype": str(self.memory.controller.weight.dtype),
             "output": "phase-context-lms-v2; fresh zero float64 weights; two-byte teacher",
             "loss": "half_sum_squared_potential_error",
@@ -178,13 +202,52 @@ class LocalMemoryLearner(nn.Module):
         if state != self.get_extra_state():
             raise ValueError("local learner checkpoint configuration mismatch")
 
+    @torch.no_grad()
     def _encoded(self, raw: bytes) -> Tensor:
+        """Encode shared raw events once, retaining only their neuronal outputs."""
         if not isinstance(raw, bytes):
             raise ValueError("inputs must be raw bytes")
+        encoder = self.event_encoder
+        size = self.input_code_size
+        if (
+            encoder.kind != "cell" or encoder.input_size != size or encoder.hidden_size != size
+            or type(encoder.update_fraction) is not float or encoder.update_fraction != 0.5
+        ):
+            raise ValueError("event encoder must retain its fixed cell configuration")
+        encoder._check_update_fraction()
+        dtype, device = self.memory.controller.weight.dtype, self.memory.controller.weight.device
+        if self.query_cell.weight.dtype != dtype or self.query_cell.weight.device != device:
+            raise ValueError("writer/query and event encoder dtype/device must match")
+        # Validate fixed tensors once per input; the pure step below shares the
+        # cell arithmetic without repeated parameter checks or eligibility work.
+        for value, shape in (
+            (self.input_codes, (BYTE_BOS + 1, size)),
+            (encoder.weight, (size, size)),
+            (encoder.recurrent, (size, size)),
+            (encoder.bias, (size,)),
+        ):
+            if (
+                value.shape != shape or value.dtype != dtype or value.device != device
+                or value.requires_grad or value.grad_fn is not None or not _all_finite(value)
+            ):
+                raise ValueError(
+                    "fixed event codes/parameters must be finite on upstream dtype/device"
+                )
         tokens = torch.tensor(
             [*raw, BYTE_EOS], dtype=torch.long, device=self.input_codes.device
         )
-        return F.embedding(tokens, self.input_codes)[None]
+        codes = F.embedding(tokens, self.input_codes)
+        spans = [(event.start, event.end) for event in segment_bytes(raw)]
+        spans.append((len(raw), len(raw) + 1))
+        outputs = []
+        for start, end in spans:
+            activity = encoder.initial_state(1)
+            for inputs in codes[start:end].unbind(0):
+                activity, _ = encoder._step(inputs[None], activity)
+                if not _all_finite(activity):
+                    raise ValueError("event encoder activity must be finite")
+            outputs.append(activity)
+        return torch.stack(outputs, dim=1)
 
     def _check_state_mode(self, state: LocalMemoryState) -> None:
         if self.mode == "writer_maps_frozen" and any(
