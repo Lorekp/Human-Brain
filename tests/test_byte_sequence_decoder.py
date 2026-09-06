@@ -9969,7 +9969,7 @@ def test_persistent_coincidence_512_append_and_reader_regression(tmp_path):
     _assert_nested_equal(reader.state_dict(), weights)
     _assert_nested_equal(state.snapshot(), full)
     # Exercise the inherited all-address teacher at full capacity without publication.
-    feedback = reader.teach(b"a", b"b", state, learning_enabled=False)
+    feedback = reader.teach(b"a", b"b", state, learning_rate=0.01, learning_enabled=False)
     assert feedback.teacher_count == 2
     assert [step.observed_token for step in feedback.steps] == [98, 256]
     assert all(step.branch_cursors.numel() == 512 for step in feedback.steps)
