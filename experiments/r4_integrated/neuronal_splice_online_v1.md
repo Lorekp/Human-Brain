@@ -7,6 +7,14 @@ and reviewed ordinary harness QA. Complete source/roster/receipt freeze and
 fresh measured admission must precede any acquisition. The bounded worker QA
 below now authenticates and loads the prior once; no cost or acquisition ran.
 
+**Completed:** the fixed cost, independent cost audit, full learning run and
+independent full audit now finish successfully as engineering executions. The
+[result](neuronal_splice_online_v1_result.md) records 12/32 fresh and 12/16
+retention successes with preserved 18/20 reading; its strict capability
+criterion fails. The prospective text below retains the original contract and
+its staged QA history. No repeated acquisition is authorized by this result.
+The roadmap now selects the linked saved-evidence learning review.
+
 ## Fixed system and workload
 
 Use the exact [selected topology](../../docs/research/neuronal-byte-splice-topology-v1.md)

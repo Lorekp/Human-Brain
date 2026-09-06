@@ -4,27 +4,24 @@ Status: living decision document. Updated 2026-09-06.
 Owner: orchestrator. This document owns current priorities and architecture policy;
 frozen experiment protocols retain authority over their own evidence.
 
-Current endpoint: the [v6 local executed learner](../../experiments/r4_integrated/local_joint_address_online_v6_result.md)
-passes its scoped criterion at 18/20 versus zero for all matched controls;
-787/1,024 learning-stream first attempts succeed. Run and independent audit total
-248.58 seconds with 620.61 MiB peak owned memory. No backpropagation or separate
-training/execution model is used. Two interference failures and the supplied host
-edit motor keep strict qualification and general software capability unmet.
-The [neuronal byte-splice interface](neuronal-byte-splice-action-v1.md) now passes
-eleven authored mechanics checks, including one unsuccessful real edit followed
-by local correction. The active [online action integration](../../experiments/r4_integrated/neuronal_splice_online_v1.md)
-fixes one 256-lesson-per-arm comparison, fresh contrasts and reading retention.
-Its three data/receipt/transport checks now pass after correcting a 129-slot
-fixture to fit the 128-slot tape. No model ran in that QA. The standalone
-auditor now has a complete-stream draft and a passed authored arithmetic check;
-its source review has closed the launch/final-state/admission bindings. The
-single-exchange worker/prior QA now passes in 31.26 monitored seconds at
-824.36 MiB observed peak. It emitted STOP and did not solve the requested edit;
-zero teachers ran. Authored completed-admission custody QA also passes, and the
-final source review found no blocker. The fixed cost probe and its completed
-independent audit are selected next; full acquisition still requires their
-authenticated admission within the unchanged 900-second/2,048-MiB budget.
-No further v6 exposure or alternate recall policy is selected.
+Current endpoint: the [completed neuronal splice learner](../../experiments/r4_integrated/neuronal_splice_online_v1_result.md)
+solves 12/32 fresh tasks (nine real edits) and 12/16 retained tasks, versus
+fresh totals 1, 2 and 4 for its matched controls. Neurons select the file, raw
+span, payload and operation; the same persistent system learns locally after
+real execution without backpropagation. It preserves the reader's eighteen old
+successes. The strict selected transfer criterion fails. Full run and independent
+audit total 96.14 seconds, with 1,234.23 MiB observed owned peak, after completed
+admission at 418.10 projected seconds and 1,500.5 MiB.
+
+All 28 fresh edited-task locations were correct; nineteen payloads were wrong,
+and one KEEP missed STOP. All eight value-swap tasks emitted empty payloads.
+The active [learning review](neuronal-splice-online-v1-learning-review.md) selects
+one saved-receipt prior/EOS attribution before any new mechanism or acquisition.
+Use existing probabilities and authenticated documents only; no model call,
+checkpoint load or action replay is needed. Preserve the working action circuit
+and the [current implementation speed](neuronal-splice-online-v1-cost-review.md).
+The completed fixed run is closed: no extra epochs, rate/seed sweep, automatic
+recall change, benchmark advancement or further v6 exposure is selected.
 
 ## Objective
 
