@@ -95,3 +95,39 @@ Source-only comparison preserves all 134 previous top-level AST nodes and adds
 four nodes. Earlier qualified suites were not rerun. Runtime qualification is
 still the separate stdlib manifest; new bootstrap evidence must be combined and
 authenticated before the single authored timing comparison above.
+
+## Measured outcome and integrated return
+
+The saved-only combiner completed in 1.7022228 process seconds, authenticating
+28 evidence files and creating the separate nine-key qualification, SHA256
+`0bb809fd33aee145f169776a03a884fd62daf381ff4e67ed333a2a378c46d92b`.
+It made no new child, model or teacher call. Exact tested source is archived at
+`.pytest-tmp/temporary-module-bootstrap-v1-tested-source.py` with the same
+03c5e739 hash above. The executed combiner SHA256 is
+`e5087c236d8553af290cb82e16539cc7726ce3ff1a20e02becabec79e3aff803`.
+
+The one fixed timing comparison passed all twelve executions and both timing
+criteria. New/old aggregate complete-execution durations were
+0.23243259999435395/0.32408940001914743 seconds, ratio 0.7171866774433896.
+Pending medians were 35.616/52.5905 ms; corrected medians were 37.518/52.7098 ms.
+This is a 28.3% aggregate reduction in a small authored sample. Fixed route order
+within each case and host variation limit causal interpretation; no observation
+was excluded. User programs importing those dependencies themselves may recover
+less of this removed bootstrap work.
+
+The completed watchdog recorded 2.6198757 seconds and 79.3828125 MiB on source
+revision `be40ac4bbf117162fae8627aced05994d7edfc93`, with clean doctor receipt
+`.pytest-tmp/dev/doctor-s_97qr0z/receipt.json`. Executed timing driver SHA256:
+`ff7546d3809a35e3bfca1742e23daf29b278d1827a766349fcfcde815a7b9b3f`.
+Evidence under `.pytest-tmp/temporary-module-action-timing-v1`:
+
+- report: `796662a37ae0331c88c2122f0f43891e362ab55ce0bdd7281a57a7b993db39a7`;
+- executions JSONL: `323465118f114bf0aefa10d1452cba6e1f4508dc08886191baf26dac4b2ada6a`;
+- adjacent monitor: `1817418e9b730a80a5c2c1901c9f8019cd0ce6d823dc8333bf57c19daad57887`.
+
+The saved review independently reproduced the timing scalars and all twelve
+execution outcomes. It directly hashed 27 of 28 qualification evidence files;
+the remaining doctor's path denied that review context, an explicit limitation.
+The executed combiner and timing loader authenticated all 28 in their common
+execution context. This earns the [v6 integrated return](../../experiments/r4_integrated/local_joint_address_online_v6.md)
+and its fresh complete-cost decision, not full acquisition or benchmark advancement.

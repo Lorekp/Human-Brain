@@ -370,6 +370,11 @@ That diagnostic found a 17.281-ms runpy subtree. Select the
 the current strict-output and main-module lifecycle with public APIs. Authored
 semantic qualification and a fixed timing comparison must earn integration;
 no neuronal rule change, identical cost retry or admission relaxation follows.
+Both now pass: eight semantic pairs and a twelve-child authored comparison with
+aggregate new/old execution ratio .7172. The prepared
+[v6 return](../../experiments/r4_integrated/local_joint_address_online_v6.md)
+keeps the learning workload unchanged and requires fresh complete cost plus
+independent audit before any full acquisition.
 Run/audit peaks of 665.539/432.832 MiB fit the revised admission estimates.
 The shorter aggregate duration includes a changed reference roster and must not
 be presented as an isolated circuit speedup.
