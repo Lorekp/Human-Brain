@@ -200,6 +200,18 @@ against saved curves: distinguish exposure/stability from temporal representatio
 and credit limits, with a justified locally learned neuronal reference and one
 decisive comparison before any further fit.
 
+The [learnability review](local-decoder-learnability-review.md) now selects one
+six-arm comparison. The existing random-feedback decoder and a declared local
+phase/context perceptron each receive lexical and fixed permuted streams, with
+zero-context and frozen reference controls. Generic phase-by-all-context neurons
+make TRAIN separable; zero-initialized integer synaptic ticks give a 54-mistake
+reference bound, motivating one 64-cycle/768-lesson endpoint. Probe read-only at
+384 and 768; preserve the old lexical decoder result at the first checkpoint.
+The bound does not certify withheld composition or the RNN. No target-specific
+witness weights enter the learner, and the supplied temporal/factor structure
+remains engineering scaffolding. One 120-second run must resolve the declared
+budget/order/reference comparisons before any further integrated fit.
+
 The [independent preflight review](local-memory-byte-preflight-review.md) records
 two learning risks: averaging byte feedback weakens explicit order credit, and
 correlated write keys may overwrite useful information. These are hypotheses

@@ -125,9 +125,11 @@ fits only 4/12 taught pairs and no withheld combination despite answer-revealing
 inputs. The [symmetric-feedback comparison](../../experiments/r4_integrated/local_context_use_v2_result.md)
 also fails: 3/12 taught and no withheld success versus random's 4/12 and zero.
 Lower teacher loss and corrected EOS do not earn adoption. The current next
-step is one bounded learnability review separating exposure/stability from
-temporal representation and credit limits, followed by one justified local
-neuronal comparison; no automatic epoch or feedback sweep. Its byte
+step follows the [bounded learnability review](local-decoder-learnability-review.md):
+compare the unchanged decoder with a certified local phase/context reference,
+under lexical and fixed permuted streams, at one analytically motivated
+768-lesson endpoint. Zero/frozen reference controls and the old 384-lesson
+checkpoint remain explicit; no automatic epoch or feedback sweep. Its byte
 learner uses no pretrained encoder or LLM. The
 [action-path review](local-memory-byte-preflight-review.md) identifies host-computed
 matching in the legacy edit motor, however. Keep neuron-generated answer bytes
