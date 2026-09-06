@@ -2241,3 +2241,71 @@ def test_value_credit_controls_preserve_immediate_predecessor_trajectory(dtype, 
                 old.snapshot() if field.name == "state" else old,
             )
         common_weights()
+
+
+
+def test_binding_fixed_factorial_roster_and_observation_budget():
+    from experiments.r4_integrated import local_memory_binding_v1 as runner
+
+    plan = runner.roster()
+    assert len(plan["memories"]) == 16 and len(plan["cases"]) == 32
+    assert [case["id"] for case in plan["cases"]] == list(range(32))
+    assert sum(len(bytes.fromhex(d)) + 1 for m in plan["memories"]
+               for d in m["document_hex"]) == 800
+    assert sum(len(bytes.fromhex(c["query_hex"])) + 1 for c in plan["cases"]) == 832
+    for mode in runner.CONFIG["checkpoint_modes"]:
+        entries = [m for m in plan["memories"] if m["model_id"] == mode]
+        for assignment in "ABCD":
+            normal, reverse = [m for m in entries if m["assignment"] == assignment]
+            assert normal["document_hex"] == reverse["document_hex"][::-1]
+        first_documents = [bytes.fromhex(m["document_hex"][0]) for m in entries]
+        assert len(set(first_documents)) == 8
+        for family, keys, values in (("AB", (b"k00", b"k01"), (b"ab", b"bc")),
+                                     ("CD", (b"k02", b"k03"), (b"cd", b"da"))):
+            documents = {bytes.fromhex(m["document_hex"][0]) for m in entries
+                         if m["assignment"] in family}
+            assert documents == {b"Record " + k + b" has value " + v + b"."
+                                 for k in keys for v in values}
+    assert runner.CONFIG["prefix_milestones"] == [9, 20, 21, 22, 24, 49]
+    assert runner.CONFIG["expected_derived_prefix_projections"] == 192
+    assert runner.CONFIG["teacher_offers"] == runner.CONFIG["actions"] == 0
+    assert runner.CONFIG["traced_ingestions"] + runner.CONFIG["ordinary_parity_ingestions"] == 32
+    assert runner.CONFIG["output_phase_evaluations"] == 3 * len(plan["cases"])
+
+
+def test_binding_query_stage_fresh_worker_two_modes_empty_memories(tmp_path):
+    import os
+    import time
+
+    from experiments.r4_integrated import local_memory_binding_v1 as runner
+
+    saved = {"models": {}, "memories": {}}
+    cases = []
+    for index, mode in enumerate(runner.CONFIG["checkpoint_modes"]):
+        model = runner.previous.new_model(runner.previous.SPEC, mode)
+        weights = runner.clone(model.state_dict())
+        _assert_nested_equal(weights, runner.new_model(mode, weights).state_dict())
+        state = model.memory.initial_local_state(1)
+        saved["models"][mode] = weights
+        saved["memories"][mode] = {"model_id": mode, "state": runner.clone(state.snapshot())}
+        cases.append({"id": index, "memory_id": mode, "query_hex": b"q".hex(),
+                      "target_hex": b"aa".hex(), "document_hex": [b"not sent".hex()]})
+    receipt, observations = runner.query_stage(
+        (tmp_path / "isolated").resolve(), saved, cases, runner.sources(),
+        time.time() + 45, lambda: None,
+    )
+    assert receipt["worker_pid"] != os.getpid()
+    assert receipt["query_traversals"] == 2 and receipt["query_byte_steps"] == 4
+    assert receipt["phase_evaluations"] == 6
+    assert not receipt["roster_or_documents_or_targets_supplied_to_model"]
+    assert receipt["command"][1:4] == ["-I", "-X", "utf8"]
+    assert receipt["command"][4] == str(runner.Path(runner.__file__).resolve())
+    for row in receipt["outputs"]:
+        assert "target_hex" not in row and "document_hex" not in row
+        assert row["generated_hex"] == "0000" and row["stop_reason"] == "limit"
+        assert row["decisions"] == 3 and row["extra_phase_evaluations"] == 0
+        assert row["weights_sha256"] == runner.digest(saved["models"][row["model_id"]])
+        assert row["memory_sha256"] == runner.digest(saved["memories"][row["memory_id"]]["state"])
+        observation = observations[row["id"]]
+        assert observation["phase_scores"].shape == (3, 257)
+        assert not observation["phase_scores"].count_nonzero()
