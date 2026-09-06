@@ -93,7 +93,11 @@ passes at cbf9403, including a genuine wrong action before the same reader's
 local correction and exact inherited-teacher parity. No acquisition or old
 checkpoint ran. Return this mechanism to the shared integrated workload.
 Root selects successor receipt serialization and saved independent competition
-trace validation as the next implementation step. Preserve the completed v1
+trace validation under the [integration contract](neuronal-address-competition-integration-v1.md)
+as the next implementation step. Separate writer and saved scalar checker
+implementations share the strict schema, with expected policy supplied by frozen
+arm metadata. The two-mebibyte size guard remains prospective until authored
+maximum-row QA. Preserve the completed v1
 experiment and reuse suitable pure helpers. The subsequent source-free worker,
 new withheld comparison and full measured cost are still separate prerequisites;
 passing component QA does not admit a fit.

@@ -10,7 +10,20 @@ with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. Hybrid permission does not relabel existing
 cell-only evidence or reopen protected evaluations.
 
-The current [joint-address online v6 result](../experiments/r4_integrated/local_joint_address_online_v6_result.md)
+The current [neuronal splice result](../experiments/r4_integrated/neuronal_splice_online_v1_result.md)
+has neuron-selected file, byte span, payload and operation, with actual execution
+before local correction on the same persistent system. It solves 12/32 fresh
+tasks (nine edits) and 12/16 retention tasks; matched fresh control totals are
+1, 2 and 4. All 28 fresh edit locations are correct, but nineteen payloads fail.
+The strict selected transfer criterion fails. Full run and independent audit
+total 96.14 seconds; these are narrow authored software tasks, not a SWE benchmark.
+The original eighteen reader successes are retained. Saved address/EOS evidence
+motivates the [competitive reader](research/neuronal-address-competition-v1.md),
+whose [six ordinary component checks](research/neuronal-address-competition-qa-v1-result.md)
+now pass. That component has no new acquired-capability result yet; successor
+integration, fresh transfer and complete cost admission remain outstanding.
+
+The preceding [joint-address online v6 result](../experiments/r4_integrated/local_joint_address_online_v6_result.md)
 passes its scoped executed-learning criterion: 8/8 fit, 4/4 new values, 4/4 delayed
 and 2/4 interference, with zero for every matched control. All 4,096 acquisition
 first attempts execute before correction on the same neuronal learner; the
@@ -19,7 +32,7 @@ direct local output-synapse teaching without backpropagation. Full run plus
 independent audit take 248.580 seconds, at 620.613 MiB peak, after admission at
 586.173 projected seconds. Two interference failures keep strict 20/20 false.
 The host motor still supplies edit selection; supervised correction is not
-autonomous recovery. No general or protected gate advances. The active
+autonomous recovery. No general or protected gate advances. The subsequent
 [neuronal byte-splice review](research/neuronal-byte-splice-action-v1.md) addresses
 that action-selection gap without extending this completed fit.
 

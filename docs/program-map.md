@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-05 with narrow neutral-document
-Python integration and the public-exam diagnostic. This file inventories implementation and
+Maintained by the orchestrator. Updated 2026-09-06 with neuronal splice learning
+and address competition component verification. This file inventories implementation and
 historical frontiers. The [roadmap](research/roadmap-reading-to-coding.md) owns
 the active queue and architecture policy; [benchmark status](benchmark-status.md)
 owns measured evidence. Older "next" steps below are local historical context.
@@ -26,6 +26,19 @@ R1  Fast, auditable simulated-cell substrate         [continuous; compiled race 
 ```
 
 ## Actual frontier
+
+`src/humanbrain/neuronal_splice_learner.py` now owns the current persistent
+reader/action loop: neurons choose a raw file/span/payload/operation, then the
+same system learns locally after real execution. Its closed narrow integrated
+result is 12/32 fresh and 12/16 retention; strict transfer remains unmet.
+`competitive_local_memory_learner.py` and `neuronal_address_competition.py`
+add a two-layer threshold address commitment with inherited local correction.
+Their six component tests pass, including actual wrong-action-before-teaching
+custody. Successor serialization and independent trace validation are the
+[active integration step](research/neuronal-address-competition-v1.md).
+No new acquired capability is claimed for the competitor yet.
+
+Earlier neutral-document frontier:
 
 `src/humanbrain/neutral_document_action.py` now owns one persistent neutral
 reader and a two-demonstration learned occurrence motor. Reader decisions expose

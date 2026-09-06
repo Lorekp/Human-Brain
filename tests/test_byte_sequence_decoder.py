@@ -6391,3 +6391,419 @@ def test_competitive_splice_wrong_action_then_teacher_parity(tmp_path):
         "action_labels": 3, "same_reader_instance": True, "teacher_numerical_parity": True,
         "address_changed": True, "task_success": False, "historical_checkpoint_loads": 0,
     })
+
+
+def _competitive_receipt_qa_save(path, value):
+    import json
+    from types import SimpleNamespace
+
+    def plain(item):
+        if isinstance(item, SimpleNamespace):
+            return {key: plain(child) for key, child in vars(item).items() if not callable(child)}
+        if isinstance(item, bytes):
+            return item.hex()
+        if isinstance(item, dict):
+            return {key: plain(child) for key, child in item.items()}
+        if isinstance(item, (list, tuple)):
+            return [plain(child) for child in item]
+        return item
+
+    with path.open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps(plain(value), sort_keys=True, allow_nan=False) + "\n")
+
+
+def _competitive_receipt_qa_trace(scores):
+    from types import SimpleNamespace as Value
+
+    n = len(scores)
+    p = n * (n - 1) // 2
+    currents = [float(scores[i]) - float(scores[j]) for i in range(n) for j in range(i + 1, n)]
+    active = [current >= 0 for current in currents]
+    winner_currents = [i - (n - 1) for i in range(n)]
+    cursor = 0
+    for i in range(n):
+        for j in range(i + 1, n):
+            winner_currents[i] += active[cursor]
+            winner_currents[j] -= active[cursor]
+            cursor += 1
+    winners = [current >= 0 for current in winner_currents]
+    work = {
+        "competition_candidates": n,
+        "competition_pairs": p,
+        "competition_threshold_layers": 2,
+        "competition_comparator_neurons": p,
+        "competition_winner_neurons": n,
+        "competition_comparator_synapse_applications": 2 * p,
+        "competition_winner_synapse_applications": 2 * p,
+        "competition_comparator_subtractions": p,
+        "competition_winner_accumulations": 2 * p,
+        "competition_winner_bias_values": n,
+        "competition_winner_threshold_subtractions": n,
+        "competition_threshold_evaluations": p + n,
+        "competition_identity_synapse_applications": n,
+        "competition_identity_reductions": n - 1,
+        "competition_winner_count_reductions": n - 1,
+        "competition_index_values_constructed": 2 * p + n,
+        "competition_receipt_tensor_bytes": 13 * n + 9 * p,
+        "competition_named_allocated_tensor_bytes": 45 * n + 49 * p + 16,
+        "competition_pair_index_bytes": 16 * p,
+        "competition_score_gather_bytes": 16 * p,
+    }
+    return Value(
+        scores=list(scores),
+        pair_currents=currents,
+        comparator_activity=active,
+        winner_currents=[float(value) for value in winner_currents],
+        winner_activity=winners,
+        winner_index=sum(i * bit for i, bit in enumerate(winners)),
+        work=work,
+    )
+
+
+def _competitive_receipt_qa_work(n, decisions, *, trace=None, teacher=False):
+    branches = 1 if trace is not None else n
+    gathers = decisions if trace is not None else n * (decisions - 1)
+    result = {
+        "query_raw_bytes": 1,
+        "query_eos_symbols": 1,
+        "query_lag_shift_steps": 2,
+        "query_population_normalizations": 1,
+        "address_feature_slots": n,
+        "address_feature_products": n * 32768,
+        "address_feature_channel_reductions": n * 31744,
+        "address_score_synapse_evaluations": n * 1024,
+        "address_score_reductions": n * 1023,
+        "address_score_evaluations": n,
+        "address_normalizations": 1,
+        "address_local_synapse_contributions": n * 1024 if teacher else 0,
+        "address_local_slot_reductions": (n - 1) * 1024 if teacher else 0,
+        "codec_slot_evaluations": n,
+        "codec_output_potentials": n * 257,
+        "codec_normalizations": n,
+        "codec_response_gathers": gathers,
+        "codec_response_values_gathered": gathers * 1028,
+        "codec_response_bytes_gathered": gathers * 7196,
+        "mixture_output_reductions": 257 * decisions,
+        "prefix_belief_updates": branches * decisions,
+        "branch_cursor_initializations": branches,
+        "branch_cursor_advances": branches * (decisions - 1),
+        "teacher_offers": decisions if teacher else 0,
+        "codec_update_group_offers": int(teacher),
+        "address_update_group_offers": int(teacher),
+        "enabled_codec_update_groups": int(teacher),
+        "enabled_address_update_groups": int(teacher),
+    }
+    if trace is not None:
+        result.update(trace.work)
+        result["codec_bank_slot_indices"] = n
+    return result
+
+
+def _competitive_receipt_qa_reader(n, decisions, *, kind, scores=None):
+    import math
+    from types import SimpleNamespace as Value
+
+    successor = [*range(1, n), n - 1]
+    state = Value(used=n, successor=successor)
+    competitive = kind == "competitive"
+    teacher = kind == "teacher"
+    trace = _competitive_receipt_qa_trace(scores or [0.0] * n) if competitive else None
+    belief = [0.0] if competitive else [-math.log(n)] * n
+    cursors = [trace.winner_index] if competitive else list(range(n))
+    steps = []
+    for index in range(decisions):
+        token = 65 if index < decisions - 1 else 256
+        probabilities = [1 / 257] * 257 if teacher else [0.0] * 257
+        if not teacher:
+            probabilities[token] = 1.0
+        steps.append(
+            Value(
+                output_step=index,
+                observed_token=token,
+                nll=math.log(257) if teacher else 0.0,
+                mixture_probabilities=probabilities,
+                prior_log_belief=list(belief),
+                posterior_log_belief=list(belief),
+                branch_cursors=list(cursors),
+            )
+        )
+        cursors = [successor[cursor] for cursor in cursors]
+    common = dict(
+        steps=steps,
+        initial_log_belief=list(belief),
+        final_log_belief=list(belief),
+        work=_competitive_receipt_qa_work(n, decisions, trace=trace, teacher=teacher),
+    )
+    if teacher:
+        common.update(
+            teacher_count=decisions,
+            total_loss=sum(step.nll for step in steps),
+            mean_loss=sum(step.nll for step in steps) / decisions,
+            address_error=[0.0] * n,
+            codec_updated=False,
+            address_updated=False,
+        )
+    else:
+        common["generation"] = Value(data=b"A" * (decisions - 1), stop_reason="eos")
+    if competitive:
+        centered = [value - max(trace.scores) for value in trace.scores]
+        norm = math.log(math.fsum(math.exp(value) for value in centered))
+        common.update(competition=trace, diagnostic_log_prior=[value - norm for value in centered])
+    return Value(**common), state
+
+
+def test_competitive_receipt_maximum_complete_row(tmp_path):
+    import json
+    import math
+    from hashlib import sha256
+    from types import SimpleNamespace as Value
+
+    from experiments.r4_integrated import check_neuronal_address_competition_v1 as checker
+    from experiments.r4_integrated import neuronal_splice_receipts_v2 as writer
+    from experiments.r4_integrated.neuronal_splice_receipts_v1 import proposal_digest, tree_bytes
+
+    free, state = _competitive_receipt_qa_reader(128, 17, kind="competitive")
+    teacher, _ = _competitive_receipt_qa_reader(128, 17, kind="teacher")
+    heads = {
+        head: Value(logits=[0.0] * n, probabilities=[1 / n] * n, selected_index=0)
+        for head, n in (("start", 516), ("end", 129), ("operation", 2))
+    }
+    proposal = dict(
+        operation="STOP",
+        path="a.py",
+        start=0,
+        end=0,
+        replacement_hex=(b"A" * 16).hex(),
+        stop_reason="eos",
+        workspace_sha256="a" * 64,
+    )
+    prediction = Value(
+        proposal=Value(to_record=lambda: dict(proposal)),
+        attempt_id="authored:1",
+        proposal_sha256=proposal_digest(proposal),
+        model_sha256="b" * 64,
+        memory_sha256="c" * 64,
+        choices=heads,
+        payload=free,
+        work={"action": {}, "reader": free.work},
+    )
+    feedback = Value(
+        attempt_id="authored:1",
+        action_updates={head: False for head in heads},
+        action_losses={head: math.log(len(value.logits)) for head, value in heads.items()},
+        teacher_choices=heads,
+        reader_feedback=teacher,
+        work={"action": {}, "reader": teacher.work},
+    )
+    _competitive_receipt_qa_save(
+        tmp_path / "maximum-input-raw.json",
+        {"free": free, "teacher": teacher, "proposal": proposal, "heads": heads},
+    )
+    row = {
+        "prediction": writer.compact_prediction(
+            prediction, state, expected_policy="competitive_free"
+        ),
+        "feedback": writer.compact_feedback(feedback, state),
+        "metadata": "x" * 32768,
+        "host_path": "p" * 1024,
+        "executable_path": "e" * 1024,
+        "bootstrap": "b" * 4096,
+        "stdout_hex": "ff" * 16384,
+        "stderr_hex": "ff" * 16384,
+        "diagnostics": ["d" * 1024, "e" * 1024],
+        "ids": ["i" * 128 for _ in range(12)],
+        "hashes": ["a" * 64 for _ in range(16)],
+        "work": [{f"counter_{i:03d}".ljust(96, "x"): 10**12 for i in range(160)} for _ in range(4)],
+    }
+    _competitive_receipt_qa_save(tmp_path / "maximum-result-raw.json", row)
+    encoded = writer.bounded_record(row)
+    with (tmp_path / "maximum.jsonl").open("xb") as stream:
+        stream.write(encoded)
+    parsed = json.loads(encoded)
+    for compact, policy in (
+        (parsed["prediction"]["payload"], "competitive_free"),
+        (parsed["feedback"]["reader"], "all_address_teacher"),
+    ):
+        writer.validate_reader(compact, state.successor, expected_policy=policy)
+        checker.check_reader(compact, state.successor, policy)
+    assert parsed == row
+    assert writer.LINE_LIMIT == writer.TREE_LIMIT == 2**21
+    assert len(encoded) <= writer.LINE_LIMIT
+    assert tree_bytes(row) <= writer.TREE_LIMIT
+    assert tree_bytes(parsed) <= writer.TREE_LIMIT
+    compact = parsed["prediction"]["payload"]
+    assert len(compact["competition"]["pair_currents"]) == 8128
+    assert len(compact["competition"]["comparator_activity"]) == 8128
+    assert compact["initial_log_belief"] == [0.0]
+    assert len(parsed["feedback"]["reader"]["initial_log_belief"]) == 128
+    assert all(
+        set(step) == {"token", "nll", "mixture", "posterior"}
+        for part in (compact, parsed["feedback"]["reader"])
+        for step in part["steps"]
+    )
+    _competitive_receipt_qa_save(
+        tmp_path / "maximum-passed.json",
+        {
+            "status": "passed",
+            "line_bytes": len(encoded),
+            "writer_tree_bytes": tree_bytes(row),
+            "parsed_tree_bytes": tree_bytes(parsed),
+            "sha256": sha256(encoded).hexdigest(),
+            "models": 0,
+            "actions": 0,
+            "synthetic_step_records": 34,
+        },
+    )
+
+
+def test_competitive_receipt_policy_and_stable_prior(tmp_path):
+    import copy
+    import math
+
+    import pytest
+
+    from experiments.r4_integrated import check_neuronal_address_competition_v1 as checker
+    from experiments.r4_integrated import neuronal_splice_receipts_v2 as writer
+
+    maximum = float.fromhex("0x1.fffffep+127")
+    free, state = _competitive_receipt_qa_reader(2, 2, kind="competitive", scores=[maximum] * 2)
+    marginal, _ = _competitive_receipt_qa_reader(2, 2, kind="marginal")
+    teacher, _ = _competitive_receipt_qa_reader(2, 2, kind="teacher")
+    _competitive_receipt_qa_save(tmp_path / "policy-input-raw.json", [free, marginal, teacher])
+    comp = writer.compact_reader(free, state, expected_policy="competitive_free")
+    marg = writer.compact_reader(marginal, state, expected_policy="marginal_free")
+    taught = writer.compact_reader(teacher, state, expected_policy="all_address_teacher")
+    _competitive_receipt_qa_save(tmp_path / "policy-result-raw.json", [comp, marg, taught])
+    for row, policy in (
+        (comp, "competitive_free"),
+        (marg, "marginal_free"),
+        (taught, "all_address_teacher"),
+    ):
+        writer.validate_reader(row, state.successor, expected_policy=policy)
+        checker.check_reader(row, state.successor, policy)
+    assert comp["diagnostic_log_prior"] == [-math.log(2)] * 2
+    assert comp["competition"]["pair_currents"] == [0.0]
+    assert comp["competition"]["winner_index"] == 0
+    assert "schema" in comp and "schema" not in marg and "schema" not in taught
+    extra = copy.deepcopy(comp)
+    extra["unexpected"] = 1
+    negatives = [
+        ("competitive_as_marginal", comp, "marginal_free"),
+        ("marginal_as_competitive", marg, "competitive_free"),
+        ("teacher_as_free", taught, "competitive_free"),
+        ("free_as_teacher", comp, "all_address_teacher"),
+        ("extra_field", extra, "competitive_free"),
+    ]
+    _competitive_receipt_qa_save(tmp_path / "policy-negative-raw.json", negatives)
+    for _, row, policy in negatives:
+        with pytest.raises(ValueError):
+            writer.validate_reader(row, state.successor, expected_policy=policy)
+        with pytest.raises(ValueError):
+            checker.check_reader(row, state.successor, policy)
+    _competitive_receipt_qa_save(
+        tmp_path / "policy-passed.json",
+        {
+            "status": "passed",
+            "valid_policy_checks_per_validator": 3,
+            "expected_rejections_per_validator": 5,
+            "models": 0,
+            "actions": 0,
+        },
+    )
+
+
+def test_competitive_receipt_trace_tampering_and_bounds(tmp_path):
+    import copy
+    import json
+    import math
+    import sys
+
+    import pytest
+
+    from experiments.r4_integrated import check_neuronal_address_competition_v1 as checker
+    from experiments.r4_integrated import neuronal_splice_receipts_v2 as writer
+    from experiments.r4_integrated.neuronal_splice_receipts_v1 import tree_bytes
+
+    free, state = _competitive_receipt_qa_reader(2, 2, kind="competitive", scores=[1.0, 0.0])
+    _competitive_receipt_qa_save(tmp_path / "tamper-input-raw.json", free)
+    row = writer.compact_reader(free, state, expected_policy="competitive_free")
+    _competitive_receipt_qa_save(tmp_path / "tamper-result-raw.json", row)
+    writer.validate_reader(row, state.successor, expected_policy="competitive_free")
+    checker.check_reader(row, state.successor, "competitive_free")
+    changes = []
+    for field, index, replacement in (
+        ("pair_currents", 0, 2.0),
+        ("comparator_activity", 0, False),
+        ("winner_currents", 0, -1.0),
+        ("winner_activity", 0, False),
+    ):
+        changed = copy.deepcopy(row)
+        changed["competition"][field][index] = replacement
+        changes.append((field, changed))
+    changed = copy.deepcopy(row)
+    changed["competition"]["winner_index"] = 1
+    changes.append(("winner_index", changed))
+    changed = copy.deepcopy(row)
+    changed["diagnostic_log_prior"][0] += 0.1
+    changes.append(("diagnostic_prior", changed))
+    changed = copy.deepcopy(row)
+    del changed["competition"]
+    changes.append(("missing_trace", changed))
+    changed = copy.deepcopy(row)
+    changed["competition"]["work"]["competition_pairs"] += 1
+    changes.append(("wrong_work", changed))
+    changed = copy.deepcopy(row)
+    changed["initial_log_belief"] = [-math.log(2)] * 2
+    changes.append(("wrong_branch_width", changed))
+    changed = copy.deepcopy(row)
+    changed["steps"][0]["token"] = 66
+    changes.append(("nonmaximum_output", changed))
+    changed = copy.deepcopy(row)
+    changed["steps"][0]["cursor"] = 0
+    changes.append(("extra_compact_cursor", changed))
+    _competitive_receipt_qa_save(tmp_path / "tamper-negative-raw.json", changes)
+    for _, changed in changes:
+        with pytest.raises(ValueError):
+            writer.validate_reader(changed, state.successor, expected_policy="competitive_free")
+        with pytest.raises(ValueError):
+            checker.check_reader(changed, state.successor, "competitive_free")
+    raw_changes = []
+    changed = copy.deepcopy(free)
+    changed.steps[1].prior_log_belief[0] = 0.1
+    raw_changes.append(("omitted_prior", changed))
+    changed = copy.deepcopy(free)
+    changed.steps[1].branch_cursors[0] = 0
+    raw_changes.append(("omitted_cursor", changed))
+    changed = copy.deepcopy(free)
+    changed.final_log_belief[0] = 0.1
+    raw_changes.append(("omitted_final", changed))
+    _competitive_receipt_qa_save(tmp_path / "omission-negative-raw.json", raw_changes)
+    for _, changed in raw_changes:
+        with pytest.raises(ValueError):
+            writer.compact_reader(changed, state, expected_policy="competitive_free")
+    expanded = {"text": "\u0080" * (writer.LINE_LIMIT // 6 + 1)}
+    tree_heavy = {"values": [0] * (writer.TREE_LIMIT // sys.getsizeof(0) + 1)}
+    sizes = {
+        "expanded_tree": tree_bytes(expanded),
+        "expanded_line": len(json.dumps(expanded, ensure_ascii=True).encode("ascii")) + 1,
+        "heavy_tree": tree_bytes(tree_heavy),
+        "heavy_line": len(json.dumps(tree_heavy, ensure_ascii=True).encode("ascii")) + 1,
+    }
+    _competitive_receipt_qa_save(tmp_path / "guard-preconditions-raw.json", sizes)
+    assert sizes["expanded_tree"] <= writer.TREE_LIMIT < sizes["heavy_tree"]
+    assert sizes["heavy_line"] <= writer.LINE_LIMIT < sizes["expanded_line"]
+    for oversized in (expanded, tree_heavy):
+        with pytest.raises(ValueError):
+            writer.bounded_record(oversized)
+    assert len(changes) == 11 and len(raw_changes) == 3
+    _competitive_receipt_qa_save(
+        tmp_path / "tamper-passed.json",
+        {
+            "status": "passed",
+            "compact_rejections_per_validator": len(changes),
+            "raw_compactor_rejections": len(raw_changes),
+            "guard_rejections": 2,
+            "models": 0,
+            "actions": 0,
+        },
+    )

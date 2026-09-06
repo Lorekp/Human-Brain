@@ -17,8 +17,26 @@ their presence does not satisfy that current learning constraint.
 
 The descriptions below document existing implementations. Their cell-only and
 fidelity constraints apply to those lanes and frozen experiments, not to every
-future architecture. Current integration work is in the
-[persistent memory and output plan](research/persistent-memory-byte-development.md).
+future architecture. Current integration work follows the
+[neuronal address competition plan](research/neuronal-address-competition-v1.md).
+
+The current compliant reader materializes fixed raw-query/key joint activities
+before one learned address-output layer. Its synapses receive their own direct
+output contrast, with no backward error through the query or keys. The same
+`NeuronalSpliceLearner` retains this reader and its locally learned action heads
+through proposal, real execution and subsequent correction. The new
+`CompetitiveLocalMemoryLearner` inherits query construction and teaching while
+adding two fixed threshold layers that select one initial free-recall address.
+It follows one cursor through the same codec and tape; after execution its
+explicit corrective phase reopens all candidates on those same synapses.
+The direct local corrective surrogate is not a derivative of the hard gate.
+The [component result](research/neuronal-address-competition-qa-v1-result.md)
+verifies these mechanics; a successor integrated fit has not run.
+
+The following development descriptions retain historical implementation
+contracts. In particular, earlier reverse error-transport paths are not the
+current learner and are not authorized for new training under the user's
+no-backpropagation requirement.
 
 Current local development combines a streaming rate-cell document writer,
 explicit fast synapses and retained local credit with byte output. The closed
