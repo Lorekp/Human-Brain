@@ -19,7 +19,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-START = time.monotonic()
+START = time.perf_counter()
 
 from experiments.r4_integrated import local_memory_byte_v1 as previous  # noqa: E402
 
@@ -29,7 +29,6 @@ detached_state, same_state, tensor_bytes = (
     previous.detached_state, previous.same_state, previous.tensor_bytes
 )
 digest, generation_record = previous.digest, previous.generation_record
-export_memories = previous.export_memories
 ARMS = ("tagged", "aggregate", "writer_maps_frozen", "frozen", "writes_disabled")
 
 
@@ -78,10 +77,24 @@ def sources(spec):
         Path(__file__), spec.entrypoint, spec.recipe,
         ROOT / "experiments/r4_integrated/local_memory_byte_v2.py",
         ROOT / "experiments/r4_integrated/local_memory_byte_v2.md",
+        ROOT / "experiments/r4_integrated/local_memory_byte_v3.py",
+        ROOT / "experiments/r4_integrated/local_memory_byte_v3.md",
     )
     return {
         **previous.sources(),
         **{path.relative_to(ROOT).as_posix(): file_hash(path) for path in paths},
+    }
+
+
+def duration_clock():
+    """Record the clock used for every measured duration in this harness."""
+    info = time.get_clock_info("perf_counter")
+    return {
+        "name": "perf_counter",
+        "implementation": info.implementation,
+        "resolution_seconds": info.resolution,
+        "monotonic": info.monotonic,
+        "adjustable": info.adjustable,
     }
 
 
@@ -100,7 +113,7 @@ def new_model(spec, arm):
 
 def lesson(spec, model, episode, guard):
     guard()
-    start = time.monotonic()
+    start = time.perf_counter()
     documents = [bytes.fromhex(x) for x in episode["document_hex"]]
     query, target = bytes.fromhex(episode["query_hex"]), bytes.fromhex(episode["target_hex"])
     before = digest(model.state_dict())
@@ -134,8 +147,74 @@ def lesson(spec, model, episode, guard):
         "retired_memory_sha256": digest(feedback.state.snapshot()),
         "retained_state_tensor_bytes": retained_bytes,
         "context_signal_sha256": digest(feedback.mean_context_signal),
-        "seconds": time.monotonic() - start,
+        "seconds": time.perf_counter() - start,
     }
+
+
+def export_memories(models, checks, isolated, report, guard):
+    import torch
+
+    saved = {}
+    begin = time.perf_counter()
+    for arm, model in models.items():
+        memories, steps = {}, 0
+        before = digest(model.state_dict())
+        for case in checks:
+            if case["memory_id"] in memories:
+                continue
+            guard()
+            base = case["base_memory_id"]
+            documents = [
+                bytes.fromhex(x)
+                for x in (case["additional_document_hex"] if base else case["document_hex"])
+            ]
+            state = model.ingest(
+                documents, model.memory.restore_local_state(memories[base]) if base else None
+            )
+            steps += sum(len(x) + 1 for x in documents)
+            memories[case["memory_id"]] = detached_state(state.snapshot())
+        assert len(memories) == 8 and digest(model.state_dict()) == before
+        saved[arm] = {"weights": detached_state(model.state_dict()), "memories": memories}
+        report.setdefault("final_ingestion_byte_steps", {})[arm] = steps
+    report["final_ingestion_seconds"] = time.perf_counter() - begin
+    report["source_free_tensor_bytes"] = tensor_bytes(saved)
+    begin = time.perf_counter()
+    torch.save(saved, isolated / "source_free.pt")
+    report["source_free_serialization_seconds"] = time.perf_counter() - begin
+    write_json(
+        isolated / "query_only.json",
+        {
+            "source_sha256": report["source_sha256"],
+            "cases": [
+                {key: c[key] for key in ("id", "memory_id", "query_hex", "delay_reads")}
+                for c in checks
+            ],
+        },
+    )
+
+
+def capped_prediction(spec, arm, model):
+    """Measure the actual capped prediction used by prospective admission."""
+    import torch
+
+    weights = detached_state(model.state_dict())
+    state = model.memory.initial_local_state(
+        1, credit_mode=("aggregate" if arm == "aggregate" else "tagged")
+    )
+    model.decoder.output.weight[256].zero_()
+    model.decoder.output.bias[256] = torch.finfo(model.decoder.output.bias.dtype).min
+    begin = time.perf_counter()
+    generated = model.predict(
+        b"What is the value of k00?", state, spec.config["max_bytes"]
+    )
+    record = {
+        "seconds": time.perf_counter() - begin,
+        **generation_record(generated),
+    }
+    model.load_state_dict(weights)
+    assert same_state(weights, model.state_dict()) and generated.stop_reason == "limit"
+    assert len(generated.data) == 32
+    return record
 
 
 def validate_cost_launch(spec, launch, report):
@@ -175,6 +254,7 @@ def project_cost(spec, report, launch):
     """Recompute the original conservative formula; never accept a supplied estimate."""
     assert report["status"] == "completed" and report["mode"] == "cost"
     assert report["config"] == spec.config
+    assert report["duration_clock"] == duration_clock()
     assert len(report["lessons"]) == len(ARMS) * spec.config["cost_lessons_per_arm"]
     assert len(report["actions"]) == 100 and len(report["motor_demonstrations"]) == 2
     assert report["counts"]["first_attempts"] == 20
@@ -253,7 +333,7 @@ def worker(spec, args):
                     model._query(b"What is the value of k99?", state)
                     query_steps += 26
                 query = bytes.fromhex(request["query_hex"])
-                begin = time.monotonic()
+                begin = time.perf_counter()
                 generated = model.predict(query, state, spec.config["max_bytes"])
                 query_steps += len(query) + 1
             assert digest(state.snapshot()) == before
@@ -262,7 +342,7 @@ def worker(spec, args):
                     "arm": arm,
                     **request,
                     **generation_record(generated),
-                    "seconds": time.monotonic() - begin,
+                    "seconds": time.perf_counter() - begin,
                     "memory_sha256": before,
                 }
             )
@@ -280,7 +360,8 @@ def worker(spec, args):
             "requests_sha256": args.requests_sha,
             "worker_pid": os.getpid(),
             "memory": _process_memory(),
-            "elapsed_seconds": time.monotonic() - START,
+            "elapsed_seconds": time.perf_counter() - START,
+            "duration_clock": duration_clock(),
             "roster_invoked_or_documents_or_targets_supplied_to_model": False,
             "routing_boundary_not_filesystem_sandbox": True,
         },
@@ -311,7 +392,7 @@ def final_actions(spec, args, checks, report, guard):
         "--deadline-unix",
         str(args.deadline_unix),
     ]
-    begin = time.monotonic()
+    begin = time.perf_counter()
     child = subprocess.run(
         command,
         cwd=isolated,
@@ -323,11 +404,12 @@ def final_actions(spec, args, checks, report, guard):
     report["worker"] = {
         "command": command,
         "returncode": child.returncode,
-        "package_seconds": time.monotonic() - begin,
+        "package_seconds": time.perf_counter() - begin,
     }
     if child.returncode:
         raise RuntimeError("source-free worker failed")
     generated = json.loads(generated_path.read_bytes())
+    assert generated["duration_clock"] == report["duration_clock"]
     report["worker"].update({k: generated[k] for k in ("memory", "worker_pid", "elapsed_seconds")})
     assert generated["checkpoint_sha256"] == file_hash(checkpoint)
     assert generated["requests_sha256"] == file_hash(requests)
@@ -339,7 +421,7 @@ def final_actions(spec, args, checks, report, guard):
     from experiments.r4_integrated.contextual_occurrence_motor import ContextualOccurrenceMotor
     from experiments.r4_integrated.utf8_action_bridge import Case, execute_utf8
 
-    begin = time.monotonic()
+    begin = time.perf_counter()
     motor = ContextualOccurrenceMotor()
     report["motor_demonstrations"] = []
     for case in (
@@ -372,7 +454,7 @@ def final_actions(spec, args, checks, report, guard):
                 **action,
             }
         )
-    report["action_package_seconds"] = time.monotonic() - begin
+    report["action_package_seconds"] = time.perf_counter() - begin
     report["scores"] = {
         a: {
             g: sum(r["correct"] for r in report["actions"] if r["arm"] == a and r["group"] == g)
@@ -405,6 +487,7 @@ def run(spec, args):
         "pid": os.getpid(),
         "launch_started_unix": args.launch_started_unix,
         "deadline_unix": args.deadline_unix,
+        "duration_clock": duration_clock(),
         "lessons": [],
         "actions": [],
         "action_scope": (
@@ -430,6 +513,7 @@ def run(spec, args):
         admission = json.loads(args.admission.read_bytes())
         assert admission["status"] == ("engineering_qa" if args.mode == "cost" else "admitted")
         assert admission["config"] == spec.config
+        assert admission["duration_clock"] == report["duration_clock"]
         assert 0 < args.deadline_unix - args.launch_started_unix <= spec.config["seconds"]
         assert args.launch_started_unix <= time.time() < args.deadline_unix
         assert all(
@@ -453,7 +537,9 @@ def run(spec, args):
             assert cost_report["status"] == "completed" and cost_report["mode"] == "cost"
             assert cost_report["config"] == spec.config
             assert cost_report["source_revision"] == args.revision
-            for name in ("source_sha256", "packages", "native", "teaching_schedule_sha256"):
+            for name in (
+                "source_sha256", "packages", "native", "teaching_schedule_sha256", "duration_clock"
+            ):
                 assert cost_report[name] == admission[name]
             assert file_hash(ROOT / cost["launcher_path"]) == cost["launcher_sha256"]
             launch = json.loads((ROOT / cost["launcher_path"]).read_bytes())
@@ -528,7 +614,7 @@ def run(spec, args):
             if completed_indices % 128 == 0:
                 print(
                     f"completed_lessons={len(report['lessons'])} "
-                    f"elapsed_seconds={time.monotonic() - START:.3f}",
+                    f"elapsed_seconds={time.perf_counter() - START:.3f}",
                     flush=True,
                 )
         assert same_state(initial["frozen"], models["frozen"].state_dict())
@@ -548,23 +634,7 @@ def run(spec, args):
             report["cap_generation"] = {}
             for arm, model in models.items():
                 guard()
-                weights = detached_state(model.state_dict())
-                state = model.memory.initial_local_state(
-                    1, credit_mode=("aggregate" if arm == "aggregate" else "tagged")
-                )
-                model.decoder.output.weight[256].zero_()
-                model.decoder.output.bias[256] = torch.finfo(model.decoder.output.bias.dtype).min
-                begin = time.monotonic()
-                generated = model.predict(
-                    b"What is the value of k00?", state, spec.config["max_bytes"]
-                )
-                report["cap_generation"][arm] = {
-                    "seconds": time.monotonic() - begin,
-                    **generation_record(generated),
-                }
-                model.load_state_dict(weights)
-                assert same_state(weights, model.state_dict()) and generated.stop_reason == "limit"
-                assert len(generated.data) == 32
+                report["cap_generation"][arm] = capped_prediction(spec, arm, model)
         isolated = args.output / "source-free"
         isolated.mkdir()
         export_memories(models, checks, isolated, report, guard)
@@ -607,7 +677,7 @@ def run(spec, args):
                 assert report["source_sha256_after"] == report["source_sha256"]
             if memory:
                 report["memory"] = memory()
-            report["elapsed_seconds"] = time.monotonic() - START
+            report["elapsed_seconds"] = time.perf_counter() - START
             write_json(args.output / "report.json", report)
             completion = {
                 "status": "passed" if report["status"] == "completed" else "failed",
@@ -630,7 +700,7 @@ def run(spec, args):
             except BaseException:
                 completion["status"] = "failed"
                 completion["resource_error"] = traceback.format_exc()
-            completion["elapsed_seconds"] = time.monotonic() - START
+            completion["elapsed_seconds"] = time.perf_counter() - START
             completion["outer_elapsed_seconds"] = (
                 time.time() - args.launch_started_unix if args.launch_started_unix else None
             )

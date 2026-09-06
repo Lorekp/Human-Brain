@@ -131,6 +131,14 @@ state and execution invariants pass independently; the strict timing failure is
 preserved with no imputation or fit. The immediate next step is a regression-tested
 performance-counter fix under a fresh identity and the unchanged budget formula.
 
+The [v4 timing return](../../experiments/r4_integrated/local_memory_byte_v4.md)
+now uses the performance counter for harness durations, with clock metadata
+bound across admission, cost, worker and report. A deterministic actual-generation
+regression reproduces the zero under the coarse clock and retains the positive
+fine-counter duration after the fix; 40 affected tests pass. Unix deadlines,
+strictly positive samples and the original margins remain unchanged. Its cost
+admission is pending; no earlier invalid or rejected result authorizes a fit.
+
 The [independent preflight review](local-memory-byte-preflight-review.md) records
 two learning risks: averaging byte feedback weakens explicit order credit, and
 correlated write keys may overwrite useful information. These are hypotheses

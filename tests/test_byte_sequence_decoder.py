@@ -498,7 +498,7 @@ def test_local_composition_source_free_transport_and_disabled_empty_teacher():
         wrong_mode.restore_snapshot(snapshot)
 
 
-@pytest.fixture(params=(2, 3))
+@pytest.fixture(params=(2, 3, 4))
 def local_cost_runner(request):
     if request.param == 2:
         from experiments.r4_integrated import local_memory_byte_v2 as runner
@@ -508,13 +508,17 @@ def local_cost_runner(request):
     from types import SimpleNamespace
 
     from experiments.r4_integrated import local_memory_byte_harness as harness
-    from experiments.r4_integrated.local_memory_byte_v3 import SPEC
+    if request.param == 3:
+        from experiments.r4_integrated.local_memory_byte_v3 import SPEC
+    else:
+        from experiments.r4_integrated.local_memory_byte_v4 import SPEC
 
     return SimpleNamespace(
         ROOT=harness.ROOT, ARMS=harness.ARMS, CONFIG=SPEC.config,
         file_hash=harness.file_hash, write_json=harness.write_json,
         project_cost=partial(harness.project_cost, SPEC),
         validate_cost_launch=partial(harness.validate_cost_launch, SPEC),
+        duration_clock=harness.duration_clock,
     ), SPEC.module
 
 
@@ -539,9 +543,20 @@ def test_local_successor_cost_keeps_original_margin_and_rejects_bad_samples(loca
         "worker": {"memory": {"peak_working_set_mib": 400}},
     }
     launch = {"elapsed_seconds": 10.0, "observed_tree_peak_sum_mib": 750}
+    if hasattr(runner, "duration_clock"):
+        report["duration_clock"] = runner.duration_clock()
     result = runner.project_cost(report, launch)
     assert result["projected_seconds"] == pytest.approx(2 * 1024 * 5 * 0.03 + 2 * 9.8 + 30)
     assert result["peak_upper_mib"] == 750 and result["admissible"]
+    report["cap_generation"]["frozen"]["seconds"] = 0.0
+    with pytest.raises(AssertionError):
+        runner.project_cost(report, launch)
+    report["cap_generation"]["frozen"]["seconds"] = 0.02
+    if hasattr(runner, "duration_clock"):
+        report["duration_clock"]["name"] = "monotonic"
+        with pytest.raises(AssertionError):
+            runner.project_cost(report, launch)
+        report["duration_clock"] = runner.duration_clock()
     launch["observed_tree_peak_sum_mib"] = 2049
     assert not runner.project_cost(report, launch)["admissible"]
     launch["observed_tree_peak_sum_mib"] = 750
@@ -590,7 +605,7 @@ def test_local_harness_spec_binds_source_and_preserves_fixed_workload():
 
     from experiments.r4_integrated import local_memory_byte_harness as harness
     from experiments.r4_integrated import local_memory_byte_v2 as previous
-    from experiments.r4_integrated.local_memory_byte_v3 import SPEC
+    from experiments.r4_integrated.local_memory_byte_v4 import SPEC
 
     assert {**SPEC.config, "schema": previous.CONFIG["schema"]} == previous.CONFIG
     modified = SPEC.config
@@ -606,6 +621,8 @@ def test_local_harness_spec_binds_source_and_preserves_fixed_workload():
         "experiments/r4_integrated/local_memory_byte_harness.py",
         "experiments/r4_integrated/local_memory_byte_v3.py",
         "experiments/r4_integrated/local_memory_byte_v3.md",
+        "experiments/r4_integrated/local_memory_byte_v4.py",
+        "experiments/r4_integrated/local_memory_byte_v4.md",
         "experiments/r4_integrated/local_memory_byte_v2.py",
         "src/humanbrain/plastic_memory.py",
         "src/humanbrain/byte_sequence_decoder.py",
@@ -614,6 +631,42 @@ def test_local_harness_spec_binds_source_and_preserves_fixed_workload():
     candidate = harness.new_model(SPEC, "tagged")
     baseline = previous.new_model("tagged")
     _assert_nested_equal(candidate.state_dict(), baseline.state_dict())
+
+
+def test_local_harness_capped_prediction_measures_subtick_duration(monkeypatch):
+    from experiments.r4_integrated import local_memory_byte_harness as harness
+    from experiments.r4_integrated.local_memory_byte_v4 import SPEC
+
+    model = harness.new_model(SPEC, "frozen")
+    monkeypatch.setattr(harness.time, "monotonic", lambda: 1000.0)
+    ticks = iter((2000.0, 2000.003))
+    monkeypatch.setattr(harness.time, "perf_counter", lambda: next(ticks))
+    with torch.no_grad():
+        sample = harness.capped_prediction(SPEC, "frozen", model)
+    assert sample["decisions"] == 33 and sample["stop_reason"] == "limit"
+    assert sample["seconds"] == pytest.approx(0.003)
+
+
+def test_local_harness_export_uses_same_high_resolution_clock(tmp_path, monkeypatch):
+    from experiments.r4_integrated import local_memory_byte_harness as harness
+    from humanbrain.local_memory_learner import LocalMemoryLearner
+
+    model = LocalMemoryLearner(
+        mode="frozen", embedding_size=2, hidden_size=3, key_size=2, value_size=3
+    )
+    checks = [
+        {"id": index, "memory_id": str(index), "base_memory_id": None,
+         "document_hex": [b"x".hex()], "query_hex": b"q".hex(), "delay_reads": 0}
+        for index in range(8)
+    ]
+    report = {"source_sha256": {}}
+    monkeypatch.setattr(harness.time, "monotonic", lambda: 1000.0)
+    ticks = iter((2000.0, 2000.004, 2000.004, 2000.005))
+    monkeypatch.setattr(harness.time, "perf_counter", lambda: next(ticks))
+    harness.export_memories({"frozen": model}, checks, tmp_path, report, lambda: None)
+    assert report["final_ingestion_seconds"] == pytest.approx(0.004)
+    assert report["source_free_serialization_seconds"] == pytest.approx(0.001)
+    assert (tmp_path / "source_free.pt").is_file()
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
