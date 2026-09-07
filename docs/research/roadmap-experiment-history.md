@@ -3634,3 +3634,23 @@ reads, preserving all mutable-state and restore checks. The parallel
 public-observation relevance as a bounded design question, not a measured
 causal diagnosis. These feed one broader continuation; no exposed replay,
 gain sweep or automatic toy gate follows.
+
+## 2026-09-07 owned checkpoint payload integration
+
+Source `768e15c4a5a460c9bc57b15842f8dc1110d53edf` adds authenticated Windows
+NTFS read ownership of newly published immutable route payloads. Continuous
+noninherited handles deny write/delete sharing; later boundaries check file
+identity and path without streaming the same protected bytes again. Fresh opens
+and restore retain full hashing, as do unsupported-platform boundaries. Mutable
+actor/tape/source/journal checks and atomic publication ordering remain intact.
+
+The [three ordinary checks](persistent-checkpoint-owned-payload-qa-v1.md) pass
+first launch in18.9013638outer seconds at1238.98046875MiB observed peak. Thirteen
+byte-file refusal cases and ten opaque interruption fixtures accompany one
+actual actor continuation fixture: four actors, six free calls, two STOP
+children, four teacher symbols, six action labels, three publications and one
+restore of two locally created tensor payloads. One injected path failure
+before new snapshot leaves HEAD and intent intact, then the fixture's original
+commit succeeds. No experimental checkpoint, V7 lesson or missing task is replayed.
+These checks verify reduced repeated byte work under ownership, not a measured
+broader-workload speedup or an additional capability gate.

@@ -32,6 +32,10 @@ authenticated without decoding or resuming V7. The
 [cost review](research/persistent-language-action-v7-cost-review.md) assigns
 917.9653919seconds (51.83%) to checkpoint work; this motivates an integral
 persistence optimization, with no isolated V6–V7 speedup claim.
+The resulting [owned-payload path passes three ordinary QA nodes](research/persistent-checkpoint-owned-payload-qa-v1.md)
+in18.9013638seconds at1238.98046875MiB observed peak. Tiny authored fixtures
+check file protection, unchanged learner continuation and independent restore;
+no historical model or task is replayed, and no new capability score is claimed.
 
 The preceding [sixth broader session](../experiments/r4_integrated/persistent_language_action_v6_result.md)
 times out at840.4533474 seconds and890.42578125MiB observed peak. It preserves182

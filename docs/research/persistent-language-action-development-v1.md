@@ -23,7 +23,10 @@ The run, failed and repaired saved reviews, and banking total1829.1531607seconds
 at818.6484375MiB observed peak; the runner itself stops before a new transaction.
 
 The [cost review](persistent-language-action-v7-cost-review.md) selects repeated
-immutable checkpoint traffic for an ownership-preserving optimization design.
+immutable checkpoint traffic. The [owned-payload implementation](persistent-checkpoint-owned-payload-v1.md)
+passes [three ordinary checks](persistent-checkpoint-owned-payload-qa-v1.md),
+including Windows refusal of writes/replacement and exact same-actor state
+continuation. Its broader runtime benefit remains unmeasured.
 The [learning review](persistent-language-action-v7-learning-review.md) selects
 a bounded decision about public-observation relevance in the same sequence cells.
 These support one next broader continuation, not competing toy gates. Preserve

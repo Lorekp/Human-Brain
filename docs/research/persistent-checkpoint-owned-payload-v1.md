@@ -1,5 +1,9 @@
 # Owned immutable checkpoint payloads
 
+Implementation `768e15c4a5a460c9bc57b15842f8dc1110d53edf` passes
+[three ordinary checks](persistent-checkpoint-owned-payload-qa-v1.md) first launch.
+No broader workload speedup or V7 restoration is claimed.
+
 Status: selected implementation is source-held for root review, 2026-09-07. The two owned modules pass the repository-configured Ruff source check; no model, checkpoint decoding, feature evaluation, action, probe or QA execution has been performed for this change. Root owns commit, doctor and ordinary QA release. The roadmap and current broader protocol remain authoritative. This is one integral persistence optimization, not a new performance gate or a V7 rerun.
 
 V7's saved create/begin/capture/commit intervals total 917.9653919 seconds, 51.8314% of its partial run. The selected change targets repeated reads of unchanged route payloads inside `_boundary`, not all of that interval. Live-state checks, journal frontiers, source hashing, serialization and fsync remain substantial independent work. The [cost review](persistent-language-action-v7-cost-review.md) supplies measurements; no isolated saving is claimed here.

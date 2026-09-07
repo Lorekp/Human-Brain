@@ -63,8 +63,13 @@ not neuronal memory or an answer source. An outstanding interrupted intent
 prevents automatic replay; V6's missing final state remains unavailable. V7
 preserves a clean boundary after185 attempts with authenticated numeric payloads;
 the saved review does not decode or restore them. Its measured repeated checkpoint
-traffic motivates an owned immutable-payload optimization while retaining mutable
-actor, tape, source, journal and fresh-restore integrity checks.
+traffic motivates the [implemented owned immutable-payload path](research/persistent-checkpoint-owned-payload-v1.md).
+Windows NTFS read leases block ordinary writes/deletion while new payloads are
+owned; later boundaries reuse their authenticated identities with live path
+checks. Other supported execution platforms keep full byte checks. Mutable
+actor, tape, source, journal and fresh-restore integrity remain checked.
+[Ordinary QA](research/persistent-checkpoint-owned-payload-qa-v1.md) passes;
+the frozen V7 session is not replayed and no workload speedup is yet measured.
 
 The preceding reader/action pair uses
 [factorized local sequence routing](research/factorized-sequence-routing-v1.md).

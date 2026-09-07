@@ -51,9 +51,14 @@ records185/192 attempts, one exact delayed reading, zero fresh transfer and
 zero successful recovery. Both factual tapes reach1614 slots;222 safe boundaries
 preserve the latest actors, actual projects and evidence. Source and correction
 offers total821 symbols per neural route. No V7 payload restore is claimed.
-Checkpoint work consumes51.83% of runner time; immutable-payload ownership and
-selective public-observation context are the current bounded design work for
-one broader successor, not additional toy capability gates.
+Checkpoint work consumes51.83% of runner time. The
+[owned-payload implementation](research/persistent-checkpoint-owned-payload-v1.md)
+now holds new Windows NTFS payload versions under authenticated read leases;
+same-owner reuse retains path/file identity checks, and independent restore
+hashes bytes afresh. [Three ordinary QA nodes](research/persistent-checkpoint-owned-payload-qa-v1.md)
+pass in18.9013638outer seconds at1238.98046875MiB. This is persistence verification,
+not a measured broader speedup. Reusable observation/value context remains the
+learning design work for one broader successor, without new toy capability gates.
 
 Preceding measured implementation:
 

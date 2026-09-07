@@ -47,14 +47,17 @@ stream. The clean V7 boundary preserves resolved learning for a new explicitly
 initialized continuation; restore has not yet been demonstrated on those bytes.
 
 The [cost review](persistent-language-action-v7-cost-review.md) identifies
-checkpoint work as51.83% of runner time. First design an owned immutable-payload
-path that avoids repeated historical payload reads while retaining mutable-state,
-source, journal and restore checks. In parallel, review selective binding of
-sequence predictions to the actual public observation: current request-only
-apical contacts can outrank a prior that also sees files and feedback. This is a
-source-based design concern, not a diagnosed cause of the measured failures.
-Select one coherent learning change for the next broader continuation, with
-ordinary affected QA and no gain sweep or isolated capability gate.
+checkpoint work as51.83% of runner time. The
+[owned immutable-payload path](persistent-checkpoint-owned-payload-v1.md) is
+implemented and passes [ordinary persistence QA](persistent-checkpoint-owned-payload-qa-v1.md).
+It avoids repeated protected payload reads while retaining mutable-state,
+source, journal and fresh restore checks; broader runtime benefit is unmeasured.
+The next learning design must address reusable context and values, not merely
+add another exact-context store. Current request-only contacts can outrank a
+prior that sees files and feedback, but more selective matching alone does not
+teach composition. Select one coherent locally learned mechanism and a realistic
+public-experience budget for the next broader continuation, with ordinary
+affected QA and no gain sweep or isolated capability gate.
 
 All byte/EOS columns remain eligible, and existing neuronal potentials remain
 the prior. Raw contextual contacts are a falsifiable sequence mechanism, not
