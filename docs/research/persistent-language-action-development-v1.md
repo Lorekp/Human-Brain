@@ -30,7 +30,9 @@ Future session persistence
 must preserve resolved learning at safe boundaries. The completed bounded
 learning review selects paired dendritic request/prefix learning as one concrete
 implementation for this broader loop, with observed source and correction symbols
-counted separately and no backpropagation. Its usefulness remains to be measured.
+counted separately and no backpropagation. [Ordinary core and same-actor QA](dendritic-request-binding-qa-v1.md)
+passes, as does [safe-boundary checkpoint QA](persistent-session-checkpoint-qa-v1.md).
+Its usefulness remains to be measured in the next broader session.
 The roadmap owns selection;
 no repeat of this exposed stream or toy-perfection gate follows.
 

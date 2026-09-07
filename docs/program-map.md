@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
 Maintained by the orchestrator. Updated 2026-09-07 with persistent
-input-defined recognition integration. This file inventories implementation and
+paired dendritic learning and persistent checkpoint integration. This file inventories implementation and
 historical frontiers. The [roadmap](research/roadmap-reading-to-coding.md) owns
 the active queue and architecture policy; [benchmark status](benchmark-status.md)
 owns measured evidence. Older "next" steps below are local historical context.
@@ -40,9 +40,13 @@ records all acquisition, transfer and retention cases before its timeout, with
 online1/6 exact delayed,0/24 fresh and0/18 prior regressions. There is no final
 V6 checkpoint. The tournament reader/action successor now passes
 [ordinary exact circuit and executed-learning parity QA](research/factual-address-tournament-qa-v1.md),
-with no new checkpoint tensors. Safe-boundary persistence remains an engineering
-priority; the learning review addresses
-the still-unresolved relevance/composition problem.
+with no new checkpoint tensors. The [parent checkpoint store](research/persistent-session-checkpoint-v1.md)
+passes durability/actor-continuation QA and preserves resolved transaction state.
+`DendriticSequenceMemoryLearner` and its combined action wrapper now integrate
+paired raw-prefix/request contacts with observed-symbol local learning, retaining
+the old prior. [Core and same-actor QA](research/dendritic-request-binding-qa-v1.md)
+passes first launch. Fresh broader usefulness remains unmeasured; the next
+48-episode workload and durable runner are in preparation.
 
 Preceding measured implementation:
 

@@ -24,6 +24,12 @@ but no final checkpoint or completed audit is saved. Three saved-only partial
 reviews bind observed evidence; V5 remains the last recoverable checkpoint.
 No correct broader neuronal software edit or fresh advantage is established.
 
+New integration mechanics are verified: [safe-boundary checkpoints](research/persistent-session-checkpoint-qa-v1.md)
+pass after an empty-tuple test assertion repair, and [paired dendritic learning](research/dendritic-request-binding-qa-v1.md)
+passes both ordinary nodes first launch in13.8375434seconds at763.66015625MiB.
+These are not new benchmark outcomes. The next broader session is still being
+prepared from the complete V5 state, with no reconstruction or replay of V6.
+
 The preceding [fifth broader session](../experiments/r4_integrated/persistent_language_action_v5_result.md)
 completes64 episodes per route,240 attempts and156 actual verifications while
 memory grows505→864 slots. Online scores0/8 corrected first responses,0/8

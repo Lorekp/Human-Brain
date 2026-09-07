@@ -20,7 +20,7 @@ fidelity constraints apply to those lanes and frozen experiments, not to every
 future architecture. Current integration work follows the
 [persistent language/action plan](research/persistent-language-action-development-v1.md).
 
-The current `RecognitionSequenceMemoryLearner` / `RecognitionSequenceSpliceLearner`
+The measured `RecognitionSequenceMemoryLearner` / `RecognitionSequenceSpliceLearner`
 pair retains every old numerical prior and adds one private recognition gain
 per input-defined event. A fixed canonical self-activity supplies its one-input
 local current rule; activation/preparation precedes the current teacher byte.
@@ -40,6 +40,22 @@ and explicit relay stages, rather than the old two-layer all-pairs circuit.
 [Ordinary circuit and executed-learning parity QA](research/factual-address-tournament-qa-v1.md)
 passes. The changed metadata/work schema adds no learned tensor or external
 answer selector; full-workload speedup remains unmeasured.
+
+The implemented successor `DendriticSequenceMemoryLearner` / `DendriticSequenceSpliceLearner`
+adds paired basal/apical contacts to byte/EOS cells. Basal contacts recognize
+ordered raw prefixes; apical contacts recognize fixed raw-request activity on
+the same branch. Source bytes teach basal contacts, and declared correction
+bytes teach their own sensory columns with local signed/clipped permanence
+updates. All byte columns enter a class/prior/identity tournament. Old neuronal
+priors stay fixed while these contacts and the acting heads receive their own
+local signals. [Ordinary QA](research/dendritic-request-binding-qa-v1.md) passes;
+language generalization and feedback-driven repair remain unestablished.
+
+The [parent checkpoint store](research/persistent-session-checkpoint-v1.md) binds
+both actors, tapes, actual workspace/feedback, reference history and evidence
+frontiers to a single safe boundary. It is development/evidence infrastructure,
+not neuronal memory or an answer source. An outstanding interrupted intent
+prevents automatic replay; V6's missing final state remains unavailable.
 
 The preceding reader/action pair uses
 [factorized local sequence routing](research/factorized-sequence-routing-v1.md).

@@ -3,7 +3,9 @@
 2026-09-07. Root-selected source implementation after source/math review. No
 model, feature, checkpoint, corpus, testcase or experiment was evaluated for this
 selection. This is one falsifiable broader-loop candidate, not established
-language understanding. It completes the missing signal origins in
+language understanding. [Ordinary core and same-actor QA](dendritic-request-binding-qa-v1.md)
+now passes on its first launch; broader usefulness remains unmeasured.
+It completes the missing signal origins in
 `docs/research/persistent-ordered-context-learning-review-v1.md`.
 
 ## 1. Concrete choice and what changes

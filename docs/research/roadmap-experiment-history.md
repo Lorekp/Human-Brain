@@ -3572,3 +3572,15 @@ failed and repaired fixtures. This is mechanics verification, not a broader
 session result. No V6 state is reconstructed or old workload repeated. Paired
 dendritic source/request learning and fresh broader workload preparation proceed
 as the shared next integration.
+
+## 2026-09-07 paired dendritic learning integration
+
+Source `cc4275969953e4f19da82d708bc3b926fb1da673` adds local paired request/prefix
+contacts to the same acting reader. The two [ordinary QA nodes](dendritic-request-binding-qa-v1.md)
+pass first launch in13.8375434seconds at763.66015625MiB: one isolated bank and
+two combined actors,22branch evaluations, six source and ten correction-symbol
+offers including declared disabled and rejected proposals, one actual child.
+The old reader priors remain fixed. The V7 continuation adapter preserves the
+complete V5 state and introduces empty contacts; no historical checkpoint was
+loaded in this QA. A48-episode broader stream and safe-boundary runner follow
+without another toy acquisition gate. Semantic transfer remains unmeasured.

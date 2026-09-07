@@ -65,9 +65,9 @@ corrections teach the same reader that generates the actor's payloads, using
 local permanence changes with every observed symbol counted. All byte/EOS
 columns remain eligible, and the existing neuronal potentials remain the prior.
 This is a falsifiable sequence/context mechanism, not established semantic
-composition or feedback-driven repair. Its source implementation and ordinary
-transaction checks proceed alongside safe-boundary checkpointing for the next
-broader session; neither requires another toy capability gate.
+composition or feedback-driven repair. Its [ordinary core and same-actor checks](dendritic-request-binding-qa-v1.md)
+pass. Integrate it and safe-boundary checkpointing into the next broader session;
+neither requires another toy capability gate.
 Metadata-only repair and sequence latches are not separate active queues.
 Preserve V5's recoverable state and all V6 partial evidence. Another automatic
 byte/operation gate or extra rounds on this exposed stream are not selected.
