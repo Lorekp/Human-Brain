@@ -55,9 +55,12 @@ the failed store is dirty and cannot silently resume that scientific stream.
 The [run watchdog](../../.pytest-tmp/persistent-language-action-v8.launch.json)
 records 15.5702892 seconds; the
 [review watchdog](../../.pytest-tmp/persistent-language-action-v8-review.launch.json)
-records 4.5379221 seconds. Together they consumed 20.1082113 seconds. Banking
-overhead is pending and must be reported separately; this is not an all-inclusive
-cost total.
+records 4.5379221 seconds. Together they consumed 20.1082113 seconds. The
+[bank watchdog](../../.pytest-tmp/persistent-language-action-v8-failure-bank.launch.json)
+adds0.5846162seconds, for20.6928275seconds of failed-run/audit/banking cost.
+Manifest and both authored-program preparations add8.4038153seconds separately.
+The corrected serializer's ordinary regression subsequently passes in5.5008832seconds
+with zero models, offers or children; these are distinct preparation costs.
 
 After ordinary serializer QA, any corrected launch is a new session and output
 directory, initialized explicitly from authenticated V7 online with a fresh

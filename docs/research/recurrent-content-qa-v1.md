@@ -124,3 +124,33 @@ sandbox: code in another file can still change the driver when executed. Such
 actual after-files and a separate public-driver integrity result are retained;
 they do not become successful protected checks merely because returncode is0.
 The parent never repairs the workspace or substitutes a correctness label.
+
+## V8 nested receipt transport regression
+
+The first broader launch reaches a valid numerical initialization and safe HEAD0,
+then fails because the inherited JSON conversion does not traverse the new
+source-feedback dataclass. The failed source update is not checkpointed; its
+[separate report](../../experiments/r4_integrated/persistent_language_action_v8_initialization_failure_result.md)
+preserves the distinction between zero durable rows and89 inferred lost offers.
+V8 now owns a recursive dataclass converter that retains existing byte/tensor
+representations without tensor deep copies. Historical converters are unchanged.
+
+Select only `test_recurrent_v8_nested_receipt_serialization` in the existing test
+home. It uses an authored actual `RecurrentContentSourceFeedback`, nested receipt
+dataclasses/mappings/sequences, four small tensors and one real journal append;
+it asserts independently authored JSON bytes and unchanged inputs. There are
+zero model constructions, source/answer offers, action children or decoders.
+Earlier controller mechanics QA had not exercised this runner-to-journal seam.
+
+The node passes first at `b7e28c28e3fa81f799bab2a15c8d21d5d11b8fdb` under
+120seconds/1024MiB:5.5008832watchdog seconds,268.50390625MiB observed peak,
+one pass with no failures/errors/skips. The optional pytest cache warning remains;
+it does not affect the recorded journal/JUnit artifacts. No broader tests or
+scientific runs are inferred from this ordinary regression.
+
+| Receipt | SHA256 |
+| --- | --- |
+| `.pytest-tmp/dev/doctor-r8zf7dm9/receipt.json` | `9b3710186faff92b1360892f587b4c45b0322a0c91139a41a462e3d5a9bf5a5f` |
+| `.pytest-tmp/recurrent-v8-serialization.launch.json` | `bd60d0590ef65bdd368a4576beec6c79dbd350895140f90afb95a2eaeec82594` |
+| `.pytest-tmp/recurrent-v8-serialization.junit.xml` | `b9a504b862a052772349be5fb45121eb83d8bae37fd8a63eb9aa278bbd13c2c6` |
+| `.pytest-tmp/recurrent-v8-serialization-tests/test_recurrent_v8_nested_recei0/v8-receipt-serialization-passed.json` | `2ba2683c1d7770383df3fb87e404c2d5e52363dc55968d4fcd96effa1af8582f` |

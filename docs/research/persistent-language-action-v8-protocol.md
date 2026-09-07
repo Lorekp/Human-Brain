@@ -145,8 +145,8 @@ The source literals contain24 distinct complete documents, each offered once:
   filtering, ordering, joining, bounds and exception precedence.
 
 Static literal accounting gives9,860 raw source bytes plus24 EOS =9,884 new
-source offers per neural route, within the10,500 ceiling. One separately released
-pure build will freeze the complete manifest and independently derive its counts.
+source offers per neural route, within the10,500 ceiling. The completed pure
+build freezes the complete manifest and independently derives these counts.
 These are source next-symbol rewards, not answer corrections or retained facts.
 Each transient document uses observe_source against the old admitted tape,
 resets its neural/cursor trajectory, and preserves the tape object. Every

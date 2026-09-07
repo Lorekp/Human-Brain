@@ -1,15 +1,16 @@
-"""Bank authenticated complete/partial V8 evidence; never invoke a learner or task."""
+"""Bank only the corrected fresh V8 session, retaining the first launch's costs."""
 
 from __future__ import annotations
 
 import argparse
 import json
 import time
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from experiments.r4_integrated.bank_persistent_language_action_v7 import read, sha
 
-DRAFT = True
+DRAFT = False  # Root-selected saved-only CLI; no task or checkpoint decoder is invoked.
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_SHA = "66b0bd96be3b9e97c4eb5f9812c2b5977f294fc5900d55109445c0a303e522d0"
 PREPARATION = {
@@ -24,6 +25,78 @@ SAVED_TOOLS = {
     "experiments/r4_integrated/persistent_language_action_v8_review.py",
     "experiments/r4_integrated/bank_persistent_language_action_v8.py",
 }
+CORRECTION_EVIDENCE = {
+    "benchmarks/persistent_language_action_v8_initialization_failure.result.json": "0882b79cad1f89448989e65bf5a029f57878d4a05b28c1b1f5bf368e392a9da8",
+    ".pytest-tmp/persistent-language-action-v8.launch.json": "757fea5a26f0094a0f4bfc8fd0b10e73581c3ab6d7fe94d3c7d13176540e6045",
+    ".pytest-tmp/persistent-language-action-v8-review.launch.json": "61a3ea7dfea5e69354c6945231d9f0e3b52b7f834602e51e0916f11b8651cc22",
+    ".pytest-tmp/persistent-language-action-v8-failure-bank.launch.json": "e42b71b512ce540b52ff5b817861957a3b461d1b87849990c3c237f6ad21ea59",
+    ".pytest-tmp/recurrent-v8-serialization.launch.json": "bd60d0590ef65bdd368a4576beec6c79dbd350895140f90afb95a2eaeec82594",
+    ".pytest-tmp/recurrent-v8-serialization.junit.xml": "b9a504b862a052772349be5fb45121eb83d8bae37fd8a63eb9aa278bbd13c2c6",
+    ".pytest-tmp/recurrent-v8-serialization-tests/test_recurrent_v8_nested_recei0/v8-receipt-serialization-passed.json": "2ba2683c1d7770383df3fb87e404c2d5e52363dc55968d4fcd96effa1af8582f",
+}
+
+
+def correction_history(evidence):
+    """Authenticate prior failure and ordinary QA; do not rebank their old sources."""
+    for name, identity in CORRECTION_EVIDENCE.items():
+        if sha(ROOT / name) != identity:
+            raise ValueError("frozen correction evidence changed: " + name)
+        evidence[name] = identity
+    old = read(ROOT / "benchmarks/persistent_language_action_v8_initialization_failure.result.json")
+    launches = {name: read(ROOT / (".pytest-tmp/" + stem + ".launch.json")) for name, stem in (
+        ("failed_runner", "persistent-language-action-v8"),
+        ("successful_partial_review", "persistent-language-action-v8-review"),
+        ("first_failure_bank", "persistent-language-action-v8-failure-bank"),
+        ("serialization_qa", "recurrent-v8-serialization"))}
+    if (old["schema"] != "persistent-language-action-result-bank-v8" or old["complete_run"] is not False
+            or old["manifest_sha256"] != MANIFEST_SHA or old["observed_attempts"] != 0
+            or old["checkpoint"]["head"]["sequence"] != 0 or old["checkpoint"]["boundaries"] != 1
+            or not old["checkpoint"]["dirty"]
+            or any(value for row in old["exposures"].values() for value in row.values())
+            or any(old["source_offers"].values())
+            or launches["failed_runner"]["status"] != "failed"
+            or any(launches[name]["status"] != "passed" for name in launches if name != "failed_runner")
+            or old["runner"]["seconds"] != launches["failed_runner"]["elapsed_seconds"]
+            or old["saved_review"]["seconds"] != launches["successful_partial_review"]["elapsed_seconds"]):
+        raise ValueError("prior failed-launch custody or costs changed")
+    failure_name = ".pytest-tmp/persistent-language-action-v8-run/failure.json"
+    manifest_name = ".pytest-tmp/persistent-language-action-v8-run/manifest.json"
+    for name in (failure_name, manifest_name):
+        if sha(ROOT / name) != old["evidence"][name]:
+            raise ValueError("original failure/manifest evidence changed")
+        evidence[name] = old["evidence"][name]
+    failure, manifest = read(ROOT / failure_name), read(ROOT / manifest_name)
+    if (failure["type"] != "TypeError" or "RecurrentContentSourceFeedback" not in failure["error"]
+            or manifest["episodes"][0]["append_document_ids"] != ["N36"]):
+        raise ValueError("first source serialization failure identity changed")
+    first = next(d for d in manifest["documents"] if d["document_id"] == "N36")
+    inferred_offers = len(bytes.fromhex(first["text_hex"])) + 1
+    if inferred_offers != 89:
+        raise ValueError("first failed source exposure inference changed")
+    qa_path = ROOT / ".pytest-tmp/recurrent-v8-serialization-tests/test_recurrent_v8_nested_recei0/v8-receipt-serialization-passed.json"
+    qa = read(qa_path)
+    if (qa["status"] != "passed" or qa["serializer_calls"] != 1 or qa["journal_appends"] != 1
+            or qa["authored_tensors"] != 4
+            or any(qa[k] != 0 for k in ("models", "source_offers", "teacher_offers", "children", "checkpoint_decodes"))):
+        raise ValueError("ordinary serialization QA exposure changed")
+    suite = ET.parse(ROOT / ".pytest-tmp/recurrent-v8-serialization.junit.xml").getroot().find("testsuite")
+    if (suite is None or any(suite.get(k) != v for k, v in (
+            ("tests", "1"), ("failures", "0"), ("errors", "0"), ("skipped", "0")))
+            or suite.find("testcase").get("name") != "test_recurrent_v8_nested_receipt_serialization"):
+        raise ValueError("ordinary serializer JUnit result changed")
+    components = {name: {"status": monitor["status"], "seconds": monitor["elapsed_seconds"],
+                         "peak_mib": monitor["observed_tree_peak_sum_mib"]} for name, monitor in launches.items()}
+    return {"components": components, "seconds": sum(v["seconds"] for v in components.values()),
+            "peak_mib": max(v["peak_mib"] for v in components.values()),
+            "first_failed_source": {
+                "route": "online", "document_id": "N36", "inferred_offers": inferred_offers,
+                "saved_source_rows": 0, "saved_ticks": None, "saved_rewards": None,
+                "basis": "source/control-flow inference: source call returned before source-feedback journal encoding failed",
+                "scope": "not reconstructed scalar exposure; unpublished dirty state is not restored",
+            },
+            "serialization_qa": qa,
+            "double_counting_policy": "add first runner, audit and banker outer times once; never add the prior bank's preparation subtotal (which already includes build/author work)",
+            "continuation_policy": "corrected fresh actors restore V7 ONLINE; N36 is deliberately reoffered, no dirty V8 resume"}
 
 
 def preparation(evidence):
@@ -63,11 +136,13 @@ def preparation(evidence):
                          "case_seconds": sum(c["elapsed_seconds"] for c in report["cases"]),
                          "passed_cases": sum(c["passed"] for c in report["cases"]),
                          "scope": "author-only canonical/broken programs, zero neuronal exposure"})
+    correction = correction_history(evidence)
     return {"pure_builds": 1, "build_seconds": build["elapsed_seconds"],
             "build_peak_mib": build["observed_tree_peak_sum_mib"], "build_children": 0,
             "author_attempts": attempts, "author_children": sum(a["children"] for a in attempts),
-            "seconds": build["elapsed_seconds"] + sum(a["seconds"] for a in attempts),
-            "peak_mib": max(build["observed_tree_peak_sum_mib"], *(a["peak_mib"] for a in attempts)),
+            "correction_history": correction,
+            "seconds": build["elapsed_seconds"] + sum(a["seconds"] for a in attempts) + correction["seconds"],
+            "peak_mib": max(build["observed_tree_peak_sum_mib"], correction["peak_mib"], *(a["peak_mib"] for a in attempts)),
             "failure_scope": "first author harness used platform CRLF stdout; second used the qualified LF bootstrap; both launches retained",
             "budget_scope": "completed preparation cost outside the selected 3600-second runner and 120-second saved audit"}
 
@@ -76,6 +151,9 @@ def bank(run, review_path, run_launch, review_launch, previous_review_launches=(
     started = time.perf_counter()
     run, review_path, run_launch, review_launch = (
         Path(p).resolve() for p in (run, review_path, run_launch, review_launch))
+    if (run != (ROOT / ".pytest-tmp/persistent-language-action-v8-corrected-run").resolve()
+            or run_launch != (ROOT / ".pytest-tmp/persistent-language-action-v8-corrected.launch.json").resolve()):
+        raise ValueError("this banker is selected only for the corrected fresh V8 launch")
     review, monitor, audit = read(review_path), read(run_launch), read(review_launch)
     complete = review.get("complete_run") is True
     if (review["schema"] != "persistent-language-action-saved-review-v8"
@@ -157,9 +235,11 @@ def bank(run, review_path, run_launch, review_launch, previous_review_launches=(
         "measured_seconds_through_bank_preparation": prepared["seconds"] + run_audit_seconds + banking_seconds,
         "measured_peak_mib": peak, "selected_budget": budget, "complete_resource_budget_passed": complete and budget_passed,
         "saved_tool_sources": review["saved_tool_sources"], "complete_outer_measurement_pending": True,
-        "timing_scope": "all build/failed+corrected author/run/failed+corrected audit outer times and this bank's byte-check preparation; banker serialization/process tail requires its outer watchdog",
+        "timing_scope": "one build; failed+corrected author QA; first failed runtime, its audit and banker outer; serialization QA; corrected runtime and its audits; current bank byte checks. Current banker serialization/process tail requires its outer watchdog",
         "claim": "open authored continuation; valid scalar custody is not a learning success or protected evaluation",
-        "checkpoint_decodes_in_bank": 0, "models_or_children_in_bank": 0, "no_scientific_replays": True,
+        "checkpoint_decodes_in_bank": 0, "models_or_children_in_bank": 0,
+        "scientific_replays_by_banker": 0, "corrected_session_deliberately_reoffers_N36": True,
+        "dirty_failed_state_resumed": False,
         "evidence": evidence,
     }
 
