@@ -122,3 +122,36 @@ receipts. Scalar teacher records alone cannot independently reconstruct all
 million-wide routing-weight updates or raw lexical gate activity. Ordinary QA
 checks actual update mechanics; saved audit limitations must remain explicit.
 No further scientific admission or toy-perfection requirement follows this run.
+
+## Authored data preparation
+
+Source commit `5e66f3d6388a046b599d8ff970265403461bf55d` builds the manifest once:
+`.pytest-tmp/persistent-language-action-v5-manifest.json`,125910 bytes,
+SHA-256 `de182acf644b18fed25948c5c7886006253bee8618a4e6ce647508f624b86fca`.
+Build receipt SHA-256 is
+`cb53a921d5517c41b22b03d4c118ba5472908a17fe30d1921e69bd5b477c614c`.
+The source validators authenticate all four prior manifests, document chronology,
+teacher budgets, exact-repeat identity/age, nominal project lineage and raw bounds.
+
+Author-only canonical program validation checks all36 editing episodes, including
+duplicates and prior regressions. The first scratch harness launched isolated
+Python directly with `-I -S main.py`; it did not supply the repository bootstrap
+for sibling imports and normalized streams, and all36 checks failed. That harness
+failure is preserved. The corrected harness uses the qualified repository
+executor against the **same unchanged manifest**, without calling its builder
+again; all36 canonical outputs pass. Neither invocation constructs a learner,
+loads a checkpoint, queries the baseline or offers a teacher. Their72 actual
+author-solution child executions are separate from future learner attempts.
+
+| Saved receipt | SHA-256 |
+| --- | --- |
+| `dev/doctor-scqbrtm7/receipt.json` | `bb5b827c01c4af75af1da9e940eeaf41f38123016f8e0eecc0831bce8d7fc37a` |
+| `persistent-language-action-v5-author-validation.json` | `6149e71342892a51d95ad4e589e268d0bc86ab2d2caa4663cd9919db029c5ade` |
+| `persistent-language-action-v5-author-validation.launch.json` | `1087454d8cf52ba333ad1dac4e7486ddd8c7509e6a3080eb1486ecd95885ca40` |
+| `persistent-language-action-v5-author-repaired.json` | `575a5cca031a7afa7b7435b603f87e0af677081ac001458b673310aa051e288f` |
+| `persistent-language-action-v5-author-repaired.launch.json` | `b48a2a9fa8b6814cf7cabc953794f1f52f742954e53322f7454ff31c236ea0b2` |
+
+Paths in the table are under `.pytest-tmp/`. The first outer monitor records
+2.5407214 seconds/36.15234375 MiB; the corrected monitor records3.3430351 seconds/
+80.40234375 MiB. These are preparation costs, not part of future neuronal exposure
+or a capability score. No source task or target changed after these checks.

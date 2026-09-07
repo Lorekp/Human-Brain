@@ -20,6 +20,19 @@ fidelity constraints apply to those lanes and frozen experiments, not to every
 future architecture. Current integration work follows the
 [persistent language/action plan](research/persistent-language-action-development-v1.md).
 
+The next implemented reader/action pair uses
+[factorized local sequence routing](research/factorized-sequence-routing-v1.md).
+Fixed byte, adjacent-pair and relative-position populations produce sparse
+coincidence activity for every event owner. One shared float64 routing vector
+receives direct outcome teaching from its own selected pre-clamp emitted byte;
+no downstream derivative or correct-owner label is transported backward.
+Teacher-time exact-context reuse/recruitment remains a separate input-only
+circuit. Routing, assembly and action updates publish jointly after validation.
+The same reader serves language and action payloads with all1024 factual slots
+eligible. Existing prototypes are authoritative; sparse views are derived caches
+with source and buffer custody checks. Ordinary integration QA passes, while the
+broader continuation's measured usefulness remains unestablished.
+
 The released `SequenceAssemblyMemoryLearner` continues the saved reader and
 505-slot tape, with a 512-slot context assembly bank shared by reading and
 action payloads. Its observation includes complete bounded requests, files and
