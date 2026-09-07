@@ -45,8 +45,9 @@ and saved audit pass. Online generation changes substantially, but neither
 correct composition nor useful action/recovery is established. The selected next
 design is [factorized local sequence routing](factorized-sequence-routing-v1.md),
 with direct outcome teaching, retained state, larger unselected factual memory
-and interleaved broader learning opportunities. Its source/math review must
-resolve credit, sparse geometry and atomic publication before a measured run.
+and interleaved broader learning opportunities. Its direct local credit, sparse
+geometry and atomic publication pass [ordinary integration QA](factorized-sequence-integration-qa-v1.md).
+The broader workload, continuation loader and saved audit are being prepared.
 An [owned-response optimization](sequence-assembly-owned-response-qa-v1.md)
 already removes redundant validation with checked-path parity and custody QA.
 Preserve this state and expose the successor to fresh problems. Another

@@ -41,7 +41,8 @@ without establishing useful composition or action. Preserve its two final
 states and use the saved learning/evaluation/resource reviews to select the
 next broader continuation, without more rounds on this exposed stream.
 The selected [factorized routing source/math design](factorized-sequence-routing-v1.md)
-is now being resolved alongside generic 1024-slot memory support. The
+is implemented with integrated 1024-slot memory and passes
+[ordinary numerical and lifecycle QA](factorized-sequence-integration-qa-v1.md). The
 [owned-response optimization](sequence-assembly-owned-response-qa-v1.md) passes
 ordinary parity/custody QA. This is one shared successor; its new workload and
 resource release are not yet frozen or executed.
