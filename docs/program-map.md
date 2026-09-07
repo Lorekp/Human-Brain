@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
-Maintained by the orchestrator. Updated 2026-09-07 with persistent
-paired dendritic learning and persistent checkpoint integration. This file inventories implementation and
+Maintained by the orchestrator. Updated 2026-09-07 with same-actor recurrent
+content learning and authenticated continuation. This file inventories implementation and
 historical frontiers. The [roadmap](research/roadmap-reading-to-coding.md) owns
 the active queue and architecture policy; [benchmark status](benchmark-status.md)
 owns measured evidence. Older "next" steps below are local historical context.
@@ -31,6 +31,46 @@ R1  Fast, auditable simulated-cell substrate         [continuous; compiled race 
 
 ## Actual frontier
 
+`RecurrentContentMemoryLearner` and `RecurrentContentSpliceLearner` in
+`src/humanbrain/recurrent_content_learner.py` integrate the implemented
+[recurrent context/content controller](research/public-observation-sequence-context-v1.md)
+into the same reading and action-payload system. The controller has 32 context
+cells and two typed content cursors with fixed bind/advance/read relays.
+Raw source and public-observation scans predict each byte/EOS before receiving
+it; the request suffix stays hidden during its scan. The held V7 reader supplies
+the prior at each actual free or teacher prefix. Direct own-synapse stochastic
+eligibility learns from observed symbols, answer corrections and actual public
+execution consequences, with no backpropagation or host semantic routing.
+Teacher branches restore pre-output context/cursors while retaining common scan
+eligibility and continuing fresh RNG draws. Disabled learning holds controller
+weights/baselines but still advances RNG on resolution. The causal frame,
+controller and same-actor lifecycle pass [ordinary QA](research/recurrent-content-qa-v1.md).
+
+`observe_source` learns from transient text without changing the factual tape;
+`ingest_with_receipt` separately admits one declared document after a causal scan
+against the old tape. The [V8 initializer](../experiments/r4_integrated/persistent_language_action_v8_initialize.py)
+authenticates V7's safe HEAD221, source/frontier bindings and payload bytes before
+one historical tensor decode per initialization. The failed and corrected V8
+launches initialize independently. [Recorded initialization](../experiments/r4_integrated/persistent_language_action_v8_initialization_failure_result.md)
+preserves all 22 old reader/action tensors, 1614 factual slots and counters in
+two independent online-derived actors, adding zero controller weights and RNG
+seed733; the simple reference retains its own history. No old lesson or missing
+V7 attempt is replayed.
+
+The [checkpoint store](research/persistent-session-checkpoint-v1.md) still fully
+serializes each changed route's actor and tape at idle boundaries. Its
+[owned-payload implementation](research/persistent-checkpoint-owned-payload-v1.md)
+retains immutable Windows NTFS versions under authenticated read leases; reuse
+checks file identity, while fresh restore hashes bytes again. Mutable-state,
+source, journal and atomic HEAD checks remain. V8 additionally binds transient
+versus factual admission and controller RNG publication at each safe boundary.
+The [corrected broader session](research/persistent-language-action-v8-protocol.md)
+is executing at `8e8df91d7e7c6889dff15f97d9fec379ebff71bb`. Its final outcomes
+and runtime benefit await saved audit; mechanics and initialization do not
+establish useful language learning or recovery.
+
+Preceding measured implementation:
+
 `RecognitionSequenceMemoryLearner` and `RecognitionSequenceSpliceLearner`
 integrate input-defined local recognition with1024 event capacity and2048 factual
 slots. Explicit promotion preserves old numerical state and occupied identities;
@@ -50,15 +90,12 @@ passes first launch. The [V7 result](../experiments/r4_integrated/persistent_lan
 records185/192 attempts, one exact delayed reading, zero fresh transfer and
 zero successful recovery. Both factual tapes reach1614 slots;222 safe boundaries
 preserve the latest actors, actual projects and evidence. Source and correction
-offers total821 symbols per neural route. No V7 payload restore is claimed.
-Checkpoint work consumes51.83% of runner time. The
-[owned-payload implementation](research/persistent-checkpoint-owned-payload-v1.md)
-now holds new Windows NTFS payload versions under authenticated read leases;
-same-owner reuse retains path/file identity checks, and independent restore
-hashes bytes afresh. [Three ordinary QA nodes](research/persistent-checkpoint-owned-payload-qa-v1.md)
-pass in18.9013638outer seconds at1238.98046875MiB. This is persistence verification,
-not a measured broader speedup. Reusable observation/value context remains the
-learning design work for one broader successor, without new toy capability gates.
+offers total821 symbols per neural route. The original V7 saved audit neither
+decoded nor restored its payloads; the later V8 initialization is a separate
+authenticated continuation. V7 checkpoint work consumes51.83% of runner time.
+[Three ordinary owned-payload QA nodes](research/persistent-checkpoint-owned-payload-qa-v1.md)
+pass in18.9013638outer seconds at1238.98046875MiB; those mechanics checks alone
+do not establish a broader speedup.
 
 Preceding measured implementation:
 

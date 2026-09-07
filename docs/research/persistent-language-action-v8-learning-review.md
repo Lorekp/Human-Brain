@@ -222,3 +222,42 @@ and changed objectives require declared normalization/baselines and fresh
 receipts. No cost-free implementation is claimed. Evidence should determine
 whether this one credit-refinement direction addresses a measured bottleneck;
 neither variant is released, and no additional experiment or gate is selected.
+
+### Unselected source feasibility: sparse causal accumulation
+
+The causal sum need not add a full three-million-weight eligibility matrix on
+every symbol. For one category let `a_t=r_t-b`, `A_t=sum_{u<=t}a_u`, and e_t
+be that tick's own sparse eligibility increment. Alongside existing cumulative
+E, accumulate `P += A_(t-1)*e_t` only at the active afferent columns during
+`draw`; advance scalar A only in `observe`, after the whole tick and target
+arrival. At finish, one dense pass computes
+`G=A_n*E_n-P=sum_t a_t*E_<=t`. This is forward bookkeeping of local
+eligibility and a declared scalar signal, not backward transport, reverse
+trajectory traversal or future target input. Every population's draws in one
+tick use the same pre-arrival A. Floating-point regrouping is not bitwise
+identity with a dense per-symbol reference and needs an explicit tolerance.
+
+The narrow seam is private ControllerStage state plus draw/observe/finish and
+their existing fork/seal validation. Keep plain scan E: subsequent teacher
+reward contributes `(A_teacher/t)*E_scan`, and actual public reward contributes
+`r*(E_scan+E_free)`. The scan's own causal contribution is `G_scan/s`; teacher's
+is `G_teacher/t`. Retaining the current outer `.01/(L*C)` makes this a causal
+estimator for the same category-mean objective under the stated assumptions;
+dropping either s/t division would instead change length weighting. Baselines
+must remain held before all credited choices, and zero-teacher categories must
+not divide by zero. This bookkeeping works with whichever per-symbol scalar
+signal is later selected; it does not select sampled reward, conditional
+expected match or a hybrid objective.
+
+A straightforward two-category P allocation adds 49,247,232 float64 bytes per
+stage. If both root and correction fork own those banks, their additional
+retained footprint is 98,494,464 bytes before scratch; lazy allocation could
+reduce this but is not assumed. Each actual scan/teacher population draw adds
+one scalar multiplication and accumulation per active afferent/cell product,
+plus counted gathering and copying. Only finish needs whole-bank arithmetic.
+No new learned checkpoint tensors are required at idle boundaries; pending
+seals, private-fork copies and validation must include P/A. The new finish
+rule needs versioned metadata even with unchanged learned tensor shapes.
+Weights still publish only after the existing joint validation; disabled
+interactions retain their real computed work and RNG progression. This is a
+feasibility finding, not an implementation or runtime authorization.
