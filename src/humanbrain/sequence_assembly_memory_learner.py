@@ -327,6 +327,7 @@ class SequenceAssemblyMemoryLearner(ActivePathMemoryLearner):
                 "memory_index": address, "address_scores": scores,
                 "input_sha256": _digest({"input": inputs}, work),
                 "free_assembly_index": context.evaluation.winner_index,
+                "assembly_scores": context.evaluation.agreement_counts,
                 "free_currents": context.evaluation.currents,
                 "selected_index": update.selected_index, "exact": context.evaluation.exact,
                 "recruited": update.recruited, "exhausted": update.exhausted,

@@ -102,7 +102,7 @@ class SequenceAssemblySpliceLearner(NeuronalSpliceLearner):
         self._pending = None
         self._check()
 
-    def _check(self):
+    def _check(self, work=None):
         if (
             self.mode not in self.MODES
             or self.reader.mode != self.MODES[self.mode]
@@ -110,8 +110,7 @@ class SequenceAssemblySpliceLearner(NeuronalSpliceLearner):
             or self.actions.seed != self.seed
         ):
             raise ValueError("sequence action control configuration changed")
-        self.reader._check_conditioned_parameters()
-        self.reader.assemblies.check_parameters()
+        self.reader._check_conditioned_parameters(work)
         self.actions.check_parameters()
 
     def _require_idle(self):
@@ -176,12 +175,12 @@ class SequenceAssemblySpliceLearner(NeuronalSpliceLearner):
     @torch.no_grad()
     def propose(self, observation, state):
         self._require_idle()
-        self._check()
+        work = {}
+        self._check(work)
         self.reader._check_state(state)
         if not isinstance(observation, RawObservation) or observation.workspace is None:
             raise ValueError("action requires the complete raw workspace observation")
         workspace = observation.workspace
-        work = {}
         encoded = encode(observation, self.reader.input_codes, work)
         model_hash = _digest(self.state_dict(), work)
         memory_hash = _digest(vars(state), work)
@@ -331,9 +330,9 @@ class SequenceAssemblySpliceLearner(NeuronalSpliceLearner):
             or type(learning_enabled) is not bool
         ):
             raise ValueError("local learning requires eta.01 and an explicit Boolean gate")
-        self._check()
-        self.reader._check_state(state)
         work = {}
+        self._check(work)
+        self.reader._check_state(state)
         self._validate_execution(prediction, observation, state, execution_receipt, work)
         self.reader.validate_pending(prediction.payload, state, observation=observation, work=work)
         workspace = observation.workspace
@@ -409,9 +408,9 @@ class SequenceAssemblySpliceLearner(NeuronalSpliceLearner):
 
     @torch.no_grad()
     def finish_without_teaching(self, prediction, observation, state, execution_receipt):
-        self._check()
-        self.reader._check_state(state)
         work = {}
+        self._check(work)
+        self.reader._check_state(state)
         self._validate_execution(prediction, observation, state, execution_receipt, work)
         self.reader.validate_pending(prediction.payload, state, observation=observation, work=work)
         result = {"action": work, "reader": {}}

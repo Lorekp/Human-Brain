@@ -1,7 +1,7 @@
 # Sequence assembly integration verification
 
-Status: component mechanics and reader/action integration verified. Independent
-action arithmetic QA is being prepared. No broader v4 workload has run. These are ordinary affected QA
+Status: component mechanics, reader/action integration and independent action
+arithmetic verified. No broader v4 workload has run. These are ordinary affected QA
 checks, not an acquired-skill gate or a benchmark result.
 
 ## Component checks
@@ -115,3 +115,37 @@ ten-input bank's seven entered offers are separate from those reader events.
 
 Broader acquisition, fresh transfer, retention and teacher-free recovery must
 be measured separately on the selected continuation.
+
+## Independent action arithmetic
+
+Source `6e9ce89386a991709237a8eea77194b98083a794` passes
+`test_sequence_assembly_action_blocks_embedding_and_atomic_update` on its first
+launch. One standalone action circuit loads four authored legacy tensors; an
+independent inverse mapping checks every old coordinate and the entire zero
+complement. A sixteen-byte file supplies seventeen boundaries, crossing the
+sixteen-candidate block size. Full declarative features, output probabilities
+and whole-bank local-update arithmetic agree with all three streamed heads.
+The declared tolerance accommodates changed floating reduction grouping.
+
+There are three direct scores, three successful private update proposals and
+one deliberately rejected operation update. The latter fails its second
+parameter proposal without changing live values. Four supplied action labels,
+fourteen module feature passes, twenty-two blocks and 142 candidate feature
+vectors are counted separately from three independent full feature oracles.
+No update publishes; no reader, tape, child or checkpoint file is involved.
+
+Pytest reports **1 passed in 4.69 seconds**; the monitored process takes
+**6.1030449 seconds** at **674.609375 MiB** sampled simultaneous owned-process
+peak, within 60 seconds/2048 MiB. This full-oracle QA peak is not a production
+working-set measurement.
+
+| Receipt | SHA256 |
+| --- | --- |
+| `.pytest-tmp/dev/doctor-wniokm03/receipt.json` | `10a1893fb15d52dc695c63676d19cfce3962fb8a780d9c5fee0bdae559272fe4` |
+| `.pytest-tmp/sequence-assembly-action-qa-v1.launch.json` | `07c41d73df504a3064b2fc519f75cdc45cadfb5dd069e002a626c967afcc86b3` |
+| `.pytest-tmp/sequence-assembly-action-qa-v1.junit.xml` | `538f626a36954fdb2cd21b340abbf19235da453c9f151b56de8cc6309750124c` |
+
+The three launches verify six distinct ordinary nodes. Their aggregate elapsed
+time is 25.5325368 seconds; no overall throughput comparison is implied. The
+independent action circuit's four offered labels are additional to the seven
+combined-fixture labels described above.
