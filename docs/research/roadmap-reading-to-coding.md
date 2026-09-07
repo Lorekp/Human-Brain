@@ -35,15 +35,18 @@ Continue the learner on a workload that combines reading,
 retained knowledge, raw software actions and observation of their consequences.
 Expose it to broader problems now; perfection on the current toy cohort is not
 a prerequisite. All completed streams are now exposed development material.
-The [current reader and local output correction](active-path-output-learning-v1.md)
+The [last measured reader and local output correction](active-path-output-learning-v1.md)
 are shared by reading and action payloads. It reconsiders all memory addresses
 at each output step and reuses exact fixed prefix activity. Mechanics checks
 pass, but useful broader answers remain unmet. The saved response and
 resource reviews select the next [context-specific sequence assembly design](context-specific-sequence-assemblies-v1.md),
 which combines local context recruitment with use of all already offered causal
 sequence events. Longer instruction access, missing-logic software and actual
-diagnostic observations belong in that same integration. This is a source-design
-direction, not implemented or measured capability; another
+diagnostic observations belong in that same integration. Its assembly, raw-input,
+reader and action source is implemented and [ordinary lifecycle checks pass](sequence-assembly-integration-qa-v1.md).
+The larger persistent workload, reduced teacher schedule and continued-project
+execution are being prepared; broader capability has not yet been measured for
+this version. Another
 automatic byte/operation gate or extra rounds on this exposed stream are not selected.
 Continue the saved model and accumulated memory on
 new instruction forms and combinations. Address selection, composition and

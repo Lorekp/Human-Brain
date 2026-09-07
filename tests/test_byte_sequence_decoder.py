@@ -11720,3 +11720,199 @@ def test_sequence_assembly_combined_custody_and_atomicity(tmp_path):
             "feedback_work": feedback_records,
         },
     )
+
+
+def test_sequence_assembly_action_blocks_embedding_and_atomic_update(tmp_path):
+    """One authored action circuit; no reader, tape, child, checkpoint or task."""
+    import json
+    import math
+    from unittest.mock import patch
+
+    import pytest
+    import torch
+
+    import humanbrain.sequence_assembly_action_cells as cells
+    from humanbrain.multiscale_opaque_event_tape import OpaqueWorkspaceFile
+    from humanbrain.sequence_assembly_observation import (
+        RawObservation,
+        SpliceWorkspace,
+        ToolFeedback,
+    )
+
+    model = cells.SequenceAssemblyActionCircuit(seed=733)
+    widths = {"start": 748947, "end": 42561, "operation": 149252}
+    assert widths == cells.WIDTHS and cells.BLOCK_SIZE == 16
+    old_widths = {"start": 6177, "end": 2049, "operation": 4244}
+    legacy = {}
+    for head, width in old_widths.items():
+        shape = (2, width) if head == "operation" else (width,)
+        legacy[head + "_weight"] = (
+            torch.arange(math.prod(shape), dtype=torch.float32).reshape(shape) + 1
+        ) / 10000
+    legacy["operation_bias"] = torch.tensor([-0.125, 0.25])
+    model.load_legacy_state(legacy)
+
+    # Independent flat-coordinate inverse: identify every old location and then
+    # require the entire complementary new population to be exactly zero.
+    def destination(head, old):
+        if head == "start":
+            if old < 1024:
+                return old
+            if old < 5152:
+                row, column = divmod(old - 1024, 129)
+                return 1298 * 32 + row * 513 + column
+            if old < 6176:
+                return 1298 * (32 + 513) + old - 5152
+            return widths[head] - 1
+        if head == "end":
+            return old if old < 1024 else 1298 * 32 + old - 1024
+        if old < 1024:
+            return old
+        if old < 2048:
+            return 1298 * 32 + old - 1024
+        if old < 4241:
+            row, column = divmod(old - 2048, 17)
+            return 1298 * 64 + row * 129 + column
+        return widths[head] - 3 + old - 4241
+
+    for head, width in old_widths.items():
+        actual = getattr(model, head + "_weight")
+        indices = torch.tensor([destination(head, i) for i in range(width)])
+        assert torch.equal(actual.index_select(-1, indices), legacy[head + "_weight"])
+        complement = torch.ones(widths[head], dtype=torch.bool)
+        complement[indices] = False
+        assert torch.count_nonzero(actual[..., complement]) == 0
+    assert torch.equal(model.operation_bias, legacy["operation_bias"])
+
+    raw = b"abcdefghijklmnop"
+    workspace = SpliceWorkspace((OpaqueWorkspaceFile("main.py", raw),))
+    feedback = ToolFeedback(-2, b"out", b"err", True, False, True, True, False)
+    observation = RawObservation(b"query", workspace, feedback)
+    # Exact binary-fraction authored input activities, not a fitted codec.
+    codes = ((torch.arange(258 * 32).reshape(258, 32) % 17) - 8).float() / 16
+    encoded = cells.encode(observation, codes)
+
+    def rows(values, size):
+        result = torch.zeros(size, 32)
+        for index, token in enumerate(values):
+            result[index] = codes[token]
+        return result
+
+    query = torch.zeros(1298, 32)
+    query[:6] = rows([256, *reversed(b"query")], 6)
+    query[257:261] = rows([*b"out", 256], 4)
+    query[770:774] = rows([*b"err", 256], 4)
+    query[1283:1291] = rows(list((-2).to_bytes(8, "little", signed=True)), 8)
+    query[1291:] = rows([1, 1, 1, 0, 1, 1, 0], 7)
+    assert torch.equal(encoded.query, query)
+    path = rows([256, *reversed(b"main.py")], 32)
+    whole = rows([*raw, 256], 513)
+    contexts = torch.zeros(17, 32, 32)
+    for boundary in range(17):
+        positions = [boundary - j for j in range(1, 17)] + list(range(boundary, boundary + 16))
+        for lag, position in enumerate(positions):
+            if 0 <= position <= 16:
+                contexts[boundary, lag] = codes[raw[position] if position < 16 else 256]
+
+    def oracle(head):
+        if head == "start":
+            raw_features = torch.cat((
+                (query @ path.T).flatten().expand(17, -1),
+                (query @ whole.T).flatten().expand(17, -1),
+                torch.matmul(query[None], contexts.transpose(1, 2)).flatten(1),
+                torch.arange(17).float()[:, None] / 128,
+            ), dim=1)
+        elif head == "end":
+            raw_features = torch.cat((
+                torch.matmul(query[None], contexts.transpose(1, 2)).flatten(1),
+                torch.matmul(contexts[0:1], contexts.transpose(1, 2)).flatten(1),
+                torch.arange(17).float()[:, None] / 128,
+            ), dim=1)
+        else:
+            span, payload = rows([*raw[2:7], 256], 513), rows([*b"xy", 256], 129)
+            raw_features = torch.cat((
+                (query @ contexts[2].T).flatten(), (query @ path.T).flatten(),
+                (span @ payload.T).flatten(), torch.tensor([5 / 128, 2 / 16, 1.0]),
+            ))[None]
+        return raw_features / torch.linalg.vector_norm(
+            raw_features, dim=1, keepdim=True
+        ).clamp_min(1e-8) * math.sqrt(32)
+
+    before = {name: value.clone() for name, value in model.named_parameters()}
+    summaries = {}
+    for head in widths:
+        coordinates = {} if head == "start" else {"path": "main.py", "start": 0}
+        if head == "operation":
+            coordinates.update(start=2, end=7, payload=b"xy", stop_reason="eos")
+        full = oracle(head)
+        chunks = list(cells.feature_blocks(head, encoded, **coordinates))
+        assert [chunk.shape[0] for chunk in chunks] == ([1] if head == "operation" else [16, 1])
+        actual = torch.cat(chunks)
+        torch.testing.assert_close(actual, full, rtol=1e-6, atol=1e-7)
+        del actual, chunks
+        parameter = getattr(model, head + "_weight")
+        logits = (full * parameter).sum(1)
+        if head == "operation":
+            logits += model.operation_bias
+        probabilities = torch.softmax(logits.double(), dim=0)
+        decision = model.score(head, encoded, **coordinates)
+        torch.testing.assert_close(decision.logits, logits, rtol=1e-6, atol=1e-6)
+        torch.testing.assert_close(decision.probabilities, probabilities, rtol=1e-6, atol=1e-7)
+        target = 1 if head == "operation" else 16
+        work = {}
+        update = model.prepare_update(head, encoded, target, work=work, **coordinates)
+        error = probabilities.clone()
+        error[target] -= 1
+        # Whole-bank direct affine-output rule; no reverse feature derivative.
+        weighted = error[:, None] * full.double()
+        signal = weighted if head == "operation" else weighted.sum(0)
+        expected = parameter - 0.01 * signal.float()
+        torch.testing.assert_close(update.parameters[0][1], expected, rtol=1e-6, atol=2e-7)
+        if head == "operation":
+            torch.testing.assert_close(
+                update.parameters[1][1], model.operation_bias - 0.01 * error.float()
+            )
+        assert update.target == target and update.nll == pytest.approx(
+            float(-torch.log_softmax(logits.double(), dim=0)[target]), rel=1e-6, abs=1e-6
+        )
+        assert work[head + "_feature_blocks"] == (2 if head == "operation" else 4)
+        assert work[head + "_feature_normalizations"] == (2 if head == "operation" else 34)
+        assert work[head + "_teacher_offers"] == 1
+        summaries[head] = work
+        del full, weighted, signal, expected, update
+    for name, value in model.named_parameters():
+        assert torch.equal(value, before[name])
+
+    real_finite = cells._finite
+    late_proposals = 0
+
+    def reject_last_proposal(value, name):
+        nonlocal late_proposals
+        if name == "extended action parameter proposal":
+            late_proposals += 1
+            if late_proposals == 2:
+                value.fill_(float("nan"))
+        return real_finite(value, name)
+
+    with (
+        patch.object(cells, "_finite", side_effect=reject_last_proposal),
+        pytest.raises(ValueError, match="extended action parameter proposal"),
+    ):
+        model.prepare_update("operation", encoded, 1, path="main.py", start=2,
+                             end=7, payload=b"xy", stop_reason="eos")
+    assert late_proposals == 2
+    for name, value in model.named_parameters():
+        assert torch.equal(value, before[name])
+    receipt = {
+        "status": "passed", "standalone_action_circuits": 1, "legacy_tensor_loads": 1,
+        "checkpoint_loads": 0, "reader_calls": 0, "children": 0,
+        "source_files": 1, "raw_file_bytes": 16, "boundaries": 17,
+        "direct_scores": 3, "successful_staged_updates": 3, "rejected_staged_updates": 1,
+        "offered_action_labels": 4, "published_updates": 0,
+        "module_feature_passes": 14, "module_feature_blocks": 22,
+        "module_candidate_features": 142, "independent_full_oracle_passes": 3,
+        "late_proposals_checked": late_proposals, "teacher_work": summaries,
+        "accounting": model.accounting(),
+    }
+    with (tmp_path / "sequence-assembly-action-qa.json").open("x", encoding="utf-8") as stream:
+        json.dump(receipt, stream, sort_keys=True, allow_nan=False)

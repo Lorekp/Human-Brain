@@ -1,7 +1,7 @@
 # Sequence assembly integration verification
 
-Status: component mechanics verified; reader/action integration is still under
-source review. No broader v4 workload has run. These are ordinary affected QA
+Status: component mechanics and reader/action integration verified. Independent
+action arithmetic QA is being prepared. No broader v4 workload has run. These are ordinary affected QA
 checks, not an acquired-skill gate or a benchmark result.
 
 ## Component checks
@@ -58,6 +58,60 @@ and the paused direct-request branch are disclosed and not exercised here.
 The abbreviated paths share `.pytest-tmp/sequence-assembly-mechanics-qa-v1-tmp`.
 Raw assertion inputs and per-stage counters are retained beside their summaries.
 
-Reader/action integration will add its own source revision, ordinary QA receipt
-and exposure accounting here. Broader acquisition, fresh transfer, retention and
-teacher-free recovery must be measured separately on the selected continuation.
+## Reader and combined action checks
+
+Source `42c747a1b44e7372de41af09be4cb2397abc4c9b` passes two further explicit nodes
+on their first monitored launch:
+
+- `test_sequence_assembly_reader_causal_prefix_and_atomicity`: one reader, one
+  four-slot tape from three raw bytes and EOS, three free responses/40 decisions.
+  An authored fixed codec first emits 33 question marks and reaches its limit.
+  One offered `ab`/EOS sequence recruits three assemblies; subsequent same-input
+  responses emit `ab` and EOS from those exact contexts. A disabled `c`/EOS offer
+  leaves even the private bank unadvanced. A final two-event lesson fails its
+  second proposal and leaves live values and the pending response unchanged.
+  Across all three teacher calls there are seven entered events, six completed,
+  three published clamps and no child executions. Independent scalar rails
+  verify every request and synthetic non-UTF8 diagnostic byte in the recruited
+  receptive patterns. Prior reader tensors and the whole tape stay unchanged.
+- `test_sequence_assembly_combined_custody_and_atomicity`: one combined model,
+  one three-slot tape from two raw bytes and EOS, three free actions/five payload
+  decisions and three actual STOP executions. PIDs 49384, 27060 and 33092 each
+  return zero and print `0\n`. The first SPLICE teacher deliberately fails at
+  final reader publication after two reader events and three action proposals;
+  an explicit ordinary-fixture retry succeeds. A later STOP teacher affects
+  only its operation head, and teacher-free acknowledgement resolves both
+  pending states. Total offered exposure is four reader events and seven action
+  labels, including failed staging. Invalid incoming assembly occupancy and
+  changed fixed context wiring fail before any incoming action value is copied.
+  The next actual observation includes the previous child's raw feedback.
+
+These are authored lifecycle fixtures, not evidence of fresh language transfer,
+coding ability or teacher-free repair. They deserialize no experiment checkpoint.
+The failed lessons are intentional ordinary fault fixtures and remain counted;
+there are no failed pytest invocations or hidden workload retries.
+
+The tests report **2 passed in 11.43 seconds**. The monitored process takes
+**12.5077729 seconds** at **639.24609375 MiB** sampled simultaneous owned-process
+peak, under the same 60-second/2048-MiB guard. Reader and combined call times are
+3.35 and 4.56 seconds; these are not isolated performance comparisons.
+
+| Receipt | SHA256 |
+| --- | --- |
+| `.pytest-tmp/dev/doctor-8lbz4lsq/receipt.json` | `572f5d38ad4dac5e4c6dfbe2e21b3bc31565f6afe97208e6c8f5eaa5a3fc30af` |
+| `.pytest-tmp/sequence-assembly-integration-qa-v1.launch.json` | `40b67af0bdfcec53f188e123d75db4cdd9d5c0db4beb362630ceb40440d20541` |
+| `.pytest-tmp/sequence-assembly-integration-qa-v1.junit.xml` | `5459fa6452bc8458e8af043c9214d242554ac83d4de1879960694a81c913346e` |
+| `.pytest-tmp/sequence-assembly-integration-qa-v1-tmp/test_sequence_assembly_combine0/combined-qa-outcome.json` | `0ad3cad72c7a39e36488075e4ea51c0405e998322543eff1a87142ee360fb5a7` |
+
+The doctor records an empty tracked diff at this revision. The unexecuted v4
+initializer and paused direct-request source are disclosed as untracked. All
+raw reader and combined records remain under that launch's retained `-tmp`
+directory. Across both launches there are two reader constructions (one nested
+in a combined learner), one additional standalone assembly bank, five actual
+children, 45 free reader decisions, eleven integrated reader target events
+(including one failed event proposal and two completed events in a rejected
+lesson stage), and seven combined action labels. The standalone
+ten-input bank's seven entered offers are separate from those reader events.
+
+Broader acquisition, fresh transfer, retention and teacher-free recovery must
+be measured separately on the selected continuation.

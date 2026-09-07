@@ -2,8 +2,10 @@
 
 Status: selected source-design and integration direction, 2026-09-07. This is
 one shared successor to the completed v3 session, not another byte or operation
-benchmark. Assembly, observation and integration source is being implemented;
-no new corpus or neuronal workload run has occurred.
+benchmark. Assembly, observation and integration source is implemented, and
+[ordinary component/lifecycle QA passes](sequence-assembly-integration-qa-v1.md).
+The broader corpus and continuation are being prepared; no new neuronal
+workload run has occurred.
 The [roadmap](roadmap-reading-to-coding.md) and
 [persistent workload](persistent-language-action-development-v1.md) own scope.
 
