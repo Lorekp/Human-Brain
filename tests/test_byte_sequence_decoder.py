@@ -13405,3 +13405,213 @@ def test_persistent_v6_summary_contract(tmp_path):
         "authored_episodes": 72, "rows_per_route": 96, "rows": 288,
         "models": 0, "builders": 0, "checkpoint_loads": 0, "children": 0,
     })
+
+
+def test_factual_tournament_exact_circuit(tmp_path):
+    """All-address winner parity, actual relay traces and strict input contract."""
+    from humanbrain.factual_address_tournament import compete_factual
+    from humanbrain.persistent_coincidence_reader import compete2048
+
+    widths = (1, 2, 3, 127, 128, 129, 511, 512, 513, 1760, 2017, 2047, 2048)
+    cases = [((torch.arange(n, dtype=torch.float32) * 37).remainder(19) - 9)
+             for n in widths]
+    extreme = torch.finfo(torch.float32).max
+    cases.extend([
+        torch.tensor([-0.0, 0.0], dtype=torch.float32),
+        torch.tensor([0.0, -0.0], dtype=torch.float32),
+        torch.tensor([extreme, -extreme, extreme], dtype=torch.float32),
+        torch.cat((torch.zeros(511), torch.ones(2))),
+        torch.ones(513),
+    ])
+    records = []
+    for scores in cases:
+        original = scores.clone()
+        old = compete2048(scores)
+        actual = compete_factual(scores)
+        n = scores.numel()
+        assert actual.winner_index == old.winner_index
+        expected_score = float(scores[old.winner_index].item())
+        assert actual.winner_score == expected_score
+        assert math.copysign(1, actual.winner_score) == math.copysign(1, expected_score)
+        assert torch.equal(actual.scores.view(torch.int32), scores.view(torch.int32))
+        assert actual.scores.data_ptr() != scores.data_ptr()
+        assert torch.equal(scores.view(torch.int32), original.view(torch.int32))
+        assert len(actual.levels) == (n - 1).bit_length()
+        ids = list(range(n))
+        retained = actual.scores.numel() * actual.scores.element_size()
+        for level in actual.levels:
+            assert level.input_count == len(ids)
+            expected_ids, expected_currents, expected_activity = [], [], []
+            for offset in range(0, len(ids) - 1, 2):
+                left, right = ids[offset:offset + 2]
+                difference = float(original[left]) - float(original[right])
+                expected_currents.append(difference)
+                expected_activity.append(difference >= 0)
+                expected_ids.append(left if difference >= 0 else right)
+            if len(ids) % 2:
+                expected_ids.append(ids[-1])
+            assert level.pair_currents.tolist() == expected_currents
+            assert level.left_wins.tolist() == expected_activity
+            assert level.identity_relays.tolist() == expected_ids
+            expected_potentials = original[expected_ids].to(torch.float64)
+            assert torch.equal(level.score_relays.view(torch.int64),
+                               expected_potentials.view(torch.int64))
+            assert all(not tensor.requires_grad for tensor in (
+                level.pair_currents, level.left_wins, level.score_relays, level.identity_relays))
+            retained += sum(tensor.numel() * tensor.element_size() for tensor in (
+                level.pair_currents, level.left_wins, level.score_relays, level.identity_relays))
+            ids = expected_ids
+        assert ids == [old.winner_index]
+        work = actual.work
+        assert work["factual_tournament_candidates"] == n
+        assert work["factual_tournament_comparators"] == n - 1
+        assert work["factual_tournament_logical_gated_payload_branches"] == 4 * (n - 1)
+        assert work["factual_tournament_tensor_where_outputs"] == 2 * (n - 1)
+        assert work["factual_tournament_retained_tensor_bytes"] == retained
+        assert retained <= work["factual_tournament_peak_named_live_bytes"]
+        assert work["factual_tournament_peak_named_live_bytes"] <= 82_899
+        assert work["factual_tournament_named_allocated_bytes"] <= 124_086
+        exact_bounds = {
+            1: (22, 4, 20), 3: (146, 78, 117), 1760: (81_448, 51_047, 57_200),
+            2048: (94_184, 59_367, 66_560),
+        }
+        if n in exact_bounds:
+            assert tuple(work["factual_tournament_" + name] for name in (
+                "named_allocated_bytes", "retained_tensor_bytes", "peak_named_live_bytes"
+            )) == exact_bounds[n]
+        if n == 2017:
+            assert work["factual_tournament_named_allocated_bytes"] == 124_086
+        if n == 2047:
+            assert work["factual_tournament_peak_named_live_bytes"] == 82_899
+        records.append({"scores": original, "winner": actual.winner_index,
+                        "winner_score": actual.winner_score, "old_work": old.work,
+                        "new_work": work, "levels": [vars(level) for level in actual.levels]})
+        scores.fill_(float("nan"))
+        assert torch.equal(actual.scores.view(torch.int32), original.view(torch.int32))
+    rejected = [torch.empty(0), torch.zeros(1, 1), torch.zeros(2049),
+                torch.zeros(2, dtype=torch.float64), torch.zeros(2, dtype=torch.int64),
+                torch.tensor([float("nan")]), torch.tensor([float("inf")]),
+                torch.zeros(2, requires_grad=True)]
+    for scores in rejected:
+        with pytest.raises(ValueError, match="finite detached CPU float32"):
+            compete_factual(scores)
+    _coincidence_qa_save(tmp_path / "factual-tournament-passed.json", {
+        "status": "passed", "valid_cases": len(cases), "invalid_cases": len(rejected),
+        "new_competition_calls": len(cases) + len(rejected),
+        "old_competition_calls": len(cases), "models": 0, "teacher_calls": 0,
+        "checkpoint_loads": 0, "children": 0, "records": records,
+    })
+
+
+def test_tournament_recognition_executed_learning_parity(tmp_path):
+    """Two fresh actors compare actual actions, local corrections and strict state."""
+    import time
+    from pathlib import Path
+
+    from experiments.r4_integrated.persistent_language_action_execution_v2 import (
+        execute_proposal,
+        feedback_from_receipt,
+        qualified_launch,
+        workspace_from_records,
+    )
+    from humanbrain.recognition_sequence_splice_learner import RecognitionSequenceSpliceLearner
+    from humanbrain.sequence_assembly_observation import (
+        RawObservation,
+        SpliceProposal,
+    )
+    from humanbrain.tournament_recognition_learner import TournamentRecognitionSpliceLearner
+
+    models = (RecognitionSequenceSpliceLearner(seed=733),
+              TournamentRecognitionSpliceLearner(seed=733))
+    workspace = workspace_from_records([{"path": "main.py", "content_hex": b"print(0)\n".hex()}])
+    observation = RawObservation(b"Change the printed value to one.", workspace)
+    teacher = SpliceProposal("SPLICE", "main.py", 6, 7, b"1", "eos", workspace.sha256)
+    predictions, corrections, later, disabled, executions, states = [], [], [], [], [], []
+    for index, model in enumerate(models):
+        reader = model.reader
+        with torch.no_grad():
+            reader.address_weight.zero_()
+            reader.prefix_weight.zero_()
+            reader.output_weight.zero_()
+            reader.codec.weight.zero_()
+            reader.codec.bias.zero_()
+            reader.codec.bias[256] = 10
+            model.actions.operation_weight.zero_()
+            model.actions.operation_bias.copy_(torch.tensor([10.0, 0.0]))
+        state = model.ingest([b"ab"])
+        states.append(state)
+        prediction = model.propose(observation, state)
+        predictions.append(prediction)
+        assert prediction.proposal.operation == "STOP" and len(prediction.payload.steps) == 1
+        _, execution = execute_proposal(
+            workspace, prediction.proposal, tmp_path / f"actual-action-{index}",
+            launch=qualified_launch(Path(__file__).resolve().parents[1]),
+            deadline=time.perf_counter() + 10)
+        executions.append(execution)
+        assert execution["returncode"] == 0 and execution["stdout_hex"] == b"0\n".hex()
+        envelope = {"attempt_id": prediction.attempt_id,
+                    "proposal_sha256": prediction.proposal_sha256,
+                    "workspace_sha256": workspace.sha256, "execution": execution}
+        correction = model.teach(prediction, observation, state, teacher, envelope)
+        corrections.append(correction.reader_feedback)
+        assert correction.reader_feedback.recognition_updated
+        assert correction.reader_feedback.output_updated and not correction.reader_feedback.routing_updated
+        assert model._pending is None and reader.pending_prediction is None
+        follow_observation = RawObservation(
+            observation.request, workspace, feedback_from_receipt(execution))
+        next_prediction = reader.predict_with_receipt(follow_observation, state, max_bytes=1)
+        later.append(next_prediction)
+        before = copy.deepcopy(model.state_dict())
+        disabled_feedback = reader.teach(follow_observation, b"2", state,
+                                         prediction=next_prediction, learning_enabled=False)
+        disabled.append(disabled_feedback)
+        assert not disabled_feedback.output_updated and not disabled_feedback.recognition_updated
+        _assert_nested_equal(model.state_dict(), before)
+        del before
+    _assert_nested_equal(states[0].snapshot(), states[1].snapshot())
+    old_state, new_state = models[0].state_dict(), models[1].state_dict()
+    assert set(old_state) == set(new_state)
+    for key in old_state:
+        if isinstance(old_state[key], torch.Tensor):
+            assert torch.equal(old_state[key], new_state[key]), key
+    assert predictions[0].proposal.to_record() == predictions[1].proposal.to_record()
+    for left, right in ((predictions[0].payload, predictions[1].payload), (later[0], later[1])):
+        assert left.generation == right.generation and len(left.steps) == len(right.steps)
+        for a, b in zip(left.steps, right.steps, strict=True):
+            for key in vars(a):
+                _assert_nested_equal(getattr(a, key), getattr(b, key))
+    for left, right in ((corrections[0], corrections[1]), (disabled[0], disabled[1])):
+        assert len(left.teacher_steps) == len(right.teacher_steps)
+        for a, b in zip(left.teacher_steps, right.teacher_steps, strict=True):
+            _assert_nested_equal(a, b)
+    old_work, new_work = predictions[0].payload.work, predictions[1].payload.work
+    assert old_work["competition_pairs"] == 3
+    assert "competition_pairs" not in new_work
+    assert new_work["factual_tournament_candidates"] == 3
+    assert new_work["factual_tournament_comparators"] == 2
+    assert corrections[1].work["factual_tournament_calls"] == 2
+    assert disabled[1].work["factual_tournament_calls"] == 2
+    trained = copy.deepcopy(new_state)
+    old_wirings = models[1].reader._self_wirings
+    load_work = {}
+    models[1].load_state_dict(trained, work=load_work)
+    _assert_nested_equal(models[1].state_dict(), trained)
+    assert models[1].reader._self_wirings is not old_wirings
+    assert int(models[1].reader.assemblies.used) == 2
+    accounting = models[1].reader.accounting()
+    assert "maximum_address_comparator_neurons" not in accounting
+    assert "maximum_address_winner_neurons" not in accounting
+    assert accounting["factual_competition"]["checkpoint_tensor_bytes"] == 0
+    _coincidence_qa_save(tmp_path / "tournament-recognition-parity-passed.json", {
+        "status": "passed", "models": 2, "ingests": 2, "ingested_raw_bytes": 4,
+        "ingested_eos": 2, "free_calls": 4,
+        "free_decisions": sum(len(p.steps) for p in [*(r.payload for r in predictions), *later]),
+        "teacher_calls": 4, "teacher_symbols": 8, "enabled_symbols": 4,
+        "disabled_symbols": 4, "action_labels": 6, "children": 2,
+        "same_instance_state_loads": 1, "checkpoint_file_loads": 0,
+        "experimental_checkpoint_loads": 0, "executions": executions,
+        "old_free_work": old_work, "new_free_work": new_work,
+        "teacher_work": [feedback.work for feedback in corrections],
+        "disabled_work": [feedback.work for feedback in disabled],
+        "load_work": load_work, "accounting": accounting,
+    })
