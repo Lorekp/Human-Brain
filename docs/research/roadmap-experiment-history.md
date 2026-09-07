@@ -3584,3 +3584,15 @@ The old reader priors remain fixed. The V7 continuation adapter preserves the
 complete V5 state and introduces empty contacts; no historical checkpoint was
 loaded in this QA. A48-episode broader stream and safe-boundary runner follow
 without another toy acquisition gate. Semantic transfer remains unmeasured.
+
+## 2026-09-07 V7 author preparation
+
+Source `13043ed670465856bbdbd37930636d4f9e3d5938` adds the durable broader runner
+and releases one pure workload build. [Author/metric QA](persistent-language-action-v7-author-qa.md)
+passes first launch: one synthetic outcome test, one48-episode build and all28
+nominal edit witnesses. Zero learners or experimental checkpoint loads occur.
+The manifest binds actual prior regression observations and separately declares
+750 source symbols plus71 answer symbols per neural route. New requirements,
+changed instruction forms, actual project chains and fixed teacher-free recovery
+share one persistent session. Root selects a1800+120-second/2048-MiB complete
+envelope; learner utility is not established by these author checks.

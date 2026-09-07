@@ -1,8 +1,10 @@
 # Seventh persistent language/action session
 
-Status: **author build released; learner held**, 2026-09-07. No manifest has been
-built or author witness executed yet. Root selects the complete bounded runtime
-below; final manifest/source binding must precede the learner release.
+Status: **author checks passed; learner held**, 2026-09-07. The one build and all28
+nominal author witnesses pass; [receipts](persistent-language-action-v7-author-qa.md)
+bind manifest `c2e1cb6237fdff468c6d413ce62c9dfbf514a607fb1a8af45bdde285c3f4b898`.
+Root selects the complete bounded runtime below; final source binding must
+precede the learner release.
 The [roadmap](roadmap-reading-to-coding.md) owns release. This is one
 broader public continuation, not a separate toy acquisition or speed gate.
 

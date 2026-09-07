@@ -11,6 +11,15 @@ selection and implementation order.
 
 ## Current continuation and frozen history
 
+The active implementation is the [seventh session](persistent-language-action-v7-protocol.md).
+Its48-episode manifest and28 nominal author edits pass
+[ordinary author/metric QA](persistent-language-action-v7-author-qa.md).
+Four answer corrections and12 new whole source observations teach the same
+dendritic actor, with actual projects and teacher-free recovery interleaved.
+Run this broader continuation from V5 with safe-boundary persistence; no further
+toy gate or perfection prerequisite follows. The complete one-run envelope is
+1800 runner seconds plus120 saved-only review seconds at2048 MiB.
+
 The [sixth protocol](persistent-language-action-v6-protocol.md) and
 [partial result](../../experiments/r4_integrated/persistent_language_action_v6_result.md)
 own current measurements. The840-second cutoff leaves182 of288 attempts and no

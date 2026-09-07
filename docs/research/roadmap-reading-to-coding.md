@@ -37,44 +37,30 @@ Continue the learner on a workload that combines reading,
 retained knowledge, raw software actions and observation of their consequences.
 Expose it to broader problems now; perfection on the current toy cohort is not
 a prerequisite. All completed streams are now exposed development material.
-The implemented [input-defined local recognition](input-defined-recognition-v1.md)
-preserves the prior router and assigns local recognition credit to the event
-activated before the current teacher byte. Its
-[ordinary integration and lossless-growth QA](input-defined-recognition-qa-v1.md)
-passes. The broader run still shows wrong-context attraction and long generation;
-prototype recognition is not established semantic understanding. The completed
-and partial streams are exposed development material, not new holdouts.
+The [seventh session](persistent-language-action-v7-protocol.md) combines new
+instruction constructions, structural combinations, two actual project chains,
+longer factual memory and eight recovery episodes distributed through the stream.
+Only four answer corrections are offered. New whole sources additionally teach
+the same acting reader through [paired dendritic branches](dendritic-request-binding-v1.md);
+count source and answer supervision separately. The frozen48-episode workload
+passes [author and metric checks](persistent-language-action-v7-author-qa.md).
+Expose the learner to this broader stream without another toy capability gate.
 
-The [measured cost review](persistent-language-action-v6-cost-review.md) motivates
-one integral optimization: replace quadratic factual-address competition with
-an [exact fixed-neuron tournament](factual-address-tournament-v1.md), retaining
-every address, original score arithmetic and lower-index ties. Its
-[ordinary circuit and executed-learning parity QA](factual-address-tournament-qa-v1.md)
-passes; full-workload speedup is not yet measured. No separate skill or speed
-gate is selected. Existing owned-free
-validation optimizations remain integral. Future measured sessions also need
-durable state at safe boundaries, so a time limit does not discard completed
-online learning. The [parent session checkpoint implementation](persistent-session-checkpoint-v1.md)
-passes [ordinary durability and actor-continuation QA](persistent-session-checkpoint-qa-v1.md).
-Do not claim that
-the missing V6 checkpoint exists or recover
-it through uncounted replay. The [bounded learning-design review](persistent-ordered-context-learning-review-v1.md)
-selects one concrete next implementation: [paired dendritic branches](dendritic-request-binding-v1.md) learn ordered
-byte context together with fixed raw-request activity. Source observations and
-corrections teach the same reader that generates the actor's payloads, using
-local permanence changes with every observed symbol counted. All byte/EOS
-columns remain eligible, and the existing neuronal potentials remain the prior.
-This is a falsifiable sequence/context mechanism, not established semantic
-composition or feedback-driven repair. Its [ordinary core and same-actor checks](dendritic-request-binding-qa-v1.md)
-pass. Integrate it and safe-boundary checkpointing into the next broader session;
-neither requires another toy capability gate.
-Metadata-only repair and sequence latches are not separate active queues.
-Preserve V5's recoverable state and all V6 partial evidence. Another automatic
-byte/operation gate or extra rounds on this exposed stream are not selected.
-Continue the saved model and accumulated memory on
-new instruction forms and combinations. Address selection, composition and
-feedback use remain unresolved capability questions. Choose changes for this broader loop, without another
-automatic operation-only or byte-only comparison.
+Continue the complete V5 online state in both neural routes, with local updates
+disabled in the matched control and factual writes retained in both. Preserve
+V6's partial evidence; its missing state must not be reconstructed by replay.
+The [exact factual tournament](factual-address-tournament-v1.md) remains integral
+to execution, and [safe-boundary checkpoints](persistent-session-checkpoint-v1.md)
+preserve resolved learning. One guarded session has1800 runner seconds plus120
+saved-review seconds at2048 MiB; full-workload speed and usefulness are unmeasured.
+
+All byte/EOS columns remain eligible, and existing neuronal potentials remain
+the prior. Raw contextual contacts are a falsifiable sequence mechanism, not
+established semantic composition or feedback-driven repair. Address relevance,
+structural generalization and useful action remain unresolved. Metadata-only
+repair, sequence latches and isolated byte/operation comparisons are not separate
+active queues. Mechanism development and QA chronology live in the
+[experiment history](roadmap-experiment-history.md).
 
 Prioritize four pressures together:
 
