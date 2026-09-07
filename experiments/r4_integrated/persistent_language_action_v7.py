@@ -30,12 +30,16 @@ from experiments.r4_integrated.persistent_language_action_v5 import (  # noqa: E
     sha,
 )
 
-DRAFT = True
+DRAFT = False
 PRIOR_ATTEMPTS_SHA = "9139824c7897f15e3a3aed71a7692f7a15c28ad18fa4d82d48072dee5981e638"
-MANIFEST_SHA = None
-RUNNER_SECONDS = 1800.0  # prospective only; root freezes after complete source pricing
+MANIFEST_SHA = "c2e1cb6237fdff468c6d413ce62c9dfbf514a607fb1a8af45bdde285c3f4b898"
+RUNNER_SECONDS = 1800.0  # one root-selected complete guarded attempt
 AUDIT_SECONDS = 120.0
 CHECKPOINT_RESERVE_SECONDS = 30.0
+SAVED_REVIEW_SOURCES = {
+    "experiments/r4_integrated/persistent_language_action_v7_review.py",
+    "experiments/r4_integrated/bank_persistent_language_action_v7.py",
+}
 
 
 class SessionJournal(Journal):
@@ -432,6 +436,7 @@ def _run(args, output, started, live):
         path.relative_to(ROOT).as_posix(): sha(path)
         for parent in (ROOT / "src/humanbrain", ROOT / "experiments/r4_integrated")
         for path in sorted(parent.glob("*.py"))
+        if path.relative_to(ROOT).as_posix() not in SAVED_REVIEW_SOURCES
     }
     save(output / "sources.json", sources)
     source_capture_seconds = time.perf_counter() - source_tick

@@ -1,10 +1,10 @@
 # Seventh persistent language/action session
 
-Status: **author checks passed; learner held**, 2026-09-07. The one build and all28
+Status: **one broader learner session released**, 2026-09-07. The one build and all28
 nominal author witnesses pass; [receipts](persistent-language-action-v7-author-qa.md)
 bind manifest `c2e1cb6237fdff468c6d413ce62c9dfbf514a607fb1a8af45bdde285c3f4b898`.
-Root selects the complete bounded runtime below; final source binding must
-precede the learner release.
+Root selects the complete bounded runtime below. The committed release revision
+and doctor receipt bind the launch; no previous workload is repeated.
 The [roadmap](roadmap-reading-to-coding.md) owns release. This is one
 broader public continuation, not a separate toy acquisition or speed gate.
 
@@ -164,6 +164,16 @@ Keep30 seconds before admitting another transaction for checkpoint work;
 unfinished intents remain visible if a transaction itself exhausts the budget.
 Freeze final source and manifest before the one run. No learner warmup,
 checkpoint pre-load QA, separate fitting/cost probe or automatic retry is selected.
+
+Runtime source capture uses canonical relative POSIX names, including the actor,
+initializer, executor, baseline, author data and checkpoint implementation. It
+excludes exactly the new V7 saved reviewer and result banker, which are not
+imported by the session. Those two external evidence tools receive separate
+committed source identities before their saved-only launch; their authors may
+finish source work concurrently without reading new workload outputs or changing
+the running system. All other captured Python bytes must remain unchanged.
+The ordinary metrics/journal QA already passes on the same runner behavior;
+the release changes only its frozen manifest/guard and this external-tool scope.
 
 Report first acquisition, pure changed form, exact delayed acquisition, fresh
 construction/combinations, historical retention and teacher-free recovery
