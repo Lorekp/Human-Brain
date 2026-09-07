@@ -9,8 +9,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
-import sys
 import time
 from pathlib import Path
 
@@ -18,6 +18,9 @@ MANIFEST_SHA = "66b0bd96be3b9e97c4eb5f9812c2b5977f294fc5900d55109445c0a303e522d0
 
 
 def run(manifest_path: Path, output: Path):
+    from experiments.r4_integrated.persistent_language_action_execution_v2 import qualified_launch
+    from experiments.r4_integrated.temporary_module_action_bridge_v1 import BOOTSTRAP, FLAGS
+
     started = time.perf_counter()
     raw = manifest_path.read_bytes()
     if hashlib.sha256(raw).hexdigest() != MANIFEST_SHA:
@@ -36,6 +39,9 @@ def run(manifest_path: Path, output: Path):
             cases.append((row, "broken", row["files"]))
     if len(seen) != 19 or len(cases) != 27:
         raise ValueError("selected author witness scope changed")
+    launch = qualified_launch(Path(__file__).resolve().parents[2])
+    environment = os.environ.copy()
+    environment.pop("__PYVENV_LAUNCHER__", None)
     output.mkdir(parents=True, exist_ok=False)
     results = []
     for row, kind, files in cases:
@@ -45,9 +51,11 @@ def run(manifest_path: Path, output: Path):
             if item["path"] not in ("app.py", "main.py"):
                 raise ValueError("author witness path is outside the selected two-file scope")
             (directory / item["path"]).write_bytes(bytes.fromhex(item["content_hex"]))
-        command = [sys.executable, "-E", "-s", "-B", str(directory / "main.py")]
+        command = [launch.base_executable, *FLAGS, "-c", BOOTSTRAP]
         tick = time.perf_counter()
-        child = subprocess.run(command, cwd=directory, capture_output=True, timeout=5, check=False)
+        child = subprocess.run(
+            command, cwd=directory, env=environment, capture_output=True, timeout=5, check=False
+        )
         elapsed = time.perf_counter() - tick
         intact = all(
             (directory / item["path"]).read_bytes() == bytes.fromhex(item["content_hex"])
@@ -89,6 +97,8 @@ def run(manifest_path: Path, output: Path):
         "models": 0,
         "learning_offers": 0,
         "checkpoint_decodes": 0,
+        "launch_record_sha256": launch.sha256,
+        "bootstrap_sha256": hashlib.sha256(BOOTSTRAP.encode()).hexdigest(),
         "elapsed_seconds": time.perf_counter() - started,
     }
     (output / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

@@ -25,6 +25,15 @@ programs and duplicate revisit witnesses are not replayed. This checks actual
 expected outputs and real failing assertions, with no learner and no teaching.
 The frozen build's zero author-child authorization records its earlier pure-build
 scope; this separate QA adds27 counted children. The broader runner remains held.
+
+The first authored check at `e93c0f7` failed its stdout comparison in2.5223246
+watchdog seconds,32.34375MiB observed peak. All19 canonical children exited0
+with intact files and no stderr, but the new QA wrapper emitted Windows CRLF;
+all8 broken starts raised the expected assertion. The established project
+bootstrap explicitly reconfigures LF. Root corrects only the QA invocation to
+authenticate and reuse that bootstrap and selects one new27-child verification
+under the same budget. Preserve `.pytest-tmp/persistent-language-action-v8-author*`
+and all original raw outputs. Do not normalize the failed bytes or alter tasks.
 The two ordinary controller/actor nodes passed under the root's recorded QA;
 that supports mechanics, not the capability predictions below.
 
