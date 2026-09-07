@@ -20,7 +20,19 @@ fidelity constraints apply to those lanes and frozen experiments, not to every
 future architecture. Current integration work follows the
 [persistent language/action plan](research/persistent-language-action-development-v1.md).
 
-The next implemented reader/action pair uses
+The current `RecognitionSequenceMemoryLearner` / `RecognitionSequenceSpliceLearner`
+pair retains every old numerical prior and adds one private recognition gain
+per input-defined event. A fixed canonical self-activity supplies its one-input
+local current rule; activation/preparation precedes the current teacher byte.
+That same prepared owner's outgoing byte currents and the acting motor receive
+their separate declared local updates. The previous shared router theta stays
+fixed. Lossless capacity growth provides1024 event owners and2048 factual slots.
+Every occupied owner and factual address remains eligible. This remains episodic
+prototype recognition, not demonstrated semantic abstraction. Ordinary integration
+QA passes; the [sixth broader result](../experiments/r4_integrated/persistent_language_action_v6_result.md)
+is partial after a time limit and establishes no fresh transfer.
+
+The preceding reader/action pair uses
 [factorized local sequence routing](research/factorized-sequence-routing-v1.md).
 Fixed byte, adjacent-pair and relative-position populations produce sparse
 coincidence activity for every event owner. One shared float64 routing vector

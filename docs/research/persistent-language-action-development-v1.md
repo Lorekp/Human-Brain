@@ -1,6 +1,7 @@
 # Public persistent language/action development
 
-Status: five public continuations completed and independently reviewed,
+Status: five public continuations completed; the sixth has independently checked
+partial evidence after a runner timeout,
 2026-09-07.
 The byte-coincidence comparison is completed. The proposed five-arm operation
 successor is stopped; its unexecuted source is not the next experiment. This
@@ -10,22 +11,23 @@ selection and implementation order.
 
 ## Current continuation and frozen history
 
-The [fifth protocol](persistent-language-action-v5-protocol.md) and
-[completed result](../../experiments/r4_integrated/persistent_language_action_v5_result.md)
-own current measurements. Its64 episodes per route interleave eight corrections,
-changed-form encounters, exact delayed repeats, fresh combinations, recovery and
-older regressions. Whole factual memory grows505→864 slots. Online learns one
-delayed reading response but has no fresh transfer or recovery, and its0/16 prior
-regressions trail correction-disabled4/16 and simple reference10/16. Keep the
-same local learning/acting system and both saved final states. The roadmap selects
-the next work; no extra round on this exposed stream or toy-perfection gate follows.
-The selected [input-defined recognition change](input-defined-recognition-v1.md)
-addresses ownership of local plastic credit. Its [ordinary QA](input-defined-recognition-qa-v1.md)
-passes, including lossless growth to1024 event owners and2048 factual slots.
-The [next broader integration](persistent-language-action-v6-protocol.md) combines
-new instruction forms, longer experience and fewer answer corrections, with
-complete resource accounting. Its source and authored data are verified; the
-protocol releases one complete continuation from the saved state.
+The [sixth protocol](persistent-language-action-v6-protocol.md) and
+[partial result](../../experiments/r4_integrated/persistent_language_action_v6_result.md)
+own current measurements. The840-second cutoff leaves182 of288 attempts and no
+final checkpoint. All acquisition, transfer and prior-regression cases finish;
+recovery remains incomplete. Online scores1/6 exact delayed,0/24 fresh and0/18
+prior cases; matched disabled scores0/6,0/24,1/18 and simple scores4/6,0/24,11/18.
+The live tape reaches1760 slots and online reaches533 event owners after six
+corrections. Keep those recorded facts distinct from recoverable saved state:
+the complete V5 checkpoint remains intact, but V6's final state is unavailable.
+
+[Input-defined recognition](input-defined-recognition-v1.md) and its
+[ordinary QA](input-defined-recognition-qa-v1.md) remain implemented. The
+[cost review](persistent-language-action-v6-cost-review.md) selects exact factual
+competition optimization for this shared broader loop. Future session persistence
+must survive time limits, and the learning review must address relevance and
+composition before selecting another learning change. The roadmap owns selection;
+no repeat of this exposed stream or toy-perfection gate follows.
 
 The original development specification below retains its historical contracts.
 Its older capacities, phase counts and proposed schedules do not override the

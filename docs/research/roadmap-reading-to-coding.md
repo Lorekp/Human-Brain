@@ -12,20 +12,21 @@ knowledge, understands language, combines learned structure, acts in software
 workspaces and recovers from failures. Local simulated-neuron learning and useful
 real-world behavior are the central commitments.
 
-The [fifth broader persistent session is complete](../../experiments/r4_integrated/persistent_language_action_v5_result.md).
-Online scores 0/8 corrected first responses, 0/8 changed-form encounters, 1/8 exact
-delayed repeats, 0/16 fresh transfer, 0/16 prior regressions and 0/8 teacher-free
-recovery. Correction-disabled and simple references score 4/16 and 10/16 on prior
-regressions. The same learning/acting system continues its state across 64 episodes
-per route while memory grows 505→864 slots. Both final states are saved. One
-exposed delayed reading response succeeds amid broad wrong-answer concentration;
-no useful broader advantage or correct software edit is established.
+The [sixth broader session](../../experiments/r4_integrated/persistent_language_action_v6_result.md)
+hits its time limit after182 of288 attempts. All acquisition, fresh and retention
+cases are recorded; recovery is incomplete. Online scores1/6 exact delayed
+repeats,0/24 fresh transfer and0/18 prior regressions, versus0/6,0/24,1/18 for
+correction-disabled and4/6,0/24,11/18 for the simple reference. Memory reaches1760
+slots in the live system, but no final checkpoint is saved. The complete V5
+checkpoint remains the last recoverable state. No useful broader advantage or
+correct neuronal software edit is established.
 
 The prepared [byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 is also completed and independently audited. Its narrow successes remain
-regression evidence. The [current result bank](../../benchmarks/persistent_language_action_v5.result.json)
-and [learning review](persistent-language-action-v5-learning-review.md) own the
-broader measurements and failure analysis.
+regression evidence. The [current result bank](../../benchmarks/persistent_language_action_v6.result.json)
+and [learning review](persistent-language-action-v6-learning-review.md) own the
+broader measurements and failure analysis, with partial evidence distinguished
+from a completed evaluation.
 The [experiment history](roadmap-experiment-history.md) owns chronology and retired
 directions. Do not append another experiment diary to this roadmap.
 
@@ -36,28 +37,27 @@ Continue the learner on a workload that combines reading,
 retained knowledge, raw software actions and observation of their consequences.
 Expose it to broader problems now; perfection on the current toy cohort is not
 a prerequisite. All completed streams are now exposed development material.
-The [measured factorized local sequence router](factorized-sequence-routing-v1.md)
-is shared by reading and action payloads. It considers every event owner and
-factual address, reuses fixed prefix activity, and receives direct local
-own-emission outcomes with separate causal assembly teaching. Its
-[ordinary integration QA](factorized-sequence-integration-qa-v1.md) and
-[complete broader saved audit](persistent-language-action-v5-protocol.md) pass.
-Generation changes substantially, but correction learning also harms the
-older-task contrast. The selected next change is
-[input-defined local recognition](input-defined-recognition-v1.md): preserve the
-prior router, give the actual input-activated event its own recognition credit,
-and avoid changing every owner's current through one shared correction vector.
-This remains prototype recognition, not established semantic understanding.
-Its [ordinary integration and lossless-growth QA](input-defined-recognition-qa-v1.md)
-passes. It proceeds into the [next broader workload](persistent-language-action-v6-protocol.md);
-metadata-only repair and sequence latches are not separate active queues.
-The [owned-response routing optimization](factorized-sequence-owned-response-qa-v1.md)
-removes repeated validation and hashing with exact checked-path parity and custody
-QA, guided by the [measured cost review](persistent-language-action-v5-cost-review.md).
-The earlier [assembly optimization](sequence-assembly-owned-response-qa-v1.md)
-also remains integral code. Full-workload speedup is not yet measured.
-Preserve the 864-slot state and expose its successor to fresh problems. Another
-automatic byte/operation gate or extra rounds on this exposed stream are not selected.
+The implemented [input-defined local recognition](input-defined-recognition-v1.md)
+preserves the prior router and assigns local recognition credit to the event
+activated before the current teacher byte. Its
+[ordinary integration and lossless-growth QA](input-defined-recognition-qa-v1.md)
+passes. The broader run still shows wrong-context attraction and long generation;
+prototype recognition is not established semantic understanding. The completed
+and partial streams are exposed development material, not new holdouts.
+
+The [measured cost review](persistent-language-action-v6-cost-review.md) motivates
+one integral optimization: replace quadratic factual-address competition with
+an exact fixed-neuron tournament, retaining every address, original score
+arithmetic and lower-index ties. Ordinary outcome-parity and lifecycle QA belong
+to integration; no separate skill or speed gate is selected. Existing owned-free
+validation optimizations remain integral. Future measured sessions also need
+durable state at safe boundaries, so a time limit does not discard completed
+online learning. Do not claim that the missing V6 checkpoint exists or recover
+it through uncounted replay. A bounded learning-design review must explain the
+persistent relevance/composition failures before another correction-rule tweak.
+Metadata-only repair and sequence latches are not separate active queues.
+Preserve V5's recoverable state and all V6 partial evidence. Another automatic
+byte/operation gate or extra rounds on this exposed stream are not selected.
 Continue the saved model and accumulated memory on
 new instruction forms and combinations. Address selection, composition and
 feedback use remain unresolved capability questions. Choose changes for this broader loop, without another

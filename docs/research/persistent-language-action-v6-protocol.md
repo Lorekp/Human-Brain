@@ -1,5 +1,13 @@
 # Sixth persistent language/action continuation
 
+Execution status: the released run times out at840.4533474 seconds, preserving
+182/288 attempts,18/18 teacher records,36/36 appends and92 actual verifications.
+All acquisition, transfer and prior regressions finish; recovery is incomplete.
+There is no final checkpoint or completed-run audit pass. The
+[partial result](../../experiments/r4_integrated/persistent_language_action_v6_result.md)
+and its three saved-only partial reviews own observed outcomes and failure
+accounting. The release below remains frozen; it does not authorize a rerun.
+
 Status: root selected 2048 factual slots / 1024 event owners, 72 episodes /
 96 attempts / 66 children per route, at most 150 offered symbols and 972 new
 fact slots, and a complete 900-second / 2048-MiB ceiling (840-second runner plus
@@ -394,7 +402,7 @@ load, prediction probe, cost run, gain sweep or repeated training round is part
 of the release. Preserve partial data if execution fails; do not change or
 truncate this stream to make its observed result pass.
 
-## Source implementation awaiting author release
+## Source authoring contract retained at release
 
 [The source-only task builder](../../experiments/r4_integrated/persistent_language_action_tasks_v6.py)
 now defines this complete schedule. Its twelve literal documents contain 884 raw

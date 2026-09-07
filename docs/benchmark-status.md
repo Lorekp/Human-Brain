@@ -10,7 +10,21 @@ with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. No backpropagation is authorized, and
 protected evaluations retain their original access contracts.
 
-The [fifth broader session](../experiments/r4_integrated/persistent_language_action_v5_result.md)
+The [sixth broader session](../experiments/r4_integrated/persistent_language_action_v6_result.md)
+times out at840.4533474 seconds and890.42578125MiB observed peak. It preserves182
+of288 planned attempts,18 correction records,36 document appends and92 actual
+verifications. All acquisition/fresh/prior cases finish; recovery is incomplete.
+Online scores0/6 corrected first,0/6 changed-requirement,1/6 exact delayed,
+0/24 fresh and0/18 prior cases. Matched disabled scores0/6,0/6,0/6,0/24,1/18;
+the simple reference scores1/6,1/6,4/6,0/24,11/18. Only two online recovery
+attempts are recorded, both failed; missing recovery outcomes are unmeasured.
+Six corrections offer135 reader symbols and nine action labels per neural route.
+The live tapes grow864→1760 and online owners398→533 with local recognition,
+but no final checkpoint or completed audit is saved. Three saved-only partial
+reviews bind observed evidence; V5 remains the last recoverable checkpoint.
+No correct broader neuronal software edit or fresh advantage is established.
+
+The preceding [fifth broader session](../experiments/r4_integrated/persistent_language_action_v5_result.md)
 completes64 episodes per route,240 attempts and156 actual verifications while
 memory grows505→864 slots. Online scores0/8 corrected first responses,0/8
 changed-form encounters,1/8 exact delayed repeats,0/16 fresh transfer,0/16 prior

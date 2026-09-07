@@ -3511,3 +3511,35 @@ They establish no new language/SWE result and load no experimental checkpoint.
 The next workload is a72-episode broader continuation with longer retention,
 new constructions/combinations and fewer corrections; its authoring and saved
 audit are prepared separately from this completed implementation verification.
+
+## 2026-09-07 sixth broader stream and resource cutoff
+
+Released source `46839d7fcea50dc6e805db910a36616b0bd51589` runs one72-episode,
+96-attempt-per-route stream from the complete V5 online checkpoint. Its once-built
+manifest and42 passing author-only program witnesses precede the launch. Six
+corrections offer135 symbols and nine action labels per neural route; twelve
+complete documents grow factual memory864→1760. Input-only private recognition
+adds135 online owners, reaching533, while disabled retains398.
+
+The watchdog stops the run after840.4533474 seconds at890.42578125MiB observed
+peak. All first60 episodes finish for all three routes, then two online C00-E
+recovery attempts finish. The182 durable attempts,18 teachers,36 appends and92
+actual execution receipts are preserved. Online scores1/6 exact delayed,0/24
+fresh and0/18 old regressions; disabled scores0/6,0/24,1/18 and the reference
+4/6,0/24,11/18. Both observed recovery attempts fail, but the full recovery
+outcome is unavailable. No final checkpoint or completed-run audit is produced.
+
+Three bounded saved-only partial analyses check recorded local algebra, execution
+and cost. The resource extractor's inherited8-MiB row guard fails once; the
+corrected reader passes on fresh output, with both receipts retained. No model
+or teacher replay repairs the failed session. The [result](../../experiments/r4_integrated/persistent_language_action_v6_result.md)
+and [bank](../../benchmarks/persistent_language_action_v6.result.json) own exact
+evidence and limitations. V5 remains the last recoverable complete state.
+
+Positive recognition learning changes routing but causes broad new-owner
+attraction: the first new reading owner begins60/62 online responses. The
+recorded workload performs3,357,755,083 factual pair comparisons; root selects
+an exact all-address fixed-neuron tournament as an integral optimization, with
+safe-boundary persistence needed for future sessions. A broader learning-design
+review addresses relevance and composition rather than starting another
+automatic correction tweak, exposed replay or toy-perfection gate.

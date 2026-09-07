@@ -1,7 +1,7 @@
 # Cell-Brain Program Map
 
 Maintained by the orchestrator. Updated 2026-09-07 with persistent
-factorized sequence routing integration. This file inventories implementation and
+input-defined recognition integration. This file inventories implementation and
 historical frontiers. The [roadmap](research/roadmap-reading-to-coding.md) owns
 the active queue and architecture policy; [benchmark status](benchmark-status.md)
 owns measured evidence. Older "next" steps below are local historical context.
@@ -9,8 +9,9 @@ owns measured evidence. Older "next" steps below are local historical context.
 The active target is [broader persistent language/action](research/persistent-language-action-development-v1.md):
 unseen instruction constructions, new code structures, longer shared memory and
 reduced teacher dependence on the same neuronal learner. Five broader sessions
-are completed; one exposed delayed reading response succeeds, with no fresh
-transfer, correct broader software edit or teacher-free recovery.
+are completed and the sixth is partial after a time limit. Exposed delayed
+reading responses succeed, with no fresh transfer or correct broader software
+edit; sixth-session recovery remains incomplete.
 
 ## Goal ladder
 
@@ -28,6 +29,20 @@ R1  Fast, auditable simulated-cell substrate         [continuous; compiled race 
 ```
 
 ## Actual frontier
+
+`RecognitionSequenceMemoryLearner` and `RecognitionSequenceSpliceLearner`
+integrate input-defined local recognition with1024 event capacity and2048 factual
+slots. Explicit promotion preserves old numerical state and occupied identities;
+private gains start at zero, with canonical self-wiring derived from stored
+receptive patterns. The old shared theta stays fixed. Four ordinary integration,
+locality and growth QA nodes pass. The [sixth workload](research/persistent-language-action-v6-protocol.md)
+records all acquisition, transfer and retention cases before its timeout, with
+online1/6 exact delayed,0/24 fresh and0/18 prior regressions. There is no final
+V6 checkpoint. Exact factual competition optimization and safe-boundary
+persistence are the shared engineering priorities; the learning review addresses
+the still-unresolved relevance/composition problem.
+
+Preceding measured implementation:
 
 `FactorizedSequenceMemoryLearner` and `FactorizedSequenceSpliceLearner` now
 integrate a shared float64 locally plastic router and1024-slot factual memory.
