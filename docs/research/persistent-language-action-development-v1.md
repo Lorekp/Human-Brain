@@ -1,11 +1,45 @@
 # Public persistent language/action development
 
-Status: three public sessions completed and independently reviewed, 2026-09-07.
+Status: four public continuations completed and independently reviewed,
+2026-09-07.
 The byte-coincidence comparison is completed. The proposed five-arm operation
 successor is stopped; its unexecuted source is not the next experiment. This
 document specifies the smallest broader development return using the current
 core. It does not itself launch tasks, load models or authorize a separate fit. The roadmap owns
 selection and implementation order.
+
+## Current selected continuation
+
+The [context assembly contract](context-specific-sequence-assemblies-v1.md)
+specifies the released v4 successor. It accepts whole bounded 256-byte requests,
+four 512-byte files, 128-byte outputs and raw actual diagnostic streams. Its
+56 episodes include three continued projects and missing program logic. Only
+the first twelve acquisition episodes receive corrections; the next twelve,
+sixteen fresh episodes, eight recovery episodes and eight exact retention
+regressions do not. Three recovery attempts are fixed regardless of private
+grade. The same local neuronal system learns and acts, with a matched disabled
+copy and a separate simple retrieval/editing reference.
+
+Twelve corrections contain 235 byte/EOS events per neuronal route, versus 172
+in v3; fewer correction occasions do not imply fewer teacher symbols. The
+whole 505-slot tape is retained without new documents. Context recruitment adds
+episodic storage, but this run does not establish growth in factual memory.
+Longer retention age, unseen multiclause requests, structural combinations and
+actual project consequences are evaluated together. Whole wording-family
+disjointness is not claimed. The one monitored run plus saved audit has a
+900-second/2048-MiB complete budget; no separate cost probe or toy gate follows.
+
+The initial-stream protocol and its measured continuations below retain their
+historical contracts. Their smaller interface and teacher schedule do not
+override the current linked v4 contract. Keep subsequent chronology in the
+[experiment history](roadmap-experiment-history.md).
+
+The [completed v4 result](../../experiments/r4_integrated/persistent_language_action_v4_result.md)
+has zero neuronal task success in all four phases; the simple reference retains
+8/8 earlier tasks and fails the new ones. Local recruitment changes generation
+without establishing useful composition or action. Preserve its two final
+states and use the saved learning/evaluation/resource reviews to select the
+next broader continuation, without more rounds on this exposed stream.
 
 ## Purpose
 

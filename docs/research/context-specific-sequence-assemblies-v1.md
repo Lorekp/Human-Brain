@@ -4,8 +4,10 @@ Status: selected source-design and integration direction, 2026-09-07. This is
 one shared successor to the completed v3 session, not another byte or operation
 benchmark. Assembly, observation and integration source is implemented, and
 [ordinary component/lifecycle QA passes](sequence-assembly-integration-qa-v1.md).
-The broader corpus and continuation are frozen and released for one monitored
-run; no new neuronal workload result is claimed at release.
+The [broader continuation and saved audit are complete](../../experiments/r4_integrated/persistent_language_action_v4_result.md).
+Both neuronal routes score zero across all four task outcomes. Online recruits
+235 contexts and changes generation, without useful broader task accuracy.
+This source contract remains frozen; the roadmap owns successor selection.
 The [roadmap](roadmap-reading-to-coding.md) and
 [persistent workload](persistent-language-action-development-v1.md) own scope.
 

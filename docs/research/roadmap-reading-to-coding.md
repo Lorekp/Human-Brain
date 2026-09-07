@@ -12,18 +12,19 @@ knowledge, understands language, combines learned structure, acts in software
 workspaces and recovers from failures. Local simulated-neuron learning and useful
 real-world behavior are the central commitments.
 
-The [third broader persistent session is complete](../../experiments/r4_integrated/persistent_language_action_v3_result.md).
+The [fourth broader persistent session is complete](../../experiments/r4_integrated/persistent_language_action_v4_result.md).
 Both neuronal routes score zero on acquisition first responses, fresh transfer,
 delayed retention and teacher-free recovery. The simple retrieval/editing
-reference scores 12/24, 6/16, 8/8 and 0/8 respectively. The same learner continues
-its saved numerical model and whole 505-slot memory across 56 episodes per route;
-both final states are saved. Actual-response output correction and exact prefix
-activity reuse are implemented, but useful broader competence is not established.
+reference scores 0/24, 0/16, 8/8 and 0/8 respectively. The same learner continues
+its saved numerical reader and whole 505-slot memory across 56 episodes per route;
+both final states are saved. Local context recruitment, full offered-sequence
+teaching, longer raw inputs and actual project feedback are implemented, but
+useful broader competence is not established.
 
 The prepared [byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 is also completed and independently audited. Its narrow successes remain
-regression evidence. The [current result bank](../../benchmarks/persistent_language_action_v3.result.json)
-and [learning review](persistent-language-action-v3-learning-review.md) own the
+regression evidence. The [current result bank](../../benchmarks/persistent_language_action_v4.result.json)
+and [learning review](persistent-language-action-v4-learning-review.md) own the
 broader measurements and failure analysis.
 The [experiment history](roadmap-experiment-history.md) owns chronology and retired
 directions. Do not append another experiment diary to this roadmap.
@@ -35,18 +36,16 @@ Continue the learner on a workload that combines reading,
 retained knowledge, raw software actions and observation of their consequences.
 Expose it to broader problems now; perfection on the current toy cohort is not
 a prerequisite. All completed streams are now exposed development material.
-The [last measured reader and local output correction](active-path-output-learning-v1.md)
-are shared by reading and action payloads. It reconsiders all memory addresses
-at each output step and reuses exact fixed prefix activity. Mechanics checks
-pass, but useful broader answers remain unmet. The saved response and
-resource reviews select the next [context-specific sequence assembly design](context-specific-sequence-assemblies-v1.md),
-which combines local context recruitment with use of all already offered causal
-sequence events. Longer instruction access, missing-logic software and actual
-diagnostic observations belong in that same integration. Its assembly, raw-input,
-reader and action source is implemented and [ordinary lifecycle checks pass](sequence-assembly-integration-qa-v1.md).
-The larger persistent workload, reduced teacher schedule and continued-project
-execution are being prepared; broader capability has not yet been measured for
-this version. Another
+The [last measured context assembly learner](context-specific-sequence-assemblies-v1.md)
+is shared by reading and action payloads. It reconsiders all memory addresses,
+reuses fixed prefix activity and locally teaches all offered causal sequence
+events. The complete broader session includes longer instructions, missing
+program logic and actual diagnostic observations. Its [ordinary lifecycle QA](sequence-assembly-integration-qa-v1.md)
+and saved audit pass. Online generation changes substantially, but neither
+correct composition nor useful action/recovery is established. Use the saved
+learning, evaluation and resource reviews to select the next shared change.
+Preserve this state and expose the successor to broader learning opportunities
+and fresh problems. Another
 automatic byte/operation gate or extra rounds on this exposed stream are not selected.
 Continue the saved model and accumulated memory on
 new instruction forms and combinations. Address selection, composition and

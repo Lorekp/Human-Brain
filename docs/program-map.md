@@ -1,14 +1,14 @@
 # Cell-Brain Program Map
 
 Maintained by the orchestrator. Updated 2026-09-07 with persistent
-actual-path output correction. This file inventories implementation and
+context assembly integration. This file inventories implementation and
 historical frontiers. The [roadmap](research/roadmap-reading-to-coding.md) owns
 the active queue and architecture policy; [benchmark status](benchmark-status.md)
 owns measured evidence. Older "next" steps below are local historical context.
 
 The active target is [broader persistent language/action](research/persistent-language-action-development-v1.md):
 unseen instruction constructions, new code structures, longer shared memory and
-reduced teacher dependence on the same neuronal learner. Three broader sessions
+reduced teacher dependence on the same neuronal learner. Four broader sessions
 are completed; neuronal scores are zero and remain visible.
 
 ## Goal ladder
@@ -27,6 +27,23 @@ R1  Fast, auditable simulated-cell substrate         [continuous; compiled race 
 ```
 
 ## Actual frontier
+
+`sequence_assembly_cells.py` adds target-independent local context recruitment,
+simulated agreement/competition and outgoing byte/EOS currents. The same
+`SequenceAssemblyMemoryLearner` serves language and action payloads while
+retaining all old reader values and the whole 505-slot memory. Its rolling
+prefix helper supports 128-byte outputs; raw observation framing supports
+256-byte requests, four 512-byte files and actual diagnostic streams.
+`SequenceAssemblySpliceLearner` integrates that reader with bounded action
+blocks and atomic local updates. The v4 runner restores prior numerical state
+and actual reference history, then carries actual projects across requirements.
+Six distinct ordinary QA nodes and one affected repeat pass. The released
+broader continuation and saved audit pass; the [result](../experiments/r4_integrated/persistent_language_action_v4_result.md)
+still has zero neuronal task success in all four phases. Both final states are
+retained; online recruits 235 assemblies and changes generation without useful
+composition, action or recovery.
+
+Previous measured frontier:
 
 `persistent_coincidence_memory.py` and `persistent_coincidence_reader.py` expand
 the shared append-only tape to 512 slots while retaining full-address competition

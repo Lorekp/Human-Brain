@@ -3425,3 +3425,30 @@ Actual outputs change but do not solve the tasks. The next bounded architectural
 review concerns context-specific local learning and effective use of already
 offered sequence information within the same broader learner. It is not an
 automatic extra pass on this now-exposed stream.
+
+## 2026-09-07 context assemblies and broader actual projects
+
+Source `07ab104` continues the full v3 online numerical reader, embedded old
+ action values, experience 138 and whole 505-slot tape. The same reader/actor
+adds target-independent local context recruitment and all offered sequence
+updates, with inherited B/C/U/codec held. Inputs expand to whole 256-byte
+instructions, four 512-byte files, 128-byte outputs and actual diagnostic bytes.
+Six ordinary QA nodes and one affected repeat pass; no toy skill gate precedes
+the broader return.
+
+The frozen 56-episode session includes 48 new multiclause instructions,
+missing program logic, three actual project chains and eight exact regressions.
+Only the first twelve acquisition episodes receive corrections, offering 235
+reader symbols and eighteen action labels per neuronal route. No new documents
+are ingested. Across all routes, 216 responses and 144 actual executions complete.
+Both neuronal routes score 0/24 acquisition, 0/16 fresh transfer, 0/8 retention
+and 0/8 recovery; the simple reference scores 0/24, 0/16, 8/8 and 0/8.
+
+The [result](../../experiments/r4_integrated/persistent_language_action_v4_result.md)
+and [bank](../../benchmarks/persistent_language_action_v4.result.json) preserve
+both final states and the passing saved audit. Full run plus review takes
+560.1913689 seconds at 970.2421875 MiB observed peak. Online recruits 235 contexts
+and makes 2,079 free output decisions versus 8,405 disabled. Whole sequence
+storage and stopping change, but correct context transfer, composition and action
+remain unmet. The saved reviews inform one shared successor; no extra fitting
+round on this exposed stream or automatic byte/operation gate is selected.

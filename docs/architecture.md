@@ -20,7 +20,26 @@ fidelity constraints apply to those lanes and frozen experiments, not to every
 future architecture. Current integration work follows the
 [persistent language/action plan](research/persistent-language-action-development-v1.md).
 
-The current `ActivePathMemoryLearner` materializes fixed raw-request/key
+The released `SequenceAssemblyMemoryLearner` continues the saved reader and
+505-slot tape, with a 512-slot context assembly bank shared by reading and
+action payloads. Its observation includes complete bounded requests, files and
+actual diagnostic bytes. Each offered teacher-prefix context selects or recruits
+an assembly before the current output label is supplied. Only the selected
+assembly's outgoing currents receive their own local error; inherited B/C/U
+and codec tensors remain fixed. Free responses use simulated agreement and
+competition over occupied assemblies. This episodic mechanism has no established
+generalization claim. The [selected contract](research/context-specific-sequence-assemblies-v1.md)
+specifies input geometry, recruitment, causal sequencing and resource limits.
+
+`SequenceAssemblySpliceLearner` owns that same reader, expanded block-simulated
+action heads and atomic action-before-teacher custody. It consumes actual
+workspace and public execution feedback across continued projects and retries.
+No host repair, target-address routing or separate executor fitting occurs.
+Ordinary affected QA and the complete v4 saved audit pass. The
+[measured continuation](../experiments/r4_integrated/persistent_language_action_v4_result.md)
+changes generation but establishes no correct broader neuronal task response.
+
+The preceding `ActivePathMemoryLearner` materializes fixed raw-request/key
 and earlier-output/key coincidence activities before learned address cells.
 Two fixed threshold layers select among every occupied address at each output
 step. Fixed mixed context cells then supply a locally learned byte/EOS output

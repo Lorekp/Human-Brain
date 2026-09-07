@@ -10,24 +10,24 @@ with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. No backpropagation is authorized, and
 protected evaluations retain their original access contracts.
 
-The [third broader session](../experiments/r4_integrated/persistent_language_action_v3_result.md)
-completes 56 episodes per route while continuing all saved numerical model state
-and the complete 505-slot memory. Both the online
+The [fourth broader session](../experiments/r4_integrated/persistent_language_action_v4_result.md)
+completes 56 episodes per route while continuing the saved numerical reader,
+embedded action weights and complete 505-slot memory. Both the online
 neuronal learner and matched learning-disabled control score 0/24 acquisition
 first responses, 0/16 fresh transfer, 0/8 delayed retention and 0/8 teacher-free
-recovery. The simple retrieval/editing reference scores 12/24, 6/16, 8/8 and 0/8.
-Four long-request challenges remain in totals; supported fresh scores are 0/12,
-0/12 and 5/12. The run and independent saved review total 60.60 seconds at
-512.52 MiB observed peak. No useful broader neuronal capability is established.
+recovery. The simple retrieval/editing reference scores 0/24, 0/16, 8/8 and 0/8.
+All 48 new multiclause requests fit the expanded interface. Three project chains
+carry actual files/feedback across requirements. The run and independent saved
+review total 560.19 seconds at 970.24 MiB observed peak. No useful broader
+neuronal capability is established.
 The final model/tape states are saved for continuation; old toy tasks remain
 regressions without an all-perfect prerequisite.
-The active-path output rule applies one local correction to the actual first
-error, with exact incremental prefix simulation and the same system learning
-and acting. All 172 reader teacher symbols remain exposed per neuronal route;
-fewer output updates do not mean less teacher information. The
-[first session](../experiments/r4_integrated/persistent_language_action_v1_result.md)
-remains separate evidence; the new result is not a matched speed or score
-comparison across identical workloads.
+The context assembly rule teaches all 235 offered causal byte/EOS events per
+neuronal route while inherited reader tensors stay fixed. Twelve correction
+occasions are fewer than v3's 24, but 235 symbols exceed its 172. Online recruits
+235 contexts and makes 2,079 free output decisions versus 8,405 disabled, without
+a correct task response. Earlier sessions remain separate evidence; the new
+result is not a matched speed comparison across identical workloads.
 
 The current [byte-coincidence splice result](../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 solves 4/32 fresh tasks versus 5/32 for its matched graded competitive reference;

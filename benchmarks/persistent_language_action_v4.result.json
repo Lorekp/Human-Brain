@@ -1,0 +1,1313 @@
+{
+  "audit_scope": "saved scores/local outgoing algebra, causal prefixes, actual raw actions, project feedback chains and custody; omitted neuronal inputs/gates are not replayed",
+  "budget": {
+    "complete_seconds": 900,
+    "peak_mib": 2048,
+    "reserved_audit_seconds": 60,
+    "runner_seconds": 840
+  },
+  "claim": "Authored broader persistent development; no useful new task success, general SWE or fully disjoint language-family claim.",
+  "combined_seconds": 560.1913689,
+  "continuation": {
+    "baseline_history_sha256": {
+      "v1": {
+        "attempts.jsonl": "24b4096773ed6fa761715a53688800094ce793445068101789b22b4143ebb71a",
+        "ingests.jsonl": "3f6e6bcaa2bbd0054d57a23a982cf1406e21fa507fc36ecb52918aa973abb147",
+        "manifest.json": "8ff7e338fb7649d8b230fc54507a1265a406cadf3f183c9c6585cbfa47b62ef8",
+        "teachers.jsonl": "98585a318401b5aa77c56e0eb6a2258c121355e634496ec8fc7d294ed5763a6f"
+      },
+      "v2": {
+        "attempts.jsonl": "7b21e2cacc6d39ff0a1b4ab7398e872195c5bed82c190e14a851dd2c85f93ccf",
+        "ingests.jsonl": "040426d1390847bcb51b9035bc39212f00de14b96de835c8109e23f1e2f4eebc",
+        "manifest.json": "efac496ad0f5e8e6de982c5a6b9418621359996ba9064465e117a1e396d5e721",
+        "teachers.jsonl": "10df7e75af48eb6ffc8b82b69640bce5534a601f25be5e16895a7bf4abdf7571"
+      },
+      "v3": {
+        "attempts.jsonl": "14bab3ac2908b3977736cadfa5886db2786a73dc48c504630213fa60eabe72d9",
+        "ingests.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "manifest.json": "fc83513a6d6accee744c5d03188bc9cec75022db3cd00ff5c49f561745aa3056",
+        "teachers.jsonl": "b785cb87167e33233a81bb7125e3d2f8cdaa0e60b1009fe9ea100b385099f08f"
+      }
+    },
+    "baseline_predict_replays": 0,
+    "baseline_prior_documents": 18,
+    "baseline_prior_edit_demonstrations": 36,
+    "initial_control_policy": "same_online_final_state; disable_current_session_learning",
+    "initial_memory_slots": 505,
+    "memory_pressure": "sustained505slots; no newfacts or capacity growth",
+    "prior_bank_sha256": "39e899d8ae5fa5bb741edab2681ccf214d6f1883fd258f96d043a02b3609022e",
+    "prior_documents": [
+      {
+        "document_id": "N00",
+        "sha256": "c31b23ffe602fdcb91cf0b20f4edcf96c546dbc0234f1503a51b6ca3ffcf6ea7",
+        "text_hex": "5468652062616467652069732027626c7565272e0a"
+      },
+      {
+        "document_id": "N01",
+        "sha256": "0b62005dd7785ebcddc409414114c87265efee96ddb802300d0be12ad1742e5a",
+        "text_hex": "486172626f72277320636f646520697320275137272e0a"
+      },
+      {
+        "document_id": "N02",
+        "sha256": "ff0b210ac68b467a4cfec241313ea050f985fda285067d3f1233e62867152116",
+        "text_hex": "526574726965732064656661756c7420746f202733272e0a"
+      },
+      {
+        "document_id": "N03",
+        "sha256": "e976cab05a18a50e2b75804328cbd4518ee0d7e15c1355411892a54ede3c10cf",
+        "text_hex": "4f6e2064656c61792c207761697420273227207365636f6e64732e0a"
+      },
+      {
+        "document_id": "N04",
+        "sha256": "28d174c8fe22ddf8f74f9a89fd6ce51211a4ab4ad120917dd8a70b0222c833f2",
+        "text_hex": "417263686976652066696c65732075736520272e62616b272e0a"
+      },
+      {
+        "document_id": "N05",
+        "sha256": "60a8dc308d1eebc4784ae901d30a2f323c65224fa010e444f386a201905a5639",
+        "text_hex": "4c6f677320617265206e616d656420276175646974272e0a"
+      },
+      {
+        "document_id": "N06",
+        "sha256": "db2932e5f0d0dc55a3b8fba54f77cff43488bddc90645d1bc767fd51646d835c",
+        "text_hex": "4472792072756e73206d616b6520273027207772697465732e0a"
+      },
+      {
+        "document_id": "N07",
+        "sha256": "7973a4e7ec9b4c3c3ac5c612b43bba9bb23bf326af6d4a9e96a7a7a8dc52f228",
+        "text_hex": "42617463682073697a65206973202734272e0a"
+      },
+      {
+        "document_id": "N08",
+        "sha256": "033848445a4c23708c9307c23ddde6d1953db30bc184bea4ef85690d40b4cc66",
+        "text_hex": "546865206261636b757020726567696f6e206973202777657374272e0a"
+      },
+      {
+        "document_id": "N09",
+        "sha256": "b9e39cb17ba618043854aaa22354c0602f8087574c279d60856dcfbd72519f09",
+        "text_hex": "5469636b6574732065787069726520696e2027362720646179732e0a"
+      },
+      {
+        "document_id": "N10",
+        "sha256": "67ab34d370cc37cf064fb8dedce5b6b08ea7dba9e45604322b43e4f045c56e5c",
+        "text_hex": "456d70747920696e7075742072657475726e73202730272e0a"
+      },
+      {
+        "document_id": "N11",
+        "sha256": "e14e86f96dec0a91977d8c9778b9489ef8a83b0d6486a381f4c04956ba3d3465",
+        "text_hex": "4c6162656c732075736520276c6f77657263617365272e0a"
+      },
+      {
+        "document_id": "N12",
+        "sha256": "0577aa4c3a049aabf81d2f74381c6aabf96098e1f397be63e34284e996e891b6",
+        "text_hex": "447572696e672074657374696e672c207468652062616467652069732027677265656e272e0a"
+      },
+      {
+        "document_id": "N13",
+        "sha256": "5439099ac9169c1d951a4bafb144089126725cb398ea2288e50101db7578cfb1",
+        "text_hex": "496e2070726f64756374696f6e2c207468652062616467652069732027626c7565272e0a"
+      },
+      {
+        "document_id": "N14",
+        "sha256": "8decf0e20fcde1d6a4eb27305129ab0991454b59322a1d8f4167afda3cf337e8",
+        "text_hex": "4c61726765206261746368657320636f6e7461696e20273827206a6f62732e0a"
+      },
+      {
+        "document_id": "N15",
+        "sha256": "69ab7f4d11ac998e349516e9816742719e025964b21b4eec33a5eaba6be7a1db",
+        "text_hex": "54656d706f72617279206c6f677320617265206e616d656420277472616365272e0a"
+      },
+      {
+        "document_id": "N16",
+        "sha256": "6768cd3fb7bc7cf3b3962374d48bc517ff870913bf5fccb49dc29781e2333461",
+        "text_hex": "436f6c64206261636b7570732075736520276e6f727468272e0a"
+      },
+      {
+        "document_id": "N17",
+        "sha256": "d072868fc688c434599491c2ab6d94bec8e7f6686579251432264cf8603e963e",
+        "text_hex": "4465627567206c6f67732075736520276465627567272e0a"
+      }
+    ],
+    "prior_final_state_path": ".pytest-tmp/persistent-language-action-v3-run/final-state.pt",
+    "prior_final_state_sha256": "692634352ea323ff7737425a4d5c4e69cd3b39f1bcb9a6c85443a6612e59d03d",
+    "selected_neural_route": "online"
+  },
+  "counts": {
+    "attempts": 216,
+    "ingests": 0,
+    "teachers": 36
+  },
+  "evidence": {
+    ".pytest-tmp/dev/doctor-9przukt6/receipt.json": "23e07e1079d3a09318ac9e9e0c163308b20de8e4dda14be5ccabe99eea1d9b38",
+    ".pytest-tmp/persistent-language-action-v4-manifest-build-v1.json": "2092c8ceb262bfee9ddcc1c6f0c8bc9e8beb2c5ed3d1af86bab5c648f7ebc34f",
+    ".pytest-tmp/persistent-language-action-v4-reference-attribution-review.json": "d22818e4e673995a6b546b541f40bd5d34a0960aae84c6007aa5cbae760364d6",
+    ".pytest-tmp/persistent-language-action-v4-resource-review.json": "c2ad596fa68317bff30d207e27fdff439d74bce46dfc5386a8118e8f90cb14ef",
+    ".pytest-tmp/persistent-language-action-v4-review.json": "fe23c79a584b905de40c7140b6515517955759bfc9c241e103a3777a1f81b8b7",
+    ".pytest-tmp/persistent-language-action-v4-review.launch.json": "652df632b8723390549386e2a4259322053b4f65b928570a946a92ca19873fd4",
+    ".pytest-tmp/persistent-language-action-v4-run.launch.json": "ebb7f7de895e7bfe8f645445a07ec414de1c821ffc681651b577f2b2849c88d6",
+    ".pytest-tmp/persistent-language-action-v4-run/attempts.jsonl": "803bacd6949a9c695c30d30e8d3ff1f86c4203b0c019bf1df86919e91f6ee400",
+    ".pytest-tmp/persistent-language-action-v4-run/baseline-restoration.json": "ad3e96744513bb0ea9ff0428fcdc4a6976f7233a4dba26d98b36fd92d33f2e9f",
+    ".pytest-tmp/persistent-language-action-v4-run/completion.json": "1d069e3b1c30c6322c7681d3b012fafe5c3919543fe5b44587a5f411f224f615",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A00-E/1/app.py": "ed68e0b35b8a7c9ecb735f14c1e27f899cd255b8a82bd35f32c940205e4e60ef",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A00-E/1/main.py": "b713c2b161b7d8a187cce4a4a44393d7f8bb8b728cb9dd19fd0f3b36fe632f99",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A01-E/1/app.py": "876ce509ff8570d309f89e9e4766b7a22cf2a54b33523a20c949a361cd12ccc9",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A01-E/1/main.py": "e1034083d9fe0449f85a25a9093341cf1387647585c882e30c51c71b9333b05f",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A02-E/1/app.py": "caa8cb632047544a1c7434067a90689abf3bddd17d6942e4d7fea58a1a3a5dec",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A02-E/1/main.py": "15c386a9d5aec15a609ee34cddbd676e8583482b839d544c6263cbea47cd52ff",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A03-E/1/app.py": "78dde34e181a5549f9ae7a1ee18eb81445e917b70ade5f98f16c3bf45fbe1967",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A03-E/1/main.py": "aca60d04a0ea6abc652d8214ca2a2a1a4ecdf6f4524e7b8b432daeb381e704ea",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A04-E/1/app.py": "e62c22b8c6717bd42f0685b191f5ec5867b9b6f5ff76f06b0e37a3231c7ed593",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A04-E/1/main.py": "8b30e616bcfa601826fe072c9a49d7b41ec17624c35f8fbe07f665ec13d80d3e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A05-E/1/app.py": "c8c40053d41200501dc1e2c5905a92bbe403b726c86c8ae4c65c3e8a31397a9f",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A05-E/1/main.py": "98584a62fd9b114b34d30395016b7dbf0370ca4c83f9ce064ee7df4b082e5498",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A06-E/1/app.py": "ed68e0b35b8a7c9ecb735f14c1e27f899cd255b8a82bd35f32c940205e4e60ef",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A06-E/1/main.py": "b713c2b161b7d8a187cce4a4a44393d7f8bb8b728cb9dd19fd0f3b36fe632f99",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A07-E/1/app.py": "876ce509ff8570d309f89e9e4766b7a22cf2a54b33523a20c949a361cd12ccc9",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A07-E/1/main.py": "e1034083d9fe0449f85a25a9093341cf1387647585c882e30c51c71b9333b05f",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A08-E/1/app.py": "7dc996335479b918c03dded47d8f59263fa6d671c6ee049fc37915bd59f65506",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A08-E/1/main.py": "3255fedaade99683981c00a23f976f07808ca2967da1a35063f6b244d83cd4e1",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A09-E/1/app.py": "78dde34e181a5549f9ae7a1ee18eb81445e917b70ade5f98f16c3bf45fbe1967",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A09-E/1/main.py": "aca60d04a0ea6abc652d8214ca2a2a1a4ecdf6f4524e7b8b432daeb381e704ea",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A10-E/1/app.py": "145d3cc59ea9bd326000b0e83f3f578dedd2c15a6f7404ef16e166129c1226a9",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A10-E/1/main.py": "9ef6c9ef5b7c27eb0802d9abe28e1e50ab9f6750db7de009a5a6a94be19572c1",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A11-E/1/app.py": "057118474d87c90fbe16a97404c28f56734c6fc045b9c6d7a8f9a0dd99d24c03",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/A11-E/1/main.py": "a554a88374ec3ed472376b36f58cfd0974783c194b47b797f54c37b7f484f7af",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/F00-E/1/app.py": "15b1a2b40b987b84eb0b6c3fa9e9d6cd34f2b6214b3891faa7e52fa271309c87",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/F00-E/1/main.py": "b713c2b161b7d8a187cce4a4a44393d7f8bb8b728cb9dd19fd0f3b36fe632f99",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/F01-E/1/app.py": "876ce509ff8570d309f89e9e4766b7a22cf2a54b33523a20c949a361cd12ccc9",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/F01-E/1/main.py": "e1034083d9fe0449f85a25a9093341cf1387647585c882e30c51c71b9333b05f",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/F02-E/1/app.py": "18b92e2020869aaa92cc893200a88e51efeef1831429af3ab860e4b334cd9d68",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/F02-E/1/main.py": "2dd76d88979ed3d6e8751ebdfbda8316847fad3d332c538a785d5f07182cdbfc",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/F03-E/1/app.py": "78dde34e181a5549f9ae7a1ee18eb81445e917b70ade5f98f16c3bf45fbe1967",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/F03-E/1/main.py": "aca60d04a0ea6abc652d8214ca2a2a1a4ecdf6f4524e7b8b432daeb381e704ea",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/F04-E/1/app.py": "3830554f353172abe4c107fdd0a4de0e36153fe3c2868d5b4f851e1a27c0acf4",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/F04-E/1/main.py": "81d5f2ac6f1dceef5bab7117632327692871d59032f28cd7de00fbe10884506d",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/F05-E/1/app.py": "a6065a3e955d5b45ec30a19588d6938d85d7833b6ba31ab0df3c3d1dab9267f6",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/F05-E/1/main.py": "e76d957eae5fa7893340b91ca46132291e24e1e12dc6791b631d5edd504fe614",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/F06-E/1/app.py": "2eb35d58e895f79aacb6c8c12b4d2ae133b4f5a50a4acb4766b3a26ef0760420",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/F06-E/1/main.py": "506653f7115c031df0c251bc0cde913da2ea40303cf724189a810b94b9441807",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/F07-E/1/app.py": "b4d33f5a863bdb2e0183fc828caba7c4ae9e924377a7762f77a09a3e7bf59284",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/F07-E/1/main.py": "dd7844836f968065830d7d732e4b721929a30755c5d61d5c8ddf032ae9d9fc48",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/T00-E/1/cfg.py": "52632d7f5f7abf489445fe5c9989af8868ffd3587f0cb1f12cacbd706ba5c580",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/T00-E/1/main.py": "470072e50c03f8e62ccdd977027550aa473b2025345af460b7b99e2533118f61",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/T03-E/1/app.py": "5481db8a71dbe48dafaec4b7fd7ab18c3c57e4107ba1ba4301f4680a6d053014",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/T03-E/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/T08-E/1/cfg.py": "52632d7f5f7abf489445fe5c9989af8868ffd3587f0cb1f12cacbd706ba5c580",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/T08-E/1/main.py": "470072e50c03f8e62ccdd977027550aa473b2025345af460b7b99e2533118f61",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/T11-E/1/app.py": "5481db8a71dbe48dafaec4b7fd7ab18c3c57e4107ba1ba4301f4680a6d053014",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/T11-E/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X00/1/app.py": "cf892b317ebb8def1ac3222ae4ef1ba2d500b0fe554fb4fca9d5e411cd7e641b",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X00/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X00/2/app.py": "cf892b317ebb8def1ac3222ae4ef1ba2d500b0fe554fb4fca9d5e411cd7e641b",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X00/2/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X00/3/app.py": "cf892b317ebb8def1ac3222ae4ef1ba2d500b0fe554fb4fca9d5e411cd7e641b",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X00/3/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X01/1/app.py": "5d8cfedcb0e07d4f6e505b787be82d74e0acb18ede4ea079313e044c59aa639e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X01/1/main.py": "b87aa2593d1042328d363747202ea3addf4c0a7594fc02a5f9bb46910139370f",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X01/2/app.py": "5d8cfedcb0e07d4f6e505b787be82d74e0acb18ede4ea079313e044c59aa639e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X01/2/main.py": "4242e2718d09b22bfc49afc6fba114244173671f8aa2ebb951fcbcb45812400f",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X01/3/app.py": "5d8cfedcb0e07d4f6e505b787be82d74e0acb18ede4ea079313e044c59aa639e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X01/3/main.py": "fa37e5da0fb7a75f82d09799c75522fe7837160edb90c5292642c41406e6e1a1",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X02/1/app.py": "97c1b54c1d01bafcd74d4a4adcb97db948c25e881c2e0345b3bf53ee11c3aac8",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X02/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X02/2/app.py": "97c1b54c1d01bafcd74d4a4adcb97db948c25e881c2e0345b3bf53ee11c3aac8",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X02/2/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X02/3/app.py": "97c1b54c1d01bafcd74d4a4adcb97db948c25e881c2e0345b3bf53ee11c3aac8",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X02/3/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X03/1/app.py": "24970a53dcf5c0af92731ad600f1728448f69c969d10f99cbaf26352c9aa6c4d",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X03/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X03/2/app.py": "24970a53dcf5c0af92731ad600f1728448f69c969d10f99cbaf26352c9aa6c4d",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X03/2/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X03/3/app.py": "24970a53dcf5c0af92731ad600f1728448f69c969d10f99cbaf26352c9aa6c4d",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X03/3/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X04/1/app.py": "56a24836fe714bd91759ee6352aeb6c536c0a7748364649fb27484df72fba91a",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X04/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X04/2/app.py": "56a24836fe714bd91759ee6352aeb6c536c0a7748364649fb27484df72fba91a",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X04/2/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X04/3/app.py": "56a24836fe714bd91759ee6352aeb6c536c0a7748364649fb27484df72fba91a",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X04/3/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X05/1/app.py": "9ce4334e7751a379875dc11d92b4e39f5f217f0d47104539cfdb09bcb6dd510e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X05/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X05/2/app.py": "9ce4334e7751a379875dc11d92b4e39f5f217f0d47104539cfdb09bcb6dd510e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X05/2/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X05/3/app.py": "9ce4334e7751a379875dc11d92b4e39f5f217f0d47104539cfdb09bcb6dd510e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X05/3/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X06/1/app.py": "9bf454219f9d95a85d1de772adf991e7d62b19461edb256b38335ac7d50633d8",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X06/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X06/2/app.py": "9bf454219f9d95a85d1de772adf991e7d62b19461edb256b38335ac7d50633d8",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X06/2/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X06/3/app.py": "9bf454219f9d95a85d1de772adf991e7d62b19461edb256b38335ac7d50633d8",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X06/3/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X07/1/app.py": "5863d64e77a065ff17bca608b82e22cbb1d18f2a79230902adc48dd9971be6ed",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X07/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X07/2/app.py": "5863d64e77a065ff17bca608b82e22cbb1d18f2a79230902adc48dd9971be6ed",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X07/2/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X07/3/app.py": "5863d64e77a065ff17bca608b82e22cbb1d18f2a79230902adc48dd9971be6ed",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/learning_disabled/X07/3/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A00-E/1/app.py": "d3076b961738dccb4960480708d88de300d6e68a02caa777a8080cbc88c3115d",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A00-E/1/main.py": "b713c2b161b7d8a187cce4a4a44393d7f8bb8b728cb9dd19fd0f3b36fe632f99",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A01-E/1/app.py": "3bce91b2d0a816760ac74e752da873a57e5bfc9df8a83e23d231d0d097191fd1",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A01-E/1/main.py": "e1034083d9fe0449f85a25a9093341cf1387647585c882e30c51c71b9333b05f",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A02-E/1/app.py": "33651d19e93c65ab513680346bc0a312f060e97ac15d619f7fa96bde693a3cfb",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A02-E/1/main.py": "15c386a9d5aec15a609ee34cddbd676e8583482b839d544c6263cbea47cd52ff",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A03-E/1/app.py": "9af2656cb90e42903e91661b4bd6960e5f78704545a25074b247a305c3508e68",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A03-E/1/main.py": "aca60d04a0ea6abc652d8214ca2a2a1a4ecdf6f4524e7b8b432daeb381e704ea",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A04-E/1/app.py": "e62c22b8c6717bd42f0685b191f5ec5867b9b6f5ff76f06b0e37a3231c7ed593",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A04-E/1/main.py": "e409cfc6777548f25eaccee33f8177a5349caafd28651a5ae9f06f4ac42b00c2",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A05-E/1/app.py": "7ff746b2ce339d38d66e3ecab48716304564e95f76a3ab9be8d6f1a55c12e4cc",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A05-E/1/main.py": "98584a62fd9b114b34d30395016b7dbf0370ca4c83f9ce064ee7df4b082e5498",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A06-E/1/app.py": "05da7b5e316d805c8819c07392481d1c256426c61d75e2d7cac7900c89f26801",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A06-E/1/main.py": "b713c2b161b7d8a187cce4a4a44393d7f8bb8b728cb9dd19fd0f3b36fe632f99",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A07-E/1/app.py": "3bce91b2d0a816760ac74e752da873a57e5bfc9df8a83e23d231d0d097191fd1",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A07-E/1/main.py": "40091dd4ee4721dba5bac5a67fa37217479cf49bc6e0479f6c83f48094924e9c",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A08-E/1/app.py": "7dc996335479b918c03dded47d8f59263fa6d671c6ee049fc37915bd59f65506",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A08-E/1/main.py": "3255fedaade99683981c00a23f976f07808ca2967da1a35063f6b244d83cd4e1",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A09-E/1/app.py": "31e0c806bff34e6a5ec3e9afb3f74c1f5397ddea203ca173eb6bfe6e43408218",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A09-E/1/main.py": "aca60d04a0ea6abc652d8214ca2a2a1a4ecdf6f4524e7b8b432daeb381e704ea",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A10-E/1/app.py": "72e544ea3667da914f6afbac72a5edf80c97e1c9811a51d845ccd5987024ed12",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A10-E/1/main.py": "9ef6c9ef5b7c27eb0802d9abe28e1e50ab9f6750db7de009a5a6a94be19572c1",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A11-E/1/app.py": "057118474d87c90fbe16a97404c28f56734c6fc045b9c6d7a8f9a0dd99d24c03",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/A11-E/1/main.py": "a554a88374ec3ed472376b36f58cfd0974783c194b47b797f54c37b7f484f7af",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/F00-E/1/app.py": "3f9997b49b7dde992e758c3a0c3fcdc349be8795f6ddf6eeabf058c0a4049650",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/F00-E/1/main.py": "b713c2b161b7d8a187cce4a4a44393d7f8bb8b728cb9dd19fd0f3b36fe632f99",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/F01-E/1/app.py": "cd1501bf633edea704409a41eda2e067072f7acbe9f8511db697d6f510330a6b",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/F01-E/1/main.py": "40091dd4ee4721dba5bac5a67fa37217479cf49bc6e0479f6c83f48094924e9c",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/F02-E/1/app.py": "d3a9c1a0d7e648ea1a71c141ebd5ad026694773167981cbcd62d359a76e6806c",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/F02-E/1/main.py": "2dd76d88979ed3d6e8751ebdfbda8316847fad3d332c538a785d5f07182cdbfc",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/F03-E/1/app.py": "289a500de60d8b1b282800c1168167c321292eadf2b40fdd32df88cfc792151b",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/F03-E/1/main.py": "aca60d04a0ea6abc652d8214ca2a2a1a4ecdf6f4524e7b8b432daeb381e704ea",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/F04-E/1/app.py": "a0f3e93a0e7e8586da084b7d37932534b5141abcc4a0f20ef810d96ef0023c88",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/F04-E/1/main.py": "81d5f2ac6f1dceef5bab7117632327692871d59032f28cd7de00fbe10884506d",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/F05-E/1/app.py": "69a99d8818293c15040e0fd077e0473ce73c68c7447e435eb5676c50e43d3cef",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/F05-E/1/main.py": "e76d957eae5fa7893340b91ca46132291e24e1e12dc6791b631d5edd504fe614",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/F06-E/1/app.py": "7709469fb85e07ffc95f898c2d192cc5e3b28955e99e82ca8aa1b99b2425a1da",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/F06-E/1/main.py": "506653f7115c031df0c251bc0cde913da2ea40303cf724189a810b94b9441807",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/F07-E/1/app.py": "b4d33f5a863bdb2e0183fc828caba7c4ae9e924377a7762f77a09a3e7bf59284",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/F07-E/1/main.py": "dd7844836f968065830d7d732e4b721929a30755c5d61d5c8ddf032ae9d9fc48",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/T00-E/1/cfg.py": "2def8f5179bade4f37833eee2ab8b8a444899a08e350a270117e7f184407fe2c",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/T00-E/1/main.py": "470072e50c03f8e62ccdd977027550aa473b2025345af460b7b99e2533118f61",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/T03-E/1/app.py": "397b91effc44018c82fe0fab54fac7966f36357ecd84a28bec690b02139fe7cf",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/T03-E/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/T08-E/1/cfg.py": "bcaa2aaf227b09f4ddb1ad2753e6268e2a55f4776f1847965a7c4321abdc421a",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/T08-E/1/main.py": "470072e50c03f8e62ccdd977027550aa473b2025345af460b7b99e2533118f61",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/T11-E/1/app.py": "350a2b48edca244f9b186b150e733d50933cf27386ee8f6d0fcf8296aa5cb70b",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/T11-E/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X00/1/app.py": "cf892b317ebb8def1ac3222ae4ef1ba2d500b0fe554fb4fca9d5e411cd7e641b",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X00/1/main.py": "faed06a29fac9f33c5727b8a45882379b260fba055fea0aaa7a0c99fb22dea72",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X00/2/app.py": "7b150cd25969363f44659ff8df104da552494a90b32ce82623d5559da008b1b7",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X00/2/main.py": "faed06a29fac9f33c5727b8a45882379b260fba055fea0aaa7a0c99fb22dea72",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X00/3/app.py": "c6c5d31a72465bf8b6a8c0a6d287888a7babdb2578e8e38aa8ced5c07da85c94",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X00/3/main.py": "faed06a29fac9f33c5727b8a45882379b260fba055fea0aaa7a0c99fb22dea72",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X01/1/app.py": "5d8cfedcb0e07d4f6e505b787be82d74e0acb18ede4ea079313e044c59aa639e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X01/1/main.py": "23c63b243cb6a66f0d6aad6c79727268f6124cbf3cf914831ede38ed31fc2feb",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X01/2/app.py": "5d8cfedcb0e07d4f6e505b787be82d74e0acb18ede4ea079313e044c59aa639e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X01/2/main.py": "905b36bad0354d635ffbaaa27d7a6f542a8a5210aa8b100b157015adb6c8224a",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X01/3/app.py": "5d8cfedcb0e07d4f6e505b787be82d74e0acb18ede4ea079313e044c59aa639e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X01/3/main.py": "10381bc4682a81b4b45842955d35cb45e003767d33007ae999bfd8e17e7ca082",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X02/1/app.py": "97c1b54c1d01bafcd74d4a4adcb97db948c25e881c2e0345b3bf53ee11c3aac8",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X02/1/main.py": "faed06a29fac9f33c5727b8a45882379b260fba055fea0aaa7a0c99fb22dea72",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X02/2/app.py": "f52cb6efd2512bb6d42b91c6453a830601d4bfb85c08f360246bc7c480b4b97c",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X02/2/main.py": "faed06a29fac9f33c5727b8a45882379b260fba055fea0aaa7a0c99fb22dea72",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X02/3/app.py": "72edff397fdfcd79091af63f9a16e7322065ebf9b71ebac2941740f09f5c1132",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X02/3/main.py": "faed06a29fac9f33c5727b8a45882379b260fba055fea0aaa7a0c99fb22dea72",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X03/1/app.py": "0177aaf231398ea6fa9713d1ac091863b1ef390ac41e97f279bf33e85801d2ac",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X03/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X03/2/app.py": "0177aaf231398ea6fa9713d1ac091863b1ef390ac41e97f279bf33e85801d2ac",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X03/2/main.py": "267095b42057dc792c773858452f526ba762737b00008211b55146b3074273ec",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X03/3/app.py": "3a9def1ccdeadfed4d7306919da73b4c71774a1ce1717cf12e1744b66020f11a",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X03/3/main.py": "267095b42057dc792c773858452f526ba762737b00008211b55146b3074273ec",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X04/1/app.py": "56a24836fe714bd91759ee6352aeb6c536c0a7748364649fb27484df72fba91a",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X04/1/main.py": "9c7a2f7b899ae1a4c2b1a9be12e6b8dd80542ef118779b471ff5a308dbcf0a58",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X04/2/app.py": "56a24836fe714bd91759ee6352aeb6c536c0a7748364649fb27484df72fba91a",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X04/2/main.py": "335cf769e59ed4af2b7dfc6a04e99e1eb52e99f0d2a13effc75e4535378c4654",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X04/3/app.py": "b9682cda25f8f0e90a820774fe2c6b4022ab48d82da0de8f68a693a310790bfe",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X04/3/main.py": "335cf769e59ed4af2b7dfc6a04e99e1eb52e99f0d2a13effc75e4535378c4654",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X05/1/app.py": "9ce4334e7751a379875dc11d92b4e39f5f217f0d47104539cfdb09bcb6dd510e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X05/1/main.py": "267095b42057dc792c773858452f526ba762737b00008211b55146b3074273ec",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X05/2/app.py": "9ce4334e7751a379875dc11d92b4e39f5f217f0d47104539cfdb09bcb6dd510e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X05/2/main.py": "1d9d7997e444f1d0f4bced815b9a6263f4bbbee1570eb76caa7c1afc1a522e3a",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X05/3/app.py": "9ce4334e7751a379875dc11d92b4e39f5f217f0d47104539cfdb09bcb6dd510e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X05/3/main.py": "61f6114ac684fb3d0cdad9df23923ed4d094140edc13c6f3a725df0cd4efb893",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X06/1/app.py": "27f9d19c894e0023a41d2f887141fde188bd1d12808fcd5abbfec097ec754237",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X06/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X06/2/app.py": "27f9d19c894e0023a41d2f887141fde188bd1d12808fcd5abbfec097ec754237",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X06/2/main.py": "bba1754c2449e7abf6e3537982ebe2762ed4ff5b6dc2e550f67564e1bce17cec",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X06/3/app.py": "27f9d19c894e0023a41d2f887141fde188bd1d12808fcd5abbfec097ec754237",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X06/3/main.py": "1ef49d915221f8c7ab100263cbb08e50453f73dff2752c6e98f0f5317ca05b2c",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X07/1/app.py": "7f2e95fd38dec6dc7c66e234fe2dd49f88a980878a9b36238dcc2065dd696b06",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X07/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X07/2/app.py": "638e73ee548030da77350e59c21a86fef25d8457c77d7e5fa03c3e56cf7ead55",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X07/2/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X07/3/app.py": "8229bffd1b8e37bb9722f352fe725095061707fade4072baf769f8152f8e61ce",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/online/X07/3/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A00-E/1/app.py": "ed68e0b35b8a7c9ecb735f14c1e27f899cd255b8a82bd35f32c940205e4e60ef",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A00-E/1/main.py": "b713c2b161b7d8a187cce4a4a44393d7f8bb8b728cb9dd19fd0f3b36fe632f99",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A01-E/1/app.py": "876ce509ff8570d309f89e9e4766b7a22cf2a54b33523a20c949a361cd12ccc9",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A01-E/1/main.py": "e1034083d9fe0449f85a25a9093341cf1387647585c882e30c51c71b9333b05f",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A02-E/1/app.py": "f06b335ef4e5a015ad5f7aa952cb05a5b9acec83a91ce4ece264957e07d52061",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A02-E/1/main.py": "15c386a9d5aec15a609ee34cddbd676e8583482b839d544c6263cbea47cd52ff",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A03-E/1/app.py": "78dde34e181a5549f9ae7a1ee18eb81445e917b70ade5f98f16c3bf45fbe1967",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A03-E/1/main.py": "aca60d04a0ea6abc652d8214ca2a2a1a4ecdf6f4524e7b8b432daeb381e704ea",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A04-E/1/app.py": "268acae1cb953824f2d4b8f152cf979477381015eb5f6334c804e1d9df36c29a",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A04-E/1/main.py": "8b30e616bcfa601826fe072c9a49d7b41ec17624c35f8fbe07f665ec13d80d3e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A05-E/1/app.py": "226623ce7d857eb9239abca06c0d877d25e76b77439a802e3afa6b8caa8640c4",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A05-E/1/main.py": "98584a62fd9b114b34d30395016b7dbf0370ca4c83f9ce064ee7df4b082e5498",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A06-E/1/app.py": "ed68e0b35b8a7c9ecb735f14c1e27f899cd255b8a82bd35f32c940205e4e60ef",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A06-E/1/main.py": "b713c2b161b7d8a187cce4a4a44393d7f8bb8b728cb9dd19fd0f3b36fe632f99",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A07-E/1/app.py": "876ce509ff8570d309f89e9e4766b7a22cf2a54b33523a20c949a361cd12ccc9",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A07-E/1/main.py": "e1034083d9fe0449f85a25a9093341cf1387647585c882e30c51c71b9333b05f",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A08-E/1/app.py": "d92dfc595ec1a1cf1561c6cb6ab349f0a66439a58faf5ad77b22aa64f3776330",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A08-E/1/main.py": "3255fedaade99683981c00a23f976f07808ca2967da1a35063f6b244d83cd4e1",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A09-E/1/app.py": "a3dedfcdd6dc29ae5aa7b8abd60282902e8db4633df81cc7d134e1ca54b3d936",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A09-E/1/main.py": "aca60d04a0ea6abc652d8214ca2a2a1a4ecdf6f4524e7b8b432daeb381e704ea",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A10-E/1/app.py": "a8023dd9efd28ce7f9b96096a1438677be9daa4d5bb55745166eeacc8e0c02a4",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A10-E/1/main.py": "9ef6c9ef5b7c27eb0802d9abe28e1e50ab9f6750db7de009a5a6a94be19572c1",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A11-E/1/app.py": "b2e34a6b8b78c98467f56211893e62d0ed7b129d839c3e36d1ebb9c80ea7ac57",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/A11-E/1/main.py": "a554a88374ec3ed472376b36f58cfd0974783c194b47b797f54c37b7f484f7af",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/F00-E/1/app.py": "ed68e0b35b8a7c9ecb735f14c1e27f899cd255b8a82bd35f32c940205e4e60ef",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/F00-E/1/main.py": "b713c2b161b7d8a187cce4a4a44393d7f8bb8b728cb9dd19fd0f3b36fe632f99",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/F01-E/1/app.py": "876ce509ff8570d309f89e9e4766b7a22cf2a54b33523a20c949a361cd12ccc9",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/F01-E/1/main.py": "e1034083d9fe0449f85a25a9093341cf1387647585c882e30c51c71b9333b05f",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/F02-E/1/app.py": "02f35ded058d3d27d5fbc8ac646b45ad0537ee42977a0c5c8f1678fd804291b2",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/F02-E/1/main.py": "2dd76d88979ed3d6e8751ebdfbda8316847fad3d332c538a785d5f07182cdbfc",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/F03-E/1/app.py": "a3dedfcdd6dc29ae5aa7b8abd60282902e8db4633df81cc7d134e1ca54b3d936",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/F03-E/1/main.py": "aca60d04a0ea6abc652d8214ca2a2a1a4ecdf6f4524e7b8b432daeb381e704ea",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/F04-E/1/app.py": "bb4d6aba379338ac4680b03fb714dff4aa57afa9e8ac23ca44349a327fb5e371",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/F04-E/1/main.py": "81d5f2ac6f1dceef5bab7117632327692871d59032f28cd7de00fbe10884506d",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/F05-E/1/app.py": "6b5e42cb7865edad602e087dd0258df42b9c29afe72b5aee8775d233dcf1f628",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/F05-E/1/main.py": "e76d957eae5fa7893340b91ca46132291e24e1e12dc6791b631d5edd504fe614",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/F06-E/1/app.py": "65b786eb6700f1b9d41232a2a7753862eae9b4cad8db8fe8bf5382b00c3be3f8",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/F06-E/1/main.py": "506653f7115c031df0c251bc0cde913da2ea40303cf724189a810b94b9441807",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/F07-E/1/app.py": "374f275ff1cd158f126aeb24a1e53b52f76a63b8ae457214864494f207105aa3",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/F07-E/1/main.py": "dd7844836f968065830d7d732e4b721929a30755c5d61d5c8ddf032ae9d9fc48",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/T00-E/1/cfg.py": "4d11c6f0121455980e958069d7e14b3d7b587dc280bdea30a43682970bdea097",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/T00-E/1/main.py": "470072e50c03f8e62ccdd977027550aa473b2025345af460b7b99e2533118f61",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/T03-E/1/app.py": "d3fe37235936f63ebabd6ba2bb8d3cf67404555d856dc63b0611fe9b6231ec13",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/T03-E/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/T08-E/1/cfg.py": "2b1aa5bd42829803a14bde552f2afac37a910a974c33d39ee21dbb97f7325006",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/T08-E/1/main.py": "470072e50c03f8e62ccdd977027550aa473b2025345af460b7b99e2533118f61",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/T11-E/1/app.py": "00f42eb74311bfbdb4402947e923fb4b1a2c1ad47d27f7a7639c7bac49d6e8eb",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/T11-E/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X00/1/app.py": "cf892b317ebb8def1ac3222ae4ef1ba2d500b0fe554fb4fca9d5e411cd7e641b",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X00/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X00/2/app.py": "cf892b317ebb8def1ac3222ae4ef1ba2d500b0fe554fb4fca9d5e411cd7e641b",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X00/2/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X00/3/app.py": "cf892b317ebb8def1ac3222ae4ef1ba2d500b0fe554fb4fca9d5e411cd7e641b",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X00/3/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X01/1/app.py": "5d8cfedcb0e07d4f6e505b787be82d74e0acb18ede4ea079313e044c59aa639e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X01/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X01/2/app.py": "5d8cfedcb0e07d4f6e505b787be82d74e0acb18ede4ea079313e044c59aa639e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X01/2/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X01/3/app.py": "5d8cfedcb0e07d4f6e505b787be82d74e0acb18ede4ea079313e044c59aa639e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X01/3/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X02/1/app.py": "97c1b54c1d01bafcd74d4a4adcb97db948c25e881c2e0345b3bf53ee11c3aac8",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X02/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X02/2/app.py": "97c1b54c1d01bafcd74d4a4adcb97db948c25e881c2e0345b3bf53ee11c3aac8",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X02/2/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X02/3/app.py": "97c1b54c1d01bafcd74d4a4adcb97db948c25e881c2e0345b3bf53ee11c3aac8",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X02/3/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X03/1/app.py": "24970a53dcf5c0af92731ad600f1728448f69c969d10f99cbaf26352c9aa6c4d",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X03/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X03/2/app.py": "24970a53dcf5c0af92731ad600f1728448f69c969d10f99cbaf26352c9aa6c4d",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X03/2/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X03/3/app.py": "24970a53dcf5c0af92731ad600f1728448f69c969d10f99cbaf26352c9aa6c4d",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X03/3/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X04/1/app.py": "56a24836fe714bd91759ee6352aeb6c536c0a7748364649fb27484df72fba91a",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X04/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X04/2/app.py": "56a24836fe714bd91759ee6352aeb6c536c0a7748364649fb27484df72fba91a",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X04/2/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X04/3/app.py": "56a24836fe714bd91759ee6352aeb6c536c0a7748364649fb27484df72fba91a",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X04/3/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X05/1/app.py": "9ce4334e7751a379875dc11d92b4e39f5f217f0d47104539cfdb09bcb6dd510e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X05/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X05/2/app.py": "9ce4334e7751a379875dc11d92b4e39f5f217f0d47104539cfdb09bcb6dd510e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X05/2/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X05/3/app.py": "9ce4334e7751a379875dc11d92b4e39f5f217f0d47104539cfdb09bcb6dd510e",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X05/3/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X06/1/app.py": "9bf454219f9d95a85d1de772adf991e7d62b19461edb256b38335ac7d50633d8",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X06/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X06/2/app.py": "9bf454219f9d95a85d1de772adf991e7d62b19461edb256b38335ac7d50633d8",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X06/2/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X06/3/app.py": "9bf454219f9d95a85d1de772adf991e7d62b19461edb256b38335ac7d50633d8",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X06/3/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X07/1/app.py": "5863d64e77a065ff17bca608b82e22cbb1d18f2a79230902adc48dd9971be6ed",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X07/1/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X07/2/app.py": "01d2136b13ebeb5c1072428bbbaea18e02b16a7e0e5a6e46a14ceef5c53e82ab",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X07/2/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X07/3/app.py": "01d2136b13ebeb5c1072428bbbaea18e02b16a7e0e5a6e46a14ceef5c53e82ab",
+    ".pytest-tmp/persistent-language-action-v4-run/executions/simple/X07/3/main.py": "80c1efe71cedf3c2211f1c91e5002a95a7a559b97778eccfe5111e1b02e7c268",
+    ".pytest-tmp/persistent-language-action-v4-run/final-state.pt": "26cabfa5aa12ce362c51fcac2f57d5fdf05be6a5041a33f00acd47c05f618817",
+    ".pytest-tmp/persistent-language-action-v4-run/ingests.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".pytest-tmp/persistent-language-action-v4-run/initialization.json": "580233da306bf549650b756c7a65088925a65181fa9b3747087cec8f48310352",
+    ".pytest-tmp/persistent-language-action-v4-run/launch-record.json": "0da6c92678821666a61910660bd76166da1623098d0bca9c42ccd80737ff27ab",
+    ".pytest-tmp/persistent-language-action-v4-run/manifest.json": "9d3399a1360ca9ddb4ba9361f06b70deb6063ddcf6461ed1aa414b0d54f4f191",
+    ".pytest-tmp/persistent-language-action-v4-run/report.json": "5c63ac8bbbb2992a8dfe94d078801c06748208aa96d5a0ab0cd4711a661e32aa",
+    ".pytest-tmp/persistent-language-action-v4-run/sources.json": "4c8d21ad74b4c6a44d0dec34e4c903114f13b34974d3c900629e4ea17c4f4395",
+    ".pytest-tmp/persistent-language-action-v4-run/teachers.jsonl": "60ebc2d149a9452211872b9507c078b71413cbd399b6c89449032aafe7b8aad7",
+    ".pytest-tmp/sequence-assembly-v4-learning-extraction.json": "bef2426f7547b50c09c83664de2177800cbead98c58cd9311503f2827a9e5905",
+    ".pytest-tmp/sequence-assembly-v4-learning-interpretation.json": "be7ea2edb4d969089c2d781eaf87b5be85c806e2b539ed04d0f8fc7bd67be7f7",
+    "docs/research/persistent-language-action-v4-cost-review.md": "40e3fe573e174acca92a61c3c79003f0df4aa95b05fbfa77579e305b2529f2d4",
+    "docs/research/persistent-language-action-v4-evaluation-review.md": "49cf1f84f95d8565365c6d4e549c6c8c55e9a25902e6d1ed0837361c02633a88",
+    "docs/research/persistent-language-action-v4-learning-review.md": "695385168f49309a703a9677b8a14f888fcee4ffdc74ba9501da02938e527912",
+    "docs/research/persistent-language-action-v4-manifest-resource-scalars.json": "0dc442dbbffc22bf1d8e4512dccc6ee1d73a38de59199bea6040913c26456091",
+    "docs/research/persistent-language-action-v4-resource-plan.md": "836d7314643853cfaec6f491bf4fa7d570d036b1a756e51382b3e79fd1651b11",
+    "docs/research/sequence-assembly-integration-qa-v1.md": "20a85fdec31ad29aaa51c95bf90895fc237847a74e4d5f193eab4fad79bee16c",
+    "experiments/r4_integrated/persistent_language_action_v4_result.md": "04cc48a959c19bf9d6515595b6db3111a994fe53059c2b89ac4b1d68f453feed"
+  },
+  "exposure": {
+    "learning_disabled": {
+      "action_labels": 18,
+      "assembly_exhausted": 0,
+      "assembly_offers": 235,
+      "assembly_recruits": 0,
+      "assembly_staged": 0,
+      "attempts": 72,
+      "executions": 48,
+      "free_decisions": 8405,
+      "free_queries": 72,
+      "reader_offers": 235,
+      "teacher_rows": 12
+    },
+    "online": {
+      "action_labels": 18,
+      "assembly_exhausted": 0,
+      "assembly_offers": 235,
+      "assembly_recruits": 235,
+      "assembly_staged": 235,
+      "attempts": 72,
+      "executions": 48,
+      "free_decisions": 2079,
+      "free_queries": 72,
+      "reader_offers": 235,
+      "teacher_rows": 12
+    },
+    "simple": {
+      "attempts": 72,
+      "executions": 48,
+      "teacher_rows": 12
+    }
+  },
+  "final_assembly_occupied": {
+    "learning_disabled": 0,
+    "online": 235
+  },
+  "final_checkpoint": {
+    "path": "final-state.pt",
+    "scope": "both model/tape/experience; continued prior online memory",
+    "sha256": "26cabfa5aa12ce362c51fcac2f57d5fdf05be6a5041a33f00acd47c05f618817",
+    "snapshots": 2,
+    "tensor_bytes": 82646896
+  },
+  "final_memory_slots": {
+    "learning_disabled": 505,
+    "online": 505
+  },
+  "initial_memory_slots": 505,
+  "manifest_counts": {
+    "action_teacher_labels": 18,
+    "document_eos": 0,
+    "document_raw_bytes": 0,
+    "edit_episodes": 32,
+    "episodes": 56,
+    "initial_occupied_memory_slots": 505,
+    "maximum_action_attempts": 48,
+    "maximum_episode_attempts": 72,
+    "new_memory_slots": 0,
+    "occupied_memory_slots": 505,
+    "phase_episodes": {
+      "acquisition": 24,
+      "recovery": 8,
+      "retention": 8,
+      "transfer": 16
+    },
+    "project_chains": 3,
+    "project_continuation_episodes": 6,
+    "reader_teacher_eos": 12,
+    "reader_teacher_raw_bytes": 223,
+    "reader_teacher_symbols": 235,
+    "reading_episodes": 24,
+    "teacher_offers": 12,
+    "unsupported_episodes": 0
+  },
+  "manifest_sha256": "9d3399a1360ca9ddb4ba9361f06b70deb6063ddcf6461ed1aa414b0d54f4f191",
+  "metrics": {
+    "learning_disabled": {
+      "acquisition_blocks": [
+        0,
+        0
+      ],
+      "forgotten": 0,
+      "improved": 0,
+      "phases": {
+        "acquisition": {
+          "edit": {
+            "attempts": 12,
+            "episodes": 12,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 12,
+            "episodes": 12,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        },
+        "recovery": {
+          "edit": {
+            "attempts": 24,
+            "episodes": 8,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 0,
+            "episodes": 0,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        },
+        "retention": {
+          "edit": {
+            "attempts": 4,
+            "episodes": 4,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 4,
+            "episodes": 4,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        },
+        "transfer": {
+          "edit": {
+            "attempts": 8,
+            "episodes": 8,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 8,
+            "episodes": 8,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        }
+      },
+      "project_chains": [
+        {
+          "correct": false,
+          "episode_id": "A00-E",
+          "predecessor_episode_id": null,
+          "project_id": "colour",
+          "status": "completed",
+          "workspace_from_actual_predecessor": false
+        },
+        {
+          "correct": false,
+          "episode_id": "A01-E",
+          "predecessor_episode_id": null,
+          "project_id": "region",
+          "status": "completed",
+          "workspace_from_actual_predecessor": false
+        },
+        {
+          "correct": false,
+          "episode_id": "A03-E",
+          "predecessor_episode_id": null,
+          "project_id": "archive",
+          "status": "completed",
+          "workspace_from_actual_predecessor": false
+        },
+        {
+          "correct": false,
+          "episode_id": "A06-E",
+          "predecessor_episode_id": "A00-E",
+          "project_id": "colour",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        },
+        {
+          "correct": false,
+          "episode_id": "A07-E",
+          "predecessor_episode_id": "A01-E",
+          "project_id": "region",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        },
+        {
+          "correct": false,
+          "episode_id": "A09-E",
+          "predecessor_episode_id": "A03-E",
+          "project_id": "archive",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        },
+        {
+          "correct": false,
+          "episode_id": "F00-E",
+          "predecessor_episode_id": "A06-E",
+          "project_id": "colour",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        },
+        {
+          "correct": false,
+          "episode_id": "F01-E",
+          "predecessor_episode_id": "A07-E",
+          "project_id": "region",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        },
+        {
+          "correct": false,
+          "episode_id": "F03-E",
+          "predecessor_episode_id": "A09-E",
+          "project_id": "archive",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        }
+      ],
+      "recovery": {
+        "final_attempt_correct": 0,
+        "final_recovered_after_first_failure": 0,
+        "first_failures": 8,
+        "later_correct": 0,
+        "policy": "three fixed attempts; private grade never controls retries",
+        "tool_feedback_consumed": true
+      },
+      "retained": 0,
+      "retention": [
+        {
+          "delayed_correct": false,
+          "episode_id": "T00-R",
+          "initial_correct": false,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 64,
+          "intervening_prior_retention_attempts": 7,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A00-R",
+          "prior_retention_id": "T00-R",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T00-E",
+          "initial_correct": false,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 65,
+          "intervening_prior_retention_attempts": 6,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A00-E",
+          "prior_retention_id": "T00-E",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T03-R",
+          "initial_correct": false,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 66,
+          "intervening_prior_retention_attempts": 5,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A03-R",
+          "prior_retention_id": "T03-R",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T03-E",
+          "initial_correct": false,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 67,
+          "intervening_prior_retention_attempts": 4,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A03-E",
+          "prior_retention_id": "T03-E",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T08-R",
+          "initial_correct": false,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 68,
+          "intervening_prior_retention_attempts": 3,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A08-R",
+          "prior_retention_id": "T08-R",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T08-E",
+          "initial_correct": false,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 69,
+          "intervening_prior_retention_attempts": 2,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A08-E",
+          "prior_retention_id": "T08-E",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T11-R",
+          "initial_correct": false,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 70,
+          "intervening_prior_retention_attempts": 1,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A11-R",
+          "prior_retention_id": "T11-R",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T11-E",
+          "initial_correct": false,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 71,
+          "intervening_prior_retention_attempts": 0,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A11-E",
+          "prior_retention_id": "T11-E",
+          "prior_route": "online"
+        }
+      ]
+    },
+    "online": {
+      "acquisition_blocks": [
+        0,
+        0
+      ],
+      "forgotten": 0,
+      "improved": 0,
+      "phases": {
+        "acquisition": {
+          "edit": {
+            "attempts": 12,
+            "episodes": 12,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 12,
+            "episodes": 12,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        },
+        "recovery": {
+          "edit": {
+            "attempts": 24,
+            "episodes": 8,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 0,
+            "episodes": 0,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        },
+        "retention": {
+          "edit": {
+            "attempts": 4,
+            "episodes": 4,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 4,
+            "episodes": 4,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        },
+        "transfer": {
+          "edit": {
+            "attempts": 8,
+            "episodes": 8,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 8,
+            "episodes": 8,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        }
+      },
+      "project_chains": [
+        {
+          "correct": false,
+          "episode_id": "A00-E",
+          "predecessor_episode_id": null,
+          "project_id": "colour",
+          "status": "completed",
+          "workspace_from_actual_predecessor": false
+        },
+        {
+          "correct": false,
+          "episode_id": "A01-E",
+          "predecessor_episode_id": null,
+          "project_id": "region",
+          "status": "completed",
+          "workspace_from_actual_predecessor": false
+        },
+        {
+          "correct": false,
+          "episode_id": "A03-E",
+          "predecessor_episode_id": null,
+          "project_id": "archive",
+          "status": "completed",
+          "workspace_from_actual_predecessor": false
+        },
+        {
+          "correct": false,
+          "episode_id": "A06-E",
+          "predecessor_episode_id": "A00-E",
+          "project_id": "colour",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        },
+        {
+          "correct": false,
+          "episode_id": "A07-E",
+          "predecessor_episode_id": "A01-E",
+          "project_id": "region",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        },
+        {
+          "correct": false,
+          "episode_id": "A09-E",
+          "predecessor_episode_id": "A03-E",
+          "project_id": "archive",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        },
+        {
+          "correct": false,
+          "episode_id": "F00-E",
+          "predecessor_episode_id": "A06-E",
+          "project_id": "colour",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        },
+        {
+          "correct": false,
+          "episode_id": "F01-E",
+          "predecessor_episode_id": "A07-E",
+          "project_id": "region",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        },
+        {
+          "correct": false,
+          "episode_id": "F03-E",
+          "predecessor_episode_id": "A09-E",
+          "project_id": "archive",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        }
+      ],
+      "recovery": {
+        "final_attempt_correct": 0,
+        "final_recovered_after_first_failure": 0,
+        "first_failures": 8,
+        "later_correct": 0,
+        "policy": "three fixed attempts; private grade never controls retries",
+        "tool_feedback_consumed": true
+      },
+      "retained": 0,
+      "retention": [
+        {
+          "delayed_correct": false,
+          "episode_id": "T00-R",
+          "initial_correct": false,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 64,
+          "intervening_prior_retention_attempts": 7,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A00-R",
+          "prior_retention_id": "T00-R",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T00-E",
+          "initial_correct": false,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 65,
+          "intervening_prior_retention_attempts": 6,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A00-E",
+          "prior_retention_id": "T00-E",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T03-R",
+          "initial_correct": false,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 66,
+          "intervening_prior_retention_attempts": 5,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A03-R",
+          "prior_retention_id": "T03-R",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T03-E",
+          "initial_correct": false,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 67,
+          "intervening_prior_retention_attempts": 4,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A03-E",
+          "prior_retention_id": "T03-E",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T08-R",
+          "initial_correct": false,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 68,
+          "intervening_prior_retention_attempts": 3,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A08-R",
+          "prior_retention_id": "T08-R",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T08-E",
+          "initial_correct": false,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 69,
+          "intervening_prior_retention_attempts": 2,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A08-E",
+          "prior_retention_id": "T08-E",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T11-R",
+          "initial_correct": false,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 70,
+          "intervening_prior_retention_attempts": 1,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A11-R",
+          "prior_retention_id": "T11-R",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T11-E",
+          "initial_correct": false,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 71,
+          "intervening_prior_retention_attempts": 0,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A11-E",
+          "prior_retention_id": "T11-E",
+          "prior_route": "online"
+        }
+      ]
+    },
+    "simple": {
+      "acquisition_blocks": [
+        0,
+        0
+      ],
+      "forgotten": 0,
+      "improved": 0,
+      "phases": {
+        "acquisition": {
+          "edit": {
+            "attempts": 12,
+            "episodes": 12,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 12,
+            "episodes": 12,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        },
+        "recovery": {
+          "edit": {
+            "attempts": 24,
+            "episodes": 8,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 0,
+            "episodes": 0,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        },
+        "retention": {
+          "edit": {
+            "attempts": 4,
+            "episodes": 4,
+            "first_correct": 4,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 4,
+            "episodes": 4,
+            "first_correct": 4,
+            "unsupported": 0
+          }
+        },
+        "transfer": {
+          "edit": {
+            "attempts": 8,
+            "episodes": 8,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 8,
+            "episodes": 8,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        }
+      },
+      "project_chains": [
+        {
+          "correct": false,
+          "episode_id": "A00-E",
+          "predecessor_episode_id": null,
+          "project_id": "colour",
+          "status": "completed",
+          "workspace_from_actual_predecessor": false
+        },
+        {
+          "correct": false,
+          "episode_id": "A01-E",
+          "predecessor_episode_id": null,
+          "project_id": "region",
+          "status": "completed",
+          "workspace_from_actual_predecessor": false
+        },
+        {
+          "correct": false,
+          "episode_id": "A03-E",
+          "predecessor_episode_id": null,
+          "project_id": "archive",
+          "status": "completed",
+          "workspace_from_actual_predecessor": false
+        },
+        {
+          "correct": false,
+          "episode_id": "A06-E",
+          "predecessor_episode_id": "A00-E",
+          "project_id": "colour",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        },
+        {
+          "correct": false,
+          "episode_id": "A07-E",
+          "predecessor_episode_id": "A01-E",
+          "project_id": "region",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        },
+        {
+          "correct": false,
+          "episode_id": "A09-E",
+          "predecessor_episode_id": "A03-E",
+          "project_id": "archive",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        },
+        {
+          "correct": false,
+          "episode_id": "F00-E",
+          "predecessor_episode_id": "A06-E",
+          "project_id": "colour",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        },
+        {
+          "correct": false,
+          "episode_id": "F01-E",
+          "predecessor_episode_id": "A07-E",
+          "project_id": "region",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        },
+        {
+          "correct": false,
+          "episode_id": "F03-E",
+          "predecessor_episode_id": "A09-E",
+          "project_id": "archive",
+          "status": "completed",
+          "workspace_from_actual_predecessor": true
+        }
+      ],
+      "recovery": {
+        "final_attempt_correct": 0,
+        "final_recovered_after_first_failure": 0,
+        "first_failures": 8,
+        "later_correct": 0,
+        "policy": "three fixed attempts; private grade never controls retries",
+        "tool_feedback_consumed": true
+      },
+      "retained": 8,
+      "retention": [
+        {
+          "delayed_correct": true,
+          "episode_id": "T00-R",
+          "initial_correct": true,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 64,
+          "intervening_prior_retention_attempts": 7,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A00-R",
+          "prior_retention_id": "T00-R",
+          "prior_route": "simple"
+        },
+        {
+          "delayed_correct": true,
+          "episode_id": "T00-E",
+          "initial_correct": true,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 65,
+          "intervening_prior_retention_attempts": 6,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A00-E",
+          "prior_retention_id": "T00-E",
+          "prior_route": "simple"
+        },
+        {
+          "delayed_correct": true,
+          "episode_id": "T03-R",
+          "initial_correct": true,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 66,
+          "intervening_prior_retention_attempts": 5,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A03-R",
+          "prior_retention_id": "T03-R",
+          "prior_route": "simple"
+        },
+        {
+          "delayed_correct": true,
+          "episode_id": "T03-E",
+          "initial_correct": true,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 67,
+          "intervening_prior_retention_attempts": 4,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A03-E",
+          "prior_retention_id": "T03-E",
+          "prior_route": "simple"
+        },
+        {
+          "delayed_correct": true,
+          "episode_id": "T08-R",
+          "initial_correct": true,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 68,
+          "intervening_prior_retention_attempts": 3,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A08-R",
+          "prior_retention_id": "T08-R",
+          "prior_route": "simple"
+        },
+        {
+          "delayed_correct": true,
+          "episode_id": "T08-E",
+          "initial_correct": true,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 69,
+          "intervening_prior_retention_attempts": 2,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A08-E",
+          "prior_retention_id": "T08-E",
+          "prior_route": "simple"
+        },
+        {
+          "delayed_correct": true,
+          "episode_id": "T11-R",
+          "initial_correct": true,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 70,
+          "intervening_prior_retention_attempts": 1,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A11-R",
+          "prior_retention_id": "T11-R",
+          "prior_route": "simple"
+        },
+        {
+          "delayed_correct": true,
+          "episode_id": "T11-E",
+          "initial_correct": true,
+          "intervening_attempts": 71,
+          "intervening_current_attempts": 71,
+          "intervening_prior_retention_attempts": 0,
+          "memory_slots": 505,
+          "prior_acquisition_id": "A11-E",
+          "prior_retention_id": "T11-E",
+          "prior_route": "simple"
+        }
+      ]
+    }
+  },
+  "observed_peak_mib": 970.2421875,
+  "qa": {
+    "affected_node_repeats_passed": 1,
+    "distinct_nodes_passed": 6,
+    "scope": "ordinary mechanics and lifecycle, no skill threshold"
+  },
+  "retained_reader_final_sha256": {
+    "learning_disabled": "ff006b07980cf157140254b361d47fa4df0d9af90cde050cee46c4b7987d1959",
+    "online": "ff006b07980cf157140254b361d47fa4df0d9af90cde050cee46c4b7987d1959"
+  },
+  "retained_reader_initial_sha256": {
+    "learning_disabled": "ff006b07980cf157140254b361d47fa4df0d9af90cde050cee46c4b7987d1959",
+    "online": "ff006b07980cf157140254b361d47fa4df0d9af90cde050cee46c4b7987d1959"
+  },
+  "review_seconds": 8.827812,
+  "run_seconds": 551.3635569,
+  "saved_behavior": {
+    "learning_disabled": {
+      "accepted_edits": 6,
+      "eos_responses": 7,
+      "limit_responses": 65
+    },
+    "online": {
+      "accepted_edits": 45,
+      "complete_responses_copying_prior_offered_target": 47,
+      "eos_responses": 65,
+      "exact_free_assembly_contexts": 0,
+      "limit_responses": 7
+    },
+    "simple": {
+      "reference_attempts_independently_attributed": 72,
+      "reference_attribution_checks": 965
+    }
+  },
+  "schema": "persistent-language-action-result-v4",
+  "source_revision": "07ab1047b19a3f39c82ca2e70aaa255f55a3923e",
+  "status": "completed_and_independently_reviewed"
+}
