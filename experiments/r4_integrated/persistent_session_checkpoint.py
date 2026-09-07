@@ -15,6 +15,7 @@ import time
 import uuid
 from pathlib import Path, PurePosixPath
 
+from experiments.r4_integrated import persistent_checkpoint_payload_lease as payload_lease
 from experiments.r4_integrated.persistent_language_action_v1 import encode
 
 ROUTES = ("online", "learning_disabled", "simple")
@@ -220,6 +221,9 @@ class PersistentSessionCheckpoint:
         obj.directory = directory
         obj.work = {}
         obj._intent = None
+        obj._payload_leases = {}
+        obj._payload_backend = None
+        obj._closed = False
         raw = obj._read(Path(manifest_path), JSON_LIMIT)
         if hashlib.sha256(raw).hexdigest() != _sha(manifest_sha256):
             raise ValueError("frozen session manifest hash mismatch")
@@ -249,6 +253,9 @@ class PersistentSessionCheckpoint:
         obj.directory = Path(directory).resolve()
         obj.work = {}
         obj._intent = None
+        obj._payload_leases = {}
+        obj._payload_backend = None
+        obj._closed = False
         raw = obj._read(obj.directory / "config.json", JSON_LIMIT)
         if hashlib.sha256(raw).hexdigest() != _sha(config_sha256):
             raise ValueError("checkpoint configuration hash mismatch")
@@ -259,6 +266,78 @@ class PersistentSessionCheckpoint:
 
     def _add(self, name, value):
         self.work[name] = self.work.get(name, 0) + value
+
+    def _require_open(self):
+        if self._closed:
+            raise ValueError("checkpoint store is closed")
+
+    def close(self):
+        """Release every owned file handle; never delete evidence or clear intents."""
+        if self._closed:
+            return
+        self._closed = True
+        failure = None
+        for lease in self._payload_leases.values():
+            try:
+                lease.close()
+            except BaseException as error:
+                if failure is None:
+                    failure = error
+        if failure is not None:
+            raise failure
+
+    def __enter__(self):
+        self._require_open()
+        return self
+
+    def __exit__(self, *_exception):
+        self.close()
+
+    def _leased_payload(self, row, lease):
+        path = _relative(self.directory, row["payload"])
+        item = lease.verify_path(path, self.work)
+        if item != {"sha256": _sha(row["sha256"]), "bytes": _integer(row["bytes"])}:
+            raise ValueError("owned payload receipt changed")
+        return item
+
+    def _payload_file(self, row, *, fresh=False):
+        """Only this live store's protected publications may avoid a byte reread."""
+        self._require_open()
+        expected_size, expected_sha = _integer(row["bytes"]), _sha(row["sha256"])
+        if expected_size > PAYLOAD_LIMIT:
+            raise ValueError("checkpoint tensor payload exceeds its bound")
+        path = _relative(self.directory, row["payload"])
+        lease = self._payload_leases.get(row["payload"])
+        if lease is not None:
+            item = self._leased_payload(row, lease)
+            if not fresh:
+                self._add("checkpoint_payload_lease_reused_checks", 1)
+                self._add("checkpoint_payload_avoided_hash_bytes", expected_size)
+                return item
+        self._add("checkpoint_payload_full_hash_checks", 1)
+        if fresh:
+            self._add("checkpoint_payload_fresh_hash_checks", 1)
+        item = self._file(path)
+        if item["bytes"] != expected_size or item["sha256"] != expected_sha:
+            raise ValueError("checkpoint tensor payload changed")
+        return item
+
+    def _own_payload(self, name, item):
+        """Authenticate the rename/open handoff before a boundary can refer to it."""
+        self._require_open()
+        if name in self._payload_leases:
+            raise ValueError("payload name already has an owned publication")
+        if self._payload_backend is None:
+            self._payload_backend = (
+                "windows_ntfs" if payload_lease.supported(self.directory, self.work)
+                else "verify_each_boundary"
+            )
+            self._add("checkpoint_payload_backend_" + self._payload_backend, 1)
+        if self._payload_backend == "windows_ntfs":
+            self._payload_leases[name] = payload_lease.PayloadLease.open(
+                _relative(self.directory, name), item["sha256"], item["bytes"], self.work)
+        else:
+            self._add("checkpoint_payload_unleased_publications", 1)
 
     def _initial_intent(self):
         intent = {"schema": "persistent-session-checkpoint-intent-v1", "sequence": 0,
@@ -271,6 +350,7 @@ class PersistentSessionCheckpoint:
         self._intent = intent, hashlib.sha256(raw).hexdigest()
 
     def _read(self, path, limit):
+        self._require_open()
         with path.open("rb") as handle:
             raw = handle.read(limit + 1)
         self._add("checkpoint_bytes_read", len(raw))
@@ -279,6 +359,7 @@ class PersistentSessionCheckpoint:
         return raw
 
     def _write(self, path, raw):
+        self._require_open()
         with path.open("xb") as handle:
             handle.write(raw)
             handle.flush()
@@ -287,6 +368,7 @@ class PersistentSessionCheckpoint:
         self._add("checkpoint_fsync_calls", 1)
 
     def _file(self, path, *, prefix=None):
+        self._require_open()
         digest = hashlib.sha256()
         size, rows, last = 0, 0, b""
         with path.open("rb") as handle:
@@ -395,6 +477,7 @@ class PersistentSessionCheckpoint:
         journals maps each kind to its chronological segment file names. This
         method neither appends/replays journals nor launches or parses programs.
         """
+        self._require_open()
         _keys(journals, KINDS)
         root = Path(self.config["evidence_root"]).resolve()
         records, seen = [], set()
@@ -469,7 +552,7 @@ class PersistentSessionCheckpoint:
             raise DirtyCheckpoint("; ".join(dirty))
         return dirty
 
-    def _boundary(self):
+    def _boundary(self, *, fresh_payloads=False):
         self._binding()
         raw = self._read(self.directory / "HEAD.json", JSON_LIMIT)
         head = json.loads(raw)
@@ -506,10 +589,7 @@ class PersistentSessionCheckpoint:
                 _integer(row[name])
             _sha(row["model_sha256"])
             _sha(row["memory_sha256"])
-            item = self._file(_relative(self.directory, row["payload"]))
-            if (item["bytes"] != _integer(row["bytes"]) or item["bytes"] > PAYLOAD_LIMIT
-                    or item["sha256"] != _sha(row["sha256"])):
-                raise ValueError("checkpoint tensor payload changed")
+            self._payload_file(row, fresh=fresh_payloads)
         return boundary, head["sha256"]
 
     def _events(self, previous, frontiers, intent):
@@ -644,9 +724,12 @@ class PersistentSessionCheckpoint:
         if record != expected:
             raise ValueError("reference history changed outside its actual append/correction")
 
-    def inspect(self, *, require_clean=True):
+    def inspect(self, *, require_clean=True, fresh_payloads=False):
         """Authenticate the last safe prior without importing/deserializing tensors."""
-        boundary, digest = self._boundary()
+        self._require_open()
+        if type(fresh_payloads) is not bool:
+            raise ValueError("fresh payload inspection must be an explicit boolean")
+        boundary, digest = self._boundary(fresh_payloads=fresh_payloads)
         dirty = self._frontiers(boundary["frontiers"], allow_tail=True)
         for path in self.directory.glob("intent-*.json"):
             intent = json.loads(self._read(path, JSON_LIMIT))
@@ -659,6 +742,7 @@ class PersistentSessionCheckpoint:
 
     def begin(self, kind, cursor, *, observation_sha256=None):
         """Durably spend the next append/attempt before it can perform any work."""
+        self._require_open()
         if self._intent is not None:
             raise DirtyCheckpoint("this store already has an unresolved intent")
         current = self.inspect()
@@ -693,6 +777,7 @@ class PersistentSessionCheckpoint:
         Caller must have reaped every action child and flushed all journals.
         A successful commit never clears pending state on the caller's behalf.
         """
+        self._require_open()
         import torch
 
         from humanbrain.neuronal_splice_learner import _digest
@@ -779,6 +864,7 @@ class PersistentSessionCheckpoint:
                 temporary.rename(self.directory / name)
                 self._add("checkpoint_bytes_written", item["bytes"])
                 self._add("checkpoint_payload_writes", 1)
+                self._own_payload(name, item)
                 record = {"payload": name, "sha256": item["sha256"], "bytes": item["bytes"],
                           "model_sha256": model_hash, "memory_sha256": memory_hash}
                 del snapshot, payload
@@ -803,6 +889,11 @@ class PersistentSessionCheckpoint:
                 raise ValueError("actor changed during checkpoint construction")
         self._frontiers(frontiers)
         self._binding()
+        for row in routes.values():
+            lease = self._payload_leases.get(row["payload"])
+            if lease is not None:
+                self._leased_payload(row, lease)
+                self._add("checkpoint_payload_prepublication_checks", 1)
         raw = encode(boundary)
         if len(raw) > JSON_LIMIT:
             raise ValueError("boundary exceeds JSON bound")
@@ -825,12 +916,13 @@ class PersistentSessionCheckpoint:
         Caller must discard both actors if any exception occurs, and launch no
         task until this method returns. Actual constructors are caller-accounted.
         """
+        self._require_open()
         import torch
 
         from humanbrain.neuronal_splice_learner import _digest
 
         tick = time.perf_counter()
-        checked = self.inspect()
+        checked = self.inspect(fresh_payloads=True)
         boundary = checked["boundary"]
         _actors(models, self.work)
         if any(model._experience != 0 or model.reader._active_experience != 0
@@ -896,7 +988,7 @@ class PersistentSessionCheckpoint:
             if (_digest(models[route].state_dict(), self.work)
                     != boundary["routes"][route]["model_sha256"]):
                 raise ValueError("strict restore changed numerical state")
-        final = self.inspect()
+        final = self.inspect(fresh_payloads=True)
         if final["boundary_sha256"] != checked["boundary_sha256"]:
             raise ValueError("checkpoint advanced during restore")
         self._add("checkpoint_restore_calls", 1)

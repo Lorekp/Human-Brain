@@ -31,6 +31,21 @@ the clean V7 numerical payloads and source identities; no automatic resume,
 missing-case replay or model restore is claimed. A new continuation must explicitly
 authenticate and initialize from that retained state without replaying lessons.
 
+For that new stream, continue V7's online state independently in both neural
+routes, then disable local learning publication in the matched control while
+retaining factual writes. Restore the simple reference's own saved history.
+The selected online payload is `route-online-000000079.pt`, authenticated by
+HEAD boundary221 and the result bank, with281 actor experiences,214 reader
+experiences and1614 factual positions. Its model hash is
+`cc49bf4fd4b50a6115fc182548f00a5edb459b40e0750a51810304c92d1bb5c6`.
+New source versions must explicitly authenticate this historical boundary and
+adapt declared state schemas; do not weaken the old store's source checks or
+call a changed checkout a same-source V7 resume. Any new learning state starts
+empty, with preserved old numerical values and no lesson reconstruction.
+Record the initialization, decoder calls, derived-state rebuilds and independent
+storage in the complete next-run cost. Prior successes and losses must be
+compared to each route's actual selected history, including V7's negative results.
+
 The [sixth protocol](persistent-language-action-v6-protocol.md) and
 [partial result](../../experiments/r4_integrated/persistent_language_action_v6_result.md)
 own the preceding measurements. The840-second cutoff leaves182 of288 attempts and no

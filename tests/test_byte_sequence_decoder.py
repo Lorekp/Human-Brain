@@ -13758,12 +13758,13 @@ def test_persistent_checkpoint_interrupted_frontiers(tmp_path):
     })
 
 
-def test_persistent_checkpoint_actual_actor_continuation(tmp_path):
+def test_persistent_checkpoint_actual_actor_continuation(tmp_path, monkeypatch, request):
     """Exact learned state, counters, actual files and independent restored actors."""
     import hashlib
     import time
     from pathlib import Path
 
+    from experiments.r4_integrated import persistent_checkpoint_payload_lease as leases
     from experiments.r4_integrated.persistent_language_action_baseline_v2 import SimpleReference
     from experiments.r4_integrated.persistent_language_action_execution_v2 import (
         execute_proposal,
@@ -13778,6 +13779,7 @@ def test_persistent_checkpoint_actual_actor_continuation(tmp_path):
     from humanbrain.tournament_recognition_learner import TournamentRecognitionSpliceLearner
 
     store, host, evidence, journals = _persistent_checkpoint_fixture(tmp_path / "actual")
+    request.addfinalizer(store.close)
     routes = ("online", "learning_disabled")
     models = {route: TournamentRecognitionSpliceLearner(seed=733) for route in routes}
     states = {}
@@ -13803,11 +13805,28 @@ def test_persistent_checkpoint_actual_actor_continuation(tmp_path):
     first = store.commit(models, states, baseline, host, frontiers)
     assert first["sequence"] == 0 and first["work"]["checkpoint_payload_writes"] == 2
     first_boundary = store.inspect()["boundary"]
+    owned_backend = leases.supported(store.directory)
+    first_payload_bytes = sum(row["bytes"] for row in first_boundary["routes"].values())
+    reused_before = store.work.get("checkpoint_payload_avoided_hash_bytes", 0)
+    check_before = store.work.get("checkpoint_hash_bytes_read", 0)
+    assert store.inspect()["boundary"] == first_boundary
+    reuse_bytes = store.work.get("checkpoint_payload_avoided_hash_bytes", 0) - reused_before
+    if owned_backend:
+        assert len(store._payload_leases) == 2
+        assert reuse_bytes == first_payload_bytes
+    else:
+        assert not store._payload_leases and reuse_bytes == 0
+        assert store.work["checkpoint_hash_bytes_read"] - check_before >= first_payload_bytes
+    fresh_before = store.work["checkpoint_hash_bytes_read"]
+    avoided_before = store.work.get("checkpoint_payload_avoided_hash_bytes", 0)
+    assert store.inspect(fresh_payloads=True)["boundary"] == first_boundary
+    assert store.work["checkpoint_hash_bytes_read"] - fresh_before >= first_payload_bytes
+    assert store.work.get("checkpoint_payload_avoided_hash_bytes", 0) == avoided_before
     workspace = workspace_from_records([{"path": "main.py", "content_hex": b"print(0)\n".hex()}])
     observation = RawObservation(b"Change the printed value to one.", workspace)
     teacher = SpliceProposal("SPLICE", "main.py", 6, 7, b"1", "eos", workspace.sha256)
     observation_hash = hashlib.sha256(encode(observation.to_record())).hexdigest()
-    executions, commits = [], []
+    executions, commits, failed_commits = [], [], 0
     for route_index, route in enumerate(routes):
         store.begin("attempt", host["cursor"], observation_sha256=observation_hash)
         model, state = models[route], states[route]
@@ -13855,8 +13874,26 @@ def test_persistent_checkpoint_actual_actor_continuation(tmp_path):
             "episode_id": "fixture", "files": actual_files, "feedback": feedback}
         host["current"] = {"route": route, "episode_id": "fixture",
                            "files": actual_files, "feedback": feedback}
-        commits.append(store.commit(models, states, baseline, host,
-                       store.capture_frontiers(journals, execution_root="executions")))
+        frontiers = store.capture_frontiers(journals, execution_root="executions")
+        if route == "online" and owned_backend:
+            head_before = (store.directory / "HEAD.json").read_bytes()
+            publications_before = store.work["checkpoint_head_publications"]
+            writes_before = store.work["checkpoint_payload_writes"]
+
+            def fail_owned_path(*_args, **_kwargs):
+                raise ValueError("injected owned payload path failure")
+
+            with monkeypatch.context() as injected:
+                injected.setattr(leases.PayloadLease, "verify_path", fail_owned_path)
+                with pytest.raises(ValueError, match="injected owned payload path failure"):
+                    store.commit(models, states, baseline, host, frontiers)
+            failed_commits += 1
+            assert (store.directory / "HEAD.json").read_bytes() == head_before
+            assert store.work["checkpoint_head_publications"] == publications_before
+            assert store.work["checkpoint_payload_writes"] == writes_before
+            assert store._intent is not None
+            assert store.inspect(require_clean=False, fresh_payloads=True)["status"] == "dirty"
+        commits.append(store.commit(models, states, baseline, host, frontiers))
         if route == "online":
             second_boundary = store.inspect()["boundary"]
             assert (second_boundary["routes"]["online"]["payload"]
@@ -13872,7 +13909,15 @@ def test_persistent_checkpoint_actual_actor_continuation(tmp_path):
     assert final_boundary["routes"]["learning_disabled"]["experience"] == 1
     fresh = {route: TournamentRecognitionSpliceLearner(seed=733) for route in routes}
     reopened = PersistentSessionCheckpoint.open(store.directory, config_sha256=store.config_sha256)
+    request.addfinalizer(reopened.close)
+    assert not reopened._payload_leases
+    independent_before = reopened.work.get("checkpoint_hash_bytes_read", 0)
+    assert reopened.inspect()["boundary"] == final_boundary
+    assert reopened.work["checkpoint_hash_bytes_read"] - independent_before >= sum(
+        row["bytes"] for row in final_boundary["routes"].values())
+    assert not reopened._payload_leases
     restored = reopened.restore_into(fresh)
+    assert restored["work"]["checkpoint_payload_fresh_hash_checks"] == 4
     assert restored["host"] == host
     assert restored["baseline"].documents == baseline.documents
     assert restored["baseline"].demonstrations == baseline.demonstrations
@@ -13917,11 +13962,19 @@ def test_persistent_checkpoint_actual_actor_continuation(tmp_path):
         "source_eos": 2, "free_calls": 6, "teacher_calls": 2, "teacher_symbols": 4,
         "enabled_teacher_symbols": 2, "disabled_teacher_symbols": 2,
         "action_labels": 6, "children": 2, "checkpoint_commits": 3,
+        "checkpoint_commit_calls": 3 + failed_commits, "failed_commits": failed_commits,
+        "owned_payload_backend": owned_backend, "first_reused_payload_bytes": reuse_bytes,
         "restore_calls": 1, "tensor_loads": restored["work"]["checkpoint_torch_load_calls"],
         "experimental_checkpoint_loads": 0, "payload_writes": 3, "payload_reuses": 3,
         "executions": executions, "comparisons": comparisons,
         "commit_work": third["work"], "restore_work": restored["work"],
     })
+    store.close()
+    store.close()
+    reopened.close()
+    assert store.work.get("checkpoint_payload_live_handles", 0) == 0
+    with pytest.raises(ValueError, match="closed"):
+        store.inspect()
 
 
 def test_dendritic_same_actor_source_and_correction(tmp_path, monkeypatch):
@@ -14490,3 +14543,133 @@ def test_persistent_v7_separate_metrics_and_journal(tmp_path):
     assert journal.metrics()["rows"] == 1
     assert journal.metrics()["bytes_written"] == journal.metrics()["max_row_bytes"] == len(raw)
     assert journal.metrics()["append_seconds"] >= 0
+
+
+def test_persistent_checkpoint_payload_lease(tmp_path, monkeypatch):
+    """Real Windows byte-file ownership; no actors, tensor decodes or children."""
+    import hashlib
+    import mmap
+    import os
+
+    from experiments.r4_integrated import persistent_checkpoint_payload_lease as leases
+
+    if os.name != "nt":
+        pytest.skip("Windows sharing-mode qualification; portable store path checked separately")
+    assert leases.supported(tmp_path), "selected Windows QA requires supported local NTFS"
+    first, second = tmp_path / "first.bin", tmp_path / "second.bin"
+    replacement = tmp_path / "unleased-replacement.bin"
+    original = b"AAAA checkpoint payload 0123456789\n"
+    other = b"BBBB checkpoint payload 0123456789\n"
+    first.write_bytes(original)
+    second.write_bytes(other)
+    replacement.write_bytes(b"CCCC checkpoint payload 0123456789\n")
+    digest = hashlib.sha256(original).hexdigest()
+    other_digest = hashlib.sha256(other).hexdigest()
+    work, refusals = {}, []
+
+    def refused(name, operation, error_type):
+        error = None
+        try:
+            result = operation()
+            if isinstance(result, leases.PayloadLease):
+                result.close()
+        except error_type as caught:
+            error = {"type": type(caught).__name__, "message": str(caught),
+                     "winerror": getattr(caught, "winerror", None)}
+        refusals.append({"operation": name, "error": error})
+        _coincidence_qa_save(tmp_path / f"payload-lease-refusal-{len(refusals):02d}.json",
+                             {"refusals": refusals, "work": work})
+        assert error is not None, name + " unexpectedly permitted"
+
+    # Existing writable access must not be blessed by a new read-only lease.
+    with second.open("r+b"):
+        refused("existing_write_handle", lambda: leases.PayloadLease.open(
+            second, other_digest, len(other), work), OSError)
+    # Close the originating file handle: the remaining writable mapping alone
+    # must still prevent acquisition of ownership over this file object.
+    with second.open("r+b") as handle:
+        mapped = mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_WRITE)
+    try:
+        refused("existing_writable_mapping", lambda: leases.PayloadLease.open(
+            second, other_digest, len(other), work), OSError)
+    finally:
+        mapped.close()
+    refused("same_length_wrong_handoff", lambda: leases.PayloadLease.open(
+        second, digest, len(original), work), ValueError)
+
+    owned = leases.PayloadLease.open(first, digest, len(original), work)
+    owned_second = None
+    try:
+        owned_second = leases.PayloadLease.open(second, other_digest, len(other), work)
+        before_reads = work["checkpoint_hash_bytes_read"]
+        before_checks = work.get("checkpoint_payload_path_checks", 0)
+        for _ in range(2):
+            assert owned.verify_path(first, work) == {"sha256": digest, "bytes": len(original)}
+        assert work["checkpoint_hash_bytes_read"] == before_reads
+        assert work["checkpoint_payload_path_checks"] - before_checks == 2
+        assert first.read_bytes() == original and second.read_bytes() == other
+
+        def inplace_write():
+            with first.open("r+b") as handle:
+                handle.write(b"Z")
+
+        def writable_mapping():
+            with first.open("r+b") as handle, mmap.mmap(
+                handle.fileno(), 0, access=mmap.ACCESS_WRITE
+            ) as mapping:
+                mapping[0] = 90
+
+        refused("in_place_write", inplace_write, OSError)
+        refused("truncate", lambda: first.write_bytes(b""), OSError)
+        refused("delete", first.unlink, OSError)
+        refused("rename", lambda: first.rename(tmp_path / "renamed.bin"), OSError)
+        refused("replace", lambda: replacement.replace(first), OSError)
+        assert replacement.exists() and first.read_bytes() == original
+        refused("new_writable_mapping", writable_mapping, OSError)
+        assert first.read_bytes() == original and second.read_bytes() == other
+        refused("different_path_identity", lambda: owned.verify_path(second, work), ValueError)
+    finally:
+        owned.close()
+        if owned_second is not None:
+            owned_second.close()
+    owned.close()
+    assert owned.closed and owned_second.closed
+    refused("closed_lease_reuse", lambda: owned.verify_path(first, work), ValueError)
+    first.write_bytes(other)
+    refused("fresh_digest_after_close_mutation", lambda: leases.PayloadLease.open(
+        first, digest, len(original), work), ValueError)
+    # The failed hash acquisition must release its partial handle too.
+    first.write_bytes(original)
+    fresh = leases.PayloadLease.open(first, digest, len(original), work)
+    fresh.close()
+    assert work["checkpoint_payload_live_handles"] == 0
+    first.unlink()
+    replacement.unlink()
+    fallback, _, _, _ = _persistent_checkpoint_fixture(tmp_path / "portable")
+    fallback_path = fallback.directory / "portable.bin"
+    second.rename(fallback_path)
+    fallback_row = {"payload": fallback_path.name, "sha256": other_digest, "bytes": len(other)}
+    try:
+        with monkeypatch.context() as unsupported:
+            unsupported.setattr(leases, "supported", lambda *_args, **_kwargs: False)
+            fallback._own_payload(fallback_path.name, fallback_row)
+        assert fallback._payload_backend == "verify_each_boundary"
+        assert not fallback._payload_leases
+        before_reads = fallback.work.get("checkpoint_hash_bytes_read", 0)
+        for _ in range(2):
+            checked = fallback._payload_file(fallback_row)
+            assert checked["sha256"] == other_digest and checked["bytes"] == len(other)
+        assert fallback.work["checkpoint_hash_bytes_read"] - before_reads == 2 * len(other)
+        assert fallback.work["checkpoint_payload_full_hash_checks"] == 2
+        fallback_path.write_bytes(original)
+        refused("portable_fresh_corruption",
+                lambda: fallback._payload_file(fallback_row), ValueError)
+        assert not fallback._payload_leases
+    finally:
+        fallback.close()
+    fallback_path.unlink()
+    _coincidence_qa_save(tmp_path / "payload-lease-passed.json", {
+        "status": "passed", "refusals": refusals, "work": work, "fallback_work": fallback.work,
+        "models": 0, "teacher_symbols": 0, "tensor_loads": 0, "children": 0,
+        "scope": "three authored byte files; actual Windows sharing/identity/hash checks",
+    })
