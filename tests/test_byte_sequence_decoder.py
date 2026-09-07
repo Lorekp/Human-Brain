@@ -13922,3 +13922,490 @@ def test_persistent_checkpoint_actual_actor_continuation(tmp_path):
         "executions": executions, "comparisons": comparisons,
         "commit_work": third["work"], "restore_work": restored["work"],
     })
+
+
+def test_dendritic_same_actor_source_and_correction(tmp_path, monkeypatch):
+    """Counted source observations, actual action, local correction and atomic refusal."""
+    import time
+    from pathlib import Path
+
+    from experiments.r4_integrated.persistent_language_action_execution_v2 import (
+        execute_proposal,
+        qualified_launch,
+        workspace_from_records,
+    )
+    from humanbrain.dendritic_sequence_learner import DendriticSequenceSpliceLearner
+    from humanbrain.neuronal_splice_learner import _digest
+    from humanbrain.sequence_assembly_observation import RawObservation, SpliceProposal
+
+    online, disabled = (DendriticSequenceSpliceLearner(seed=733) for _ in range(2))
+    models = (online, disabled)
+    states, sources, old_reader_hashes = [], [], []
+
+    def held_numeric(reader):
+        return _digest({name: value for name, value in reader.state_dict().items()
+                        if isinstance(value, torch.Tensor) and not name.startswith("binding.")})
+
+    for model, enabled in zip(models, (True, False), strict=True):
+        reader = model.reader
+        with torch.no_grad():
+            reader.address_weight.zero_()
+            reader.prefix_weight.zero_()
+            reader.output_weight.zero_()
+            reader.codec.weight.zero_()
+            reader.codec.bias.zero_()
+            reader.codec.bias[256] = 1
+            model.actions.operation_weight.zero_()
+            model.actions.operation_bias.copy_(torch.tensor([10.0, 0.0]))
+        old_reader_hashes.append(held_numeric(reader))
+        state, source = model.ingest_with_receipt(
+            [b"a"], learning_enabled=enabled, writes_enabled=True)
+        states.append(state)
+        sources.append(source)
+        assert state.used == 2 and source.symbol_count == 2 and source.raw_bytes == 1
+        assert source.binding_updated == enabled
+        assert source.model_after_sha256 == _digest(reader.state_dict())
+        assert source.memory_after_sha256 == _digest(vars(state))
+        assert source.work.get("dendritic_prior_decisions", 0) == 0
+        assert source.work["dendritic_source_offers"] == 2
+        assert held_numeric(reader) == old_reader_hashes[-1]
+        assert int(reader.binding.occupied.sum()) == (2 if enabled else 0)
+        for index, row in enumerate(source.source_steps):
+            assert row["observed_token"] == (97 if index == 0 else 256)
+            assert row["binding"]["request_sha256"] is None
+            assert torch.equal(row["binding"]["prior"], torch.zeros(257, dtype=torch.float64))
+            update = row["update"]
+            assert update["staged"] == enabled and update["recruited"]
+            if not enabled:
+                assert update["stage_revision_before"] == update["stage_revision_after"] == 0
+    _assert_nested_equal(states[0].snapshot(), states[1].snapshot())
+    workspace = workspace_from_records([{"path": "main.py", "content_hex": b"print('a')\n".hex()}])
+    observation = RawObservation(b"Print b.", workspace)
+    teacher = SpliceProposal("SPLICE", "main.py", 7, 8, b"b", "eos", workspace.sha256)
+
+    disabled_before = _digest(disabled.state_dict())
+    discarded = disabled.reader.predict_with_receipt(observation, states[1], max_bytes=1)
+    assert discarded.generation.data == b"" and discarded.generation.stop_reason == "eos"
+    assert len(discarded.steps) == 1
+    disabled_feedback = disabled.reader.teach(
+        observation, b"b", states[1], prediction=discarded, learning_enabled=False)
+    assert disabled_feedback.teacher_count == 2 and not disabled_feedback.binding_updated
+    assert _digest(disabled.state_dict()) == disabled_before
+    assert disabled.reader.pending_prediction is None
+    for row in disabled_feedback.teacher_steps:
+        assert not row["update"]["staged"] and row["update"]["recruited"]
+        assert row["update"]["stage_revision_before"] == row["update"]["stage_revision_after"] == 0
+
+    prediction = online.propose(observation, states[0])
+    assert prediction.proposal.operation == "STOP"
+    assert prediction.payload.generation.data == b"a"
+    assert prediction.payload.generation.stop_reason == "eos" and len(prediction.payload.steps) == 2
+    for step in prediction.payload.steps:
+        expected_prior = torch.zeros(257, dtype=torch.float64)
+        expected_prior[256] = 1
+        assert torch.equal(step.binding["prior"], expected_prior)
+    request_seal = prediction.payload.steps[0].binding["request_sha256"]
+    with pytest.raises(ValueError, match="resolve"):
+        online.snapshot(states[0])
+    after_files, execution = execute_proposal(
+        workspace, prediction.proposal, tmp_path / "actual-action",
+        launch=qualified_launch(Path(__file__).resolve().parents[1]),
+        deadline=time.perf_counter() + 10)
+    assert execution["returncode"] == 0 and execution["stdout_hex"] == b"a\n".hex()
+    assert after_files == [{"path": "main.py", "content_hex": b"print('a')\n".hex()}]
+    envelope = {"attempt_id": prediction.attempt_id,
+                "proposal_sha256": prediction.proposal_sha256,
+                "workspace_sha256": workspace.sha256, "execution": execution}
+    correction = online.teach(prediction, observation, states[0], teacher, envelope)
+    feedback = correction.reader_feedback
+    assert feedback.binding_updated and feedback.output_updated and feedback.teacher_count == 2
+    assert not feedback.address_updated and not feedback.legacy_codec_updated
+    assert not feedback.recognition_updated and not feedback.routing_updated
+    assert set(correction.action_updates) == {"start", "end", "operation"}
+    assert any(correction.action_updates.values())
+    assert [row["prefix_hex"] for row in feedback.teacher_steps] == ["", "62"]
+    assert all(row["binding"]["request_sha256"] == request_seal for row in feedback.teacher_steps)
+    assert feedback.work.get("dendritic_request_encodings", 0) == 0
+    assert online._pending is None and online.reader.pending_prediction is None
+    for model, original in zip(models, old_reader_hashes, strict=True):
+        assert held_numeric(model.reader) == original
+
+    # Final owner validation has exactly two calls in this teach method. Inject
+    # after the genuine one-symbol private stage, before any live publication.
+    reader, state = online.reader, states[0]
+    late_prediction = reader.predict_with_receipt(observation, state, max_bytes=0)
+    assert len(late_prediction.steps) == 1
+    before_late = _digest(online.state_dict())
+    original_validate = reader.validate_pending
+    late = {"calls": 0}
+
+    def reject_final(*args, **kwargs):
+        original_validate(*args, **kwargs)
+        late["calls"] += 1
+        if late["calls"] == 2:
+            late["work"] = dict(kwargs["work"])
+            raise ValueError("authored late dendritic publication rejection")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(reader, "validate_pending", reject_final)
+        with pytest.raises(ValueError, match="authored late"):
+            reader.teach(observation, b"", state, prediction=late_prediction)
+    assert late["calls"] == 2 and late["work"]["dendritic_apical_offers"] == 1
+    assert _digest(online.state_dict()) == before_late and reader.is_pending(late_prediction)
+    ack_work = reader.acknowledge(late_prediction, state)
+
+    saved = copy.deepcopy(online.state_dict())
+    invalid = dict(saved)
+    invalid["reader.binding.permanences"] = saved["reader.binding.permanences"].clone()
+    invalid["reader.binding.permanences"][0, 0] = 255
+    with pytest.raises(ValueError):
+        online.load_state_dict(invalid)
+    assert _digest(online.state_dict()) == before_late
+    del invalid
+    stale_stage = reader.binding.begin_stage()
+    load_work = {}
+    online.load_state_dict(saved, work=load_work)
+    _assert_nested_equal(online.state_dict(), saved)
+    with pytest.raises(ValueError, match="stale"):
+        reader.binding.validate_stage(stale_stage)
+    del stale_stage, saved
+
+    # A NumPy write does not raise Tensor's version. The synchronous free-call
+    # end check must reject it before creating pending/experience publication.
+    original_evaluate = reader.binding.evaluate
+    mutation = {"calls": 0}
+    experience = reader._active_experience
+    initial_version = reader.binding.permanences._version
+    bank_before = _digest(reader.binding.state_dict())
+
+    def mutate_after_forward(*args, **kwargs):
+        decision = original_evaluate(*args, **kwargs)
+        mutation["calls"] += 1
+        mutation["work"] = kwargs["work"]
+        reader.binding.permanences.numpy()[-1, 0] = 1
+        assert reader.binding.permanences._version == initial_version
+        return decision
+
+    try:
+        with monkeypatch.context() as patch:
+            patch.setattr(reader.binding, "evaluate", mutate_after_forward)
+            with pytest.raises((ValueError, RuntimeError)):
+                reader.predict_with_receipt(observation, state, max_bytes=0)
+    finally:
+        reader.binding.permanences.numpy()[-1, 0] = 0
+    assert mutation["calls"] == 1 and reader._active_experience == experience
+    assert reader.pending_prediction is None and _digest(reader.binding.state_dict()) == bank_before
+    assert held_numeric(reader) == old_reader_hashes[0]
+    _coincidence_qa_save(tmp_path / "dendritic-same-actor-passed.json", {
+        "status": "passed", "models": 2, "source_documents": 2, "source_raw_bytes": 2,
+        "source_eos": 2, "source_offers": 4, "free_calls": 4, "free_decisions": 5,
+        "successful_free_calls": 3, "rejected_free_calls": 1,
+        "successful_teacher_calls": 2, "rejected_teacher_calls": 1, "correction_offers": 5,
+        "branch_evaluations": 14, "old_prior_evaluations": 10, "source_prior_evaluations": 0,
+        "action_labels": 3, "children": 1, "strict_loads": 1, "rejected_strict_loads": 1,
+        "checkpoint_file_loads": 0, "experimental_checkpoint_loads": 0,
+        "source_feedback": sources, "free_work": [discarded.work, prediction.payload.work,
+                                                  late_prediction.work, mutation["work"]],
+        "teacher_steps": [disabled_feedback.teacher_steps, feedback.teacher_steps],
+        "teacher_work": [disabled_feedback.work, feedback.work, late["work"]],
+        "ack_work": ack_work, "load_work": load_work, "execution": execution,
+        "old_reader_numeric_sha256": old_reader_hashes,
+    })
+
+
+def test_dendritic_binding_local_arithmetic_contract(tmp_path):
+    """One authored bank; seven offers, eight decisions, no actor or fitted skill."""
+    import copy
+    import math
+
+    import pytest
+    import torch
+
+    from humanbrain.dendritic_request_binding import (
+        BANK_NAMES,
+        BASAL_WIDTH,
+        BRANCHES,
+        BRANCHES_PER_OUTPUT,
+        CONTACT_OFFSETS,
+        OUTPUTS,
+        REQUEST_OFFSETS,
+        REQUEST_WIDTH,
+        DendriticRequestBinding,
+        compete_bytes,
+        encode_prefix,
+        encode_request,
+    )
+
+    work, decisions, updates, tuples = {}, [], [], []
+    # Independent scalar identities, not a call to the production encoders.
+    raw = bytes(range(20))
+    request = encode_request(raw, work)
+    for query, encoded in ((raw, request), (b"", encode_request(b"", work))):
+        expected = set(query)
+        stream = [257, *query, 256]
+        expected.update(256 + stream[i] * 258 + stream[i + 1] for i in range(len(stream) - 1))
+        expected.update(256 + 258 * 258 + (i // 32) * 256 + value for i, value in enumerate(query))
+        assert encoded.population.numel() == REQUEST_WIDTH
+        assert set(encoded.population.nonzero().flatten().tolist()) == expected
+    for prefix in (b"", bytes(range(31)), bytes(range(32)), bytes(range(128))):
+        actual = encode_prefix(prefix, work)
+        history = ([257] if len(prefix) < 32 else []) + list(prefix[-32:])
+        expected = {lag * 258 + value for lag, value in enumerate(reversed(history))}
+        assert actual.numel() == BASAL_WIDTH
+        assert set(actual.nonzero().flatten().tolist()) == expected
+    with pytest.raises(ValueError, match="256"):
+        encode_request(b"x" * 257, work)
+
+    def scalar_tournament(classes, prior):
+        identities, levels = list(range(257)), []
+        while len(identities) > 1:
+            following = []
+            for start in range(0, len(identities) - 1, 2):
+                left, right = identities[start : start + 2]
+                a, b = (classes[left], prior[left], -left), (classes[right], prior[right], -right)
+                following.append(left if a >= b else right)
+            if len(identities) % 2:
+                following.append(identities[-1])
+            identities = following
+            levels.append(tuple(following))
+        return identities[0], tuple(levels)
+
+    configurations = []
+    classes, prior = [0] * 257, [0.0] * 257
+    configurations.append((classes.copy(), prior.copy()))
+    classes[256], prior[0] = 2, 1e100
+    configurations.append((classes.copy(), prior.copy()))
+    classes, prior = [1] * 257, [0.0] * 257
+    prior[0], prior[1] = 1.0, math.nextafter(1.0, math.inf)
+    configurations.append((classes.copy(), prior.copy()))
+    classes, prior = [0] * 257, [0.0] * 257
+    classes[4] = classes[256] = 2
+    prior[4] = prior[256] = 3.0
+    configurations.append((classes.copy(), prior.copy()))
+    for classes, prior in configurations:
+        local = {}
+        actual = compete_bytes(
+            torch.tensor(classes, dtype=torch.int16),
+            torch.tensor(prior, dtype=torch.float64),
+            local,
+        )
+        winner, levels = scalar_tournament(classes, prior)
+        assert (actual.winner, actual.levels, actual.pairs) == (winner, levels, 256)
+        assert local["dendritic_competition_levels"] == 9
+        assert local["dendritic_competition_carried_values"] == 24
+        assert local["dendritic_competition_thresholds"] == 1024
+        assert local["dendritic_competition_boolean_gates"] == 768
+        tuples.append({"winner": winner, "levels": levels, "work": local})
+    zero_classes = torch.zeros(257, dtype=torch.int16)
+    for invalid in (float("nan"), float("inf")):
+        prior = torch.zeros(257, dtype=torch.float64)
+        prior[0] = invalid
+        with pytest.raises(ValueError, match="competition values"):
+            compete_bytes(zero_classes, prior, {})
+    prior = torch.zeros(257, dtype=torch.float64)
+    prior[0], prior[1] = 1.7e308, -1.7e308
+    with pytest.raises(ValueError, match="overflow"):
+        compete_bytes(zero_classes, prior, {})
+
+    bank = DendriticRequestBinding(seed=733)
+    zeros = torch.zeros(OUTPUTS, dtype=torch.float64)
+    initial = bank.evaluate(b"", None, zeros, work=work)
+    assert not initial.basal_active.any() and not initial.joint_active.any()
+    assert not initial.classes.any() and initial.selected_branch is None and initial.winner == 0
+    decisions.append(initial.record(work))
+
+    def evaluate(stage, prefix, context):
+        result = bank.evaluate(prefix, context, zeros, stage=stage, work=work)
+        winner, levels = scalar_tournament(result.classes.tolist(), result.prior.tolist())
+        assert result.winner == winner and result.competition.levels == levels
+        decisions.append(result.record(work))
+        return result
+
+    def verify_local(update, apical):
+        for item in update.selected_contacts:
+            assert item["count"] == len(item["indices"])
+            assert item["threshold"] == (3 * item["count"] + 3) // 4
+            assert list(item["indices"]) == sorted(set(item["indices"]))
+            expected = (
+                [1] * item["count"]
+                if item["created"]
+                else [
+                    max(0, min(3, p + x - (1 - x)))
+                    for p, x in zip(item["before"], item["activity"], strict=True)
+                ]
+            )
+            assert list(item["after"]) == expected
+            assert item["compartment"] <= (3 if apical else 0)
+        updates.append(update.record())
+
+    def publish(stage):
+        bank.validate_stage(stage, work)
+        bank.commit_validated(stage, work)
+
+    # One causal source stream: a, then EOS. Only basal contacts are learned.
+    source = bank.begin_stage(work)
+    for prefix, target in ((b"", ord("a")), (b"a", 256)):
+        decision = evaluate(source, prefix, None)
+        update = bank.prepare_observation(
+            source, decision, target, apical_learning=False, enabled=True, work=work
+        )
+        assert update.recruited and update.staged and not update.attached_apical
+        assert not update.false_prediction_branches
+        verify_local(update, False)
+    publish(source)
+    a_branch, b_branch = ord("a") * BRANCHES_PER_OUTPUT, ord("b") * BRANCHES_PER_OUTPUT
+    assert bank.counts[a_branch, 0] == 1 and bank.indices[a_branch, 0] == 257
+    assert not bank.counts[:, 1:].any()
+
+    # The same input-prefix basal branch receives its request contacts.
+    attach = bank.begin_stage(work)
+    decision = evaluate(attach, b"", request)
+    assert decision.winner == ord("a") and decision.classes[ord("a")] == 1
+    update = bank.prepare_observation(
+        attach, decision, ord("a"), apical_learning=True, enabled=True, work=work
+    )
+    assert update.selected_branch == a_branch and update.attached_apical and not update.recruited
+    assert tuple(attach.bank["counts"][a_branch].tolist()) == (1, 8, 16, 8)
+    verify_local(update, True)
+    publish(attach)
+
+    # Authored contact values exercise saturation and signed zero arithmetic.
+    # These are explicit fixtures, not additional observed-symbol updates.
+    for compartment in range(4):
+        start = CONTACT_OFFSETS[compartment]
+        count = int(bank.counts[a_branch, compartment])
+        bank.permanences[a_branch, start : start + count] = 3
+    bank.permanences[a_branch, 16:18] = 0
+    bank.check_parameters(work)
+    saturation = bank.begin_stage(work)
+    decision = evaluate(saturation, b"", request)
+    assert decision.joint_active[a_branch]
+    update = bank.prepare_observation(
+        saturation, decision, ord("a"), apical_learning=True, enabled=True, work=work
+    )
+    verify_local(update, True)
+    assert tuple(saturation.bank["permanences"][a_branch, 16:24].tolist()) == (
+        1,
+        1,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+    )
+    publish(saturation)
+
+    # Re-author only apical contact values: enough connected matches to predict,
+    # with two zero contacts whose active input must not underflow uint8.
+    bank.permanences[a_branch, 16:48] = 1
+    bank.permanences[a_branch, 16:18] = 0
+    bank.check_parameters(work)
+    basal_before = bank.permanences[:, :16].clone()
+    false_before = bank.permanences[a_branch, 16:48].clone()
+    conflict = bank.begin_stage(work)
+    decision = evaluate(conflict, b"", request)
+    assert decision.joint_active[a_branch] and decision.winner == ord("a")
+    update = bank.prepare_observation(
+        conflict, decision, ord("b"), apical_learning=True, enabled=True, work=work
+    )
+    assert update.recruited and update.attached_apical and update.selected_branch == b_branch
+    assert update.false_prediction_branches == (a_branch,)
+    verify_local(update, True)
+    for compartment in (1, 2, 3):
+        start, end = CONTACT_OFFSETS[compartment : compartment + 2]
+        offset = REQUEST_OFFSETS[compartment - 1]
+        indices = bank.indices[a_branch, start:end].tolist()
+        activity = [int(request.population[offset + index]) for index in indices]
+        expected = [
+            max(0, min(3, p - x))
+            for p, x in zip(false_before[start - 16 : end - 16].tolist(), activity, strict=True)
+        ]
+        assert conflict.bank["permanences"][a_branch, start:end].tolist() == expected
+    assert not conflict.bank["permanences"][a_branch, 16:48].any()
+    assert torch.equal(conflict.bank["permanences"][a_branch, :16], basal_before[a_branch])
+    untouched = torch.ones(BRANCHES, dtype=torch.bool)
+    untouched[b_branch] = False
+    assert torch.equal(conflict.bank["permanences"][untouched, :16], basal_before[untouched])
+    publish(conflict)
+
+    # Both disabled offers see the identical private bank and same empty slot.
+    disabled = bank.begin_stage(work)
+    before = {name: value.clone() for name, value in disabled.bank.items()}
+    disabled_records = []
+    for _ in range(2):
+        decision = evaluate(disabled, b"", request)
+        assert decision.winner == ord("b") and decision.classes[ord("a")] == 1
+        update = bank.prepare_observation(
+            disabled, decision, ord("c"), apical_learning=True, enabled=False, work=work
+        )
+        verify_local(update, True)
+        assert (
+            not update.staged and update.stage_revision_before == update.stage_revision_after == 0
+        )
+        assert update.proposed_bank_sha256 is None
+        disabled_records.append(update.record())
+        for name in BANK_NAMES:
+            assert torch.equal(disabled.bank[name], before[name])
+        with pytest.raises(ValueError, match="used"):
+            bank.validate_decision(decision, disabled, work)
+    assert disabled_records[0] == disabled_records[1]
+
+    # A malformed late field cannot partially copy an earlier changed index.
+    live = {name: value.clone() for name, value in bank._bank().items()}
+    incoming = copy.deepcopy(bank.state_dict())
+    incoming["indices"][a_branch, 0] = 258
+    incoming["occupied"] = incoming["occupied"][:-1]
+    with pytest.raises(ValueError, match="branch occupancy"):
+        bank.load_state_dict(incoming)
+    for name in BANK_NAMES:
+        assert torch.equal(getattr(bank, name), live[name])
+    # The caller must reject a damaged or storage-replaced stage before commit.
+    saved = int(disabled.bank["permanences"][-1, -1])
+    disabled.bank["permanences"][-1, -1] = 4
+    with pytest.raises(ValueError, match="contact index or permanence"):
+        bank.validate_stage(disabled, work)
+    disabled.bank["permanences"][-1, -1] = saved
+    owned_counts = disabled.bank["counts"]
+    disabled.bank["counts"] = bank.counts
+    with pytest.raises(ValueError, match="storage"):
+        bank.validate_stage(disabled, work)
+    disabled.bank["counts"] = owned_counts
+    bank.validate_stage(disabled, work)
+    for name in BANK_NAMES:
+        assert torch.equal(getattr(bank, name), live[name])
+
+    assert work["dendritic_evaluations"] == 8
+    assert work["dendritic_offers"] == 7
+    assert work["dendritic_source_offers"] == 2 and work["dendritic_apical_offers"] == 5
+    assert work["dendritic_staged_offers"] == 5 and work["dendritic_publications"] == 4
+    assert work["dendritic_record_decisions"] == 8
+    assert work["dendritic_record_tensor_bytes"] == 8 * 2570 + 5 * 8
+    _coincidence_qa_save(  # noqa: F821 - supplied by the destination test module
+        tmp_path / "dendritic-core-arithmetic-passed.json",
+        {
+            "status": "passed",
+            "branch_banks": 1,
+            "branch_evaluations": 8,
+            "observed_symbol_offers": 7,
+            "source_offers": 2,
+            "enabled_apical_offers": 3,
+            "disabled_apical_offers": 2,
+            "standalone_valid_tournaments": 4,
+            "standalone_invalid_tournaments": 3,
+            "explicit_request_encodings": 2,
+            "explicit_prefix_encodings": 4,
+            "authored_permanence_fixtures": 2,
+            "private_stages": 5,
+            "live_commits": 4,
+            "failed_in_memory_loads": 1,
+            "actors": 0,
+            "tapes": 0,
+            "children": 0,
+            "checkpoint_loads": 0,
+            "decisions": decisions,
+            "updates": updates,
+            "tuple_oracles": tuples,
+            "work": work,
+        },
+    )

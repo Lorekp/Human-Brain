@@ -59,7 +59,7 @@ passes [ordinary durability and actor-continuation QA](persistent-session-checkp
 Do not claim that
 the missing V6 checkpoint exists or recover
 it through uncounted replay. The [bounded learning-design review](persistent-ordered-context-learning-review-v1.md)
-selects one concrete next implementation: paired dendritic branches learn ordered
+selects one concrete next implementation: [paired dendritic branches](dendritic-request-binding-v1.md) learn ordered
 byte context together with fixed raw-request activity. Source observations and
 corrections teach the same reader that generates the actor's payloads, using
 local permanence changes with every observed symbol counted. All byte/EOS
