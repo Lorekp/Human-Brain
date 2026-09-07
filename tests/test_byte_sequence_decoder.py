@@ -11292,3 +11292,431 @@ def test_sequence_assembly_raw_observation_and_execution(tmp_path):
         },
         [],
     )["task_success"]
+
+
+def test_sequence_assembly_reader_causal_prefix_and_atomicity(tmp_path):
+    """One authored reader lifecycle fixture; no external prior or task-skill claim."""
+    import hashlib
+    import json
+
+    from humanbrain import sequence_assembly_cells as assembly_module
+    from humanbrain.sequence_assembly_memory_learner import (
+        INPUT_WIDTH,
+        SequenceAssemblyMemoryLearner,
+    )
+    from humanbrain.sequence_assembly_observation import RawObservation, ToolFeedback
+
+    raw_path = tmp_path / "sequence-assembly-reader-raw.jsonl"
+
+    def save(row):
+        with raw_path.open("a", encoding="utf-8") as output:
+            output.write(json.dumps(row, sort_keys=True, allow_nan=False) + "\n")
+
+    def state_equal(actual, expected):
+        assert set(actual) == set(expected)
+        for key, value in expected.items():
+            if isinstance(value, torch.Tensor):
+                assert torch.equal(actual[key], value), key
+            else:
+                assert actual[key] == value, key
+
+    reader = SequenceAssemblyMemoryLearner(mode="learned", seed=733)
+    with torch.no_grad():
+        reader.address_weight.zero_()
+        reader.prefix_weight.zero_()
+        reader.codec.weight.zero_()
+        reader.codec.bias.zero_()
+        reader.codec.bias[63] = math.log(256)
+    state = reader.ingest([b"abc"])
+    assert state.used == 4
+    held_tape = state.snapshot()
+    held_model = copy.deepcopy(reader.state_dict())
+    # Hand-authored public diagnostic fields; there is no child execution here.
+    feedback = ToolFeedback(
+        returncode=-7, stdout=b"\x00\xff", stderr=b"\xfeerror\x80",
+        accepted=False, timeout=False, capture_complete=True, files_complete=True,
+        output_limit_exceeded=False)
+    observation = RawObservation(
+        b"Read the complete raw value after this longer instruction: \xff", None, feedback)
+    frame = observation.sensor_frame()
+    assert len(observation.request) > 31
+    assert len(frame.symbols) == 3471 and len(frame.flags) == 12
+    assert INPUT_WIDTH == 66093
+    predictions, teacher_events = [], []
+
+    def predict():
+        prediction = reader.predict_with_receipt(observation, state, max_bytes=33)
+        predictions.append(prediction)
+        save({"phase": "free", "attempt_id": prediction.attempt_id,
+              "output_hex": prediction.generation.data.hex(),
+              "stop_reason": prediction.generation.stop_reason,
+              "prefixes": [step.prefix.hex() for step in prediction.steps],
+              "addresses": [step.selected_index for step in prediction.steps],
+              "assemblies": [step.assembly_index for step in prediction.steps],
+              "work": prediction.work})
+        return prediction
+
+    original_teach = reader.assemblies.prepare_teach
+
+    def capture_offer(context, target, **kwargs):
+        row = {"target": target, "selected": context.selected_index,
+               "recruited": context.recruited, "enabled": kwargs["learning_enabled"],
+               "completed": False}
+        teacher_events.append(row)
+        try:
+            result = original_teach(context, target, **kwargs)
+            row.update(completed=True, staged=result.staged)
+            return result
+        finally:
+            row["work"] = dict(kwargs["work"])
+            save({"phase": "teacher_offer", **row})
+
+    first = predict()
+    assert first.generation.data == b"?" * 33 and first.generation.stop_reason == "limit"
+    assert len(first.steps) == 34 and all(step.selected_index == 0 for step in first.steps)
+    assert first.work["prefix_cache_advances"] == 33
+    assert first.work["prefix_cache_rolling_drops"] == 2
+    assert first.work.get("sequence_conditioned_fallbacks", 0) == 0
+    assert first.work["sequence_codec_fallbacks"] == 34
+    assert first.work["query_raw_bytes"] == len(observation.request)
+    assert first.work["sequence_query_chunks"] == (len(observation.request) + 30) // 31
+    with patch.object(reader.assemblies, "prepare_teach", capture_offer):
+        taught = reader.teach(observation, b"ab", state, prediction=first)
+    save({"phase": "enabled_feedback", "count": taught.teacher_count,
+          "prefixes": [step["prefix_hex"] for step in taught.teacher_steps],
+          "targets": [step["target"] for step in taught.teacher_steps], "work": taught.work})
+    assert taught.teacher_count == 3 and taught.output_updated
+    assert not taught.address_updated and not taught.legacy_codec_updated
+    assert [step["prefix_hex"] for step in taught.teacher_steps] == ["", "61", "6162"]
+    assert [step["target"] for step in taught.teacher_steps] == [97, 98, 256]
+    assert [step["selected_index"] for step in taught.teacher_steps] == [0, 1, 2]
+    assert all(step["recruited"] and step["staged"] for step in taught.teacher_steps)
+    assert int(reader.assemblies.used) == 3
+    assert taught.work["assembly_output_offers"] == 3
+    assert taught.work["assembly_staged_output_updates"] == 3
+    assert taught.work["assembly_publications"] == 1
+    assert reader.pending_prediction is None
+
+    # Independent scalar IO oracle: preserve every symbol, including raw invalid
+    # UTF8 diagnostics, in each learned receptive prototype. No encoder call.
+    sensor_bits = []
+    for symbol in frame.symbols:
+        if symbol == -1:
+            sensor_bits.extend([False] * 18)
+        else:
+            for bit in range(9):
+                one = bool((symbol >> bit) & 1)
+                sensor_bits.extend((not one, one))
+    sensor_bits.extend(frame.flags)
+    expected_sensor = torch.tensor(sensor_bits, dtype=torch.bool)
+    assert expected_sensor.numel() == 62490
+    for index in range(3):
+        assert torch.equal(reader.assemblies.prototypes[index, :62490], expected_sensor)
+    for name, value in held_model.items():
+        if not name.startswith("assemblies."):
+            actual = reader.state_dict()[name]
+            assert (torch.equal(actual, value)
+                    if isinstance(value, torch.Tensor) else actual == value)
+    _assert_nested_equal(state.snapshot(), held_tape)
+    trained = copy.deepcopy(reader.state_dict())
+
+    second = predict()
+    assert second.generation.data == b"ab" and second.generation.stop_reason == "eos"
+    assert len(second.steps) == 3
+    assert [step.assembly_index for step in second.steps] == [0, 1, 2]
+    assert [step.prefix for step in second.steps] == [b"", b"a", b"ab"]
+    assert all(step.exact_context for step in second.steps)
+    original_logits = second.steps[0].logits.clone()
+    second.steps[0].logits[0] += 1
+    with pytest.raises(ValueError, match="response or work changed"):
+        reader.validate_pending(second, state, observation=observation)
+    second.steps[0].logits.copy_(original_logits)
+    stale = RawObservation(observation.request + b"!", None, feedback)
+    with pytest.raises(ValueError, match="observation changed"):
+        reader.validate_pending(second, state, observation=stale)
+    with pytest.raises(ValueError, match="pending"):
+        reader.load_state_dict(trained)
+    assert reader.pending_prediction is second
+    state_equal(reader.state_dict(), trained)
+    with patch.object(reader.assemblies, "prepare_teach", capture_offer):
+        disabled = reader.teach(
+            observation, b"c", state, prediction=second, learning_enabled=False)
+    save({"phase": "disabled_feedback", "count": disabled.teacher_count,
+          "prefixes": [step["prefix_hex"] for step in disabled.teacher_steps],
+          "targets": [step["target"] for step in disabled.teacher_steps], "work": disabled.work})
+    assert disabled.teacher_count == 2 and not disabled.output_updated
+    assert [step["prefix_hex"] for step in disabled.teacher_steps] == ["", "63"]
+    assert [step["target"] for step in disabled.teacher_steps] == [99, 256]
+    assert all(not step["staged"] for step in disabled.teacher_steps)
+    assert disabled.work.get("assembly_staged_output_updates", 0) == 0
+    state_equal(reader.state_dict(), trained)
+    _assert_nested_equal(state.snapshot(), held_tape)
+
+    third = predict()
+    assert third.generation.data == b"ab" and third.generation.stop_reason == "eos"
+    finite_calls = 0
+    original_finite = assembly_module._finite
+
+    def fail_second_proposal(value, label):
+        nonlocal finite_calls
+        if label == "assembly output proposal":
+            finite_calls += 1
+            if finite_calls == 2:
+                raise ValueError("authored final sequence proposal failure")
+        return original_finite(value, label)
+
+    with (patch.object(reader.assemblies, "prepare_teach", capture_offer),
+          patch.object(assembly_module, "_finite", fail_second_proposal),
+          pytest.raises(ValueError, match="authored final sequence proposal failure")):
+        reader.teach(observation, b"b", state, prediction=third)
+    assert finite_calls == 2 and reader.pending_prediction is third
+    state_equal(reader.state_dict(), trained)
+    _assert_nested_equal(state.snapshot(), held_tape)
+    with patch.object(reader, "_context_forward", side_effect=AssertionError("ack forward")):
+        ack = reader.acknowledge(third, state)
+    save({"phase": "late_failure_ack", "work": ack,
+          "used": int(reader.assemblies.used), "teacher_events": len(teacher_events)})
+    assert ack["sequence_acknowledgements"] == 1 and reader.pending_prediction is None
+    assert ack.get("assembly_output_offers", 0) == 0
+    assert len(teacher_events) == 7 and sum(row["completed"] for row in teacher_events) == 6
+    assert sum(len(prediction.steps) for prediction in predictions) == 40
+    assert len({prediction.attempt_id for prediction in predictions}) == 3
+    state_equal(reader.state_dict(), trained)
+    _assert_nested_equal(state.snapshot(), held_tape)
+    (tmp_path / "sequence-assembly-reader-passed.json").write_text(json.dumps({
+        "status": "passed", "readers": 1, "assembly_banks": 1,
+        "ingests": 1, "raw_ingest_bytes": 3, "ingest_eos": 1, "slots": 4,
+        "free_calls": 3, "free_decisions": 40, "teacher_loops": 3,
+        "offered_events": 7, "completed_events": 6, "published_output_clamps": 3,
+        "disabled_events": 2, "late_failed_events": 1, "recruited_units": 3,
+        "validation_rejections": 3, "checkpoint_loads": 0, "actions": 0,
+        "teacher_events": teacher_events,
+        "raw_sha256": hashlib.sha256(raw_path.read_bytes()).hexdigest(),
+        "claim": "authored causal sequence mechanics; no broad acquisition or external prior",
+    }, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def test_sequence_assembly_combined_custody_and_atomicity(tmp_path):
+    """One combined learner, three real children, four reader offers incl failed staging."""
+    import copy
+    import json
+    import time
+    from pathlib import Path
+    from unittest.mock import patch
+
+    import pytest
+    import torch
+
+    from experiments.r4_integrated.persistent_language_action_execution_v2 import (
+        execute_proposal,
+        feedback_from_receipt,
+        qualified_launch,
+        workspace_from_records,
+    )
+    from humanbrain.sequence_assembly_observation import RawObservation, SpliceProposal
+    from humanbrain.sequence_assembly_splice_learner import SequenceAssemblySpliceLearner
+
+    def save(name, value):
+        with (tmp_path / name).open("x", encoding="utf-8") as handle:
+            json.dump(
+                value,
+                handle,
+                indent=2,
+                sort_keys=True,
+                default=lambda item: item.tolist() if isinstance(item, torch.Tensor) else str(item),
+            )
+
+    model = SequenceAssemblySpliceLearner(seed=733)
+    reader = model.reader
+    state = model.ingest([b"ab"])
+    with torch.no_grad():
+        reader.address_weight.zero_()
+        reader.prefix_weight.zero_()
+        reader.output_weight.zero_()
+        reader.codec.weight.zero_()
+        reader.codec.bias.zero_()
+        reader.codec.bias[256] = 10
+        model.actions.operation_weight.zero_()
+        model.actions.operation_bias.copy_(torch.tensor([10.0, 0.0]))
+    initial = copy.deepcopy(model.state_dict())
+    tape = state.snapshot()
+    # An earlier otherwise-valid action change must never publish before a later
+    # invalid assembly or fixed-context tensor is detected.
+    load_rejections = []
+    for fault in ("assembly_capacity", "fixed_context"):
+        incoming = copy.deepcopy(initial)
+        incoming["actions.operation_bias"].add_(1)
+        if fault == "assembly_capacity":
+            incoming["reader.assemblies.used"].fill_(513)
+        else:
+            incoming["reader.context.signs"][0, 0] *= -1
+        save(
+            f"load-{fault}-input.json",
+            {
+                "fault": fault,
+                "earlier_action_bias": incoming["actions.operation_bias"],
+                "incoming_used": incoming["reader.assemblies.used"],
+                "first_sign": incoming["reader.context.signs"][0, 0],
+            },
+        )
+        with pytest.raises(ValueError) as rejected:
+            model.load_state_dict(incoming)
+        load_rejections.append({"fault": fault, "error": str(rejected.value)})
+        _assert_nested_equal(model.state_dict(), initial)  # noqa: F821 -- existing test-file helper
+        del incoming
+    save("load-rejections.json", load_rejections)
+    del initial
+
+    workspace = workspace_from_records(
+        [
+            {"path": "main.py", "content_hex": b"print(0)\n".hex()},
+        ]
+    )
+    request = b"Change the output to one while keeping the surrounding statement."
+    observation = RawObservation(request, workspace)
+    launch = qualified_launch(Path(__file__).resolve().parents[1])
+    total_free_decisions = 0
+    feedback_records = []
+    for index, phase in enumerate(("splice", "stop", "ack")):
+        before = copy.deepcopy(model.state_dict())
+        seen = []
+        actual_prepare = reader._prepare_observation
+
+        def inspect_observation(value, tape_state, work, _original=actual_prepare, _seen=seen):
+            _seen.append(value.to_record())
+            return _original(value, tape_state, work)
+
+        with patch.object(reader, "_prepare_observation", side_effect=inspect_observation):
+            prediction = model.propose(observation, state)
+        total_free_decisions += len(prediction.payload.steps)
+        save(
+            f"{index}-proposal.json",
+            {
+                "observation": observation.to_record(),
+                "observed_preparation": seen,
+                "proposal": prediction.proposal.to_record(),
+                "attempt_id": prediction.attempt_id,
+                "reader_attempt_id": prediction.payload.attempt_id,
+                "observation_sha256": prediction.observation_sha256,
+                "model_sha256": prediction.model_sha256,
+                "memory_sha256": prediction.memory_sha256,
+                "reader_trace_sha256": prediction.payload.trace_sha256,
+                "decisions": len(prediction.payload.steps),
+                "work": prediction.work,
+            },
+        )
+        assert seen == [observation.to_record()]
+        assert prediction.proposal.operation == "STOP"
+        assert prediction.payload.observation is observation
+        if index:
+            assert observation.feedback.stdout == b"0\n"
+        assert model._pending is not None and reader.pending_prediction is prediction.payload
+        after, execution = execute_proposal(
+            workspace,
+            prediction.proposal,
+            tmp_path / f"actual-{phase}",
+            launch=launch,
+            deadline=time.perf_counter() + 10,
+        )
+        completed = time.perf_counter()
+        path = tmp_path / f"{index}-execution.json"
+        save(path.name, execution)
+        envelope = {
+            "attempt_id": prediction.attempt_id,
+            "proposal_sha256": prediction.proposal_sha256,
+            "workspace_sha256": workspace.sha256,
+            "execution": execution,
+        }
+        assert execution["returncode"] == 0 and execution["stdout_hex"] == b"0\n".hex()
+
+        if phase == "splice":
+            teacher = SpliceProposal("SPLICE", "main.py", 6, 7, b"1", "eos", workspace.sha256)
+            prepared_heads = []
+            actual_update = model.actions.prepare_update
+
+            def observed_update(head, *args, _bound=(actual_update, prepared_heads), **kwargs):
+                original_update, heads = _bound
+                update = original_update(head, *args, **kwargs)
+                heads.append(head)
+                return update
+
+            failed = {}
+
+            def late_failure(
+                stage,
+                work=None,
+                _bound=(failed, prepared_heads, path, execution, completed, before),
+            ):
+                failed, prepared_heads, path, execution, completed, before = _bound
+                failed.update(
+                    revision=stage.revision, work=dict(work), prepared_heads=list(prepared_heads)
+                )
+                assert json.loads(path.read_text()) == execution
+                assert time.perf_counter() >= completed
+                _assert_nested_equal(model.state_dict(), before)  # noqa: F821 -- existing test-file helper
+                raise ValueError("authored final assembly publication rejection")
+
+            with (
+                patch.object(model.actions, "prepare_update", side_effect=observed_update),
+                patch.object(reader.assemblies, "publish", side_effect=late_failure),
+                pytest.raises(ValueError, match="authored final"),
+            ):
+                model.teach(prediction, observation, state, teacher, envelope)
+            save("failed-teacher-stage.json", failed)
+            assert prepared_heads == ["start", "end", "operation"]
+            assert failed["work"]["assembly_output_offers"] == 2
+            _assert_nested_equal(model.state_dict(), before)  # noqa: F821 -- existing test-file helper
+            assert reader.pending_prediction is prediction.payload and model._pending is not None
+            feedback = model.teach(prediction, observation, state, teacher, envelope)
+            save(
+                "successful-teacher.json",
+                {
+                    "reader_count": feedback.reader_feedback.teacher_count,
+                    "teacher_steps": feedback.reader_feedback.teacher_steps,
+                    "action_losses": feedback.action_losses,
+                    "work": feedback.work,
+                },
+            )
+            assert feedback.reader_feedback.teacher_count == 2
+            assert feedback.reader_feedback.output_updated
+            assert set(feedback.action_losses) == {"start", "end", "operation"}
+            feedback_records.append(feedback.work)
+        elif phase == "stop":
+            teacher = SpliceProposal("STOP", "", 0, 0, b"", "eos", workspace.sha256)
+            with patch.object(reader, "teach", side_effect=AssertionError("STOP payload teacher")):
+                feedback = model.teach(prediction, observation, state, teacher, envelope)
+            assert feedback.reader_feedback is None
+            assert set(feedback.action_losses) == {"operation"}
+            assert feedback.work["reader"]["sequence_acknowledgements"] == 1
+            for name, value in before.items():
+                if name.startswith("reader.") and isinstance(value, torch.Tensor):
+                    assert torch.equal(value, model.state_dict()[name])
+            feedback_records.append(feedback.work)
+        else:
+            with patch.object(reader, "teach", side_effect=AssertionError("ack payload teacher")):
+                work = model.finish_without_teaching(prediction, observation, state, envelope)
+            assert work["reader"]["sequence_acknowledgements"] == 1
+            _assert_nested_equal(model.state_dict(), before)  # noqa: F821 -- existing test-file helper
+            feedback_records.append(work)
+        assert model._pending is None and reader.pending_prediction is None
+        _assert_nested_equal(state.snapshot(), tape)  # noqa: F821 -- existing test-file helper
+        workspace = workspace_from_records(after)
+        observation = RawObservation(request, workspace, feedback_from_receipt(execution))
+        del before
+    save(
+        "combined-qa-outcome.json",
+        {
+            "actual_child_executions": 3,
+            "combined_model_constructions": 1,
+            "ingestions": 1,
+            "raw_memory_bytes": 2,
+            "memory_eos": 1,
+            "free_queries": 3,
+            "actual_free_decisions": total_free_decisions,
+            "reader_teacher_calls": 2,
+            "reader_target_offers_including_failed_stage": 4,
+            "action_labels_including_failed_stage": 7,
+            "checkpoint_loads": 0,
+            "feedback_work": feedback_records,
+        },
+    )

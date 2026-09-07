@@ -2,7 +2,8 @@
 
 Status: selected source-design and integration direction, 2026-09-07. This is
 one shared successor to the completed v3 session, not another byte or operation
-benchmark. No assembly implementation, new corpus or neuronal run has occurred.
+benchmark. Assembly, observation and integration source is being implemented;
+no new corpus or neuronal workload run has occurred.
 The [roadmap](roadmap-reading-to-coding.md) and
 [persistent workload](persistent-language-action-development-v1.md) own scope.
 
@@ -64,10 +65,9 @@ currents; once prototypes exist, nearest-prototype use is an intentional change
 in free policy. Initialize a recruited unit from the old currents at that same
 public context before exposing the current target. At exhaustion, record and
 skip novel-context output learning without eviction or modifying a nonmatching
-unit. Exact-context reuse remains available. The extended-input fallback and
-precise B/C coupling still need a coherent source contract before execution.
-If B/C responsibility teaching is retained, compute it from pre-clamp currents;
-the current desired byte must not first alter the evidence used for address credit.
+unit. Exact-context reuse remains available. The source contract below freezes
+the inherited B/C/U and codec while the assembly bank learns. There is no
+all-address responsibility teacher sweep in this version.
 
 Preserve the full saved v3 model and 505-slot memory
 with explicit schema and initialization ownership. Do not reinterpret old U
@@ -77,6 +77,55 @@ Stage and validate all affected state before publication. Teacher-free reading,
 actions and STOP must resolve pending state without invented corrections.
 
 ## Broader interface and workload are part of this change
+
+### Selected raw-input and inherited-state contract
+
+The new version accepts at most 256 request bytes, four files of at most 512
+bytes each, paths of at most 31 UTF-8 bytes and 128 response/replacement bytes.
+Each actual public stdout and stderr stream has a separate 512-byte ceiling;
+overflow remains an explicitly incomplete capture. Eight signed little-endian
+return-code bytes preserve negative codes and Windows DWORD values. Public
+presence, execution acceptance, timeout and capture/file completeness flags are
+inputs; correctness grades and teacher fields are excluded.
+
+The observation frame has 3471 symbol positions, each represented by 18 Boolean
+rails, and twelve flags. Separate fixed fields preserve every path, file,
+request and captured diagnostic byte with EOS and distinguish absent padding.
+The assembly adds BOS plus the full prefix in 129 symbol positions, the selected
+64-row memory context and 129 position cells: 66,093 Boolean inputs in total.
+This allocates 33,839,616 receptive bytes and 1,052,672 outgoing bytes, plus eight
+occupancy bytes per reader. A private teacher stage duplicates this bank.
+
+Memory addressing retains the old B/C matrices and all 505 occupied slots.
+Every mechanical 31-byte request chunk receives EOS and its own original
+normalized coincidence bank. The arithmetic mean of these banks, in source
+order, drives B; C receives exact rolling activity for the most recent 32
+prefix symbols. The complete prefix also enters the assembly. No chunk or
+memory address is chosen from a teacher label. Chunk averaging loses some
+cross-chunk order in address selection; the assembly's raw observation preserves
+byte positions. Tool text enters assembly and action inputs, rather than the
+old request-address matrix.
+
+The inherited conditional U contributes fallback currents only where its
+original geometry applies: request length at most 31 and output position at
+most 16. Elsewhere the inherited codec supplies currents at the selected memory
+address. There is no truncated request/prefix passed to U. New assemblies begin
+from these same-context currents and then own their outgoing currents. This
+changes the free policy and does not claim old-trajectory parity. B/C/U and the
+legacy codec are frozen during new teaching, preserving context selection from
+drift due to the current lesson's address credit. No second output rule is stacked.
+
+Action heads use the same request and actual diagnostic fields. Their 1291
+query symbol positions plus seven status-as-byte code rows give 1298 query
+rows. Candidate contexts remain mechanical raw file boundaries. Start/end/
+operation feature widths are 748947/42561/149252; fixed blocks of sixteen
+candidates avoid a full candidate-by-feature bank. Teaching uses two passes:
+all candidate currents/softmax first, then the same fixed features and their own
+local output error products. Prior action weights embed by explicit old row and
+column coordinates; new coordinates start at zero. Original offset/span `/128`
+and payload `/16` scales retain their meanings, with larger attainable ranges.
+Expanded normalization and reductions mean old numerical trajectory parity is
+not claimed. The complete new workload must measure this larger simulation.
 
 The next return must add complete multi-clause instruction access and software
 where some required logic is missing. Another stream confined to short literal
