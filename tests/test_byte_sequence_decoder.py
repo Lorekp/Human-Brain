@@ -11986,3 +11986,138 @@ def test_sequence_assembly_action_blocks_embedding_and_atomic_update(tmp_path):
     }
     with (tmp_path / "sequence-assembly-action-qa.json").open("x", encoding="utf-8") as stream:
         json.dump(receipt, stream, sort_keys=True, allow_nan=False)
+
+
+def test_persistent_coincidence_1024_promotion_and_append(tmp_path):
+    """Authored capacity fixture; no experiment checkpoint, query or teacher."""
+    from humanbrain.persistent_coincidence_memory import (
+        PersistentCoincidenceMemory512,
+        PersistentCoincidenceMemory1024,
+    )
+
+    old, memory = PersistentCoincidenceMemory512(), PersistentCoincidenceMemory1024()
+    source = old.ingest([b"a" * 504])
+    before = source.snapshot()
+    work = {}
+    promoted = memory.promote_512_state(source, work=work)
+    assert promoted.used == source.used == 505
+    for name, value in vars(source).items():
+        actual = getattr(promoted, name)
+        assert torch.equal(actual if name == "write_index" else actual[:512], value)
+        assert all(actual.untyped_storage().data_ptr() != other.untyped_storage().data_ptr()
+                   for other in vars(source).values())
+    assert not promoted.keys[512:].any() and not promoted.sensory[512:].any()
+    assert (promoted.successor[512:] == -1).all()
+    assert work["promotion_ingest_calls"] == 0
+    assert work["promotion_copied_bytes"] == 825352
+    assert work["promotion_initialized_bytes"] == 1650696
+    assert memory.accounting(promoted)["state_tensor_bytes"] == 1650696
+    with pytest.raises(ValueError, match="geometry"):
+        old.check_state(promoted)
+
+    documents = [b"b" * 64] * 4 + [b"c" * 128] * 2
+    append_work = {}
+    expanded = memory.ingest(documents, promoted, work=append_work)
+    assert expanded.used == 1023 and promoted.used == 505
+    for name in ("keys", "sensory", "successor"):
+        assert torch.equal(getattr(expanded, name)[:505], before[name][:505])
+    cursor = 505
+    for document in documents:
+        assert not expanded.keys[cursor].any()
+        for offset, token in enumerate((*document, 256)):
+            slot = cursor + offset
+            assert expanded.sensory[slot, token] == 1
+            expected_next = slot if token == 256 else slot + 1
+            assert expanded.successor[slot] == expected_next
+        cursor += len(document) + 1
+    assert expanded.successor[504] == 504
+    assert append_work["coincidence_ingest_allocation_steps"] == 518
+    assert append_work["coincidence_ingest_sensory_publications"] == 518
+    assert append_work["coincidence_ingest_document_resets"] == 6
+    occupied = expanded.snapshot()
+    with pytest.raises(ValueError, match="capacity exceeded"):
+        memory.ingest([b"x"], expanded)
+    _assert_nested_equal(expanded.snapshot(), occupied)
+    full = memory.ingest([b""], expanded)
+    assert full.used == 1024 and full.sensory[1023, 256] == 1
+    all_cursors = memory.initial_recall(full)
+    assert all_cursors.tolist() == list(range(1024))
+    assert torch.equal(memory.advance(full, all_cursors), full.successor)
+    with pytest.raises(ValueError, match="capacity exceeded"):
+        memory.ingest([b""], full)
+    _assert_nested_equal(source.snapshot(), before)
+    _assert_nested_equal(expanded.snapshot(), occupied)
+    _coincidence_qa_save(tmp_path / "persistent-1024-promotion.json", {
+        "status": "passed", "memory_objects": 2, "promotions": 1,
+        "successful_ingests": 3, "raw_ingested_bytes": 1016, "ingest_eos": 8,
+        "rejected_ingests": 2, "final_slots": 1024, "promotion_work": work,
+        "append_work": append_work, "readers": 0, "teachers": 0,
+        "actual_children": 0, "checkpoint_loads": 0,
+    })
+
+
+def test_persistent_1024_competition_and_prefix(tmp_path):
+    """Full candidate coverage, extreme/tied scores and exact rowwise prefix activity."""
+    from humanbrain.neuronal_byte_coincidence import encode_symbol_rails
+    from humanbrain.persistent_coincidence_reader import compete512, compete1024
+    from humanbrain.sequence_assembly_prefix import (
+        RollingPrefixCoincidence,
+        RollingPrefixCoincidence1024,
+    )
+
+    limit = torch.finfo(torch.float32).max
+    extremes = torch.full((1024,), -limit)
+    extremes[511:513] = limit
+    vectors = [torch.tensor([-7.0]), torch.arange(512, dtype=torch.float32),
+               torch.arange(513, dtype=torch.float32), torch.zeros(1024), extremes]
+    receipts = []
+    for values, winner in zip(vectors, (0, 511, 512, 0, 511), strict=True):
+        result = compete1024(values)
+        assert result.winner_index == winner
+        assert result.winner_activity.sum() == 1 and result.winner_activity[winner]
+        assert torch.isfinite(result.pair_currents).all()
+        n = values.numel()
+        assert result.work["competition_candidates"] == n
+        assert result.work["competition_pairs"] == n * (n - 1) // 2
+        assert result.work["competition_threshold_layers"] == 2
+        if n == 512:
+            old = compete512(values)
+            assert torch.equal(result.pair_currents, old.pair_currents)
+            assert torch.equal(result.winner_currents, old.winner_currents)
+            assert result.work == old.work
+        receipts.append(result.work)
+    with pytest.raises(ValueError, match="1..512"):
+        compete512(vectors[2])
+    with pytest.raises(ValueError, match="finite"):
+        compete1024(torch.tensor([float("nan")]))
+
+    keys = torch.zeros(1024, 32, 18, dtype=torch.bool)
+    symbols = torch.arange(1024, dtype=torch.int64) % 256
+    keys[:, 0] = encode_symbol_rails(symbols)
+    new_work, old_work = {}, {}
+    cache = RollingPrefixCoincidence1024(keys, work=new_work)
+    old_cache = RollingPrefixCoincidence(keys[:512], work=old_work)
+    with pytest.raises(ValueError, match="1..512"):
+        RollingPrefixCoincidence(keys)
+    for prefix in (b"", b"a", b"ab"):
+        if prefix:
+            cache.advance(prefix[-1])
+            old_cache.advance(prefix[-1])
+        actual = cache.features()
+        assert actual.shape == (1024, 32, 32)
+        assert torch.equal(actual[:512], old_cache.features())
+        assert torch.equal(actual[:512], actual[512:])
+        # Only one key lag is occupied. Independently check all nonzero matches.
+        wanted = torch.zeros_like(actual)
+        gain = math.sqrt(32) / math.sqrt(len(prefix) + 1)
+        for lag, token in enumerate(reversed(prefix)):
+            wanted[symbols == token, lag, 0] = gain
+        assert torch.allclose(actual, wanted, rtol=2e-6, atol=2e-7)
+    assert new_work["prefix_cache_advances"] == 2
+    _coincidence_qa_save(tmp_path / "persistent-1024-competition-prefix.json", {
+        "status": "passed", "competition_calls_1024": 5, "competition_calls_512": 1,
+        "rejected_competitions": 2, "prefix_caches": 2, "rejected_prefix_caches": 1,
+        "prefix_feature_calls": 6, "prefix_advances": 4, "full_prefix_scalar_checks": 3,
+        "competition_work": receipts, "prefix_work": new_work,
+        "readers": 0, "teachers": 0, "actual_children": 0, "checkpoint_loads": 0,
+    })

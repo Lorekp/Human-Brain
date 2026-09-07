@@ -1,4 +1,4 @@
-"""Persistent 512-slot binary associations with unchanged local writes.
+"""Fixed512 and1024-slot binary associations with unchanged local writes.
 
 Keys retain preceding raw-symbol rails, never normalized random codes. Sensory
 content and forward/EOS cursor wiring keep the existing sequence-memory meaning.
@@ -28,20 +28,25 @@ def _add(work: dict | None, name: str, value: int) -> None:
         work[name] = work.get(name, 0) + value
 
 
-class PersistentCoincidenceMemory512(NeuronalSequenceMemory):
-    """512 append-only literal slots with binary [32,18] preceding-symbol associations.
+class _PersistentCoincidenceMemory(NeuronalSequenceMemory):
+    """Append-only literal slots with binary [32,18] preceding-symbol associations.
 
     A fresh selected slot publishes the exact local unit-rate endpoints
     ``w += cursor * (rail - w)``. Binary copy implements that update without
     pretending Boolean subtraction or normalized random-key writes are valid.
-    Old tape snapshots are incompatible and are rejected by the new contract.
+    Each public class validates its fixed geometry; promotion is explicit.
     """
+
+    def __init__(self, capacity: int) -> None:
+        if capacity not in (512, 1024):
+            raise ValueError("persistent memory requires an explicit supported capacity")
+        self._capacity = capacity
 
     def initial_state(self) -> TapeState:
         return TapeState(
-            torch.zeros(CAPACITY, LAGS, RAILS, dtype=torch.bool, device="cpu"),
-            torch.zeros(CAPACITY, SENSORY_SIZE, dtype=torch.float32, device="cpu"),
-            torch.full((CAPACITY,), -1, dtype=torch.int64, device="cpu"),
+            torch.zeros(self._capacity, LAGS, RAILS, dtype=torch.bool, device="cpu"),
+            torch.zeros(self._capacity, SENSORY_SIZE, dtype=torch.float32, device="cpu"),
+            torch.full((self._capacity,), -1, dtype=torch.int64, device="cpu"),
             torch.zeros((), dtype=torch.int64, device="cpu"),
         )
 
@@ -49,9 +54,9 @@ class PersistentCoincidenceMemory512(NeuronalSequenceMemory):
         if not isinstance(state, TapeState):
             raise ValueError("coincidence state must be a TapeState")
         for name, shape, dtype in (
-            ("keys", (CAPACITY, LAGS, RAILS), torch.bool),
-            ("sensory", (CAPACITY, SENSORY_SIZE), torch.float32),
-            ("successor", (CAPACITY,), torch.int64),
+            ("keys", (self._capacity, LAGS, RAILS), torch.bool),
+            ("sensory", (self._capacity, SENSORY_SIZE), torch.float32),
+            ("successor", (self._capacity,), torch.int64),
             ("write_index", (), torch.int64),
         ):
             value = getattr(state, name)
@@ -68,7 +73,7 @@ class PersistentCoincidenceMemory512(NeuronalSequenceMemory):
                 raise ValueError("coincidence tape must retain its finite detached CPU geometry")
         validate_symbol_rails(state.keys, allow_special=False)
         used = state.used
-        if not 0 <= used <= CAPACITY:
+        if not 0 <= used <= self._capacity:
             raise ValueError("write cursor must be within tape capacity")
         if (
             bool(state.keys[used:].count_nonzero())
@@ -119,7 +124,7 @@ class PersistentCoincidenceMemory512(NeuronalSequenceMemory):
             self.check_state(state)
         used = 0 if state is None else state.used
         required = sum(len(document) + 1 for document in documents)
-        if used + required > CAPACITY:
+        if used + required > self._capacity:
             raise ValueError("neuronal coincidence memory capacity exceeded")
         result = self.initial_state() if state is None else TapeState(**state.snapshot())
         slot = used
@@ -153,22 +158,22 @@ class PersistentCoincidenceMemory512(NeuronalSequenceMemory):
     def accounting(self, state: TapeState) -> dict[str, int]:
         self.check_state(state)
         return {
-            "capacity": CAPACITY,
+            "capacity": self._capacity,
             "occupied_slots": state.used,
             "key_features_per_slot": LAGS * RAILS,
             "sensory_neurons": SENSORY_SIZE,
-            "key_sensory_association_synapses": CAPACITY * (LAGS * RAILS + SENSORY_SIZE),
-            "association_tensor_bytes": CAPACITY * (LAGS * RAILS + SENSORY_SIZE * 4),
-            "binary_key_tensor_bytes": CAPACITY * LAGS * RAILS,
-            "logical_write_cursor_neurons": CAPACITY,
-            "logical_recall_branches": CAPACITY,
-            "logical_recall_cursor_neurons": CAPACITY * CAPACITY,
-            "logical_write_forward_connections": CAPACITY - 1,
-            "logical_shared_recall_forward_connections": CAPACITY - 1,
-            "logical_shared_recall_self_connections": CAPACITY,
-            "logical_recall_connections_all_branches": CAPACITY * (2 * CAPACITY - 1),
+            "key_sensory_association_synapses": self._capacity * (LAGS * RAILS + SENSORY_SIZE),
+            "association_tensor_bytes": self._capacity * (LAGS * RAILS + SENSORY_SIZE * 4),
+            "binary_key_tensor_bytes": self._capacity * LAGS * RAILS,
+            "logical_write_cursor_neurons": self._capacity,
+            "logical_recall_branches": self._capacity,
+            "logical_recall_cursor_neurons": self._capacity * self._capacity,
+            "logical_write_forward_connections": self._capacity - 1,
+            "logical_shared_recall_forward_connections": self._capacity - 1,
+            "logical_shared_recall_self_connections": self._capacity,
+            "logical_recall_connections_all_branches": self._capacity * (2 * self._capacity - 1),
             "enabled_shared_recall_connections": state.used,
-            "stored_successor_bytes": CAPACITY * 8,
+            "stored_successor_bytes": self._capacity * 8,
             "stored_write_cursor_bytes": 8,
             "stored_initial_recall_cursor_bytes": state.used * 8,
             "temporary_lag_neurons": LAGS * RAILS,
@@ -182,9 +187,69 @@ class PersistentCoincidenceMemory512(NeuronalSequenceMemory):
     def _check_cursors(self, state: TapeState, cursors: torch.Tensor) -> None:
         if (
             not isinstance(cursors, torch.Tensor) or cursors.ndim != 1
-            or cursors.numel() > CAPACITY or cursors.dtype != torch.int64
+            or cursors.numel() > self._capacity or cursors.dtype != torch.int64
             or cursors.device.type != "cpu" or cursors.requires_grad
             or cursors.grad_fn is not None or cursors.grad is not None
             or bool(((cursors < 0) | (cursors >= state.used)).any())
         ):
             raise ValueError("persistent recall cursors must be occupied CPU int64 indices")
+
+
+class PersistentCoincidenceMemory512(_PersistentCoincidenceMemory):
+    """Original fixed512-slot public contract and unchanged append counters."""
+
+    def __init__(self) -> None:
+        super().__init__(512)
+
+
+class PersistentCoincidenceMemory1024(_PersistentCoincidenceMemory):
+    """Fixed1024-slot capacity; every old and appended address remains available."""
+
+    def __init__(self) -> None:
+        super().__init__(1024)
+
+    @torch.no_grad()
+    def promote_512_state(self, source: TapeState, *, work: dict | None = None) -> TapeState:
+        """Copy an entire validated512-state into independent1024 storage.
+
+        This is initializer storage expansion, not ingestion or local teaching.
+        The caller owns pending-response exclusion and authenticated source
+        custody. All512 rows, including unused rows and absorbing EOS links,
+        retain their values; the new tail remains zero/-1. No live source
+        tensor is changed, even when validation rejects the result.
+        """
+        PersistentCoincidenceMemory512().check_state(source)
+        result = self.initial_state()
+        for name in ("keys", "sensory", "successor"):
+            getattr(result, name)[:512].copy_(getattr(source, name))
+        result.write_index.copy_(source.write_index)
+        self.check_state(result)
+        for name, old in vars(source).items():
+            new = getattr(result, name)
+            preserved = new if name == "write_index" else new[:512]
+            if not torch.equal(old, preserved):
+                raise ValueError("promotion changed a source tape value")
+            if any(
+                new.untyped_storage().data_ptr() == other.untyped_storage().data_ptr()
+                for other in vars(source).values()
+            ):
+                raise ValueError("promoted tape must not alias source storage")
+        source_bytes = sum(v.numel() * v.element_size() for v in vars(source).values())
+        destination_bytes = sum(v.numel() * v.element_size() for v in vars(result).values())
+        for name, value in {
+            "promotion_calls": 1,
+            "promotion_source_validation_calls": 1,
+            "promotion_destination_validation_calls": 1,
+            "promotion_source_tensor_bytes": source_bytes,
+            "promotion_destination_tensor_bytes": destination_bytes,
+            "promotion_initialized_bytes": destination_bytes,
+            "promotion_copied_bytes": source_bytes,
+            "promotion_prefix_comparison_values": sum(v.numel() for v in vars(source).values()),
+            "promotion_storage_identity_comparisons": 16,
+            "promotion_preserved_rows": 512,
+            "promotion_preserved_occupied_slots": source.used,
+            "promotion_new_empty_rows": 512,
+            "promotion_ingest_calls": 0,
+        }.items():
+            _add(work, name, value)
+        return result

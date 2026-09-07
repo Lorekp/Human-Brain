@@ -36,10 +36,11 @@ WORK_KEYS = (
 )
 
 
-class RollingPrefixCoincidence:
+class _RollingPrefixCoincidence:
     """Own one immutable key copy and one evolving prefix's fixed activity.
 
-    Keys are detached CPU bool[N,32,18], N1..512, with raw or empty rows.
+    Keys are detached CPU bool[N,32,18], within the public class's fixed
+    capacity, with raw or empty rows.
     The constructor's numeric key copy prevents caller mutations from changing
     this call's circuit. The caller owns model/tape custody and discards this
     object after its free/teacher call; it is not model or checkpoint state.
@@ -55,12 +56,12 @@ class RollingPrefixCoincidence:
     """
 
     @torch.no_grad()
-    def __init__(self, keys: Tensor, work: dict | None = None):
+    def __init__(self, keys: Tensor, work: dict | None, capacity: int):
         if (
             not isinstance(keys, Tensor) or keys.ndim != 3
-            or tuple(keys.shape[1:]) != (32, 18) or not 1 <= keys.shape[0] <= 512
+            or tuple(keys.shape[1:]) != (32, 18) or not 1 <= keys.shape[0] <= capacity
         ):
-            raise ValueError("prefix keys require [1..512,32,18]")
+            raise ValueError(f"prefix keys require [1..{capacity},32,18]")
         validate_symbol_rails(keys, allow_special=False, work=work)
         self._work = work
         self._used = keys.shape[0]
@@ -197,3 +198,17 @@ class RollingPrefixCoincidence:
         }.items():
             _add(self._work, name, value)
         return features
+
+
+class RollingPrefixCoincidence(_RollingPrefixCoincidence):
+    """Original fixedN≤512 rolling-prefix interface and counters."""
+
+    def __init__(self, keys: Tensor, work: dict | None = None):
+        super().__init__(keys, work, 512)
+
+
+class RollingPrefixCoincidence1024(_RollingPrefixCoincidence):
+    """Same32-lag activity over every occupied key, up to1024 slots."""
+
+    def __init__(self, keys: Tensor, work: dict | None = None):
+        super().__init__(keys, work, 1024)

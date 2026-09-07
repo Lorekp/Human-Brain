@@ -20,7 +20,7 @@ from humanbrain.plastic_memory import _all_finite
 
 
 @torch.no_grad()
-def compete512(scores: Tensor) -> AddressCompetition:
+def _compete(scores: Tensor, capacity: int) -> AddressCompetition:
     """Compete finite CPU float32 scores in exactly two threshold stages.
 
     Fixed +/-1 wiring uses one subtraction per pair and two signed indexed
@@ -30,12 +30,12 @@ def compete512(scores: Tensor) -> AddressCompetition:
     or an assertion that all arrays are simultaneously live.
     """
     if (
-        not isinstance(scores, Tensor) or scores.ndim != 1 or not 1 <= scores.numel() <= 512
+        not isinstance(scores, Tensor) or scores.ndim != 1 or not 1 <= scores.numel() <= capacity
         or scores.dtype != torch.float32 or scores.device.type != "cpu"
         or scores.requires_grad or scores.grad_fn is not None or scores.grad is not None
         or not _all_finite(scores)
     ):
-        raise ValueError("address scores must be finite detached CPU float32 [1..512]")
+        raise ValueError(f"address scores must be finite detached CPU float32 [1..{capacity}]")
 
     held_scores = scores.clone()
     n = held_scores.numel()
@@ -98,6 +98,16 @@ def compete512(scores: Tensor) -> AddressCompetition:
         held_scores, pair_currents, comparator_activity, winner_currents,
         winner_activity, winner_index, work,
     )
+
+
+def compete512(scores: Tensor) -> AddressCompetition:
+    """Existing fixed512 contract, using the unchanged two-stage circuit."""
+    return _compete(scores, 512)
+
+
+def compete1024(scores: Tensor) -> AddressCompetition:
+    """All occupied addresses, with the same exact lower-index tie rule."""
+    return _compete(scores, 1024)
 
 
 class PersistentCoincidenceReader512(CoincidenceLocalMemoryLearner):
