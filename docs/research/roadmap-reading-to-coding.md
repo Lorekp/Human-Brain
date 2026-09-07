@@ -13,13 +13,13 @@ workspaces and recovers from failures. Local simulated-neuron learning and usefu
 real-world behavior are the central commitments.
 
 The [fifth broader persistent session is complete](../../experiments/r4_integrated/persistent_language_action_v5_result.md).
-Online scores0/8 corrected first responses,0/8 changed-form encounters,1/8 exact
-delayed repeats,0/16 fresh transfer,0/16 prior regressions and0/8 teacher-free
-recovery. Correction-disabled and simple references score4/16 and10/16 on prior
-regressions. The same learning/acting system continues its state across64 episodes
-per route while memory grows505→864 slots. Both final states are saved. Local
-learning establishes one exposed delayed reading success, but no useful broader
-advantage or correct software edit.
+Online scores 0/8 corrected first responses, 0/8 changed-form encounters, 1/8 exact
+delayed repeats, 0/16 fresh transfer, 0/16 prior regressions and 0/8 teacher-free
+recovery. Correction-disabled and simple references score 4/16 and 10/16 on prior
+regressions. The same learning/acting system continues its state across 64 episodes
+per route while memory grows 505→864 slots. Both final states are saved. One
+exposed delayed reading response succeeds amid broad wrong-answer concentration;
+no useful broader advantage or correct software edit is established.
 
 The prepared [byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 is also completed and independently audited. Its narrow successes remain
@@ -43,13 +43,19 @@ own-emission outcomes with separate causal assembly teaching. Its
 [ordinary integration QA](factorized-sequence-integration-qa-v1.md) and
 [complete broader saved audit](persistent-language-action-v5-protocol.md) pass.
 Generation changes substantially, but correction learning also harms the
-older-task contrast. Use the saved learning/evaluation reviews to resolve entry
-relevance and shared-update interference before selecting another mechanism.
-The immediate integral speed work is owned-response routing validation, guided
-by the [measured cost review](persistent-language-action-v5-cost-review.md).
-An [owned-response optimization](sequence-assembly-owned-response-qa-v1.md)
-already removes redundant validation with checked-path parity and custody QA.
-Preserve the864-slot state and expose its successor to fresh problems. Another
+older-task contrast. The selected next change is
+[input-defined local recognition](input-defined-recognition-v1.md): preserve the
+prior router, give the actual input-activated event its own recognition credit,
+and avoid changing every owner's current through one shared correction vector.
+This remains prototype recognition, not established semantic understanding.
+It proceeds through ordinary integration QA into the next broader workload;
+metadata-only repair and sequence latches are not separate active queues.
+The [owned-response routing optimization](factorized-sequence-owned-response-qa-v1.md)
+removes repeated validation and hashing with exact checked-path parity and custody
+QA, guided by the [measured cost review](persistent-language-action-v5-cost-review.md).
+The earlier [assembly optimization](sequence-assembly-owned-response-qa-v1.md)
+also remains integral code. Full-workload speedup is not yet measured.
+Preserve the 864-slot state and expose its successor to fresh problems. Another
 automatic byte/operation gate or extra rounds on this exposed stream are not selected.
 Continue the saved model and accumulated memory on
 new instruction forms and combinations. Address selection, composition and

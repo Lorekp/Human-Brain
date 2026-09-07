@@ -44,6 +44,12 @@ has online1/8 exact delayed repeats,0/16 fresh,0/16 prior regressions and0/8
 recovery. Correction-disabled4/16 prior regressions exceed online0/16. The full
 run and audit preserve both final states and pass within the complete budget.
 
+The reader now borrows one validated routing scope and theta digest per free
+response. Public calls and teacher stages retain their full checks; the shared
+float64 arithmetic kernel is unchanged. [Two affected QA nodes pass](research/factorized-sequence-owned-response-qa-v1.md),
+including exact public-path parity and mutation/rebinding rejection. This removes
+redundant work without a new skill gate or a claimed measured workload speedup.
+
 Preceding measured implementation:
 
 `sequence_assembly_cells.py` adds target-independent local context recruitment,
