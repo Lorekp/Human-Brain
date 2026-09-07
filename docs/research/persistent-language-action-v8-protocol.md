@@ -1,7 +1,8 @@
 # Eighth persistent language/action session
 
 Status: first launch stopped on a receipt transport bug; its saved prefix is
-audited. Corrected source is held for ordinary serialization QA, 2026-09-07.
+audited. Corrected source passes ordinary serialization QA; one corrected fresh
+session and its saved audit are explicitly released, 2026-09-07.
 Root selects the frozen curriculum, public protected-driver policy and resource
 envelope after source, serializer, ordinary mechanics and authored-program review.
 The first release permitted one fresh continuation, no automatic budget extension.
@@ -95,6 +96,20 @@ After this QA, the next explicit release will be a new corrected session from
 the authenticated V7 online prior, with the same frozen workload and declared
 N36 reoffering. It will not resume/clear the dirty intent or pretend to retain
 the lost source update. The failed cohort is exposed development material.
+
+The serializer node passes first launch at
+`b7e28c28e3fa81f799bab2a15c8d21d5d11b8fdb`,5.5008832watchdog seconds and
+268.50390625MiB observed peak, with zero models/offers/children/decoders.
+Root now releases exactly one corrected session, using the same3600-second,
+120-second-reserve,4GiB-RSS,26GiB-artifact and34GiB-free thresholds. Its new
+directory is `.pytest-tmp/persistent-language-action-v8-corrected-run` and
+monitor `.pytest-tmp/persistent-language-action-v8-corrected.launch.json`.
+Reinitialize both routes independently from V7 ONLINE and the reference from
+its own V7 history. N36 is deliberately offered again;89 discarded first-run
+offers remain separately counted. No first-run dirty intent is cleared and
+no post-source weights, rewards or RNG are reconstructed. There were no first-run
+task attempts or answer corrections. The unchanged manifest is re-exposed
+development material rather than a newly authored or pristine cohort.
 
 ## Scope and continuation
 
