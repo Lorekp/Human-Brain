@@ -110,6 +110,11 @@ def compete1024(scores: Tensor) -> AddressCompetition:
     return _compete(scores, 1024)
 
 
+def compete2048(scores: Tensor) -> AddressCompetition:
+    """Explicit2048-address expansion with the identical two-stage circuit."""
+    return _compete(scores, 2048)
+
+
 class PersistentCoincidenceReader512(CoincidenceLocalMemoryLearner):
     """Same32x32 synapses/codec/teacher with one caller-owned512-slot tape."""
 

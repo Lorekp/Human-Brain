@@ -12770,3 +12770,450 @@ def test_persistent_v5_summary_contract(tmp_path):
             "children": 0,
         },
     )
+
+
+def test_input_defined_recognition_local_contract(tmp_path):
+    """Two authored contexts; no reader, task stream, checkpoint or execution."""
+    from dataclasses import replace
+    from types import SimpleNamespace
+    from unittest.mock import patch
+
+    from humanbrain import input_defined_recognition as module
+    from humanbrain.factorized_sequence_features import (
+        INPUT_WIDTH,
+        SENSOR_SYMBOLS,
+        build_candidate_view,
+        build_context,
+    )
+    from humanbrain.factorized_sequence_router import (
+        FactorizedSequenceRouter,
+        compete_float64,
+        compete_float64_1024,
+    )
+
+    def pattern(request):
+        raw = torch.zeros(INPUT_WIDTH, dtype=torch.bool)
+        for position, symbol in enumerate([*request, 256]):
+            for bit in range(9):
+                raw[position * 18 + 2 * bit + ((symbol >> bit) & 1)] = True
+        start = SENSOR_SYMBOLS * 18 + 12
+        for bit in range(9):
+            raw[start + 2 * bit + ((257 >> bit) & 1)] = True
+        raw[-129] = True
+        return raw
+
+    # Exercise the expanded, genuinely f64 competition while preserving old512.
+    scores = torch.zeros(1024, dtype=torch.float64)
+    scores[-2], scores[-1] = 1.0, 1.0 + 2**-40
+    competition = compete_float64_1024(scores)
+    assert scores.float()[-2] == scores.float()[-1]
+    assert competition.winner_index == 1023
+    assert competition.pair_currents[-1].item() == -(2**-40)
+    assert int(competition.comparator_activity.sum()) == 1022 * 1021 // 2
+    assert competition.winner_activity.tolist() == [False] * 1023 + [True]
+    assert competition.work["competition_pairs"] == 1024 * 1023 // 2
+    with pytest.raises(ValueError, match=r"1\.\.512"):
+        compete_float64(scores)
+    maximum = torch.finfo(torch.float64).max
+    with pytest.raises(ValueError, match="comparator currents must be finite"):
+        compete_float64_1024(torch.tensor([maximum, -maximum], dtype=torch.float64))
+
+    patterns = [pattern(b"ab"), pattern(b"ac")]
+    feature_work, work, legacy_work = {}, {}, {}
+    views = [build_candidate_view(raw, work=feature_work) for raw in patterns]
+    currents = [build_context(raw, work=feature_work) for raw in patterns]
+    wirings = [
+        module.build_self_activity(view, raw, work=feature_work)
+        for view, raw in zip(views, patterns, strict=True)
+    ]
+    oracle_h, oracle_z, oracle_kappa, oracle_baseline = [], [], [], []
+    for view, wiring in zip(views, wirings, strict=True):
+        values = view.values.tolist()
+        squared = [value * value for value in values]
+        own_norm = math.sqrt(math.fsum(value * value for value in squared))
+        h = [value / own_norm / math.sqrt(2) for value in squared] + [0.0] * 14
+        products = [
+            float(currents[0].populations[int(index)]) * value
+            for index, value in zip(view.indices, values, strict=True)
+        ]
+        norm = math.sqrt(math.fsum(value * value for value in products))
+        z = [value / norm / math.sqrt(2) for value in products] + [0.0] * 14
+        assert wiring.values.tolist() == pytest.approx(h, rel=2e-14, abs=2e-15)
+        assert wiring.indices[: len(values)].tolist() == view.indices.tolist()
+        assert wiring.values[-14:].tolist() == [0.0] * 14
+        oracle_h.append(h)
+        oracle_z.append(z)
+        oracle_kappa.append(math.fsum(a * b for a, b in zip(h, z, strict=True)))
+        oracle_baseline.append(math.fsum(products) / 45)
+    assert feature_work["recognition_self_builds"] == 2
+    assert feature_work["recognition_self_tensor_bytes"] == sum(
+        12 * (view.indices.numel() + 14) for view in views
+    )
+
+    prior = FactorizedSequenceRouter()
+    prior.theta[views[0].indices.long()] = 0.03
+    theta_before = prior.theta.clone()
+    recognition = module.InputDefinedRecognition()
+    initial = recognition.snapshot()
+    assert recognition.capacity == 1024 and recognition.tensor_bytes == 8192
+    assert recognition.gains.shape == (1024,) and not bool(recognition.gains.any())
+    legacy = prior.evaluate(currents[0], views, work=legacy_work)
+    actual = recognition.evaluate(currents[0], views, wirings, prior.theta, work=work)
+    assert torch.equal(actual.prior_scores, legacy.scores)
+    assert torch.equal(actual.scores, legacy.scores)
+    assert actual.kappas.tolist() == pytest.approx(oracle_kappa, rel=2e-14, abs=2e-15)
+    assert actual.selected_index == legacy.selected_index
+    scalar_prior = [
+        math.fsum(
+            float(prior.theta[int(index)]) * value
+            for index, value in zip(wiring.indices, z, strict=True)
+        )
+        + baseline
+        for wiring, z, baseline in zip(wirings, oracle_z, oracle_baseline, strict=True)
+    ]
+    assert actual.prior_scores.tolist() == pytest.approx(scalar_prior, rel=2e-14, abs=2e-15)
+    owned = recognition._begin_validated_free_response(prior.theta, work)
+    fast = recognition._evaluate_owned_free(currents[0], views, wirings, owned, work=work)
+    for field in ("scores", "prior_scores", "kappas"):
+        assert torch.equal(getattr(fast, field), getattr(actual, field))
+    assert fast.selected_index == actual.selected_index
+
+    # Cached fixed wiring and a prepared local context each reject mutation.
+    held = wirings[0].values[0].item()
+    wirings[0].values[0] = held + 1
+    with pytest.raises(ValueError, match="self activity or its canonical view changed"):
+        module.check_self_activity(wirings[0], views[0], work)
+    wirings[0].values[0] = held
+    stage = recognition.begin_stage(work)
+    prepared = recognition.prepare_context(
+        currents[0], views[0], wirings[0], 0, prior.theta, stage=stage, work=work
+    )
+    tampered = replace(prepared, score_before=prepared.score_before + 1)
+    with pytest.raises(ValueError, match="changed after preparation"):
+        recognition.prepare_recognition(tampered, stage=stage, work=work)
+    disabled = recognition.prepare_recognition(
+        prepared, stage=stage, learning_enabled=False, work=work
+    )
+    assert not disabled.staged and not disabled.skipped
+    assert stage.revision == 0 and torch.equal(stage.gains, initial["gains"])
+    assert torch.equal(recognition.gains, initial["gains"])
+    assert disabled.score_after == pytest.approx(1.0, abs=2e-14)
+    update = recognition.prepare_recognition(prepared, stage=stage, work=work)
+    expected_gain = (1 - scalar_prior[0]) / oracle_kappa[0]
+    assert update.delta_gain == pytest.approx(expected_gain, rel=2e-14, abs=2e-15)
+    assert update.score_after == pytest.approx(1.0, rel=0, abs=2e-14)
+    assert update.delta_gain == disabled.delta_gain
+    assert stage.revision == 1 and update.staged
+    assert stage.gains[0] == pytest.approx(expected_gain, rel=2e-14, abs=2e-15)
+    assert not bool(stage.gains[1:].any())
+    assert torch.equal(recognition.gains, initial["gains"])
+    with pytest.raises(ValueError, match="changed after preparation"):
+        recognition.prepare_recognition(prepared, stage=stage, work=work)
+    changed = recognition.evaluate(currents[0], views, wirings, prior.theta, stage=stage, work=work)
+    assert changed.scores[0] == pytest.approx(1.0, rel=0, abs=2e-14)
+    assert changed.scores[1].item() == actual.scores[1].item()
+    assert torch.equal(changed.prior_scores, actual.prior_scores)
+    recognition.validate_stage(stage, work)
+    recognition.commit_validated(stage)
+    assert torch.equal(recognition.gains, stage.gains)
+    assert recognition.gains.data_ptr() != stage.gains.data_ptr()
+    with pytest.raises(RuntimeError, match="owned recognition gains or theta changed"):
+        recognition._check_owned_free_response(owned)
+
+    live = recognition.gains.clone()
+    failed_stage = recognition.begin_stage(work)
+    with pytest.raises(ValueError, match="exact context"):
+        recognition.prepare_context(
+            currents[0], views[1], wirings[1], 1, prior.theta, stage=failed_stage, work=work
+        )
+    later = recognition.prepare_context(
+        currents[1], views[1], wirings[1], 1, prior.theta, stage=failed_stage, work=work
+    )
+    # Reject the final finite validation after genuine local scalar arithmetic.
+    # Replace only this module's math binding, never Python's shared math module.
+    with (
+        patch.object(module, "math", SimpleNamespace(isfinite=lambda value: False)),
+        pytest.raises(ValueError, match="local proposal must be finite"),
+    ):
+        recognition.prepare_recognition(later, stage=failed_stage, work=work)
+    assert failed_stage.revision == 0 and torch.equal(failed_stage.gains, live)
+    assert torch.equal(recognition.gains, live)
+    _coincidence_qa_save(
+        tmp_path / "input-defined-recognition-raw.json",
+        {
+            "prior_scores": actual.prior_scores.tolist(),
+            "self_activity": oracle_h,
+            "actual_activity_oracle": oracle_z,
+            "kappa_oracle": oracle_kappa,
+            "actual_kappas": actual.kappas.tolist(),
+            "expected_gain": expected_gain,
+            "actual_gain": update.gain_after,
+            "corrected_scores": changed.scores.tolist(),
+            "expanded_competition_work": competition.work,
+            "work": work,
+            "feature_work": feature_work,
+        },
+    )
+    invalid = {"gains": live.clone(), "_extra_state": recognition.get_extra_state()}
+    invalid["gains"][0], invalid["gains"][4] = 77.0, float("nan")
+    with pytest.raises(ValueError, match="gains must be finite"):
+        recognition.load_state_dict(invalid)
+    assert torch.equal(recognition.gains, live)
+    invalid = {
+        "gains": live.clone(),
+        "_extra_state": recognition.get_extra_state() | {"capacity": 512},
+    }
+    with pytest.raises(ValueError, match="state metadata mismatch"):
+        recognition.load_state_dict(invalid)
+    assert torch.equal(recognition.gains, live)
+    recognition.load_state_dict(initial)
+    empty = recognition.evaluate(currents[0], [], [], prior.theta, work=work)
+    assert empty.selected_index is None and empty.energy == empty.selected_kappa == 0
+    assert empty.competition is None and empty.scores.numel() == 0
+    assert torch.equal(prior.theta, theta_before)
+    assert torch.equal(recognition.gains, initial["gains"])
+    assert work["recognition_evaluations"] == 4 and work["recognition_candidates"] == 6
+    assert work["recognition_prepared_contexts"] == 2
+    assert work["recognition_offers"] == 3 and work["recognition_staged_updates"] == 1
+    assert work["recognition_local_errors"] == work["recognition_local_divisions"] == 3
+    assert work["recognition_stage_copy_bytes"] == 2 * 8192
+    assert work["factorized_activity_calls"] == 11
+    _coincidence_qa_save(
+        tmp_path / "input-defined-recognition-passed.json",
+        {
+            "status": "passed",
+            "recognition_modules": 1,
+            "legacy_routers": 1,
+            "reader_models": 0,
+            "task_builders": 0,
+            "checkpoint_loads": 0,
+            "children": 0,
+            "authored_contexts": 2,
+            "candidate_builds_including_canonical_checks": 4,
+            "current_builds": 2,
+            "self_activity_builds": 2,
+            "recognition_evaluations": 4,
+            "legacy_evaluations": 1,
+            "prepared_context_attempts": 3,
+            "prepared_contexts": 2,
+            "recognition_update_attempts": 5,
+            "recognition_offers": 3,
+            "enabled_staged_updates": 1,
+            "disabled_proposals": 1,
+            "late_failed_proposals": 1,
+            "rejected_tampered_contexts": 1,
+            "rejected_stale_contexts": 1,
+            "recognition_commits": 1,
+            "snapshots": 1,
+            "same_instance_state_restores": 1,
+            "rejected_state_loads": 2,
+            "expanded_competitions": 1,
+            "direct_rejected_competitions": 2,
+            "work": work,
+            "feature_work": feature_work,
+        },
+    )
+
+
+def test_recognition_reader_growth_and_executed_atomicity(tmp_path):
+    """One actor, one child, causal recognition and lossless independent growth."""
+    import copy
+    import time
+    from pathlib import Path
+    from unittest.mock import patch
+
+    from experiments.r4_integrated.persistent_language_action_execution_v2 import (
+        execute_proposal,
+        qualified_launch,
+        workspace_from_records,
+    )
+    from humanbrain import recognition_sequence_memory_learner as module
+    from humanbrain.persistent_coincidence_memory import PersistentCoincidenceMemory1024
+    from humanbrain.persistent_coincidence_reader import compete2048
+    from humanbrain.recognition_sequence_splice_learner import RecognitionSequenceSpliceLearner
+    from humanbrain.sequence_assembly_cells import SequenceAssemblyCells1024
+    from humanbrain.sequence_assembly_observation import (
+        RawObservation,
+        SpliceProposal,
+        ToolFeedback,
+    )
+    from humanbrain.sequence_assembly_prefix import RollingPrefixCoincidence2048
+
+    model = RecognitionSequenceSpliceLearner(seed=733)
+    reader = model.reader
+    with torch.no_grad():
+        reader.address_weight.zero_()
+        reader.prefix_weight.zero_()
+        reader.output_weight.zero_()
+        reader.codec.weight.zero_()
+        reader.codec.bias.zero_()
+        reader.codec.bias[256] = 10
+        model.actions.operation_weight.zero_()
+        model.actions.operation_bias.copy_(torch.tensor([10.0, 0.0]))
+    state = model.ingest([b"a"])
+    tape = state.snapshot()
+    before = copy.deepcopy(model.state_dict())
+    workspace = workspace_from_records([{"path": "main.py", "content_hex": b"print(0)\n".hex()}])
+    observation = RawObservation(b"Change the printed value to one.", workspace)
+    prediction = model.propose(observation, state)
+    assert prediction.proposal.operation == "STOP" and len(prediction.payload.steps) == 1
+    _, execution = execute_proposal(
+        workspace, prediction.proposal, tmp_path / "actual-action",
+        launch=qualified_launch(Path(__file__).resolve().parents[1]),
+        deadline=time.perf_counter() + 10)
+    _coincidence_qa_save(tmp_path / "recognition-actual-action.json", {
+        "proposal": prediction.proposal.to_record(), "execution": execution})
+    assert execution["returncode"] == 0 and execution["stdout_hex"] == b"0\n".hex()
+    envelope = {"attempt_id": prediction.attempt_id, "proposal_sha256": prediction.proposal_sha256,
+                "workspace_sha256": workspace.sha256, "execution": execution}
+    teacher = SpliceProposal("SPLICE", "main.py", 6, 7, b"1", "eos", workspace.sha256)
+    failed = []
+
+    def reject_final_wiring(wiring, view, pattern, work):
+        failed.append(dict(work))
+        raise ValueError("authored final recognition wiring rejection")
+
+    with (patch.object(module, "validate_self_activity", side_effect=reject_final_wiring),
+          pytest.raises(ValueError, match="authored final recognition")):
+        model.teach(prediction, observation, state, teacher, envelope)
+    assert len(failed) == 1 and failed[0]["recognition_offers"] == 2
+    assert failed[0]["assembly_output_offers"] == 2
+    _assert_nested_equal(model.state_dict(), before)
+    assert model._pending is not None and reader.pending_prediction is prediction.payload
+    feedback = model.teach(prediction, observation, state, teacher, envelope)
+    taught = feedback.reader_feedback
+    assert taught.recognition_updated and taught.output_updated and not taught.routing_updated
+    assert int(reader.assemblies.used) == len(reader._candidate_views) == 2
+    assert len(reader._self_wirings) == 2
+    assert model._pending is None and reader.pending_prediction is None
+    assert [row["target"] for row in taught.teacher_steps] == [49, 256]
+    for row in taught.teacher_steps:
+        association = row["recognition_update"]
+        assert association["selected_index"] == row["selected_index"]
+        assert association["context_sha256"] == row["routing"]["context_sha256"]
+        assert association["score_after"] == pytest.approx(1, abs=1e-12)
+        assert association["staged"] and not association["skipped"]
+    for name, value in before.items():
+        if not name.startswith(("reader.assemblies.", "reader.recognition.", "actions.")):
+            _assert_nested_equal(model.state_dict()[name], value)
+    trained = copy.deepcopy(model.state_dict())
+    old_views, old_wirings = reader._candidate_views, reader._self_wirings
+    load_work = {}
+    model.load_state_dict(trained, work=load_work)
+    assert reader._candidate_views is not old_views and reader._self_wirings is not old_wirings
+    for old, new in zip(old_wirings, reader._self_wirings, strict=True):
+        assert old.indices.data_ptr() != new.indices.data_ptr()
+        assert old.values.data_ptr() != new.values.data_ptr()
+    _assert_nested_equal(model.state_dict(), trained)
+    incoming = copy.deepcopy(trained)
+    incoming["actions.operation_bias"].add_(1)
+    incoming["reader.recognition.gains"][2] = 1
+    with pytest.raises(ValueError, match="outside occupied"):
+        model.load_state_dict(incoming)
+    _assert_nested_equal(model.state_dict(), trained)
+    del incoming, before
+    feedback_observation = RawObservation(
+        observation.request, workspace,
+        ToolFeedback(execution["returncode"], bytes.fromhex(execution["stdout_hex"]),
+                     bytes.fromhex(execution["stderr_hex"]), execution["timeout"],
+                     execution["output_limit_exceeded"], execution["capture_complete"],
+                     execution["files_complete"], False))
+    second = reader.predict_with_receipt(feedback_observation, state, max_bytes=1)
+    assert second.observation is feedback_observation
+    assert second.observation.sha256 != prediction.payload.observation.sha256
+    assert all(step.exact_context is None for step in second.steps)
+    disabled = reader.teach(feedback_observation, b"2", state, prediction=second,
+                            learning_enabled=False)
+    assert not disabled.recognition_updated and not disabled.output_updated
+    assert all(not row["staged"] and not row["recognition_update"]["staged"]
+               for row in disabled.teacher_steps)
+    _assert_nested_equal(model.state_dict(), trained)
+    _assert_nested_equal(state.snapshot(), tape)
+    # A borrowed gain replacement cannot hide behind equal numerical values.
+    original = reader._recognize
+    gains = reader.recognition.gains
+    experience = reader._active_experience
+    failed_free = []
+
+    def rebind_after_read(*args, **kwargs):
+        result = original(*args, **kwargs)
+        failed_free.append(1)
+        reader.recognition.gains = gains.clone()
+        return result
+
+    try:
+        with patch.object(reader, "_recognize", side_effect=rebind_after_read), pytest.raises(
+                RuntimeError):
+            reader.predict_with_receipt(feedback_observation, state, max_bytes=0)
+    finally:
+        reader.recognition.gains = gains
+    assert failed_free == [1] and reader.pending_prediction is None
+    assert reader._active_experience == experience
+    _assert_nested_equal(model.state_dict(), trained)
+    # Full old tape is retained, then append crosses the old1024-slot boundary.
+    prior_memory = PersistentCoincidenceMemory1024()
+    prior_state = prior_memory.ingest([b"a" * 1023])
+    prior_snapshot = prior_state.snapshot()
+    growth_work = {}
+    grown = reader.memory.promote_1024_state(prior_state, work=growth_work)
+    for name, value in vars(prior_state).items():
+        actual = getattr(grown, name)
+        assert actual.data_ptr() != value.data_ptr()
+        assert torch.equal(actual if name == "write_index" else actual[:1024], value)
+    assert not bool(grown.keys[1024:].any()) and not bool(grown.sensory[1024:].any())
+    assert bool(grown.successor[1024:].eq(-1).all()) and grown.used == 1024
+    appended = reader.memory.ingest([b"b"], grown)
+    assert appended.used == 1026 and appended.successor[1025].item() == 1025
+    _assert_nested_equal(prior_state.snapshot(), prior_snapshot)
+    assert grown.used == 1024
+    prefix_work = {}
+    cache = RollingPrefixCoincidence2048(appended.keys[:appended.used], work=prefix_work)
+    initial_prefix = cache.features()
+    cache.advance(98)
+    advanced_prefix = cache.features()
+    assert initial_prefix.shape == advanced_prefix.shape == (1026, 32, 32)
+    scores = torch.zeros(1026, dtype=torch.float32)
+    scores[1024:] = 1
+    competition = compete2048(scores)
+    assert competition.winner_index == 1024
+    # A small generic bank proves lossless old-owner growth and new owner512.
+    bank = SequenceAssemblyCells1024(10)
+    metadata = bank.get_extra_state()
+    metadata.update(schema="sequence-assembly-cells-v1", capacity=512)
+    old_patterns = torch.tensor(
+        [[bool((index >> bit) & 1) for bit in range(10)] for index in range(512)])
+    old_bank = {"prototypes": old_patterns, "outgoing": torch.zeros(512, 257, dtype=torch.float64),
+                "used": torch.tensor(512, dtype=torch.int64), "_extra_state": metadata}
+    bank_work = {}
+    promoted = bank.promote_512_state(old_bank, work=bank_work)
+    for name in ("prototypes", "outgoing", "used"):
+        assert promoted[name].data_ptr() != old_bank[name].data_ptr()
+        retained = promoted[name] if name == "used" else promoted[name][:512]
+        assert torch.equal(retained, old_bank[name])
+    bank.load_state_dict(promoted)
+    stage = bank.begin_stage(bank_work)
+    new_pattern = torch.tensor([False] * 9 + [True])
+    prepared = bank.prepare_context(new_pattern, torch.zeros(257, dtype=torch.float64),
+                                    stage=stage, work=bank_work)
+    assert prepared.recruited and prepared.selected_index == 512
+    offered = bank.prepare_teach(prepared, 65, stage=stage, work=bank_work)
+    bank.validate_stage(stage, bank_work)
+    bank.commit_validated(stage)
+    assert offered.staged and int(bank.used) == 513
+    assert torch.equal(bank.prototypes[512], new_pattern)
+    assert torch.equal(bank.prototypes[:512], old_bank["prototypes"])
+    _coincidence_qa_save(tmp_path / "recognition-integration-passed.json", {
+        "status": "passed", "combined_models": 1, "ingests": 3,
+        "ingested_raw_bytes": 1025, "ingested_eos": 3,
+        "free_calls": 2, "free_decisions": 1 + len(second.steps), "failed_free_calls": 1,
+        "failed_free_decisions": 1, "actual_children": 1,
+        "reader_teacher_calls": 3, "reader_teacher_offers": 6,
+        "recognition_offers": 6, "action_teacher_calls": 2, "action_labels": 6,
+        "same_instance_loads": 1, "rejected_loads": 1, "checkpoint_loads": 0,
+        "standalone_assembly_constructions": 1, "authored_prior_owners": 512,
+        "standalone_assembly_offers": 1, "final_standalone_owners": 513,
+        "fact_growth": growth_work, "fact_competition": competition.work,
+        "prefix_growth": prefix_work, "event_growth": bank_work,
+        "load": load_work, "failed_teacher": failed[0],
+        "enabled_teacher": taught.work, "disabled_teacher": disabled.work,
+    })

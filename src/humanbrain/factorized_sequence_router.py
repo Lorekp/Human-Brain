@@ -80,8 +80,18 @@ def _hash(*values, work=None):
 @torch.no_grad()
 def compete_float64(scores: Tensor) -> AddressCompetition:
     """Two actual threshold layers over all 1..512 scores; lower-index ties."""
-    if not isinstance(scores, Tensor) or scores.ndim != 1 or not 1 <= scores.numel() <= CAPACITY:
-        raise ValueError("routing scores must have 1..512 entries")
+    return _compete_float64(scores, CAPACITY)
+
+
+@torch.no_grad()
+def compete_float64_1024(scores: Tensor) -> AddressCompetition:
+    """Explicit expanded event population; the old public bound stays512."""
+    return _compete_float64(scores, 1024)
+
+
+def _compete_float64(scores: Tensor, capacity: int) -> AddressCompetition:
+    if not isinstance(scores, Tensor) or scores.ndim != 1 or not 1 <= scores.numel() <= capacity:
+        raise ValueError(f"routing scores must have 1..{capacity} entries")
     n = scores.numel()
     _tensor(scores, (n,), torch.float64, "routing scores")
     _finite(scores, "routing scores")

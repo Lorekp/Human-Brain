@@ -212,3 +212,10 @@ class RollingPrefixCoincidence1024(_RollingPrefixCoincidence):
 
     def __init__(self, keys: Tensor, work: dict | None = None):
         super().__init__(keys, work, 1024)
+
+
+class RollingPrefixCoincidence2048(_RollingPrefixCoincidence):
+    """Unchanged32-lag activity over all occupied keys, up to2048 slots."""
+
+    def __init__(self, keys: Tensor, work: dict | None = None):
+        super().__init__(keys, work, 2048)

@@ -1,4 +1,4 @@
-"""Fixed512 and1024-slot binary associations with unchanged local writes.
+"""Explicit512,1024 and2048-slot binary associations with unchanged local writes.
 
 Keys retain preceding raw-symbol rails, never normalized random codes. Sensory
 content and forward/EOS cursor wiring keep the existing sequence-memory meaning.
@@ -38,7 +38,7 @@ class _PersistentCoincidenceMemory(NeuronalSequenceMemory):
     """
 
     def __init__(self, capacity: int) -> None:
-        if capacity not in (512, 1024):
+        if capacity not in (512, 1024, 2048):
             raise ValueError("persistent memory requires an explicit supported capacity")
         self._capacity = capacity
 
@@ -218,38 +218,53 @@ class PersistentCoincidenceMemory1024(_PersistentCoincidenceMemory):
         retain their values; the new tail remains zero/-1. No live source
         tensor is changed, even when validation rejects the result.
         """
-        PersistentCoincidenceMemory512().check_state(source)
-        result = self.initial_state()
-        for name in ("keys", "sensory", "successor"):
-            getattr(result, name)[:512].copy_(getattr(source, name))
-        result.write_index.copy_(source.write_index)
-        self.check_state(result)
-        for name, old in vars(source).items():
-            new = getattr(result, name)
-            preserved = new if name == "write_index" else new[:512]
-            if not torch.equal(old, preserved):
-                raise ValueError("promotion changed a source tape value")
-            if any(
-                new.untyped_storage().data_ptr() == other.untyped_storage().data_ptr()
-                for other in vars(source).values()
-            ):
-                raise ValueError("promoted tape must not alias source storage")
-        source_bytes = sum(v.numel() * v.element_size() for v in vars(source).values())
-        destination_bytes = sum(v.numel() * v.element_size() for v in vars(result).values())
-        for name, value in {
-            "promotion_calls": 1,
-            "promotion_source_validation_calls": 1,
-            "promotion_destination_validation_calls": 1,
-            "promotion_source_tensor_bytes": source_bytes,
-            "promotion_destination_tensor_bytes": destination_bytes,
-            "promotion_initialized_bytes": destination_bytes,
-            "promotion_copied_bytes": source_bytes,
-            "promotion_prefix_comparison_values": sum(v.numel() for v in vars(source).values()),
-            "promotion_storage_identity_comparisons": 16,
-            "promotion_preserved_rows": 512,
-            "promotion_preserved_occupied_slots": source.used,
-            "promotion_new_empty_rows": 512,
-            "promotion_ingest_calls": 0,
-        }.items():
-            _add(work, name, value)
-        return result
+        return _promote_state(self, source, PersistentCoincidenceMemory512(), work)
+
+
+class PersistentCoincidenceMemory2048(_PersistentCoincidenceMemory):
+    """Fixed2048-slot factual memory; all old and new addresses stay eligible."""
+
+    def __init__(self) -> None:
+        super().__init__(2048)
+
+    @torch.no_grad()
+    def promote_1024_state(self, source: TapeState, *, work: dict | None = None) -> TapeState:
+        """Losslessly expand all1024 rows, without ingestion or source mutation."""
+        return _promote_state(self, source, PersistentCoincidenceMemory1024(), work)
+
+
+def _promote_state(destination, source, previous, work):
+    previous.check_state(source)
+    count = previous._capacity
+    result = destination.initial_state()
+    for name in ("keys", "sensory", "successor"):
+        getattr(result, name)[:count].copy_(getattr(source, name))
+    result.write_index.copy_(source.write_index)
+    destination.check_state(result)
+    for name, old in vars(source).items():
+        new = getattr(result, name)
+        preserved = new if name == "write_index" else new[:count]
+        if not torch.equal(old, preserved):
+            raise ValueError("promotion changed a source tape value")
+        if any(new.untyped_storage().data_ptr() == other.untyped_storage().data_ptr()
+               for other in vars(source).values()):
+            raise ValueError("promoted tape must not alias source storage")
+    source_bytes = sum(v.numel() * v.element_size() for v in vars(source).values())
+    destination_bytes = sum(v.numel() * v.element_size() for v in vars(result).values())
+    for name, value in {
+        "promotion_calls": 1,
+        "promotion_source_validation_calls": 1,
+        "promotion_destination_validation_calls": 1,
+        "promotion_source_tensor_bytes": source_bytes,
+        "promotion_destination_tensor_bytes": destination_bytes,
+        "promotion_initialized_bytes": destination_bytes,
+        "promotion_copied_bytes": source_bytes,
+        "promotion_prefix_comparison_values": sum(v.numel() for v in vars(source).values()),
+        "promotion_storage_identity_comparisons": 16,
+        "promotion_preserved_rows": count,
+        "promotion_preserved_occupied_slots": source.used,
+        "promotion_new_empty_rows": destination._capacity - count,
+        "promotion_ingest_calls": 0,
+    }.items():
+        _add(work, name, value)
+    return result

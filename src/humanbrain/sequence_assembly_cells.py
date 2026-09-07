@@ -16,7 +16,7 @@ import torch
 from torch import Tensor, nn
 
 from humanbrain.neuronal_address_competition import AddressCompetition
-from humanbrain.persistent_coincidence_reader import compete512
+from humanbrain.persistent_coincidence_reader import compete512, compete1024
 from humanbrain.plastic_memory import _all_finite
 
 CAPACITY = 512
@@ -141,6 +141,9 @@ class SequenceAssemblyCells(nn.Module):
     """
 
     WORK_KEYS = WORK_KEYS
+    capacity = CAPACITY
+    _compete = staticmethod(compete512)
+    schema = "sequence-assembly-cells-v1"
 
     def __init__(self, input_width: int) -> None:
         super().__init__()
@@ -148,19 +151,19 @@ class SequenceAssemblyCells(nn.Module):
             raise ValueError("assembly input_width must be an integer in1..2**24")
         self.input_width = input_width
         self.register_buffer("prototypes", torch.zeros(
-            CAPACITY, input_width, dtype=torch.bool, device="cpu"))
+            self.capacity, input_width, dtype=torch.bool, device="cpu"))
         self.register_buffer("outgoing", torch.zeros(
-            CAPACITY, OUTPUT_WIDTH, dtype=torch.float64, device="cpu"))
+            self.capacity, OUTPUT_WIDTH, dtype=torch.float64, device="cpu"))
         self.register_buffer("used", torch.zeros((), dtype=torch.int64, device="cpu"))
         self._stage_owner = object()
 
     @property
     def tensor_bytes(self) -> int:
-        return CAPACITY * self.input_width + CAPACITY * OUTPUT_WIDTH * 8 + 8
+        return self.capacity * self.input_width + self.capacity * OUTPUT_WIDTH * 8 + 8
 
     def get_extra_state(self) -> dict:
         return {
-            "schema": "sequence-assembly-cells-v1", "capacity": CAPACITY,
+            "schema": self.schema, "capacity": self.capacity,
             "input_width": self.input_width, "output_width": OUTPUT_WIDTH,
             "receptive_dtype": "bool", "outgoing_dtype": "float64",
             "novelty": "exact input agreement before current target; first free slot",
@@ -177,17 +180,18 @@ class SequenceAssemblyCells(nn.Module):
             raise ValueError("assembly metadata mismatch")
 
     def _validate_bank(self, prototypes, outgoing, used, work=None) -> int:
-        _tensor(prototypes, (CAPACITY, self.input_width), torch.bool, "assembly prototypes")
-        _tensor(outgoing, (CAPACITY, OUTPUT_WIDTH), torch.float64, "assembly outgoing")
+        _tensor(prototypes, (self.capacity, self.input_width), torch.bool, "assembly prototypes")
+        _tensor(outgoing, (self.capacity, OUTPUT_WIDTH), torch.float64, "assembly outgoing")
         _tensor(used, (), torch.int64, "assembly occupancy")
         count = int(used.item())
-        if not 0 <= count <= CAPACITY:
+        if not 0 <= count <= self.capacity:
             raise ValueError("assembly occupancy exceeds capacity")
         _finite(outgoing, "assembly outgoing")
         if bool(prototypes[count:].any()) or bool(outgoing[count:].ne(0).any()):
             raise ValueError("unused assemblies must remain zero")
         _add(work, "assembly_validation_values",
-             CAPACITY * OUTPUT_WIDTH + (CAPACITY - count) * (self.input_width + OUTPUT_WIDTH) + 1)
+             self.capacity * OUTPUT_WIDTH
+             + (self.capacity - count) * (self.input_width + OUTPUT_WIDTH) + 1)
         return count
 
     def check_parameters(self, work=None) -> None:
@@ -326,7 +330,7 @@ class SequenceAssemblyCells(nn.Module):
             del prototype8, currents, both_off, both_on, off8, on8
             del agreement_current, agreement, count_values
         scores = counts.to(torch.float32)
-        competition = compete512(scores)
+        competition = self._compete(scores)
         for key, value in competition.work.items():
             _add(work, "assembly_" + key, value)
         winner = competition.winner_index
@@ -353,8 +357,8 @@ class SequenceAssemblyCells(nn.Module):
         self.validate_stage(stage, work)
         evaluation = self.evaluate(inputs, fallback_currents, stage=stage, work=work)
         count = int(stage.used.item())
-        recruited = not evaluation.exact and count < CAPACITY
-        exhausted = not evaluation.exact and count == CAPACITY
+        recruited = not evaluation.exact and count < self.capacity
+        exhausted = not evaluation.exact and count == self.capacity
         selected = count if recruited else evaluation.winner_index
         if exhausted:
             selected = None
@@ -411,7 +415,7 @@ class SequenceAssemblyCells(nn.Module):
         _finite(proposal, "assembly output proposal")
         if learning_enabled:
             index = context.selected_index
-            if type(index) is not int or not 0 <= index < CAPACITY:
+            if type(index) is not int or not 0 <= index < self.capacity:
                 raise ValueError("prepared assembly selection is invalid")
             # Every fallible proposal check precedes private advancement too.
             if context.recruited:
@@ -426,3 +430,46 @@ class SequenceAssemblyCells(nn.Module):
             _add(work, "assembly_staged_output_updates", 1)
         return AssemblyUpdate(context.selected_index, target, context.recruited,
                               False, learning_enabled, before, proposal, error)
+
+
+class SequenceAssemblyCells1024(SequenceAssemblyCells):
+    """Lossless larger event bank; the original512-cell contract stays fixed."""
+
+    capacity = 1024
+    _compete = staticmethod(compete1024)
+    schema = "sequence-assembly-cells-1024-v1"
+
+    @torch.no_grad()
+    def promote_512_state(self, state: Mapping, *, work=None) -> dict:
+        """Return a strict successor state, preserving all old rows and zeros.
+
+        This is a shape adapter, not a model load or recognition replay. The
+        owning learner validates the complete adapted state before publication.
+        """
+        if not isinstance(state, Mapping) or set(state) != {
+                "prototypes", "outgoing", "used", "_extra_state"}:
+            raise ValueError("promotion requires the complete512-cell bank state")
+        metadata = self.get_extra_state()
+        metadata.update(schema="sequence-assembly-cells-v1", capacity=512)
+        if state["_extra_state"] != metadata:
+            raise ValueError("promotion source must have the original512-cell metadata")
+        _tensor(state["prototypes"], (512, self.input_width), torch.bool, "prior prototypes")
+        _tensor(state["outgoing"], (512, OUTPUT_WIDTH), torch.float64, "prior outgoing")
+        _tensor(state["used"], (), torch.int64, "prior occupancy")
+        count = int(state["used"].item())
+        if (not 0 <= count <= 512 or not _all_finite(state["outgoing"])
+                or bool(state["prototypes"][count:].any())
+                or bool(state["outgoing"][count:].ne(0).any())):
+            raise ValueError("promotion requires a finite canonical512-cell bank")
+        prototypes = torch.zeros((1024, self.input_width), dtype=torch.bool, device="cpu")
+        outgoing = torch.zeros((1024, OUTPUT_WIDTH), dtype=torch.float64, device="cpu")
+        prototypes[:512].copy_(state["prototypes"])
+        outgoing[:512].copy_(state["outgoing"])
+        result = {"prototypes": prototypes, "outgoing": outgoing,
+                  "used": state["used"].clone(), "_extra_state": self.get_extra_state()}
+        self.validate_state(result, work=work)
+        _add(work, "assembly_promotion_allocated_bytes", self.tensor_bytes)
+        _add(work, "assembly_promotion_copy_bytes", 512 * (self.input_width + OUTPUT_WIDTH * 8) + 8)
+        _add(work, "assembly_promotion_prior_validation_values",
+             512 * OUTPUT_WIDTH + (512 - count) * (self.input_width + OUTPUT_WIDTH) + 1)
+        return result
