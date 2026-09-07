@@ -1,8 +1,9 @@
 # Eighth persistent language/action session
 
-Status: selected for source preparation, 2026-09-07. Runtime is NOT released.
-Root selects this single curriculum scope and public protected-driver policy.
-The resource envelope remains proposed until source, serializer and author review.
+Status: one broader run and its saved audit released, 2026-09-07.
+Root selects the frozen curriculum, public protected-driver policy and resource
+envelope after source, serializer, ordinary mechanics and authored-program review.
+Release permits one fresh continuation, no replay or automatic budget extension.
 Authored source is held in
 [v8_workload.py](../../experiments/r4_integrated/persistent_language_action_v8_workload.py)
 and [v8_sources.py](../../experiments/r4_integrated/persistent_language_action_v8_sources.py).
@@ -34,8 +35,35 @@ bootstrap explicitly reconfigures LF. Root corrects only the QA invocation to
 authenticate and reuse that bootstrap and selects one new27-child verification
 under the same budget. Preserve `.pytest-tmp/persistent-language-action-v8-author*`
 and all original raw outputs. Do not normalize the failed bytes or alter tasks.
+
+The corrected check passes at `272346e9591f29ca82020247b3bee6e45ca6a213`:
+27 children,2.8452625 watchdog seconds,79.68359375MiB observed peak. All19
+canonical outputs match exactly and all8 broken starts fail actual assertions;
+all files remain intact. No model, learning offer or checkpoint decoder runs.
+Across both wrapper attempts, count54 authored children and5.3675871 seconds.
+The corrected report is `.pytest-tmp/persistent-language-action-v8-author-check-lf/report.json`
+(`c94c586acb8866770b509d850a3d8afcfa42a7928fab1cb1bef92e1407c4e707`),
+with launch `.pytest-tmp/persistent-language-action-v8-author-lf.launch.json`
+(`78736cbc31d2699f5f1e54b5ab919d434e336fc87e134b1715981d7afb9dc3d1`)
+and doctor `.pytest-tmp/dev/doctor-bqwc0zdj/receipt.json`
+(`3572e8fe704e8a3ae18902e8d38a575c1382f852321e96cabba7825d85c3f64c`).
 The two ordinary controller/actor nodes passed under the root's recorded QA;
 that supports mechanics, not the capability predictions below.
+
+Final source review of the saved checker passes at pre-release hash
+`104eb968dd74aee991a124954c71cebb7631c6c179c886e8db65012532553de6`.
+It independently checks saved probabilities/draw choices, public causal relays,
+reward/baseline/normalization arithmetic, actual execution and safe frontiers.
+Omitted eligibility tensors, factual successor/read values and learned weight
+arithmetic remain bound by source/custody rather than independently reconstructed.
+The checker has not yet run on V8 evidence. Its source and the saved-only banker
+are explicitly excluded from the runner's frozen source inventory.
+Fresh pre-release C: free space is40,791,040,000bytes; launch checks it again.
+Use `.pytest-tmp/persistent-language-action-v8-run` as the new evidence directory,
+its adjacent `.pytest-tmp/persistent-language-action-v8.launch.json` monitor,
+and the frozen external manifest. Final safe HEAD owns learned state; no redundant
+final tensor export is selected. Account for preparation separately from the
+3,600-second runner and120-second saved audit.
 
 ## Scope and continuation
 

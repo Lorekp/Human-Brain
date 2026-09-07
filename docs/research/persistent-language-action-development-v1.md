@@ -33,9 +33,11 @@ Local stochastic eligibility trains the neurons choosing binds, advances and
 literal/value output; no backward derivative teaches earlier cells. More exact
 observation matching alone is superseded. This same-reader mechanism passes
 [ordinary causal scan, local arithmetic and persistence QA](recurrent-content-qa-v1.md).
-Implement authenticated initialization and explicit transient-source checkpoint
-transactions, then price a varied public observation curriculum and retained
-memory before its release. The [resource ledger](recurrent-content-resource-plan-v1.md)
+The [eighth-session protocol](persistent-language-action-v8-protocol.md) now
+freezes the next broader stream and resource envelope. Its manifest and authored
+programs are checked; authenticated initialization and transient-source checkpoint
+transactions are implemented. Finish the saved-evidence checker and release that
+single stream. The [resource ledger](recurrent-content-resource-plan-v1.md)
 distinguishes transient learned experience from factual admission.
 These support one next broader continuation, not competing toy gates. Preserve
 the clean V7 numerical payloads and source identities; no automatic resume,

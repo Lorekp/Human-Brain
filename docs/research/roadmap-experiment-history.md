@@ -3700,3 +3700,30 @@ V7 adaptation remains source-only and no historical checkpoint is decoded.
 The next shared work is authenticated initialization, explicit transient-source
 persistence and a priced broader stream with public checks; no gain sweep,
 automatic missing-case replay or toy-perfection prerequisite follows.
+
+## 2026-09-07 eighth broader stream preparation
+
+The [V8 protocol](persistent-language-action-v8-protocol.md) owns the frozen
+48-episode/64-attempt-per-route roster,9,884 new source offers and35 answer
+symbols from two corrections. Four notes grow factual occupancy1614→1982;
+twenty transient prose/program documents offer local learning without factual
+admission. The simple retrieval reference retains all observed source text,
+an explicitly disclosed memory difference. Two project chains carry actual
+workspaces and eight recovery episodes keep three attempts without teachers.
+
+The initializer authenticates V7 ONLINE for independent neural descendants and
+preserves the simple reference's own history. The transient-source checkpoint
+adapter retains full actor serialization and a safe boundary after each resolved
+route transaction. The public executor rejects proposed main.py edits before
+application and records actual driver integrity; it is not an OS sandbox.
+Its two ordinary execution/history checks pass, as recorded in
+[the QA ledger](recurrent-content-qa-v1.md).
+
+Pure build `e3341d9` passes in3.0362282seconds without model/decoder/children.
+The first authored-program QA wrapper fails because its Windows stdout uses
+CRLF; actual canonical programs all exit0 and broken starts raise assertions.
+The corrected wrapper reuses the established LF bootstrap. Its19 distinct
+canonical outputs and8 broken starts pass; both retained wrapper runs total
+54 children and5.3675871seconds. No source text, task or grade is changed to
+repair this QA invocation. Details and receipt hashes remain in the protocol.
+These are dataset/mechanics checks, not learned software-engineering evidence.

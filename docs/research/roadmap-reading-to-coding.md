@@ -59,11 +59,14 @@ consequence signals, without backward error transport. This makes learned
 binding and value reuse possible; it does not establish that learning will find
 useful policies. A patch-only exact-context store is superseded. The causal
 frame, local controller and same-actor integration pass
-[ordinary affected QA](recurrent-content-qa-v1.md). Continue with authenticated
-V7 initialization and explicit transient-source persistence, then release a
-priced broader public experience stream with varied observations, actual public
-checks and declared retained-memory costs. No gain sweep or isolated capability
-gate follows.
+[ordinary affected QA](recurrent-content-qa-v1.md). The
+[eighth-session protocol](persistent-language-action-v8-protocol.md) now fixes
+one broader public stream: varied instruction forms, structural combinations,
+two actual project chains and public-check recovery, with two answer corrections.
+Its manifest and authored programs are checked. Authenticated V7 initialization
+and explicit transient-source persistence are implemented; the broader runtime
+remains to be released and measured. No gain sweep or isolated capability gate
+follows.
 
 All byte/EOS columns remain eligible, and existing neuronal potentials remain
 the prior. Raw contextual contacts are a falsifiable sequence mechanism, not

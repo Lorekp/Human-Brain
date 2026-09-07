@@ -29,8 +29,8 @@ from experiments.r4_integrated.persistent_language_action_v7 import (  # noqa: E
     sha,
 )
 
-DRAFT = True
-MANIFEST_SHA = None
+DRAFT = False
+MANIFEST_SHA = "66b0bd96be3b9e97c4eb5f9812c2b5977f294fc5900d55109445c0a303e522d0"
 RUNNER_SECONDS = 3600.0
 AUDIT_SECONDS = 120.0
 CHECKPOINT_RESERVE_SECONDS = 120.0
