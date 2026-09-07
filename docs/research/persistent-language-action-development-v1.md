@@ -11,7 +11,7 @@ selection and implementation order.
 
 ## Current continuation and frozen history
 
-The current implementation is the [seventh session](persistent-language-action-v7-protocol.md).
+The latest audited capability evidence is the [seventh session](persistent-language-action-v7-protocol.md).
 Its [partial result](../../experiments/r4_integrated/persistent_language_action_v7_result.md)
 preserves185/192 attempts and222 safe boundaries. All fresh, prior and recovery
 cases finish. Online scores0/4 changed wording,1/2 observed exact delayed,
@@ -36,8 +36,9 @@ observation matching alone is superseded. This same-reader mechanism passes
 The [eighth-session protocol](persistent-language-action-v8-protocol.md) now
 freezes the next broader stream and resource envelope. Its manifest and authored
 programs are checked; authenticated initialization and transient-source checkpoint
-transactions are implemented. Finish the saved-evidence checker and release that
-single stream. The [resource ledger](recurrent-content-resource-plan-v1.md)
+transactions are implemented. The corrected stream is executing; its saved
+checker and separate acquisition/transfer/retention/recovery reports are prepared.
+Await actual evidence before selecting a successor. The [resource ledger](recurrent-content-resource-plan-v1.md)
 distinguishes transient learned experience from factual admission.
 These support one next broader continuation, not competing toy gates. Preserve
 the clean V7 numerical payloads and source identities; no automatic resume,

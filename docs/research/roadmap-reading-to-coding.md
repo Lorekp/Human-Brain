@@ -63,10 +63,11 @@ frame, local controller and same-actor integration pass
 [eighth-session protocol](persistent-language-action-v8-protocol.md) now fixes
 one broader public stream: varied instruction forms, structural combinations,
 two actual project chains and public-check recovery, with two answer corrections.
-Its manifest and authored programs are checked. Authenticated V7 initialization
-and explicit transient-source persistence are implemented; the broader runtime
-remains to be released and measured. No gain sweep or isolated capability gate
-follows.
+Its manifest and authored programs are checked. The corrected broader stream is
+executing with authenticated V7 initialization and explicit transient-source
+persistence; final outcomes and costs await its saved audit. The first launch's
+transport failure and lost source exposure are recorded in the protocol/history.
+No gain sweep or isolated capability gate follows.
 
 All byte/EOS columns remain eligible, and existing neuronal potentials remain
 the prior. Raw contextual contacts are a falsifiable sequence mechanism, not
