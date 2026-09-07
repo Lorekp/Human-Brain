@@ -12423,3 +12423,251 @@ def test_factorized_reader_action_persistence_and_atomicity(tmp_path):
             "first": taught.work, "disabled": disabled.work,
             "failed": failed_validation[0], "action": feedback.work},
     })
+
+
+def test_persistent_v5_summary_contract(tmp_path):
+    """Authored scalar rows only: no stream builder, learner, prior or child."""
+    from copy import deepcopy
+
+    from experiments.r4_integrated.persistent_language_action_v5 import summarize
+    from experiments.r4_integrated.review_persistent_language_action_v5 import check_metrics
+
+    episodes = []
+    for index in range(24):
+        episode = {
+            "episode_id": f"A{index:02d}",
+            "phase": "acquisition",
+            "kind": "reading" if index % 2 == 0 else "edit",
+            "encounter": ("corrected_first", "changed_form", "exact_delayed")[index // 8],
+        }
+        if index >= 16:
+            episode["same_session_origin_id"] = f"A{index - 16:02d}"
+        episodes.append(episode)
+    for index in range(16):
+        episodes.append(
+            {
+                "episode_id": f"F{index:02d}",
+                "phase": "transfer",
+                "kind": "reading" if index % 2 == 0 else "edit",
+                "encounter": "fresh",
+            }
+        )
+    for index in range(8):
+        episodes.append(
+            {
+                "episode_id": f"C{index:02d}",
+                "phase": "recovery",
+                "kind": "edit",
+                "encounter": "teacher_free",
+            }
+        )
+    for index in range(16):
+        episodes.append(
+            {
+                "episode_id": f"R{index:02d}",
+                "phase": "retention",
+                "kind": "reading" if index % 2 == 0 else "edit",
+                "encounter": "old_retained" if index < 8 else "old_regression",
+                "previous_session_episode_id": f"P{index:02d}",
+            }
+        )
+    manifest = {"episodes": episodes}
+    recovery_correct = (
+        (False, True, False),
+        (False, False, True),
+        (True, False, True),
+        (True, True, False),
+        (False, False, False),
+        (False, True, True),
+        (False, False, False),
+        (False, False, False),
+    )
+    recovery_proposals = (
+        ("x", "x", "x"),
+        ("x", "y", "y"),
+        (None, None, None),
+        ("a", "b", "c"),
+        ("x", "x", "x"),
+        ("x", "x", "y"),
+        ("a", "b", "a"),
+        ("x", "x", None),
+    )
+    routes = ("online", "learning_disabled", "simple")
+    attempts = []
+    for route in routes:
+        for episode in episodes:
+            episode_id = episode["episode_id"]
+            index = int(episode_id[1:])
+            recovery = episode["phase"] == "recovery"
+            for attempt_index in range(1, 4 if recovery else 2):
+                unsupported = route == "online" and episode_id == "C07" and attempt_index == 3
+                correct = (
+                    recovery_correct[index][attempt_index - 1]
+                    if recovery
+                    else index in {0, 3, 9, 10, 16, 17}
+                    if episode_id.startswith("A")
+                    else index in {0, 1, 4, 5}
+                    if episode_id.startswith("R")
+                    else index in {0, 1}
+                )
+                observation = episode.get("same_session_origin_id", episode_id)
+                if episode_id.startswith("R") and index < 8:
+                    observation = f"prior-{index}"
+                project = episode_id in {"A01", "A09"}
+                attempts.append(
+                    {
+                        "route": route,
+                        "episode_id": episode_id,
+                        "phase": episode["phase"],
+                        "kind": episode["kind"],
+                        "attempt_index": attempt_index,
+                        "correct": correct,
+                        "status": "unsupported" if unsupported else "completed",
+                        "observation_sha256": observation,
+                        "memory_used": 505 if episode_id.startswith("A") and index < 8 else 864,
+                        "feedback_consumed": recovery
+                        and attempt_index > 1
+                        and route != "learning_disabled"
+                        and not unsupported,
+                        "proposal_signature": recovery_proposals[index][attempt_index - 1]
+                        if recovery
+                        else None,
+                        "project_id": "project" if project else None,
+                        "predecessor_episode_id": "A01" if episode_id == "A09" else None,
+                        "workspace_lifecycle": "carry_actual_project"
+                        if episode_id == "A09"
+                        else "reset",
+                    }
+                )
+    prior = {}
+    for route in routes:
+        prior[route] = {
+            f"P{index:02d}": {
+                "attempt_index": 3 if index >= 8 else 1,
+                "route_ordinal": 64 + index if index < 8 else index - 8,
+                "correct": index in ({0, 2, 4, 6} if route == "simple" else {0, 1, 2, 3})
+                if route != "learning_disabled"
+                else True,
+                "observation_sha256": f"prior-{index}",
+            }
+            for index in range(16)
+        }
+    _coincidence_qa_save(
+        tmp_path / "persistent-v5-summary-raw.json",
+        {
+            "manifest": manifest,
+            "attempts": attempts,
+            "prior_outcomes": prior,
+            "scope": {
+                "authored_episodes": 64,
+                "rows_per_route": 80,
+                "rows": 240,
+                "summary_calls": 3,
+                "expected_rejections": 2,
+                "models": 0,
+                "builders": 0,
+                "checkpoint_loads": 0,
+                "children": 0,
+            },
+        },
+    )
+    result = summarize(attempts, manifest, prior)
+    assert check_metrics({"metrics": result}, attempts, manifest, prior) == result
+    wrong_report = deepcopy(result)
+    wrong_report["online"]["recovery"]["later_correct"] += 1
+    with pytest.raises(ValueError, match="independent outcomes"):
+        check_metrics({"metrics": wrong_report}, attempts, manifest, prior)
+    _coincidence_qa_save(tmp_path / "persistent-v5-summary-result.json", result)
+    assert len(episodes) == 64 and len(attempts) == 240
+    for route in routes:
+        actual = result[route]
+        assert sum(row["route"] == route for row in attempts) == 80
+        for encounter in ("corrected_first", "changed_form", "exact_delayed"):
+            assert actual["acquisition_encounters"][encounter] == {
+                "reading": {"episodes": 4, "first_correct": 1},
+                "edit": {"episodes": 4, "first_correct": 1},
+            }
+        expected_phase = {
+            "acquisition": ((12, 12, 3), (12, 12, 3)),
+            "transfer": ((8, 8, 1), (8, 8, 1)),
+            "recovery": ((0, 0, 0), (8, 24, 2)),
+            "retention": ((8, 8, 2), (8, 8, 2)),
+        }
+        for phase, counts in expected_phase.items():
+            for kind, (count, row_count, correct) in zip(("reading", "edit"), counts, strict=True):
+                assert actual["phases"][phase][kind] == {
+                    "episodes": count,
+                    "attempts": row_count,
+                    "first_correct": correct,
+                    "unsupported": int(
+                        route == "online" and phase == "recovery" and kind == "edit"
+                    ),
+                }
+        assert actual["recovery"] == {
+            "first_failures": 6,
+            "first_correct": 2,
+            "later_correct": 3,
+            "final_attempt_correct": 3,
+            "final_recovered_after_first_failure": 2,
+            "policy": "three fixed attempts; private grade never controls retries",
+            "tool_feedback_consumed": route != "learning_disabled",
+            "feedback_consuming_attempts": {"online": 15, "learning_disabled": 0, "simple": 16}[
+                route
+            ],
+            "identical_consecutive_proposals": 7,
+        }
+        assert [
+            actual[key]
+            for key in ("same_session_retained", "same_session_forgotten", "same_session_improved")
+        ] == [1, 1, 1]
+        assert len(actual["same_session_retention"]) == 8
+        for row in actual["same_session_retention"]:
+            assert row["intervening_attempts"] == 15
+            assert row["initial_memory_slots"] == 505 and row["memory_slots"] == 864
+        assert [actual[key] for key in ("retained", "forgotten", "improved")] == [2, 2, 2]
+        assert len(actual["retention"]) == 16
+        for index, row in enumerate(actual["retention"]):
+            assert row["prior_route"] == ("simple" if route == "simple" else "online")
+            assert row["initial_correct"] == (
+                index in ({0, 2, 4, 6} if route == "simple" else {0, 1, 2, 3})
+            )
+            assert row["intervening_current_attempts"] == 64 + index
+            assert row["intervening_prior_attempts"] == (7 - index if index < 8 else 79 - index)
+            assert row["intervening_attempts"] == (71 if index < 8 else 143)
+            assert row["prior_attempt_index"] == (1 if index < 8 else 3)
+            assert row["same_raw_observation_as_prior"] == (index < 8)
+            assert (
+                row["observation_scope"]
+                == "current authored reset vs previous actual last-attempt input"
+            )
+        assert [row["workspace_from_actual_predecessor"] for row in actual["project_chains"]] == [
+            False,
+            True,
+        ]
+        assert actual["project_chains"][1]["predecessor_episode_id"] == "A01"
+
+    changed_input = deepcopy(attempts)
+    changed_input[16]["observation_sha256"] = "different actual input"
+    with pytest.raises(ValueError, match="same-session exact repeat input or age changed"):
+        summarize(changed_input, manifest, prior)
+    changed_age = list(attempts)
+    changed_age[0], changed_age[1] = changed_age[1], changed_age[0]
+    with pytest.raises(ValueError, match="same-session exact repeat input or age changed"):
+        summarize(changed_age, manifest, prior)
+    _coincidence_qa_save(
+        tmp_path / "persistent-v5-summary-passed.json",
+        {
+            "status": "passed",
+            "summary_calls": 3,
+            "expected_rejections": 2,
+            "independent_metric_audits": 2,
+            "rejected_forged_metric_reports": 1,
+            "authored_episodes": 64,
+            "rows_per_route": 80,
+            "rows": 240,
+            "models": 0,
+            "builders": 0,
+            "checkpoint_loads": 0,
+            "children": 0,
+        },
+    )

@@ -46,7 +46,7 @@ occasions. Each holds one persistent model and whole accumulated memory.
 | Recovery |8 editing|None; three actual attempts each regardless of private grade|
 | Prior exposed regressions |16:8 reading,8 editing|None|
 
-Four requirement families cover alerts, revised cache lifetimes, report tags and
+Four requirement families cover alerts, current cache lifetimes, report tags and
 queue selection. First examples already include missing logic, conditions and
 boundary cases. Changed wording, changed input/placement and collection transforms
 follow. Eight exact same-session repeats occur after fifteen intervening episode
@@ -74,6 +74,9 @@ absorbing EOS links. Four notes and two ordinary source snippets are observed;
 the source snippets are not executed or used for additional next-byte teaching
 inside the stream. Every fact address remains eligible. There is no task-selected
 tape, answer excerpt, target address or semantic candidate shortlist.
+The cache note says "now", but the stream does not deliberately establish a
+conflicting old/new cache-lifetime pair. Do not claim measured knowledge revision
+from that wording alone.
 
 Eight fixed corrections offer **155 raw bytes plus8 EOS =163 external symbols**
 per neuronal route, with twelve action-head labels. Each symbol has two declared

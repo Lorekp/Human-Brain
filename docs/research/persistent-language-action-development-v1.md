@@ -44,8 +44,10 @@ The selected [factorized routing source/math design](factorized-sequence-routing
 is implemented with integrated 1024-slot memory and passes
 [ordinary numerical and lifecycle QA](factorized-sequence-integration-qa-v1.md). The
 [owned-response optimization](sequence-assembly-owned-response-qa-v1.md) passes
-ordinary parity/custody QA. This is one shared successor; its new workload and
-resource release are not yet frozen or executed.
+ordinary parity/custody QA. This is one shared successor. Its
+[64-episode workload](persistent-language-action-v5-protocol.md) is built and its
+authored program answers are checked. The full runner/resource release and saved
+audit are still being prepared; no fifth-session learner execution has occurred.
 
 ## Purpose
 
