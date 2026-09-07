@@ -1,13 +1,17 @@
 # Public observation, reusable context and content binding
 
-2026-09-07. **Implemented with ordinary mechanics QA passing; broader workload
-release remains unfinished.** The [roadmap](roadmap-reading-to-coding.md) owns
+2026-09-07. **Implemented and exercised in the completed broader V8 session.**
+The [roadmap](roadmap-reading-to-coding.md) owns
 selection. Use one locally learned recurrent controller with two content-address
 populations inside the existing acting reader. Its choices learn through their
 own stochastic eligibility and observed outcomes. Independent source/math review
-and root's causal-input review are complete. Sample efficiency and useful
-generalization remain untested. The [two ordinary checks](recurrent-content-qa-v1.md)
-exercise the new controller and same actor; no new curriculum has been executed.
+and root's causal-input review are complete. The
+[V8 result](../../experiments/r4_integrated/persistent_language_action_v8_result.md)
+establishes no useful task advantage over disabled learning. The
+[two ordinary checks](recurrent-content-qa-v1.md) verify mechanics separately.
+The design below records V8's implemented rule; the
+[learning review](persistent-language-action-v8-learning-review.md) owns the
+measured diagnosis and next credit-refinement design direction.
 
 ## Actual source and rejected patch-only option
 

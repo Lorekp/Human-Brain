@@ -1,8 +1,13 @@
 # Eighth persistent language/action session
 
-Status: first launch stopped on a receipt transport bug; its saved prefix is
-audited. Corrected source passes ordinary serialization QA; one corrected fresh
-session and its saved audit are explicitly released, 2026-09-07.
+Status: completed and independently audited, 2026-09-07. The corrected session
+finishes192 attempts and132 executions at265 safe boundaries. Both neuronal
+routes score zero on every task stratum; the
+[result](../../experiments/r4_integrated/persistent_language_action_v8_result.md)
+and [bank](../../benchmarks/persistent_language_action_v8.result.json) own outcomes
+and complete declared costs. The first transport failure remains banked.
+The release history and fixed contract below remain unchanged; no new run follows
+automatically from their wording.
 Root selects the frozen curriculum, public protected-driver policy and resource
 envelope after source, serializer, ordinary mechanics and authored-program review.
 The first release permitted one fresh continuation, no automatic budget extension.

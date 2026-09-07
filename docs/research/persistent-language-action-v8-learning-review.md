@@ -1,16 +1,132 @@
-# V8 learning review: provisional signal analysis
+# V8 learning review: complete outcomes and local credit
 
-2026-09-07. **PROVISIONAL — corrected-run outcomes and final saved audit pending.**
-This note reads the selected source and protocol only. It contains no live
-journal inspection, model/feature evaluation, checkpoint decoding or new
-experiment. Planned counts below are not completed exposures. The earlier
-serializer failure and its discarded activity belong in the eventual complete
-cost/exposure ledger; they are not corrected-run capability results.
+2026-09-07. **Corrected run complete; independent saved audit passed.** Both
+neuronal routes score zero in all four outcome categories. More public
+experience and a locally plastic recurrent controller did not establish useful
+acquisition, new-form transfer, retention or repair in this session.
+
+Evidence is the immutable [saved audit](../../.pytest-tmp/persistent-language-action-v8-corrected-review.json),
+SHA256 `037f65e62c9170205ad063d40dd0e8f9a0069d0fb9e03f7499ff1df9233194bf`,
+and [result bank](../../benchmarks/persistent_language_action_v8.result.json).
+The audit passes on its first launch in104.7858249 seconds at93.3828125MiB;
+the corrected runner takes2206.5499429 seconds at866.890625MiB. All192
+attempts,132 executions,72 source rows and6 correction rows are present,
+with265 safe boundaries. This review reads those saved summaries and the
+source, plus one authorized streaming output-summary pass over the audited
+311,424,915-byte attempts journal. That pass verifies journal SHA256
+`3efbc004382b496602325d9c77b2f5a6e3fcb8148f322c31161fce7ef7a81a5c`
+and takes4.0072871 internal seconds (4.2561156 shell seconds); its
+[extraction](../../.pytest-tmp/persistent-language-action-v8-output-extraction.json)
+is preserved at SHA256
+`1bdd10439df4678e9739adb5d8650819c895f985b6da777a5d9ffb3e285cc950`.
+This is separate post-bank report analysis, outside the already frozen
+2362.395290-second outer experiment total; no combined whole-project total is
+claimed. No model, feature, payload decode, replay or extra audit call occurs.
+The first serializer-failed run's inferred89 source offers were discarded,
+then N36 was deliberately reoffered from fresh V7 initialization. Those failed
+offers have no saved match trace and are not mixed into the counts below.
+
+## Measured behavior
+
+| Outcome | Online | Disabled | Simple reference |
+| --- | ---: | ---: | ---: |
+| Acquisition first, before correction | 0/2 | 0/2 | 0/2 |
+| Unchanged-requirement paraphrase | 0/2 | 0/2 | 1/2 |
+| Exact delayed repeat | 0/2 | 0/2 | 1/2 |
+| Fresh whole constructions | 0/10 | 0/10 | 0/10 |
+| Fresh structural combinations | 0/10 | 0/10 | 0/10 |
+| Historical regression | 0/14 | 0/14 | 9/14 |
+| Recovery, any later and terminal | 0/8 | 0/8 | 0/8 |
+
+All64 attempts per route are supported. Fresh strata each split five reading
+and five editing cases; neither actual two-stage project chain succeeds.
+Simple's acquisition successes are the edit paraphrase and exact edit revisit,
+not fresh construction. Its historical9/14 consists of three readings and six
+edits: eight previous successes retained, one old failure improved, none lost.
+Both neural routes lose the same V7 ONLINE success A04-R on the matched R12-R
+observation. Both began with a new stochastic controller, so this shared loss
+does not isolate forgetting caused by online weight publication. The other13
+historical failures are not13 newly forgotten skills. All historical raw
+observations match their declared prior records. Exact repeats have61
+intervening route attempts; factual occupancy grows from1614 to1982 without
+eviction. Simple retains all source text and reaches11498 stored byte/EOS
+positions, an explicitly different memory mechanism.
+
+Both neural routes produce44 accepted but incorrect splices, with no STOP or
+direct protected-driver rejection. Public checks pass only2 online and4
+disabled executions, all privately incorrect; therefore clean public execution
+does not imply completed requirements. Simple has eight correct changed
+splices, eight incorrect accepted splices and28 incorrect STOPs. Its nine
+public-check passes likewise include a privately incorrect case. The driver
+policy prevents direct target splices, not arbitrary imported-code side effects;
+these summary counts do not attribute failures to a particular integrity or
+syntax cause.
+
+The online public passes are R01-E/R13-E; disabled adds R05-E/R09-E. All are
+historical cases, not fresh or recovery successes. Simple's one incorrect
+public pass is R07-E with STOP. Its other eight public passes are the eight
+correct edits.
+
+Every recovery uses three attempts and16 actual feedback-consuming retries per
+route. Consecutive proposals differ in all16 neural pairs, but none recovers;
+simple repeats all16 pairs and also fails. Changed stochastic proposals are not
+learned repair. Free output uses280 decisions online and254 disabled. The
+actual response records confirm216 and190 emitted raw bytes, respectively,
+averaging3.375 and2.96875 per response. All64 outputs in each route stop on
+EOS, with zero LIMIT stops. Online has20 empty outputs (five readings and15
+edits); disabled has23 (eight readings and15 edits). Maximum lengths are22
+and18 bytes. Stopping is reliable here, but useful content is not: neither
+route answers or edits correctly. Prior NLL remains a
+frozen-prior diagnostic, not the stochastic policy's output likelihood.
+
+## Measured symbol matches and sampled choices
+
+| Already offered target category | Online matches/offers | Disabled matches/offers |
+| --- | ---: | ---: |
+| Source raw bytes | 129/9860 | 132/9860 |
+| Source EOS | 7/24 | 6/24 |
+| Public-scan raw content | 351/24058 | 350/24422 |
+| Public-scan non-status EOS | 84/294 | 74/294 |
+| Public flags/status, including their EOS | 106/832 | 117/832 |
+| Answer-correction raw bytes | 5/33 | 5/33 |
+| Answer-correction EOS | 1/2 | 1/2 |
+
+Source raw accuracy is about1.31% online and1.34% disabled; public raw accuracy
+about1.46% and1.43%. Each route has541 public-scan matches but different raw
+denominators because actual files/diagnostics differ. Both receive9884 identical
+source symbols and35 answer symbols; public-scan totals are25184 and25548.
+These are aggregate matches, **not temporal improvement, a significance test,
+or evidence of matched post-action observations**. EOS/status are easier here
+than raw content, and combining them would obscure the latter's weakness.
+
+For compact choice accounting, modes are `[PRIOR, REGISTER1, REGISTER2,
+LITERAL]`; gates are `[HOLD, BIND1_CURRENT, BIND2_CURRENT, BIND1_RETRIEVED,
+BIND2_RETRIEVED, ADVANCE1, ADVANCE2, SWAP]`.
+
+| Category/route | Mode counts | Gate counts |
+| --- | --- | --- |
+| Source online | 2473,2459,2525,2427 | 1137,1244,1266,1253,1284,1198,1269,1233 |
+| Source disabled | 2485,2463,2511,2425 | 1170,1256,1259,1231,1228,1185,1248,1307 |
+| Public online | 6252,6377,6325,6230 | 3103,3149,3131,3009,3189,3279,3162,3162 |
+| Public disabled | 6328,6456,6430,6334 | 3115,3188,3185,3083,3295,3329,3224,3129 |
+| Teacher, each route | 8,8,7,12 | 1,3,2,3,9,5,9,3 |
+| Free online | 68,71,72,69 | 38,40,31,37,36,32,35,31 |
+| Free disabled | 68,61,68,57 | 31,35,31,31,32,32,31,31 |
+
+All populations are sampled, with no large aggregate mode concentration.
+Balanced counts do not prove equal conditional probabilities or an absence of
+learned context-specific choices. Free choices have no invented target or
+match count. Total draws are114887 online and115991 disabled; fewer draws can
+reflect shorter outputs or changed observations, not greater intelligence.
+The audit verifies saved probability/draw, public relay and reward arithmetic.
+Omitted eligibility tensors, factual reads and learned-weight effects remain
+source/custody-bound; no dominant internal cause is identified from these
+aggregate records.
 
 The [protocol](persistent-language-action-v8-protocol.md) offers a plausible
-learning problem, not evidence that its signals identify useful language or
-action policies. Negative task scores would constrain this implementation and
-experience budget; they would prove neither that the broader goal is impossible
+learning problem, but its signals did not establish useful language or action
+policies here. Negative task scores constrain this implementation and
+experience budget; they prove neither that the broader goal is impossible
 nor that a larger population alone fixes the problem.
 
 ## What actually teaches the cells
@@ -65,10 +181,10 @@ cause of any V8 error.
 
 ## Reward density and normalization: derived bounds only
 
-The planned stream contains 9,884 source offers, 18,983 nominal public-scan
-offers, and 35 answer byte/EOS offers per neural route. Actual retries and
-changed files/diagnostics can change the public count. Of each public scan,
-13 offers are flags/EOS: 832 if all 64 scheduled attempts produce a scan.
+The frozen stream specified 9,884 source offers, 18,983 nominal public-scan
+offers, and 35 answer byte/EOS offers per neural route. Actual source/answer
+counts match; actual public counts are reported above. Of each public scan,
+13 offers are flags/EOS: all832 scheduled offers are present per neural route.
 Fewer answer corrections therefore does not mean less total supervision.
 
 At zero weights all categorical distributions are uniform. At the first raw
@@ -127,7 +243,7 @@ tick products do not remove dense eligibility/staging or old-prior costs.
 The [source resource ledger](recurrent-content-resource-plan-v1.md) supplies
 those bounds; this note predicts neither elapsed time nor adequate sample size.
 
-## Interpretation after the actual evidence is checked
+## Interpretation and one bounded next direction
 
 Keep first acquisition, pure paraphrase, exact delayed repeat, new construction,
 structural combination, historical regression and first/later/terminal recovery
@@ -137,25 +253,35 @@ routes begin from V7 ONLINE with a new stochastic policy, so historical changes
 are not an isolated measure of forgetting caused by current learning.
 
 Read actual output bytes, EOS/limits, public assertions and private correctness
-together. A source-reward gain with unchanged fresh accuracy supports learning
-of the prediction objective, not instruction understanding. Fewer crashes
-without correct terminal edits supports failure avoidance, not successful repair.
+together. There is no demonstrated source-prediction advantage or correct
+neural task here. Future source-reward gains without fresh accuracy would
+support that prediction objective, not instruction understanding. Fewer crashes
+without correct terminal edits would support avoidance, not successful repair.
 Any online/control difference combines source, public-scan, answer and
 consequence updates. Saved scalar receipts can check their arithmetic and
 causality; omitted eligibility and learned-weight effects cannot establish
 which internal state or gate caused a result.
 
-The one shared direction remains learning reusable context/content control in
-the acting system. After evidence, identify whether it learns source regularity
-but fails to bind the request, or whether useful credit is absent even there,
-before selecting a change. A justified successor would address that specific
-causal credit/representation gap using declared public experience in the same
-loop. This provisional note selects no new mechanism, larger population,
-gain/seed sweep, replay or isolated capability gate.
+Recommend one bounded design refinement of the same acting controller:
+direct observed-byte teaching at actually evaluated literal output cells,
+paired with causal per-symbol own-eligibility credit for context/gates using
+available conditional match probabilities. The source-derived mechanism and
+forward-only accumulation seam below make this concrete. Low raw matches,
+zero task gain and no established source-prediction advantage justify examining
+credit before assuming a learned language representation merely needs more
+cells. They do not prove variance or attenuation caused the failure.
+
+This recommendation changes the output objective explicitly and still must
+resolve conditional branch accounting, held baselines/normalization and public
+motor-versus-payload blame. It does not supply semantic roles, guarantee
+composition, or authorize implementation, another run, gain/seed tuning, replay
+or an isolated gate. Preserve the same broader learning/action pressures and
+all V8 negative evidence; direct output learning alone is not a complete repair
+or instruction-understanding mechanism.
 
 ## Possible credit refinement, not selected or implemented
 
-The following is source/math inference pending audited V8 evidence. It concerns
+The following is source/math inference, distinguished from the audited V8 results. It concerns
 the same cells and already offered source/public/answer symbols, with no new
 labels, parser, target address, alternative rollout or second learner.
 

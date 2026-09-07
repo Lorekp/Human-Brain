@@ -12,22 +12,20 @@ knowledge, understands language, combines learned structure, acts in software
 workspaces and recovers from failures. Local simulated-neuron learning and useful
 real-world behavior are the central commitments.
 
-The [seventh broader session](../../experiments/r4_integrated/persistent_language_action_v7_result.md)
-preserves185 of192 attempts and a clean safe checkpoint at the deadline reserve
-before admitting new work.
-Online scores0/4 changed forms,1/2 observed exact delayed repeats,0/16 fresh
-transfer,0/12 prior regressions and0/8 teacher-free recovery. Disabled retains
-one prior success and the simple reference retains eight; online loses that
-previously correct reading. All fresh, prior and recovery cases finish; seven
-late acquisition attempts remain unrun. Memory reaches1614 factual slots.
-No useful broader advantage or correct neuronal software edit is established.
+The [eighth broader session](../../experiments/r4_integrated/persistent_language_action_v8_result.md)
+completes192 attempts and132 actual executions with265 authenticated safe
+boundaries. Both neural routes score0/2 on each acquisition encounter,0/20
+fresh transfer,0/14 earlier regressions and0/8 teacher-free recovery. The simple
+reference succeeds on two acquisition follow-ups and9/14 earlier regressions,
+but also fails fresh transfer and recovery. Factual memory reaches1982 slots.
+No useful broader neuronal advantage or correct software edit is established.
 
 The prepared [byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 is also completed and independently audited. Its narrow successes remain
-regression evidence. The [current result bank](../../benchmarks/persistent_language_action_v7.result.json)
-and [learning review](persistent-language-action-v7-learning-review.md) own the
-broader measurements and failure analysis, with partial evidence distinguished
-from a completed evaluation.
+regression evidence. The [current result bank](../../benchmarks/persistent_language_action_v8.result.json)
+and [learning review](persistent-language-action-v8-learning-review.md) own the
+broader measurements and failure analysis. Completion and valid custody do not
+mean useful learning.
 The [experiment history](roadmap-experiment-history.md) owns chronology and retired
 directions. Do not append another experiment diary to this roadmap.
 
@@ -38,36 +36,36 @@ Continue the learner on a workload that combines reading,
 retained knowledge, raw software actions and observation of their consequences.
 Expose it to broader problems now; perfection on the current toy cohort is not
 a prerequisite. All observed streams are now exposed development material.
-The completed portion of the [seventh session](persistent-language-action-v7-protocol.md)
-offers four answer corrections and12 whole sources to the same acting reader:
-71 answer symbols plus750 source symbols per neural route. Its two actual
-project chains and eight recovery episodes expose failures beyond exact recall.
-Preserve these as regressions; do not automatically finish or replay the frozen
-stream. The clean V7 boundary preserves resolved learning for a new explicitly
-initialized continuation; restore has not yet been demonstrated on those bytes.
+The [completed protocol](persistent-language-action-v8-protocol.md) combines
+varied instruction forms, structural combinations, two actual project chains
+and public-check recovery with two answer corrections. Each neural route
+receives35 answer symbols,9884 source offers and over25000 public-input offers.
+Transient sources teach the same actor without admission to its factual tape;
+the retrieval reference retains all source text, a disclosed memory difference.
+Preserve the actual stream as regressions without automatically replaying it.
 
-The [cost review](persistent-language-action-v7-cost-review.md) identifies
-checkpoint work as51.83% of runner time. The
-[owned immutable-payload path](persistent-checkpoint-owned-payload-v1.md) is
-implemented and passes [ordinary persistence QA](persistent-checkpoint-owned-payload-qa-v1.md).
-It avoids repeated protected payload reads while retaining mutable-state,
-source, journal and fresh restore checks; broader runtime benefit is unmeasured.
-The [selected learning design](public-observation-sequence-context-v1.md) adds
-recurrent context cells and two content cursors within the same acting reader.
-Their own stochastic eligibility receives declared observed-symbol or public
-consequence signals, without backward error transport. This makes learned
-binding and value reuse possible; it does not establish that learning will find
-useful policies. A patch-only exact-context store is superseded. The causal
-frame, local controller and same-actor integration pass
-[ordinary affected QA](recurrent-content-qa-v1.md). The
-[eighth-session protocol](persistent-language-action-v8-protocol.md) now fixes
-one broader public stream: varied instruction forms, structural combinations,
-two actual project chains and public-check recovery, with two answer corrections.
-Its manifest and authored programs are checked. The corrected broader stream is
-executing with authenticated V7 initialization and explicit transient-source
-persistence; final outcomes and costs await its saved audit. The first launch's
-transport failure and lost source exposure are recorded in the protocol/history.
-No gain sweep or isolated capability gate follows.
+The [implemented context/content design](public-observation-sequence-context-v1.md)
+learns recurrent choices and two content cursors through own-synapse eligibility.
+The checked raw-content prediction counts show no useful advantage over disabled,
+and all neural responses stop with short, incorrect outputs. Root selects a
+bounded [local-credit refinement design](causal-observation-credit-v1.md) for
+this same acting system: direct observed-byte output teaching and causal
+per-symbol credit to earlier choices, preserving the no-backward-transport
+rule. It fixes separate local objectives and bounded normalization while
+retaining completed V8 state. No new fit,
+seed/gain sweep, replay or capability gate is released by this design selection.
+
+The [cost review](persistent-language-action-v8-cost-review.md) measures
+checkpoint phases at63.15% of runner time. Ownership review finds the proposed
+tensor-copy removal cannot safely cover dominant live-state hashes; keep that
+path unchanged. Repeated journal-prefix authentication accounts for84.60% of
+checkpoint file-hash bytes. Select an owned append-journal source design to
+reuse authenticated prefixes only under proven exclusive writer ownership,
+with real new-tail reads and full fresh-open/restore verification retained.
+The existing owned immutable-payload path remains integral to persistence;
+different workloads prevent an attributable cross-session speedup claim.
+Both directions serve the next broader persistent workload, whose sources,
+learning exposure and resource limits require an explicit complete design.
 
 All byte/EOS columns remain eligible, and existing neuronal potentials remain
 the prior. Raw contextual contacts are a falsifiable sequence mechanism, not

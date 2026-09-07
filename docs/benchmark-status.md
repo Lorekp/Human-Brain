@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-07 with the broader persistent language/action result.
+Updated 2026-09-07 with the eighth persistent language/action result.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -9,6 +9,46 @@ workload is [persistent language/action development](research/persistent-languag
 with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. No backpropagation is authorized, and
 protected evaluations retain their original access contracts.
+
+The [eighth session's banked result](../benchmarks/persistent_language_action_v8.result.json)
+completes all 192 attempts across 48 episodes per route, 132 actual program
+verifications and 265 safe checkpoint publications. Online, learning-disabled
+and simple routes all score 0/2 acquisition first responses. Online and disabled
+score 0/2 on both paraphrases and exact delayed repeats; simple scores 1/2 on
+each. All routes score 0/20 fresh transfer and 0/8 teacher-free recovery.
+Prior regressions score 0/14 for both neuronal routes and 9/14 for simple,
+comprising eight retained successes and one improvement. No useful neuronal
+transfer or correct software edit is established; each neuronal route makes
+44 accepted but incorrect SPLICE proposals.
+
+Both neuronal routes start from the same saved V7 ONLINE state with a new
+recurrent controller and changed output policy. Both lose its one historically
+correct case, so that historical loss cannot be attributed to V8 online teaching
+alone. The matched disabled route holds slow parameters while its stochastic
+state advances. Actual project files and public execution feedback feed later
+observations; private grading does not provide controller reward. These are open,
+authored development problems, not protected evaluation results.
+
+Each neuronal route observes 24 whole sources containing 9,884 byte/EOS offers,
+with four admitted notes growing factual memory from 1,614 to 1,982 slots and
+20 sources observed transiently. Two answer corrections supply 35 byte/EOS
+offers and three motor labels per route. Actual public scans contain 25,184
+online and 25,548 disabled offers, including status framing. Free output uses
+280 and 254 decisions respectively; adding 35 correction decisions gives
+315 and 289 actual held-prior calls. Source scans do not call that prior.
+Saved symbol-match and mode/gate counts describe these actual trajectories;
+aggregate prediction matches do not establish learning improvement or transfer.
+
+The corrected runner takes 2,206.5499429 seconds and its independent saved audit
+104.7858249 seconds, within the selected 3,600-second runner, 120-second audit
+and 4,096 MiB ceiling. The [complete outer measurement](../benchmarks/persistent_language_action_v8.measurement.json)
+totals 2,362.39529 seconds at 866.890625 MiB maximum observed process-tree peak.
+It includes preparation, both authored-program verification launches, the first
+runtime's source-receipt serialization failure and partial audit, the serializer
+QA, the fresh corrected run and review, and both bankers. The failed launch's
+89 source offers are a control-flow inference, not saved tick evidence; the
+corrected run deliberately reoffers that source from V7 state without resuming
+dirty V8 state. This complete cost is not an isolated speed comparison with V7.
 
 The [seventh broader session](../experiments/r4_integrated/persistent_language_action_v7_result.md)
 preserves185/192 attempts,128 actual verifications and a clean checkpoint after

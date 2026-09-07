@@ -3727,3 +3727,53 @@ canonical outputs and8 broken starts pass; both retained wrapper runs total
 54 children and5.3675871seconds. No source text, task or grade is changed to
 repair this QA invocation. Details and receipt hashes remain in the protocol.
 These are dataset/mechanics checks, not learned software-engineering evidence.
+
+## 2026-09-07 eighth broader stream: failed transport and completed correction
+
+First runtime source `0a9002d829d1edb9f000ec02585d7cde3d1db59f` authenticates
+and decodes V7 ONLINE, builds independent actors and publishes HEAD0. It fails
+after15.5702892 seconds when the inherited plain-value converter leaves a
+source-feedback dataclass unconverted. The source call already returned, so
+89 N36 offers and a discarded update are inferred from control flow; exact
+draws/rewards and post-source state are unavailable. No source or task row
+is durable. The dirty intent is preserved. Partial audit and banking cost
+4.5379221 and0.5846162 seconds; no unsaved weights are reconstructed.
+
+The V8-local recursive serializer at `b7e28c28e3fa81f799bab2a15c8d21d5d11b8fdb`
+passes its ordinary node in5.5008832 seconds, with zero models, learning offers,
+children or checkpoint decodes. Corrected runtime
+`8e8df91d7e7c6889dff15f97d9fec379ebff71bb` independently reinitializes V7 and
+deliberately reoffers the unchanged source. It does not resume dirty state.
+
+The corrected stream completes192 attempts,132 executions,72 source rows and
+six teacher rows in2206.5499429 seconds,866.890625MiB observed peak. All265
+safe boundaries are preserved, with clean HEAD264 and178 full neural payloads.
+Factual memory grows1614→1982. Each neural route receives9884 source offers,
+35 answer symbols and three motor labels; actual public scans offer25184 online
+and25548 disabled symbols. The reference retains all source text, a disclosed
+memory difference. Both neural routes score zero in every task stratum. Both
+lose V7 ONLINE's one correct reading after new-policy initialization and
+experience; online learning alone cannot explain that historical contrast.
+The reference succeeds on two acquisition follow-ups and9/14 prior regressions,
+with zero fresh or recovery success. All neural outputs stop with EOS but fail.
+
+The independent audit at saved-tool commit `4e56263` passes first launch in
+104.7858249 seconds without model calls, decodes or executions. Banking costs
+16.4619962 seconds. Listed preparation, failed launch/repair, corrected run,
+audit and banking total2362.3952900 seconds at866.890625MiB maximum observed peak.
+The [result](../../experiments/r4_integrated/persistent_language_action_v8_result.md),
+[bank](../../benchmarks/persistent_language_action_v8.result.json) and
+[outer measurement](../../benchmarks/persistent_language_action_v8.measurement.json)
+preserve the full record. Post-bank output extraction is separately disclosed
+report-analysis cost outside the frozen outer ledger.
+
+The [learning review](persistent-language-action-v8-learning-review.md) motivates
+one bounded design for direct output teaching and causal per-symbol local
+credit; it does not identify variance as a proven cause or select a replay.
+Checkpoint phases consume63.15% of runner time. Stable-tensor copy-removal
+review finds dominant live-state tensors remain aliasable, so their fallback
+stays unchanged. Further source/scalar analysis attributes84.60% of checkpoint
+file-hash bytes to repeated growing journal prefixes. Root redirects persistence
+design to authenticated owned append journals, retaining fresh full reads and
+live-tensor validation. These directions serve broader development without
+another toy gate or a perfection prerequisite.

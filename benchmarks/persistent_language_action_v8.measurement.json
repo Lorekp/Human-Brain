@@ -1,0 +1,103 @@
+{
+  "all_corrected_audit_seconds": 104.7858249,
+  "bank_path": "benchmarks/persistent_language_action_v8.result.json",
+  "bank_sha256": "87f0c8e39cbbaaed0558d1affb1ca87f52177f4cb6aee0650b74cfcbf06f392a",
+  "bank_status": "completed_and_independently_reviewed",
+  "checkpoint_decodes": 0,
+  "complete_run": true,
+  "components": [
+    {
+      "category": "preparation_build",
+      "monitor": ".pytest-tmp/persistent-language-action-v8-build.launch.json",
+      "peak_mib": 66.109375,
+      "seconds": 3.0362282,
+      "status": "passed"
+    },
+    {
+      "category": "preparation_author",
+      "monitor": ".pytest-tmp/persistent-language-action-v8-author.launch.json",
+      "peak_mib": 32.34375,
+      "seconds": 2.5223246,
+      "status": "failed"
+    },
+    {
+      "category": "preparation_author-lf",
+      "monitor": ".pytest-tmp/persistent-language-action-v8-author-lf.launch.json",
+      "peak_mib": 79.68359375,
+      "seconds": 2.8452625,
+      "status": "passed"
+    },
+    {
+      "category": "preparation_failed_runner",
+      "monitor": ".pytest-tmp/persistent-language-action-v8.launch.json",
+      "peak_mib": 684.25,
+      "seconds": 15.5702892,
+      "status": "failed"
+    },
+    {
+      "category": "preparation_successful_partial_review",
+      "monitor": ".pytest-tmp/persistent-language-action-v8-review.launch.json",
+      "peak_mib": 64.9609375,
+      "seconds": 4.5379221,
+      "status": "passed"
+    },
+    {
+      "category": "preparation_first_failure_bank",
+      "monitor": ".pytest-tmp/persistent-language-action-v8-failure-bank.launch.json",
+      "peak_mib": 46.55859375,
+      "seconds": 0.5846162,
+      "status": "passed"
+    },
+    {
+      "category": "preparation_serialization_qa",
+      "monitor": ".pytest-tmp/recurrent-v8-serialization.launch.json",
+      "peak_mib": 268.50390625,
+      "seconds": 5.5008832,
+      "status": "passed"
+    },
+    {
+      "category": "corrected_runner",
+      "monitor": ".pytest-tmp/persistent-language-action-v8-corrected.launch.json",
+      "peak_mib": 866.890625,
+      "seconds": 2206.5499429,
+      "status": "passed"
+    },
+    {
+      "category": "corrected_audit",
+      "monitor": ".pytest-tmp/persistent-language-action-v8-corrected-review.launch.json",
+      "peak_mib": 93.3828125,
+      "seconds": 104.7858249,
+      "status": "passed"
+    },
+    {
+      "category": "corrected_banker_outer",
+      "monitor": ".pytest-tmp/persistent-language-action-v8-corrected-bank.launch.json",
+      "peak_mib": 48.7578125,
+      "seconds": 16.4619962,
+      "status": "passed"
+    }
+  ],
+  "corrected_banker_outer_seconds": 16.4619962,
+  "corrected_runner_seconds": 2206.5499429,
+  "input_sha256": {
+    ".pytest-tmp/persistent-language-action-v8-author-lf.launch.json": "78736cbc31d2699f5f1e54b5ab919d434e336fc87e134b1715981d7afb9dc3d1",
+    ".pytest-tmp/persistent-language-action-v8-author.launch.json": "5efbb6c80dbc165298b132984192cac668f5e68f43a858c52ca877b442ce97e3",
+    ".pytest-tmp/persistent-language-action-v8-build.launch.json": "20d93cd30dfb0c8a3b2107840b340695674704a42dac562f6e1ac4162d44e1ac",
+    ".pytest-tmp/persistent-language-action-v8-corrected-bank.launch.json": "8cb3bbf416a7a4ea03b50e005a68b68400ef06c7504c3718a1bb90be79ca1c3f",
+    ".pytest-tmp/persistent-language-action-v8-corrected-review.launch.json": "0b583d0c7452aba4d2324262fbc5c75224ffcf725b43da8b0d50968b4bc3b94c",
+    ".pytest-tmp/persistent-language-action-v8-corrected.launch.json": "ab2cea18d6809cbb93af18c0ef6b6da12f8b3957e8f511684cd04cc28f18ad79",
+    ".pytest-tmp/persistent-language-action-v8-failure-bank.launch.json": "e42b71b512ce540b52ff5b817861957a3b461d1b87849990c3c237f6ad21ea59",
+    ".pytest-tmp/persistent-language-action-v8-review.launch.json": "61a3ea7dfea5e69354c6945231d9f0e3b52b7f834602e51e0916f11b8651cc22",
+    ".pytest-tmp/persistent-language-action-v8.launch.json": "757fea5a26f0094a0f4bfc8fd0b10e73581c3ab6d7fe94d3c7d13176540e6045",
+    ".pytest-tmp/recurrent-v8-serialization.launch.json": "bd60d0590ef65bdd368a4576beec6c79dbd350895140f90afb95a2eaeec82594",
+    "benchmarks/persistent_language_action_v8.result.json": "87f0c8e39cbbaaed0558d1affb1ca87f52177f4cb6aee0650b74cfcbf06f392a"
+  },
+  "max_observed_process_tree_peak_mib": 866.890625,
+  "model_calls": 0,
+  "payload_reads": 0,
+  "preparation_seconds": 34.597525999999995,
+  "schema": "persistent-language-action-outer-measurement-v8",
+  "scope": "Sum each distinct outer monitor once; maximum sampled owned-process-tree peak, not sum of peaks. Preparation includes failed runtime/review/banker and serializer QA. Current bank_preparation_seconds is inside banker outer time and is not added. No stage, child or prior bank subtotals are added. This helper's own execution is outside the measured experiment ledger.",
+  "status": "passed",
+  "total_outer_seconds": 2362.3952900000004
+}

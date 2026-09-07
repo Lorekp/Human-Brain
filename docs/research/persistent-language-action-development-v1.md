@@ -1,89 +1,68 @@
 # Public persistent language/action development
 
-Status: five public continuations completed; the sixth and seventh have checked
-partial evidence, with a clean safe checkpoint preserved by the seventh,
-2026-09-07.
-The byte-coincidence comparison is completed. The proposed five-arm operation
-successor is stopped; its unexecuted source is not the next experiment. This
-document specifies the smallest broader development return using the current
-core. It does not itself launch tasks, load models or authorize a separate fit. The roadmap owns
-selection and implementation order.
+Status: the eighth broader session is complete and independently audited,
+2026-09-07. The prepared byte-coincidence comparison is complete. The roadmap
+owns the next shared design; frozen streams remain exposed regression evidence.
 
 ## Current continuation and frozen history
 
-The latest audited capability evidence is the [seventh session](persistent-language-action-v7-protocol.md).
-Its [partial result](../../experiments/r4_integrated/persistent_language_action_v7_result.md)
-preserves185/192 attempts and222 safe boundaries. All fresh, prior and recovery
-cases finish. Online scores0/4 changed wording,1/2 observed exact delayed,
-0/16 fresh,0/12 prior and0/8 recovery; disabled retains one prior success and
-the simple reference eight. Seven late acquisition outcomes remain unknown.
-Four corrections offer71 answer symbols, and12 source observations offer750
-additional symbols per neural route to the same locally learning/acting reader.
-The run, failed and repaired saved reviews, and banking total1829.1531607seconds
-at818.6484375MiB observed peak; the runner itself stops before a new transaction.
+The [eighth session](persistent-language-action-v8-protocol.md) completes all
+192 attempts and132 executions. Both neural routes score0/2 first acquisition,
+0/2 changed forms,0/2 exact delayed repeats,0/20 fresh transfer,0/14 prior
+regressions and0/8 teacher-free recovery. The simple reference succeeds on both
+editing acquisition follow-ups and9/14 prior regressions, but no fresh or
+recovery task. The [result](../../experiments/r4_integrated/persistent_language_action_v8_result.md)
+and [bank](../../benchmarks/persistent_language_action_v8.result.json) preserve
+the full evidence. No useful neuronal coding capability is established.
 
-The [cost review](persistent-language-action-v7-cost-review.md) selects repeated
-immutable checkpoint traffic. The [owned-payload implementation](persistent-checkpoint-owned-payload-v1.md)
-passes [three ordinary checks](persistent-checkpoint-owned-payload-qa-v1.md),
-including Windows refusal of writes/replacement and exact same-actor state
-continuation. Its broader runtime benefit remains unmeasured.
-The [learning review](persistent-language-action-v7-learning-review.md) leads to
-the [selected recurrent context/content design](public-observation-sequence-context-v1.md).
-Local stochastic eligibility trains the neurons choosing binds, advances and
-literal/value output; no backward derivative teaches earlier cells. More exact
-observation matching alone is superseded. This same-reader mechanism passes
-[ordinary causal scan, local arithmetic and persistence QA](recurrent-content-qa-v1.md).
-The [eighth-session protocol](persistent-language-action-v8-protocol.md) now
-freezes the next broader stream and resource envelope. Its manifest and authored
-programs are checked; authenticated initialization and transient-source checkpoint
-transactions are implemented. The corrected stream is executing; its saved
-checker and separate acquisition/transfer/retention/recovery reports are prepared.
-Await actual evidence before selecting a successor. The [resource ledger](recurrent-content-resource-plan-v1.md)
-distinguishes transient learned experience from factual admission.
-These support one next broader continuation, not competing toy gates. Preserve
-the clean V7 numerical payloads and source identities; no automatic resume,
-missing-case replay or model restore is claimed. A new continuation must explicitly
-authenticate and initialize from that retained state without replaying lessons.
+The same recurrent controller and action system receive two answer corrections
+(35 symbols and three motor labels),9884 source offers and over25000 public
+scan offers per neural route. Four sources enter factual memory1614→1982;
+twenty transient sources teach without factual admission. The reference retains
+all source text, reaching11498 symbols. The sources, observations and trials
+are all now exposed development material; do not automatically replay them.
 
-For that new stream, continue V7's online state independently in both neural
-routes, then disable local learning publication in the matched control while
-retaining factual writes. Restore the simple reference's own saved history.
-The selected online payload is `route-online-000000079.pt`, authenticated by
-HEAD boundary221 and the result bank, with281 actor experiences,214 reader
-experiences and1614 factual positions. Its model hash is
-`cc49bf4fd4b50a6115fc182548f00a5edb459b40e0750a51810304c92d1bb5c6`.
-New source versions must explicitly authenticate this historical boundary and
-adapt declared state schemas; do not weaken the old store's source checks or
-call a changed checkout a same-source V7 resume. Any new learning state starts
-empty, with preserved old numerical values and no lesson reconstruction.
-Record the initialization, decoder calls, derived-state rebuilds and independent
-storage in the complete next-run cost. Prior successes and losses must be
-compared to each route's actual selected history, including V7's negative results.
+HEAD264 after265 safe publications retains the final actors, actual projects,
+reference history and journal frontiers with no pending intent. Online payload
+route-online-000000262.pt is115712128 bytes, SHA256
+f49a6496f91bca6dc431ae221034dfda9e897d0f2476ae18d2bb4b65f8617592.
+Its model hash is
+376c5a6223b727020a56bf09d62b7aed5ead069431fd989de5faf7f94adce853,
+factual hash
+cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e,
+with325 actor and278 reader experiences. Its final tensor restore has not run.
 
-The [sixth protocol](persistent-language-action-v6-protocol.md) and
-[partial result](../../experiments/r4_integrated/persistent_language_action_v6_result.md)
-own the preceding measurements. The840-second cutoff leaves182 of288 attempts and no
-final checkpoint. All acquisition, transfer and prior-regression cases finish;
-recovery remains incomplete. Online scores1/6 exact delayed,0/24 fresh and0/18
-prior cases; matched disabled scores0/6,0/24,1/18 and simple scores4/6,0/24,11/18.
-The live tape reaches1760 slots and online reaches533 event owners after six
-corrections. Keep those recorded facts distinct from recoverable saved state:
-the complete V5 checkpoint remains intact, but V6's final state is unavailable.
+Continue from this retained ONLINE state for the next explicitly initialized
+broader workload, preserving learned controller weights, baselines, RNG and
+facts rather than resetting or reconstructing lessons. Both future neural
+routes should receive independent copies, with local publication disabled in
+the control; restore the simple reference's own actual history. Changed learning
+algorithms require declared schema/metadata adaptation and authenticated source
+identities. This direction does not release a model load, missing-case replay,
+new corpus or experiment.
 
-[Input-defined recognition](input-defined-recognition-v1.md) and its
-[ordinary QA](input-defined-recognition-qa-v1.md) remain implemented. The
-[cost review](persistent-language-action-v6-cost-review.md) selects exact factual
-competition optimization for this shared broader loop. The
-[integrated tournament passes ordinary QA](factual-address-tournament-qa-v1.md).
-Future session persistence
-must preserve resolved learning at safe boundaries. The completed bounded
-learning review selects paired dendritic request/prefix learning as one concrete
-implementation for this broader loop, with observed source and correction symbols
-counted separately and no backpropagation. [Ordinary core and same-actor QA](dendritic-request-binding-qa-v1.md)
-passes, as does [safe-boundary checkpoint QA](persistent-session-checkpoint-qa-v1.md).
-V7 measures one exact delayed recall but no fresh or recovery usefulness.
-The roadmap owns selection;
-no repeat of this exposed stream or toy-perfection gate follows.
+The [learning review](persistent-language-action-v8-learning-review.md) finds
+low raw-symbol matches, short incorrect outputs and no useful advantage over
+disabled learning. Root selects one
+[local-credit refinement source design](causal-observation-credit-v1.md):
+direct observed-byte output teaching with causal per-symbol own eligibility
+for earlier choices, without reverse error transport. Ordinary mechanics QA
+will support integration; it will not be another toy capability gate.
+The [cost review](persistent-language-action-v8-cost-review.md) measures
+1393.4882711 seconds of checkpoint phases (63.15% of runner time). An ownership
+review finds the proposed tensor-copy removal cannot safely cover dominant
+live-state hashes. Keep that path unchanged. Repeated journal prefixes explain
+84.60% of checkpoint file-hash bytes; the next persistence design is authenticated
+owned append journals, with new-tail reads and full fresh restore checks.
+These directions serve one broader persistent workload.
+
+The [outer measurement](../../benchmarks/persistent_language_action_v8.measurement.json)
+counts2362.3952900 seconds for listed preparation, corrected runner, audit and
+banking, at866.890625MiB observed peak. The first launch's transport failure,
+lost89 source offers and corrected reinitialization remain counted separately
+from completed capability outcomes. Full chronology and retired mechanisms live
+in [experiment history](roadmap-experiment-history.md), with older frozen
+protocols and results linked there.
 
 The original development specification below retains its historical contracts.
 Its older capacities, phase counts and proposed schedules do not override the

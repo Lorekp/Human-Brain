@@ -9,10 +9,10 @@ owns measured evidence. Older "next" steps below are local historical context.
 The active target is [broader persistent language/action](research/persistent-language-action-development-v1.md):
 unseen instruction constructions, new code structures, longer shared memory and
 reduced teacher dependence on the same neuronal learner. Five broader sessions
-are completed; the sixth and seventh are partial after time limits. V7 retains
-a clean safe checkpoint and finishes all fresh, prior and recovery cases.
-Exposed delayed reading responses succeed, with no fresh transfer, useful
-teacher-free recovery or correct broader software edit.
+are completed before the partial sixth and seventh; the eighth is now complete
+with265 authenticated safe boundaries. Both V8 neural routes score zero across
+acquisition, fresh transfer, prior regressions and recovery. No useful
+teacher-free recovery or correct broader neuronal software edit is established.
 
 ## Goal ladder
 
@@ -65,9 +65,12 @@ checks file identity, while fresh restore hashes bytes again. Mutable-state,
 source, journal and atomic HEAD checks remain. V8 additionally binds transient
 versus factual admission and controller RNG publication at each safe boundary.
 The [corrected broader session](research/persistent-language-action-v8-protocol.md)
-is executing at `8e8df91d7e7c6889dff15f97d9fec379ebff71bb`. Its final outcomes
-and runtime benefit await saved audit; mechanics and initialization do not
-establish useful language learning or recovery.
+completed at `8e8df91d7e7c6889dff15f97d9fec379ebff71bb`. Its
+[audited result](../experiments/r4_integrated/persistent_language_action_v8_result.md)
+retains192 attempts,132 actual executions and1982 factual slots per neural route,
+without a correct neuronal task. Checkpoint phases consume63.15% of runtime;
+there is no matched cross-session speedup claim. Local-credit refinement and
+measured persistence costs own the next shared design review.
 
 Preceding measured implementation:
 
