@@ -39,7 +39,7 @@ from experiments.r4_integrated.persistent_language_action_review_v4 import (
     vector,
 )
 
-DRAFT = True
+DRAFT = False
 ROUTES = ("online", "learning_disabled", "simple")
 PHASES = ("acquisition", "transfer", "recovery", "retention")
 PRIOR_BANK_SHA = "3122aed0c040ae086597cbdec6c0e2535a268cc62f7c72da05453ab88dd35466"

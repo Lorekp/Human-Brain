@@ -1,8 +1,9 @@
 # Fifth broader persistent continuation
 
-Status: workload and implementation selected, 2026-09-07. The runner and saved
-auditor remain source-only until their complete release review. A pure manifest
-build and author-data validation may precede that release; neither queries a
+Status: one full run and its saved audit released, 2026-09-07. Numerical,
+lifecycle and reporting QA pass; independent scalar and main/custody source
+reviews pass. The release permits one840-second run and one60-second saved audit,
+each within2048 MiB. The manifest build and author-data validation query no
 learner. The [roadmap](roadmap-reading-to-coding.md) owns priorities. This stream
 does not require perfect earlier tasks and is not a new byte or operation gate.
 
@@ -158,3 +159,32 @@ Paths in the table are under `.pytest-tmp/`. The first outer monitor records
 2.5407214 seconds/36.15234375 MiB; the corrected monitor records3.3430351 seconds/
 80.40234375 MiB. These are preparation costs, not part of future neuronal exposure
 or a capability score. No source task or target changed after these checks.
+
+## Reporting and saved-audit QA
+
+At `0f46973e83d02e0088f041ac1e0c756fc15825da`, the existing test file's
+`test_persistent_v5_summary_contract` passes on its first invocation. It uses240
+authored scalar rows across64 synthetic episodes per route, with no task builder,
+model, checkpoint, reference call or child. One summary call checks the expected
+four measures, eight cases per acquisition encounter,15-attempt exact retention,
+prior reset/equality distinctions, transient versus final recovery, seven repeated
+proposal pairs and15/0/16 actual feedback-consuming retries in the three synthetic
+routes. Two malformed exact-repeat input/age calls reject. The independent saved
+metric audit accepts the report and rejects an inflated recovery count.
+
+Pytest reports1 pass in3.80 seconds; the outer process takes4.8182776 seconds and
+252.62109375 MiB. The familiar nonfatal pytest cache permission warning remains.
+These are reporting checks, not additional neural training or measured task scores.
+
+| Receipt under `.pytest-tmp/` | SHA-256 |
+| --- | --- |
+| `dev/doctor-y8heeyqq/receipt.json` | `89c6466e49edd167db3feec92392473411b0bdccbd858f808ba0d172dbcce9b6` |
+| `persistent-v5-summary-qa-v1.launch.json` | `65c7d74d6669b1eeea04501edd3f23ee2a000e004abe01e52ac83b7b21cb9916` |
+| `persistent-v5-summary-qa-v1.junit.xml` | `8954524990a25d8096ad691f61415a39ef5f0d9031fc631641500d6ae0fed2fa` |
+
+Source review corrected two audit-schema mismatches before this QA: the retained
+numeric-state identity is one aggregate digest, and raw observation record hashes
+include the journal encoder's trailing LF. Domain-prefixed observation identity
+uses its existing separate encoding. Actual feedback consumption replaces a
+hardcoded support flag. No task data, learner weights or frozen old evidence
+changed during these source corrections.

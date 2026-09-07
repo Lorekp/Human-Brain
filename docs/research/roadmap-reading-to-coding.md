@@ -47,7 +47,8 @@ design is [factorized local sequence routing](factorized-sequence-routing-v1.md)
 with direct outcome teaching, retained state, larger unselected factual memory
 and interleaved broader learning opportunities. Its direct local credit, sparse
 geometry and atomic publication pass [ordinary integration QA](factorized-sequence-integration-qa-v1.md).
-The broader workload, continuation loader and saved audit are being prepared.
+The [broader workload, continuation loader and saved audit](persistent-language-action-v5-protocol.md)
+are reviewed and released for one bounded continuation.
 An [owned-response optimization](sequence-assembly-owned-response-qa-v1.md)
 already removes redundant validation with checked-path parity and custody QA.
 Preserve this state and expose the successor to fresh problems. Another

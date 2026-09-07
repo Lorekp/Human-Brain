@@ -46,8 +46,8 @@ is implemented with integrated 1024-slot memory and passes
 [owned-response optimization](sequence-assembly-owned-response-qa-v1.md) passes
 ordinary parity/custody QA. This is one shared successor. Its
 [64-episode workload](persistent-language-action-v5-protocol.md) is built and its
-authored program answers are checked. The full runner/resource release and saved
-audit are still being prepared; no fifth-session learner execution has occurred.
+authored program answers are checked. The full runner and saved audit pass source
+review and reporting QA, and are released for one bounded fifth session.
 
 ## Purpose
 

@@ -30,7 +30,7 @@ from experiments.r4_integrated.persistent_language_action_v4 import (  # noqa: E
     sha,
 )
 
-DRAFT = True
+DRAFT = False
 PRIOR_ATTEMPTS_SHA = "803bacd6949a9c695c30d30e8d3ff1f86c4203b0c019bf1df86919e91f6ee400"
 MANIFEST_SHA = "de182acf644b18fed25948c5c7886006253bee8618a4e6ce647508f624b86fca"
 
