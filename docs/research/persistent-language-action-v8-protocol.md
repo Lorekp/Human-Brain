@@ -9,7 +9,22 @@ and [v8_sources.py](../../experiments/r4_integrated/persistent_language_action_v
 Static AST/literal accounting and Ruff pass. Root releases one pure manifest
 build under a60-second/1GiB watchdog; it reads authenticated historical JSON and
 checks source syntax/splice arithmetic, with zero models, decoders or children.
-The broader runner and authored-program execution remain held.
+The pure build passes at source commit `e3341d9` in3.0362282 watchdog seconds,
+66.109375MiB observed peak, with zero models/decoders/children. Its183,091-byte
+manifest is frozen at SHA256
+`66b0bd96be3b9e97c4eb5f9812c2b5977f294fc5900d55109445c0a303e522d0`.
+It confirms the counts below and18,983 nominal public-scan offers per route;
+actual feedback/project/retry bytes can increase that count. The build receipt
+is `.pytest-tmp/persistent-language-action-v8-build.launch.json`
+(`20d93cd30dfb0c8a3b2107840b340695674704a42dac562f6e1ac4162d44e1ac`).
+
+Root now selects ordinary dataset QA in `persistent_language_action_v8_author_check.py`:
+19 distinct new canonical workspace/driver executions and8 broken recovery starts,
+under120 seconds/512MiB with a5-second timeout per authored child. Historical
+programs and duplicate revisit witnesses are not replayed. This checks actual
+expected outputs and real failing assertions, with no learner and no teaching.
+The frozen build's zero author-child authorization records its earlier pure-build
+scope; this separate QA adds27 counted children. The broader runner remains held.
 The two ordinary controller/actor nodes passed under the root's recorded QA;
 that supports mechanics, not the capability predictions below.
 
