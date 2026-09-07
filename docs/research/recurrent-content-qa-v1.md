@@ -98,4 +98,29 @@ It also checks two accepted and two rejected reference-history restorations or
 validations, including the unchanged old default. The old node retains its ten
 opaque interruption cases, with no neural models. This is execution/custody QA,
 not evidence of learned editing. Use a fresh120-second/2048-MiB watchdog and
-doctor receipt; preserve the first result. Execution is pending.
+doctor receipt; preserve the first result.
+
+Both nodes pass first launch at `17e293afaaecd1bd2ea400247a5587ec47f4bb27`:
+8.2469853 watchdog seconds,300.52734375 MiB observed peak; JUnit reports
+7.164 seconds with zero failures/errors/skips. The new node takes1.503 seconds
+and the unchanged interruption node1.230 seconds. Two real children execute;
+no neural model, training offer or checkpoint decoder runs. The same optional
+pytest cache warning is retained. Doctor reports a clean tracked baseline;
+the untracked V8 workload/checkpoint/protocol drafts are not imported by these
+two tests. Their source-only status is not promoted by this result.
+
+| Receipt | SHA256 |
+| --- | --- |
+| `.pytest-tmp/dev/doctor-0d6c35p9/receipt.json` | `c45680f6c8cd64dc8da9968710288f096751054645dae42d7598feab01b34cd1` |
+| `.pytest-tmp/recurrent-public-driver-v1.launch.json` | `b6e35dec9b22675dbebbd55a395f853de21d031b75086ee3470a1d912b0b65ff` |
+| `.pytest-tmp/recurrent-public-driver-v1.junit.xml` | `038a7367b9d2d8d246c59c2113032e7180a11f29a1c77c591ca325fad40c316d` |
+| `.pytest-tmp/recurrent-public-driver-v1.stdout` | `545a580048b8fcd3b140327bf1d6d2e263e37c4dce52bebadb883e2ab2a59c74` |
+| `.pytest-tmp/recurrent-public-driver-v1.stderr` (empty) | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `.pytest-tmp/recurrent-public-driver-v1-tests/test_recurrent_public_driver_a0/recurrent-public-driver-passed.json` | `ef2a6c1e0ff3602c5e44b805bafde84632e1691e3eaa063c591cdf8e934b0f3d` |
+| `.pytest-tmp/recurrent-public-driver-v1-tests/test_persistent_checkpoint_int0/persistent-checkpoint-frontiers-passed.json` | `aae96839c8b5985d1e22dc1bf8c0857d7c29795301230f21bf519979d93b64c2` |
+
+The driver policy prevents direct proposed driver rewrites. It is not an OS
+sandbox: code in another file can still change the driver when executed. Such
+actual after-files and a separate public-driver integrity result are retained;
+they do not become successful protected checks merely because returncode is0.
+The parent never repairs the workspace or substitutes a correctness label.
