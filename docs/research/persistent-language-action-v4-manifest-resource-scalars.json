@@ -1,0 +1,129 @@
+{
+  "queryChunks": {
+    "uniqueAll": 255,
+    "freeWeightedPerRoute": 341,
+    "teacherPerRoute": 58,
+    "totalTwo": 798,
+    "old": [
+      25,
+      30,
+      26,
+      28,
+      27,
+      27,
+      29,
+      24
+    ],
+    "full_lag_pairs": 412661760
+  },
+  "requestRawPerRoute": 9671,
+  "teacherLengths": [
+    {
+      "id": "A00-R",
+      "raw": 10,
+      "events": 11,
+      "queryChunks": 5
+    },
+    {
+      "id": "A00-E",
+      "raw": 37,
+      "events": 38,
+      "queryChunks": 5
+    },
+    {
+      "id": "A01-R",
+      "raw": 10,
+      "events": 11,
+      "queryChunks": 4
+    },
+    {
+      "id": "A01-E",
+      "raw": 27,
+      "events": 28,
+      "queryChunks": 5
+    },
+    {
+      "id": "A02-R",
+      "raw": 11,
+      "events": 12,
+      "queryChunks": 4
+    },
+    {
+      "id": "A02-E",
+      "raw": 29,
+      "events": 30,
+      "queryChunks": 5
+    },
+    {
+      "id": "A03-R",
+      "raw": 10,
+      "events": 11,
+      "queryChunks": 5
+    },
+    {
+      "id": "A03-E",
+      "raw": 13,
+      "events": 14,
+      "queryChunks": 5
+    },
+    {
+      "id": "A04-R",
+      "raw": 3,
+      "events": 4,
+      "queryChunks": 5
+    },
+    {
+      "id": "A04-E",
+      "raw": 17,
+      "events": 18,
+      "queryChunks": 5
+    },
+    {
+      "id": "A05-R",
+      "raw": 8,
+      "events": 9,
+      "queryChunks": 5
+    },
+    {
+      "id": "A05-E",
+      "raw": 48,
+      "events": 49,
+      "queryChunks": 5
+    }
+  ],
+  "nominalAllEditBoundaryWeighted": 4573,
+  "fixedInitialCalls": 26,
+  "dynamicCarriedOrRetryCalls": 22,
+  "fixedBoundaries": 2437,
+  "fixedMaxEndCandidates": 1574,
+  "fixedFileCount": 52,
+  "freeUpperPerRoute": {
+    "B": 47581,
+    "E": 12860,
+    "files": 140,
+    "featureBlocksStart": 3077,
+    "featureBlocksEnd": 836
+  },
+  "teacherPerRoute": {
+    "tB": 666,
+    "tE": 36,
+    "tf": 12,
+    "startBlocks": 48,
+    "endBlocks": 6
+  },
+  "allNeuralFixedProductsUpper": 173248413952,
+  "allNeuralScoreProductsUpper": 73398863562,
+  "allNeuralLocalProductsExact": 1004243844,
+  "manifest_sha256": "9d3399a1360ca9ddb4ba9361f06b70deb6063ddcf6461ed1aa414b0d54f4f191",
+  "source_revision": "290316b6e66f6f7e731906154d72319db870cb27",
+  "teacher_raw": 223,
+  "teacher_events": 235,
+  "max_teacher_events": 49,
+  "teacher_request_raw": 1646,
+  "new_queries_range": [
+    117,
+    168
+  ],
+  "max_fixed_boundary_count": 147,
+  "max_fixed_file_bytes": 103
+}

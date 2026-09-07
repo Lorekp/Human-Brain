@@ -4,8 +4,8 @@ Status: selected source-design and integration direction, 2026-09-07. This is
 one shared successor to the completed v3 session, not another byte or operation
 benchmark. Assembly, observation and integration source is implemented, and
 [ordinary component/lifecycle QA passes](sequence-assembly-integration-qa-v1.md).
-The broader corpus and continuation are being prepared; no new neuronal
-workload run has occurred.
+The broader corpus and continuation are frozen and released for one monitored
+run; no new neuronal workload result is claimed at release.
 The [roadmap](roadmap-reading-to-coding.md) and
 [persistent workload](persistent-language-action-development-v1.md) own scope.
 
@@ -156,6 +156,26 @@ and 36 edit demonstrations. Both neuronal routes continue the same initial state
 with separate storage and matched tools; only new learning differs. No new task
 roster is generated until these shared interface decisions are coherent.
 
+The reviewed v4 source now freezes that schedule: six interleaved reading/edit
+pairs receive one correction each; six related pairs receive none. Three actual
+project chains continue through changed requirements. Missing conditional,
+collection, guard and formatting logic is checked through multiple public
+driver inputs. Parent-only nominal solutions never replace a route's actual
+files. The old eight v3 retention items remain exact exposed regressions.
+
+The first pure manifest build has SHA256
+`9d3399a1360ca9ddb4ba9361f06b70deb6063ddcf6461ed1aa414b0d54f4f191`
+at `.pytest-tmp/persistent-language-action-v4-manifest.json` (84,120 bytes).
+It ran the builder once and no model, checkpoint load, baseline prediction or
+authored program. Build receipt SHA256 is
+`2092c8ceb262bfee9ddcc1c6f0c8bc9e8beb2c5ed3d1af86bab5c648f7ebc34f`.
+Twelve corrections offer 223 raw bytes plus twelve EOS events: 235 neuronal
+reader offers and eighteen action labels per route. Fewer correction occasions
+therefore do not mean fewer target symbols than v3's 172. All 48 new requests
+have 117--168 bytes; the eight exact earlier regressions keep their original
+requests. The whole 505-slot tape remains unchanged; context assemblies add
+episodic capacity, without a claim that tape capacity or knowledge has grown.
+
 ## Integral resource work and verification
 
 Keep the exact incremental-prefix improvement and full accounting. Prefer
@@ -179,7 +199,21 @@ ordinary QA, measure one broader continuation with the same 900-second/
 2048-MiB complete budget, including references and independent saved checking.
 Do not require perfect earlier tasks before that exposure.
 
+## Release review
+
+The six distinct ordinary mechanics/lifecycle QA nodes passed, followed by one
+affected combined-node repeat after receipt and accounting changes. Independent
+source reviews of initialization, the reference, actual project continuation,
+the runner and saved auditor found no remaining launch blocker. No experiment
+checkpoint was loaded by those checks. The frozen manifest above was built once.
+The [source resource envelope](persistent-language-action-v4-resource-plan.md)
+selects one 840-second run plus a 60-second saved-only audit under 2048 MiB.
+This release measures the whole broader workload without an additional cost
+probe or toy skill gate. The final source closure binds all released Python
+files, including the saved auditor and retained-reader custody assertions.
+
 ## Source-design inputs
+
 
 The independent source/resource note is
 `.pytest-tmp/active-path-next-architecture-cost-note.md`, SHA256

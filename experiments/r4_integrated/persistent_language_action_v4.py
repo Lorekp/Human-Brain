@@ -14,7 +14,7 @@ import sys
 import time
 from pathlib import Path
 
-DRAFT = True
+DRAFT = False
 ROOT = Path(__file__).resolve().parents[2]
 ROUTES = ("online", "learning_disabled", "simple")
 PHASES = ("acquisition", "transfer", "recovery", "retention")
@@ -147,6 +147,9 @@ def summarize(attempts, manifest, prior_report):
             if len(matches) != 1:
                 raise ValueError("retention requires one authenticated prior-session outcome")
             before, after = matches[0], first[episode["episode_id"]]
+            prior_retention = prior_report["metrics"][prior_route]["retention"]
+            earlier_gap = len(prior_retention) - prior_retention.index(before) - 1
+            current_gap = rows.index(after)
             retained.append(
                 {
                     "episode_id": episode["episode_id"],
@@ -155,6 +158,10 @@ def summarize(attempts, manifest, prior_report):
                     "prior_route": prior_route,
                     "initial_correct": before["delayed_correct"],
                     "delayed_correct": after["correct"],
+                    "intervening_prior_retention_attempts": earlier_gap,
+                    "intervening_current_attempts": current_gap,
+                    "intervening_attempts": earlier_gap + current_gap,
+                    "memory_slots": after["memory_used"],
                 }
             )
         result[route] = {
@@ -264,6 +271,11 @@ def run(args):
     initial_hashes = {
         route: dict(zip(("model", "memory"), hashes(route), strict=True)) for route in ROUTES
     }
+    def retained_reader_hash(model):
+        return _digest({key: value for key, value in model.reader.state_dict().items()
+                        if not key.startswith("assemblies.")})
+
+    retained_reader_initial = {route: retained_reader_hash(model) for route, model in models.items()}
     try:
         for episode in manifest["episodes"]:
             for route in ROUTES:
@@ -413,7 +425,7 @@ def run(args):
                     # scalar metric fields rather than every converted neural trace.
                     attempts.append({key: row[key] for key in (
                         "route", "episode_id", "phase", "kind", "attempt_index", "correct", "status",
-                        "project_id", "predecessor_episode_id", "workspace_lifecycle")})
+                        "project_id", "predecessor_episode_id", "workspace_lifecycle", "memory_used")})
                     if row["execution"] is not None and not row["execution"]["files_complete"]:
                         raise ValueError(
                             "incomplete actual workspace retained; cannot resume from partial files"
@@ -495,6 +507,12 @@ def run(args):
                         "episode_id": episode["episode_id"], "files": files, "feedback": public_feedback}
         for journal in journals.values():
             journal.close()
+        retained_reader_final = {route: retained_reader_hash(model) for route, model in models.items()}
+        if retained_reader_final != retained_reader_initial:
+            raise ValueError("held inherited reader state changed during assembly learning")
+        if (hashes("learning_disabled")[0] != initial_hashes["learning_disabled"]["model"]
+                or any(hashes(route)[1] != initial_hashes[route]["memory"] for route in models)):
+            raise ValueError("disabled slow state or the retained whole memory changed")
         checkpoint = {
             "schema": "persistent-language-action-state-v4",
             "routes": {route: model.snapshot(states[route]) for route, model in models.items()},
@@ -561,6 +579,10 @@ def run(args):
             "continuation": manifest["continuation"],
             "initial_memory_slots": 505,
             "final_memory_slots": {route: states[route].used for route in models},
+            "final_assembly_occupied": {
+                route: int(model.reader.assemblies.used.item()) for route, model in models.items()},
+            "retained_reader_initial_sha256": retained_reader_initial,
+            "retained_reader_final_sha256": retained_reader_final,
             "functional_prior_parity": False,
         }
         save(output / "report.json", report)

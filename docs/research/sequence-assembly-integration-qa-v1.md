@@ -149,3 +149,18 @@ The three launches verify six distinct ordinary nodes. Their aggregate elapsed
 time is 25.5325368 seconds; no overall throughput comparison is implied. The
 independent action circuit's four offered labels are additional to the seven
 combined-fixture labels described above.
+
+After adding recorded teacher agreement counts for independent review and
+counting the wrapper's remaining assembly validation scan, the affected combined
+node is checked again at `290316b6e66f6f7e731906154d72319db870cb27`. One redundant
+scan is removed; the learning equations are unchanged. The first launch passes:
+1 test in 6.82 seconds, monitored 8.337765 seconds at 617.015625 MiB. This adds
+one combined/reader construction, five free decisions, four offered reader
+events, seven action labels and three actual children to the earlier QA totals;
+it is a repeated ordinary fixture after a source change, not another skill gate.
+
+The retained prefix is `.pytest-tmp/sequence-assembly-receipt-qa-v1`:
+launch SHA256 `29b23e1c73a15461d338d5fec36ea5df5bbde8aec9a818963320e8f0ceb74a70`,
+JUnit `b4f722286759201d903739715c33ec709e47c18df4bd1a251897e76266c7fdf8`.
+Doctor `.pytest-tmp/dev/doctor-cxl1c6yv/receipt.json` has SHA256
+`e1359353c810f5413022b6723c3d4d811ca853b9fc0f4015c7b4670de2d85e4c`.
