@@ -1,11 +1,13 @@
-# Sixth persistent language/action continuation — source draft
+# Sixth persistent language/action continuation
 
 Status: root selected 2048 factual slots / 1024 event owners, 72 episodes /
 96 attempts / 66 children per route, at most 150 offered symbols and 972 new
 fact slots, and a complete 900-second / 2048-MiB ceiling (840-second runner plus
-60-second saved audit), 2026-09-07. The concrete raw manifest and execution release
-remain pending. No manifest has been built and no model, checkpoint tensor, feature,
-teacher, reference prediction or child has been evaluated for this proposal.
+60-second saved audit), 2026-09-07. The once-built manifest,42 passing author-only
+program witnesses and ordinary reporting QA now bind one complete execution.
+Actual exposure is135 teacher symbols and896 new factual slots, ending at1760
+facts and no more than533 owners. No V6 checkpoint or learner call has occurred
+at this release; the author-only executions are separate.
 The [roadmap](roadmap-reading-to-coding.md) and selected
 [input-defined recognition](input-defined-recognition-v1.md) own the architecture.
 
@@ -231,7 +233,7 @@ complete source/resource custody. It must not claim reconstruction of omitted
 full lexical gates or every recognition parameter from scalar summaries alone.
 Ordinary source/numerical/lifecycle checks supply that separate evidence.
 
-## Integration decisions to settle before authoring/build
+## Integration constraints
 
 1. Implement the selected 2048/1024 growth and finalize the complete budget. Provide
    explicit strict promotion for tape, bank, recognition gains, owner views and
@@ -244,9 +246,8 @@ Ordinary source/numerical/lifecycle checks supply that separate evidence.
    checked public APIs and synchronous free-response ownership.
 4. Author the fixed schedule, complete raw documents/requests/files and six
    whole targets within the selected aggregate bounds. Root reviews that one
-   manifest and ordinary affected QA before the one broader run. No builder,
-   canonical author-program verification or learner exposure is authorized by
-   this draft alone.
+   manifest and ordinary affected QA before the one broader run. The completed
+   preparation and one-run release are bound below.
 
 ## Concrete authoring schedule
 
@@ -345,6 +346,53 @@ across two files. Actual stderr/stdout and changed files become the next public
 input. These categories are parent-only author coverage, not cell input labels.
 Require behavior over several inputs and protected-file integrity; changing a
 proposal or obtaining exit code zero alone does not establish recovery.
+
+## Verified preparation and single-run release
+
+Source `cb24161e3f6cd0dca7f7b36b09d6ebe07ed4ef06` builds the manifest once at
+`.pytest-tmp/persistent-language-action-v6-manifest.json`, SHA256
+`9ac45b7754f9ac033cc85aba49d66bee1b471e9a6da7ee26ecd883c25d65051f`.
+The task module hash is
+`aba356df441fb13a7584e5ceab19822e4ccb4aa5a1ec3b1fe8bebe52392f5a4d`.
+It contains72 episodes,96 attempts and66 child verifications per route;12 whole
+documents add884 raw bytes and12 EOS. Six corrections contain129 raw bytes and6
+EOS, plus9 action-head labels per neuronal route. All authored observations fit
+the ABI. Six project followers use actual predecessor files, including three
+fresh combinations; nominal programs are never substituted into the run.
+
+The build passes first launch in0.5274548 seconds. Separate author verification
+checks all42 nominal edit witnesses on this same manifest:42 pass,42 children,
+no model construction/checkpoint load/learner call/teacher offer/task rebuild.
+It takes1.60792399998 internal seconds and3.7123315 outer seconds, with80.609375MiB
+observed peak. These are data checks, not learner scores.
+
+One existing-file reporting node passes first launch:5.01 pytest seconds,
+6.2751345 outer seconds and260.03515625MiB observed peak. Its288 synthetic rows
+exercise separate acquisition/fresh/retention/recovery outcomes,47-attempt ages,
+changed-requirement qualification, dependent-project strata and rejected forged
+metrics. Three summary calls and two independent metric checks make no model,
+task-builder, checkpoint or child calls. The nonfatal pytest cache permission
+warning does not affect saved receipts. The earlier four neuronal integration
+nodes retain their own [QA report](input-defined-recognition-qa-v1.md).
+
+| Preparation evidence | SHA256 |
+|---|---|
+| `.pytest-tmp/dev/doctor-sjvy54_u/receipt.json` | `6cefa42b58005b709b6141a2bdb6d19372cfeedc21929aba463f27e870fe0858` |
+| `.pytest-tmp/persistent-language-action-v6-build.launch.json` | `bed31d1ba760570c05150396f4fde2eff067418d09d3ecd7d807d21e9be44486` |
+| `.pytest-tmp/persistent-language-action-v6-summary-qa.launch.json` | `2c4d6722819626d8e21387213f1a292b37ca94c0eeee720ba22eb67c896a8fda` |
+| `.pytest-tmp/persistent-language-action-v6-summary-qa.junit.xml` | `744b56803a4c0925bac0e186c3784c8245fb11c4f02b50d50c488362579732b6` |
+| `.pytest-tmp/persistent-language-action-v6-author-validation.launch.json` | `80abea65024d27027070477093de96fa58eaf0c79eefd63e1f1184a0ba5c803f` |
+| `.pytest-tmp/persistent-language-action-v6-author-validation/report.json` | `f98869a598c9e78971b1d5faa76e7b30228f50e0a9d3cdc0e8dbf18eede20988` |
+| `.pytest-tmp/persistent-language-action-v6-author-validation/actions.jsonl` | `b59e2ff462984b56d39054b45836fc4b57764dfbd2fb47aa39915f49e73a825c` |
+
+Release one invocation of `persistent_language_action_v6` on this manifest and
+the complete authenticated V5 online state, writing fresh
+`.pytest-tmp/persistent-language-action-v6-run/` and its matching monitor files.
+Its first complete saved-only `persistent_language_action_v6_review` follows,
+within the840+60-second/2048-MiB envelope. No extra model construction, checkpoint
+load, prediction probe, cost run, gain sweep or repeated training round is part
+of the release. Preserve partial data if execution fails; do not change or
+truncate this stream to make its observed result pass.
 
 ## Source implementation awaiting author release
 

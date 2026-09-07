@@ -41,7 +41,7 @@ from experiments.r4_integrated.persistent_language_action_review_v4 import (
     vector,
 )
 
-DRAFT = True
+DRAFT = False
 ROUTES = ("online", "learning_disabled", "simple")
 PHASES = ("acquisition", "transfer", "recovery", "retention")
 PRIOR_BANK_SHA = "c60ca50a1800f5431e1a20c8f1aa9c6bcd6e3c82e45ebfa72977735e52728d42"
@@ -56,7 +56,7 @@ PRIOR_HISTORY_SHA = {
     "teachers.jsonl": "51713e14cbc82e575106adef182ef5e13d8af97be8a5f0c11eba453786712d74",
     "ingests.jsonl": "a4ea76e0aca10a801b4815927933b41dfd3ac5672fde659f9f0e9ae00aa17f3c",
 }
-MANIFEST_SHA = "DRAFT"
+MANIFEST_SHA = "9ac45b7754f9ac033cc85aba49d66bee1b471e9a6da7ee26ecd883c25d65051f"
 FEATURE_WIDTH = 1033304
 MAX_SPARSE = 10992
 MODEL_BYTES = 83665008

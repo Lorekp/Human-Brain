@@ -30,9 +30,9 @@ from experiments.r4_integrated.persistent_language_action_v5 import (  # noqa: E
     sha,
 )
 
-DRAFT = True
+DRAFT = False
 PRIOR_ATTEMPTS_SHA = "9139824c7897f15e3a3aed71a7692f7a15c28ad18fa4d82d48072dee5981e638"
-MANIFEST_SHA = "DRAFT"
+MANIFEST_SHA = "9ac45b7754f9ac033cc85aba49d66bee1b471e9a6da7ee26ecd883c25d65051f"
 
 
 def reader_summary(prediction):

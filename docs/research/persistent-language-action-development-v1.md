@@ -24,7 +24,8 @@ addresses ownership of local plastic credit. Its [ordinary QA](input-defined-rec
 passes, including lossless growth to1024 event owners and2048 factual slots.
 The [next broader integration](persistent-language-action-v6-protocol.md) combines
 new instruction forms, longer experience and fewer answer corrections, with
-complete resource accounting; its full run remains held during authoring.
+complete resource accounting. Its source and authored data are verified; the
+protocol releases one complete continuation from the saved state.
 
 The original development specification below retains its historical contracts.
 Its older capacities, phase counts and proposed schedules do not override the

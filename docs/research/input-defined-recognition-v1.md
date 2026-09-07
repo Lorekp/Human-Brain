@@ -203,4 +203,5 @@ gain vector 8192 bytes; the512-owner cost examples above remain comparisons.
 Preserve all512 prior event rows and1024 prior tape rows, including unused
 coordinates, when promoting the398-owner/864-fact state. The implementation's
 [ordinary numerical, lifecycle and growth QA](input-defined-recognition-qa-v1.md)
-passes. The draft broader protocol does not release the full model run yet.
+passes. The broader protocol binds the once-built workload, passing author-only
+program checks and reporting QA, and releases its single complete continuation.
