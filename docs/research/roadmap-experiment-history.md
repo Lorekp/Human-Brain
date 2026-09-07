@@ -3673,3 +3673,30 @@ V7 online; its numerical state is retained, but the new stochastic policy does
 not promise old behavior parity. The design is selected for source implementation,
 not a completed model or evidence of useful generalization. Larger raw-experience
 and retained-memory budgets remain to be priced before a broader release.
+
+## 2026-09-07 recurrent content implementation and ordinary QA
+
+Source `bf9a9f0451b3d7de1d17f9e9782f872dc69f112e` implements the selected
+controller, immutable causal frames and same-reader/action integration. The
+complete V7 reader remains a numerical prior; new stochastic context/gate/mode
+and literal cells learn through held local eligibility. Transient observations
+preserve the original tape object; explicit admitted sources retain existing
+factual writes. Disabled resolution advances its own RNG while holding learned
+weights and baselines. Source review closes tensor-bearing trace serialization
+and controller-only idle guards before execution.
+
+The [two ordinary checks](recurrent-content-qa-v1.md) pass first launch in
+18.527647 outer seconds at866.30859375 MiB observed process-tree peak. They
+contain124 predictive offers, including two in an intentionally rejected
+transaction,390 categorical draws, seven held-prior calls and one actual STOP
+child. Separate raw-frame relays receive47 symbols without model predictions.
+Scalar arithmetic, causal visibility, teacher branching, disabled acknowledgement,
+late rejection and strict local restoration pass. The
+[cost review](recurrent-content-cost-review-v1.md) binds the saved evidence and
+separates sparse current work from dense transaction validation and custody.
+
+These fixtures do not establish language transfer or useful recovery. Numerical
+V7 adaptation remains source-only and no historical checkpoint is decoded.
+The next shared work is authenticated initialization, explicit transient-source
+persistence and a priced broader stream with public checks; no gain sweep,
+automatic missing-case replay or toy-perfection prerequisite follows.

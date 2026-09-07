@@ -1,12 +1,13 @@
 # Public observation, reusable context and content binding
 
-2026-09-07. **Selected next learning design; source implementation and workload
-release remain unfinished.** The [roadmap](roadmap-reading-to-coding.md) owns
+2026-09-07. **Implemented with ordinary mechanics QA passing; broader workload
+release remains unfinished.** The [roadmap](roadmap-reading-to-coding.md) owns
 selection. Use one locally learned recurrent controller with two content-address
 populations inside the existing acting reader. Its choices learn through their
 own stochastic eligibility and observed outcomes. Independent source/math review
-and root's causal-input review are complete. Usefulness, sample efficiency and
-implementation remain untested; no model or new curriculum has been executed.
+and root's causal-input review are complete. Sample efficiency and useful
+generalization remain untested. The [two ordinary checks](recurrent-content-qa-v1.md)
+exercise the new controller and same actor; no new curriculum has been executed.
 
 ## Actual source and rejected patch-only option
 
@@ -358,17 +359,19 @@ and strict RNG/state restoration. Use small authored in-memory fixtures, no
 historical checkpoint or exposed-task fit. Count every symbol, prior call and
 child. These checks are arithmetic/custody QA, not proof of learned generality.
 
-Root selects this recurrent-control/content-binding design for the next source
-implementation, superseding the patch-only option. It can represent content-independent
+Root selects this recurrent-control/content-binding design, superseding the
+patch-only option. It can represent content-independent
 bind/advance/read policies, while its own local eligibility can train their
 selection. The remaining empirical barrier is whether observed-byte/public
 outcome signals teach useful state partitions and gates at affordable exposure
-rather than common-byte shortcuts. The next implementation step must close
-the exact visibility, sampling and checkpoint interfaces, including publication
-of actual RNG advancement on acknowledgement even when learning is disabled.
-Keep weights fixed through the common scan and its actual/correction branches.
-Account for sparse afferent products, eligibility storage, each teacher-prefix
-prior call and complete persistence before choosing the broader exposure budget.
+rather than common-byte shortcuts. Ordinary QA now checks causal visibility,
+sampling, local updates and actual RNG publication during disabled acknowledgement.
+Weights stay fixed through the common scan and its actual/correction branches.
+The next integration must authenticate historical initialization and distinguish
+transient observations from factual admission in persistent transactions.
+The resource and saved-cost ledgers account for sparse products, eligibility,
+teacher-prefix prior calls and dense custody; complete broader costs remain
+unmeasured before choosing the new exposure budget.
 Root can then release one broader curriculum measuring acquisition,
 new forms/combinations, retention and genuine recovery; no toy-perfection gate
 or gain sweep is implied.

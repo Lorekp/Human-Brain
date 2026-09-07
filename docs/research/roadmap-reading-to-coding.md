@@ -57,11 +57,13 @@ recurrent context cells and two content cursors within the same acting reader.
 Their own stochastic eligibility receives declared observed-symbol or public
 consequence signals, without backward error transport. This makes learned
 binding and value reuse possible; it does not establish that learning will find
-useful policies. A patch-only exact-context store is superseded. Implement the
-causal visibility, state and local update interfaces, then price a broader public
-experience stream with more varied raw observations and explicit retained-memory
-costs. Ordinary affected QA supports that continuation; no gain sweep or isolated
-capability gate follows.
+useful policies. A patch-only exact-context store is superseded. The causal
+frame, local controller and same-actor integration pass
+[ordinary affected QA](recurrent-content-qa-v1.md). Continue with authenticated
+V7 initialization and explicit transient-source persistence, then release a
+priced broader public experience stream with varied observations, actual public
+checks and declared retained-memory costs. No gain sweep or isolated capability
+gate follows.
 
 All byte/EOS columns remain eligible, and existing neuronal potentials remain
 the prior. Raw contextual contacts are a falsifiable sequence mechanism, not

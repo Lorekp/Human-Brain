@@ -31,9 +31,12 @@ The [learning review](persistent-language-action-v7-learning-review.md) leads to
 the [selected recurrent context/content design](public-observation-sequence-context-v1.md).
 Local stochastic eligibility trains the neurons choosing binds, advances and
 literal/value output; no backward derivative teaches earlier cells. More exact
-observation matching alone is superseded. Implement this same-reader mechanism
-with causal scan visibility and persistent RNG ownership, then price a varied
-public observation curriculum and explicit memory capacity before its release.
+observation matching alone is superseded. This same-reader mechanism passes
+[ordinary causal scan, local arithmetic and persistence QA](recurrent-content-qa-v1.md).
+Implement authenticated initialization and explicit transient-source checkpoint
+transactions, then price a varied public observation curriculum and retained
+memory before its release. The [resource ledger](recurrent-content-resource-plan-v1.md)
+distinguishes transient learned experience from factual admission.
 These support one next broader continuation, not competing toy gates. Preserve
 the clean V7 numerical payloads and source identities; no automatic resume,
 missing-case replay or model restore is claimed. A new continuation must explicitly

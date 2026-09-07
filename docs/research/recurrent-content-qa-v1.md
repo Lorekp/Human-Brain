@@ -48,8 +48,34 @@ Keep the paused direct-request module and protected stash untouched.
 
 ## Result
 
-Pending the first bounded execution. Source-only Ruff passes for the three new
-modules and reports no findings in the two new test nodes. Existing unrelated
-test-file findings are outside this change. Independent source review checked
-the local arithmetic, causal frame ABI, shared scan credit, teacher RNG/prior
-flow, strict recursive loading and joint action/controller publication.
+Both nodes pass on the first launch at source
+`bf9a9f0451b3d7de1d17f9e9782f872dc69f112e`. JUnit reports2 tests, zero
+failures/errors/skips and17.239 seconds. The complete watchdog process takes
+18.527647 seconds with866.30859375 MiB observed process-tree peak. Its500-ms
+sampling can miss short-lived children; the actual execution receipt separately
+records the one STOP child. No repeated run or historical model restore occurs.
+
+The checkout doctor verifies the committed baseline with an empty tracked diff
+and only the deliberately paused direct-request module untracked. Source-only
+Ruff passes for all three new modules and reports no findings in the two new
+test nodes. Existing unrelated test-file findings are outside this change.
+Pytest warns that its optional node-ID cache cannot be written; both tests,
+their result files and JUnit complete normally. This does not trigger a rerun.
+
+Independent source review checked the local arithmetic, causal frame ABI,
+shared scan credit, teacher RNG/prior flow, strict recursive loading and joint
+action/controller publication. The [saved cost review](recurrent-content-cost-review-v1.md)
+owns detailed work and exposure totals. These fixtures establish mechanics,
+not useful transfer, retained language competence or autonomous repair.
+
+| Receipt, relative to the checkout | SHA256 |
+| --- | --- |
+| `.pytest-tmp/dev/doctor-al7ngzac/receipt.json` | `df18c5a1a762dde5ff9d67f187c77f384dc99f071478de5de83f2c10c0fd1e24` |
+| `.pytest-tmp/recurrent-content-v1.launch.json` | `20667153e169ab070d4cc0f9ac2003013cb8036cf3aab4bcef54665665d905f6` |
+| `.pytest-tmp/recurrent-content-v1.stdout` | `545a580048b8fcd3b140327bf1d6d2e263e37c4dce52bebadb883e2ab2a59c74` |
+| `.pytest-tmp/recurrent-content-v1.stderr` (empty) | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `.pytest-tmp/recurrent-content-v1.junit.xml` | `ddeef244a8ae732cb9e117e172f1c2542285db357881aefd34184d55eec521ec` |
+
+The numerical V7 adapter exists as source but is not exercised by these tests.
+Authenticated historical initialization, the transient-source checkpoint
+contract and a priced broader workload remain the next integration work.
