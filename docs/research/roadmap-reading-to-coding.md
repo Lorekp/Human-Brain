@@ -54,9 +54,19 @@ passes; full-workload speedup is not yet measured. No separate skill or speed
 gate is selected. Existing owned-free
 validation optimizations remain integral. Future measured sessions also need
 durable state at safe boundaries, so a time limit does not discard completed
-online learning. Do not claim that the missing V6 checkpoint exists or recover
-it through uncounted replay. The [bounded learning-design review](persistent-ordered-context-learning-review-v1.md) must explain the
-persistent relevance/composition failures before another correction-rule tweak.
+online learning. The [parent session checkpoint implementation](persistent-session-checkpoint-v1.md)
+is ready for ordinary durability and actor-continuation QA. Do not claim that
+the missing V6 checkpoint exists or recover
+it through uncounted replay. The [bounded learning-design review](persistent-ordered-context-learning-review-v1.md)
+selects one concrete next implementation: paired dendritic branches learn ordered
+byte context together with fixed raw-request activity. Source observations and
+corrections teach the same reader that generates the actor's payloads, using
+local permanence changes with every observed symbol counted. All byte/EOS
+columns remain eligible, and the existing neuronal potentials remain the prior.
+This is a falsifiable sequence/context mechanism, not established semantic
+composition or feedback-driven repair. Its source implementation and ordinary
+transaction checks proceed alongside safe-boundary checkpointing for the next
+broader session; neither requires another toy capability gate.
 Metadata-only repair and sequence latches are not separate active queues.
 Preserve V5's recoverable state and all V6 partial evidence. Another automatic
 byte/operation gate or extra rounds on this exposed stream are not selected.

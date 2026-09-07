@@ -27,8 +27,11 @@ the complete V5 checkpoint remains intact, but V6's final state is unavailable.
 competition optimization for this shared broader loop. The
 [integrated tournament passes ordinary QA](factual-address-tournament-qa-v1.md).
 Future session persistence
-must survive time limits, and the learning review must address relevance and
-composition before selecting another learning change. The roadmap owns selection;
+must preserve resolved learning at safe boundaries. The completed bounded
+learning review selects paired dendritic request/prefix learning as one concrete
+implementation for this broader loop, with observed source and correction symbols
+counted separately and no backpropagation. Its usefulness remains to be measured.
+The roadmap owns selection;
 no repeat of this exposed stream or toy-perfection gate follows.
 
 The original development specification below retains its historical contracts.

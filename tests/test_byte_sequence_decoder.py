@@ -13615,3 +13615,299 @@ def test_tournament_recognition_executed_learning_parity(tmp_path):
         "disabled_work": [feedback.work for feedback in disabled],
         "load_work": load_work, "accounting": accounting,
     })
+
+
+def _persistent_checkpoint_fixture(root):
+    """Parent-only fixed evidence; opaque payloads are never tensor-decoded."""
+    import hashlib
+
+    from experiments.r4_integrated.persistent_language_action_v1 import encode
+    from experiments.r4_integrated.persistent_session_checkpoint import (
+        COUNTERS,
+        ROUTES,
+        PersistentSessionCheckpoint,
+    )
+
+    root.mkdir()
+    source = root / "source"
+    source.mkdir()
+    (source / "fixture.txt").write_bytes(b"fixed checkpoint fixture\n")
+    evidence = root / "evidence"
+    evidence.mkdir()
+    journals = {}
+    for kind in ("attempts", "teachers", "ingests"):
+        name = kind + ".jsonl"
+        (evidence / name).write_bytes(b"")
+        journals[kind] = [name]
+    manifest = root / "manifest.json"
+    manifest.write_bytes(encode({"episodes": [
+        {"episode_id": "fixture", "attempt_limit": 1, "append_document_ids": [],
+         "teacher": {"kind": "edit", "operation": "SPLICE", "path": "main.py",
+                     "start": 6, "end": 7, "replacement_hex": b"1".hex(),
+                     "stop_reason": "eos"}}]}))
+    store = PersistentSessionCheckpoint.create(
+        root / "checkpoint", source_root=source, evidence_root=evidence,
+        manifest_path=manifest, manifest_sha256=hashlib.sha256(manifest.read_bytes()).hexdigest(),
+        source_revision="a" * 40,
+        source_sha256={"fixture.txt": hashlib.sha256(
+            (source / "fixture.txt").read_bytes()).hexdigest()}, session_id="ordinary-qa")
+    host = {
+        "cursor": {"episode_index": 0, "route_index": 0,
+                   "attempt_index": 1, "append_done": False},
+        "projects": {route: {} for route in ROUTES}, "current": None,
+        "counters": {route: dict.fromkeys(COUNTERS, 0) for route in ROUTES},
+        "elapsed_seconds": 0, "budget_seconds": 180, "budget_mib": 2048,
+        "initial_bindings": {"fixture": hashlib.sha256(b"ordinary QA").hexdigest()},
+    }
+    return store, host, evidence, journals
+
+
+def test_persistent_checkpoint_interrupted_frontiers(tmp_path):
+    """Publication and dirty-tail custody without models or tensor decoding."""
+    import hashlib
+
+    from experiments.r4_integrated.persistent_language_action_v1 import encode
+    from experiments.r4_integrated.persistent_session_checkpoint import (
+        DirtyCheckpoint,
+        PersistentSessionCheckpoint,
+    )
+
+    cases = ("clean", "intent", "partial_journal", "attempt_before_teacher",
+             "payload", "manifest", "published_head", "source_change", "payload_corruption",
+             "empty_execution_directory")
+    records = []
+    for case in cases:
+        store, host, evidence, journals = _persistent_checkpoint_fixture(tmp_path / case)
+        payload = b"opaque parent-only QA payload; never torch-loaded"
+        payload_name = "route-fixture.pt"
+        (store.directory / payload_name).write_bytes(payload)
+        row = {"payload": payload_name, "sha256": hashlib.sha256(payload).hexdigest(),
+               "bytes": len(payload), "model_sha256": "b" * 64, "memory_sha256": "c" * 64,
+               "experience": 0, "reader_experience": 0, "mode": "learned", "seed": 733,
+               "actor_class": "parent_only_opaque_fixture"}
+        boundary = {
+            "schema": "persistent-session-checkpoint-boundary-v1", "sequence": 0,
+            "config_sha256": store.config_sha256, "previous_sha256": None,
+            "intent_sha256": hashlib.sha256(
+                (store.directory / "intent-000000000.json").read_bytes()).hexdigest(),
+            "routes": {route: dict(row) for route in ("online", "learning_disabled")},
+            "baseline": {"documents_hex": [], "demonstrations": [],
+                         "new_teacher_offers": {"reading": 0, "STOP": 0, "SPLICE": 0}},
+            "host": host,
+            "frontiers": store.capture_frontiers(journals, execution_root="executions"),
+            "work": {},
+        }
+
+        def publish(value, *, directory=store.directory):
+            name = f"boundary-{value['sequence']:09d}.json"
+            raw = encode(value)
+            (directory / name).write_bytes(raw)
+            (directory / "HEAD.json").write_bytes(encode({
+                "schema": "persistent-session-checkpoint-head-v1", "sequence": value["sequence"],
+                "manifest": name, "sha256": hashlib.sha256(raw).hexdigest()}))
+
+        publish(boundary)
+        store = PersistentSessionCheckpoint.open(
+            store.directory, config_sha256=store.config_sha256)
+        assert store.inspect()["status"] == "clean"
+        if case in {"intent", "partial_journal", "attempt_before_teacher", "payload",
+                    "manifest", "published_head"}:
+            digest = store.begin("attempt", host["cursor"], observation_sha256="e" * 64)
+            if case == "partial_journal":
+                (evidence / "attempts.jsonl").write_bytes(b'{"interrupted":')
+            elif case == "attempt_before_teacher":
+                (evidence / "attempts.jsonl").write_bytes(encode({"attempt": "actual"}))
+            elif case in {"payload", "manifest", "published_head"}:
+                (store.directory / "route-uncommitted.pt").write_bytes(b"uncommitted")
+                if case in {"manifest", "published_head"}:
+                    successor = copy.deepcopy(boundary)
+                    successor.update(sequence=1, intent_sha256=digest)
+                    successor["host"]["cursor"]["route_index"] = 1
+                    successor["previous_sha256"] = store.inspect(
+                        require_clean=False)["boundary_sha256"]
+                    if case == "manifest":
+                        (store.directory / "boundary-000000001.json").write_bytes(encode(successor))
+                    else:
+                        publish(successor)
+        elif case == "source_change":
+            (tmp_path / case / "source" / "fixture.txt").write_bytes(b"changed\n")
+        elif case == "payload_corruption":
+            (store.directory / payload_name).write_bytes(b"changed payload")
+        elif case == "empty_execution_directory":
+            (evidence / "executions" / "unexplained-empty").mkdir(parents=True)
+        reopened = PersistentSessionCheckpoint.open(
+            store.directory, config_sha256=store.config_sha256) if case != "source_change" else None
+        if case in {"clean", "published_head"}:
+            assert reopened.inspect()["status"] == "clean"
+        elif case == "source_change":
+            with pytest.raises(ValueError, match="source changed"):
+                PersistentSessionCheckpoint.open(store.directory, config_sha256=store.config_sha256)
+        elif case == "payload_corruption":
+            with pytest.raises(ValueError, match="payload changed"):
+                reopened.inspect()
+        else:
+            with pytest.raises(DirtyCheckpoint):
+                reopened.inspect()
+            partial = reopened.inspect(require_clean=False)
+            assert partial["status"] == "dirty" and partial["boundary"]["sequence"] == 0
+        records.append({"case": case, "work": store.work})
+    _coincidence_qa_save(tmp_path / "persistent-checkpoint-frontiers-passed.json", {
+        "status": "passed", "cases": records, "models": 0, "teacher_symbols": 0,
+        "tensor_loads": 0, "children": 0,
+        "scope": "constructed parent-only publication fixtures; no neuronal continuation claim",
+    })
+
+
+def test_persistent_checkpoint_actual_actor_continuation(tmp_path):
+    """Exact learned state, counters, actual files and independent restored actors."""
+    import hashlib
+    import time
+    from pathlib import Path
+
+    from experiments.r4_integrated.persistent_language_action_baseline_v2 import SimpleReference
+    from experiments.r4_integrated.persistent_language_action_execution_v2 import (
+        execute_proposal,
+        feedback_from_receipt,
+        qualified_launch,
+        workspace_from_records,
+    )
+    from experiments.r4_integrated.persistent_language_action_v1 import encode
+    from experiments.r4_integrated.persistent_session_checkpoint import PersistentSessionCheckpoint
+    from humanbrain.neuronal_splice_learner import _digest
+    from humanbrain.sequence_assembly_observation import RawObservation, SpliceProposal
+    from humanbrain.tournament_recognition_learner import TournamentRecognitionSpliceLearner
+
+    store, host, evidence, journals = _persistent_checkpoint_fixture(tmp_path / "actual")
+    routes = ("online", "learning_disabled")
+    models = {route: TournamentRecognitionSpliceLearner(seed=733) for route in routes}
+    states = {}
+    for route, model in models.items():
+        with torch.no_grad():
+            model.reader.address_weight.zero_()
+            model.reader.prefix_weight.zero_()
+            model.reader.output_weight.zero_()
+            model.reader.codec.weight.zero_()
+            model.reader.codec.bias.zero_()
+            model.reader.codec.bias[256] = 10
+            model.actions.operation_weight.zero_()
+            model.actions.operation_bias.copy_(torch.tensor([10.0, 0.0]))
+        states[route] = model.ingest([b"a"])
+    baseline = SimpleReference()
+    baseline.documents = [b"a"]
+    # Transport an authentic-shaped prior demo directly; this is not new teaching.
+    baseline.demonstrations = [{"query": b"prior raw request", "old": b"0", "replacement": b"1",
+                                "source_sha256": hashlib.sha256(b"print(0)\n").hexdigest(),
+                                "query_sha256": hashlib.sha256(b"prior raw request").hexdigest()}]
+    baseline.new_teacher_offers = {"reading": 3, "STOP": 2, "SPLICE": 1}
+    frontiers = store.capture_frontiers(journals, execution_root="executions")
+    first = store.commit(models, states, baseline, host, frontiers)
+    assert first["sequence"] == 0 and first["work"]["checkpoint_payload_writes"] == 2
+    first_boundary = store.inspect()["boundary"]
+    workspace = workspace_from_records([{"path": "main.py", "content_hex": b"print(0)\n".hex()}])
+    observation = RawObservation(b"Change the printed value to one.", workspace)
+    teacher = SpliceProposal("SPLICE", "main.py", 6, 7, b"1", "eos", workspace.sha256)
+    observation_hash = hashlib.sha256(encode(observation.to_record())).hexdigest()
+    executions, commits = [], []
+    for route_index, route in enumerate(routes):
+        store.begin("attempt", host["cursor"], observation_sha256=observation_hash)
+        model, state = models[route], states[route]
+        prediction = model.propose(observation, state)
+        assert prediction.proposal.operation == "STOP" and len(prediction.payload.steps) == 1
+        actual_files, execution = execute_proposal(
+            workspace, prediction.proposal, evidence / "executions" / f"{route}-1",
+            launch=qualified_launch(Path(__file__).resolve().parents[1]),
+            deadline=time.perf_counter() + 10)
+        executions.append(execution)
+        assert execution["returncode"] == 0 and execution["stdout_hex"] == b"0\n".hex()
+        envelope = {"attempt_id": prediction.attempt_id,
+                    "proposal_sha256": prediction.proposal_sha256,
+                    "workspace_sha256": workspace.sha256, "execution": execution}
+        # Actual runner fields needed by the boundary contract, including the
+        # actual observation, execution and pre-correction state. No fake outcome.
+        row = {"schema": "persistent-language-action-attempt-checkpoint-qa-v1",
+               "route": route, "episode_id": "fixture", "kind": "edit", "attempt_index": 1,
+               "observation": observation.to_record(),
+               "observation_record_sha256": observation_hash,
+               "prediction": {"attempt_id": prediction.attempt_id},
+               "execution": execution, "after_files": actual_files, "project_id": "actual-project",
+               "model_after_sha256": _digest(model.state_dict()),
+               "memory_after_sha256": _digest(vars(state))}
+        raw_attempt = encode(row)
+        with (evidence / "attempts.jsonl").open("ab") as handle:
+            handle.write(raw_attempt)
+        correction = model.teach(
+            prediction, observation, state, teacher, envelope, learning_enabled=route == "online")
+        assert correction.reader_feedback.recognition_updated == (route == "online")
+        with (evidence / "teachers.jsonl").open("ab") as handle:
+            handle.write(encode({
+                "schema": "persistent-language-action-teacher-checkpoint-qa-v1", "route": route,
+                "episode_id": "fixture", "attempt_sha256": hashlib.sha256(raw_attempt).hexdigest(),
+                "teacher": store.manifest["episodes"][0]["teacher"],
+                "learning_enabled": route == "online", "reader_offers": 2, "action_labels": 3,
+                "model_after_sha256": _digest(model.state_dict()),
+                "memory_after_sha256": _digest(vars(state))}))
+        host["cursor"]["route_index"] = route_index + 1
+        host["elapsed_seconds"] = route_index + 1
+        host["counters"][route].update(attempts=1, executions=1, teacher_occasions=1,
+                                       reader_offers=2, action_labels=3)
+        feedback = feedback_from_receipt(execution).to_record()
+        host["projects"][route]["actual-project"] = {
+            "episode_id": "fixture", "files": actual_files, "feedback": feedback}
+        host["current"] = {"route": route, "episode_id": "fixture",
+                           "files": actual_files, "feedback": feedback}
+        commits.append(store.commit(models, states, baseline, host,
+                       store.capture_frontiers(journals, execution_root="executions")))
+        if route == "online":
+            second_boundary = store.inspect()["boundary"]
+            assert (second_boundary["routes"]["online"]["payload"]
+                    != first_boundary["routes"]["online"]["payload"])
+            assert (second_boundary["routes"]["learning_disabled"]["payload"]
+                    == first_boundary["routes"]["learning_disabled"]["payload"])
+    second, third = commits
+    assert second["sequence"] == 1 and third["sequence"] == 2
+    final_boundary = store.inspect()["boundary"]
+    assert third["work"]["checkpoint_payload_writes"] == 3
+    assert third["work"]["checkpoint_payload_reuses"] == 3
+    assert final_boundary["routes"]["learning_disabled"]["reader_experience"] > 0
+    assert final_boundary["routes"]["learning_disabled"]["experience"] == 1
+    fresh = {route: TournamentRecognitionSpliceLearner(seed=733) for route in routes}
+    reopened = PersistentSessionCheckpoint.open(store.directory, config_sha256=store.config_sha256)
+    restored = reopened.restore_into(fresh)
+    assert restored["host"] == host
+    assert restored["baseline"].documents == baseline.documents
+    assert restored["baseline"].demonstrations == baseline.demonstrations
+    assert restored["baseline"].new_teacher_offers == baseline.new_teacher_offers
+    carried = restored["host"]["projects"]["online"]["actual-project"]
+    next_observation = RawObservation(observation.request, workspace_from_records(carried["files"]),
+                                      feedback_from_receipt(executions[0]))
+    assert next_observation.workspace.sha256 == workspace.sha256
+    comparisons = []
+    for route in routes:
+        _assert_nested_equal(models[route].state_dict(), fresh[route].state_dict())
+        _assert_nested_equal(states[route].snapshot(), restored["states"][route].snapshot())
+        assert models[route]._experience == fresh[route]._experience
+        assert models[route].reader._active_experience == fresh[route].reader._active_experience
+        assert models[route].reader._candidate_views is not fresh[route].reader._candidate_views
+        assert models[route].reader._self_wirings is not fresh[route].reader._self_wirings
+        old_prediction = models[route].reader.predict_with_receipt(
+            next_observation, states[route], max_bytes=1)
+        new_prediction = fresh[route].reader.predict_with_receipt(
+            next_observation, restored["states"][route], max_bytes=1)
+        assert old_prediction.generation == new_prediction.generation
+        assert len(old_prediction.steps) == len(new_prediction.steps)
+        for left, right in zip(old_prediction.steps, new_prediction.steps, strict=True):
+            _assert_nested_equal(vars(left), vars(right))
+        models[route].reader.acknowledge(old_prediction, states[route])
+        fresh[route].reader.acknowledge(new_prediction, restored["states"][route])
+        comparisons.append({"route": route, "steps": len(old_prediction.steps),
+                            "generation": vars(old_prediction.generation)})
+    _coincidence_qa_save(tmp_path / "persistent-checkpoint-continuation-passed.json", {
+        "status": "passed", "models": 4, "ingests": 2, "source_raw_bytes": 2,
+        "source_eos": 2, "free_calls": 6, "teacher_calls": 2, "teacher_symbols": 4,
+        "enabled_teacher_symbols": 2, "disabled_teacher_symbols": 2,
+        "action_labels": 6, "children": 2, "checkpoint_commits": 3,
+        "restore_calls": 1, "tensor_loads": restored["work"]["checkpoint_torch_load_calls"],
+        "experimental_checkpoint_loads": 0, "payload_writes": 3, "payload_reuses": 3,
+        "executions": executions, "comparisons": comparisons,
+        "commit_work": third["work"], "restore_work": restored["work"],
+    })
