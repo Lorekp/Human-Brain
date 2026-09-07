@@ -1,6 +1,7 @@
 # Parent session checkpoint and restart
 
-Status: selected source implementation; ordinary QA is authored but not executed.
+Status: selected source implementation; [ordinary QA passes](persistent-session-checkpoint-qa-v1.md)
+after one test assertion repair. The original failed run is preserved.
 This adds persistence to future broader runners. It neither reconstructs V6 nor
 authorizes a retry, workload, checkpoint load or learner execution. The
 [roadmap](roadmap-reading-to-coding.md) owns integration and release.
@@ -213,10 +214,11 @@ restore a previous process's perf_counter deadline. Boundary reserve/voluntary s
 and complete-session admission remain future-runner integration work, not an
 automatic guarantee that a long next response can finish before the wall cutoff.
 
-## Ordinary QA authored, not run
+## Ordinary QA scope
 
-Two additions in the existing byte-sequence test file are selected for root review,
-commit/doctor and one monitored affected launch:
+Two additions in the existing byte-sequence test file have completed ordinary
+verification; the [QA report](persistent-session-checkpoint-qa-v1.md) owns actual
+launches, the assertion repair, cumulative exposure and evidence:
 
 * Ten pure parent cases use opaque bytes that are never tensor-decoded: clean HEAD,
   outstanding intent, partial journal, complete attempt before correction, uncommitted
@@ -234,6 +236,5 @@ commit/doctor and one monitored affected launch:
   history are compared. The fabricated prior reference history is transport data,
   not another teacher or reference prediction.
 
-No model, checkpoint, task, child or test was executed while implementing this source
-and document. These are ordinary durability/continuation checks, not a skill gate or
+These are ordinary durability/continuation checks, not a skill gate or
 authorization to rerun the exposed V6 stream.

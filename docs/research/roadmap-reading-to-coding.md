@@ -55,7 +55,8 @@ gate is selected. Existing owned-free
 validation optimizations remain integral. Future measured sessions also need
 durable state at safe boundaries, so a time limit does not discard completed
 online learning. The [parent session checkpoint implementation](persistent-session-checkpoint-v1.md)
-is ready for ordinary durability and actor-continuation QA. Do not claim that
+passes [ordinary durability and actor-continuation QA](persistent-session-checkpoint-qa-v1.md).
+Do not claim that
 the missing V6 checkpoint exists or recover
 it through uncounted replay. The [bounded learning-design review](persistent-ordered-context-learning-review-v1.md)
 selects one concrete next implementation: paired dendritic branches learn ordered

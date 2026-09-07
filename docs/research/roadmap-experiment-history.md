@@ -3557,3 +3557,18 @@ actors make four responses, two actual STOP executions and eight local teacher
 offers with exact action/update parity. One in-memory strict state load passes.
 No experimental checkpoint or V6 task is replayed. This is an integral
 simulation improvement, with broader runtime benefit still unmeasured.
+
+## 2026-09-07 safe-boundary persistent state
+
+Source `cf26310d4ee96647db6eac4207f0f0a0161f66c5` adds durable initialization and
+transaction intents, immutable route payloads and one atomic HEAD. Ten ordinary
+interruption fixtures pass first launch. The actual actor continuation test
+reaches restoration but incorrectly demands distinct empty Python cache tuples;
+test repair `8338af3938fb45c528b66529e1bb24d8b27cf72a` checks actual tensor storage
+and the affected node passes. [QA evidence](persistent-session-checkpoint-qa-v1.md)
+retains both launches:37.8355623seconds total and1232.08203125MiB maximum observed
+peak, eight fresh actors, eight teacher symbols and four actual children across
+failed and repaired fixtures. This is mechanics verification, not a broader
+session result. No V6 state is reconstructed or old workload repeated. Paired
+dendritic source/request learning and fresh broader workload preparation proceed
+as the shared next integration.
