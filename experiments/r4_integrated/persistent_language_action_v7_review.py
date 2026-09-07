@@ -789,7 +789,7 @@ def check_checkpoints(run, sources, manifest_sha, rows_by_kind, partial, resolve
     for sequence in range(head["sequence"] + 1):
         path = directory / f"boundary-{sequence:09d}.json"
         boundary = read_json(path)
-        identity = scalar.file_sha(path)
+        boundary_sha256 = scalar.file_sha(path)
         require(
             boundary["schema"] == "persistent-session-checkpoint-boundary-v1"
             and boundary["sequence"] == sequence
@@ -814,9 +814,10 @@ def check_checkpoints(run, sources, manifest_sha, rows_by_kind, partial, resolve
             "checkpoint cursor/counter/actual workspace mismatch",
         )
         if previous is None:
-            for name, identity in host["initial_bindings"].items():
+            for name, initial_sha256 in host["initial_bindings"].items():
                 require(
-                    scalar.file_sha(safe_path(run, name)) == identity, "checkpoint initial evidence"
+                    scalar.file_sha(safe_path(run, name)) == initial_sha256,
+                    "checkpoint initial evidence",
                 )
         else:
             require(
@@ -885,10 +886,10 @@ def check_checkpoints(run, sources, manifest_sha, rows_by_kind, partial, resolve
                 "kind": intent["kind"],
                 "cursor": intent["cursor"],
                 "host_cursor": boundary["host"]["cursor"],
-                "sha256": identity,
+                "sha256": boundary_sha256,
             }
         )
-        previous, previous_hash, last = boundary, identity, boundary
+        previous, previous_hash, last = boundary, boundary_sha256, boundary
     require(
         head["manifest"] == f"boundary-{head['sequence']:09d}.json"
         and head["sha256"] == previous_hash,

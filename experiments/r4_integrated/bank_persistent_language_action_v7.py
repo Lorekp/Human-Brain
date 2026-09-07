@@ -29,7 +29,7 @@ def read(path):
     return json.loads(raw)
 
 
-def bank(run, review_path, run_launch, review_launch):
+def bank(run, review_path, run_launch, review_launch, previous_review_launches=()):
     started = time.perf_counter()
     run, review_path, run_launch, review_launch = (
         Path(p).resolve() for p in (run, review_path, run_launch, review_launch)
@@ -56,6 +56,28 @@ def bank(run, review_path, run_launch, review_launch):
         raise ValueError("review monitor command is not bound to this saved artifact")
     if monitor["status"] != ("passed" if complete else "failed"):
         raise ValueError("completion status disagrees with runner watchdog")
+    previous_reviews = []
+    for previous_path in previous_review_launches:
+        previous_path = Path(previous_path).resolve()
+        previous = read(previous_path)
+        previous_command = previous["command"]
+        if (
+            previous["status"] != "failed"
+            or previous_command[1:5] != command[1:5]
+            or Path(previous_command[previous_command.index("--run") + 1]).resolve() != run
+        ):
+            raise ValueError("previous failed review belongs to another workload")
+        previous_output = Path(previous_command[previous_command.index("--output") + 1]).resolve()
+        previous_reviews.append(
+            {
+                "launch_path": previous_path.relative_to(ROOT).as_posix(),
+                "launch_sha256": sha(previous_path),
+                "output_path": previous_output.relative_to(ROOT).as_posix(),
+                "output_sha256": sha(previous_output),
+                "seconds": previous["elapsed_seconds"],
+                "peak_mib": previous["observed_tree_peak_sum_mib"],
+            }
+        )
     saved_tools = {
         "experiments/r4_integrated/persistent_language_action_v7_review.py",
         "experiments/r4_integrated/bank_persistent_language_action_v7.py",
@@ -78,8 +100,18 @@ def bank(run, review_path, run_launch, review_launch):
         ROOT / "experiments/r4_integrated/persistent_language_action_v7_review.py",
     ):
         evidence[path.relative_to(ROOT).as_posix()] = sha(path)
-    run_and_audit_seconds = monitor["elapsed_seconds"] + audit_monitor["elapsed_seconds"]
-    peak = max(monitor["observed_tree_peak_sum_mib"], audit_monitor["observed_tree_peak_sum_mib"])
+    for previous in previous_reviews:
+        evidence[previous["launch_path"]] = previous["launch_sha256"]
+        evidence[previous["output_path"]] = previous["output_sha256"]
+    all_review_seconds = audit_monitor["elapsed_seconds"] + sum(
+        x["seconds"] for x in previous_reviews
+    )
+    run_and_audit_seconds = monitor["elapsed_seconds"] + all_review_seconds
+    peak = max(
+        monitor["observed_tree_peak_sum_mib"],
+        audit_monitor["observed_tree_peak_sum_mib"],
+        *(x["peak_mib"] for x in previous_reviews),
+    )
     admission = None
     if complete:
         report = read(run / "report.json")
@@ -87,7 +119,7 @@ def bank(run, review_path, run_launch, review_launch):
         if (
             run_and_audit_seconds > budget["complete_seconds"]
             or peak > budget["peak_mib"]
-            or audit_monitor["elapsed_seconds"] > budget["reserved_audit_seconds"]
+            or all_review_seconds > budget["reserved_audit_seconds"]
         ):
             raise ValueError("completed run+review exceeds selected complete budget")
         admission = budget
@@ -125,6 +157,8 @@ def bank(run, review_path, run_launch, review_launch):
             "seconds": audit_monitor["elapsed_seconds"],
             "peak_mib": audit_monitor["observed_tree_peak_sum_mib"],
         },
+        "previous_failed_reviews": previous_reviews,
+        "all_saved_review_seconds": all_review_seconds,
         "saved_tool_sources": review["saved_tool_sources"],
         "bank_preparation_seconds": preparation_seconds,
         "measured_seconds_through_bank_preparation": subtotal_seconds,
@@ -146,10 +180,13 @@ def main():
     parser = argparse.ArgumentParser()
     for name in ("run", "review", "run-launch", "review-launch", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument("--previous-review-launch", type=Path, action="append", default=[])
     args = parser.parse_args()
     if DRAFT:
         raise SystemExit("DRAFT: root source review/release required")
-    result = bank(args.run, args.review, args.run_launch, args.review_launch)
+    result = bank(
+        args.run, args.review, args.run_launch, args.review_launch, args.previous_review_launch
+    )
     with args.output.open("xb") as handle:
         handle.write(
             (json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n").encode()
