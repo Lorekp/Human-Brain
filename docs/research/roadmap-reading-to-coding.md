@@ -12,18 +12,18 @@ knowledge, understands language, combines learned structure, acts in software
 workspaces and recovers from failures. Local simulated-neuron learning and useful
 real-world behavior are the central commitments.
 
-The [broader persistent continuation is complete](../../experiments/r4_integrated/persistent_language_action_v2_result.md).
+The [third broader persistent session is complete](../../experiments/r4_integrated/persistent_language_action_v3_result.md).
 Both neuronal routes score zero on acquisition first responses, fresh transfer,
 delayed retention and teacher-free recovery. The simple retrieval/editing
-reference scores 13/24, 11/16, 8/8 and 0/8 respectively. The same learner continues
-its saved model and memory from 453 to 505 slots across 56 episodes per route;
-final state is saved.
-Local updates occur, but useful broader competence is not established.
+reference scores 12/24, 6/16, 8/8 and 0/8 respectively. The same learner continues
+its saved numerical model and whole 505-slot memory across 56 episodes per route;
+both final states are saved. Actual-response output correction and exact prefix
+activity reuse are implemented, but useful broader competence is not established.
 
 The prepared [byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 is also completed and independently audited. Its narrow successes remain
-regression evidence. The [current result bank](../../benchmarks/persistent_language_action_v2.result.json)
-and [learning review](persistent-language-action-v2-learning-review.md) own the
+regression evidence. The [current result bank](../../benchmarks/persistent_language_action_v3.result.json)
+and [learning review](persistent-language-action-v3-learning-review.md) own the
 broader measurements and failure analysis.
 The [experiment history](roadmap-experiment-history.md) owns chronology and retired
 directions. Do not append another experiment diary to this roadmap.
@@ -34,15 +34,17 @@ The active plan is [persistent language-and-action development](persistent-langu
 Continue the learner on a workload that combines reading,
 retained knowledge, raw software actions and observation of their consequences.
 Expose it to broader problems now; perfection on the current toy cohort is not
-a prerequisite. Both completed streams are now exposed development material. The
-[request-conditioned output implementation](request-conditioned-output-v1.md) is
-shared by reading and action payloads. It reconsiders all memory addresses at
-each output step using the request and earlier output, with direct local
-output-current learning, but the completed continuation still shows no useful
-task competence. The selected next implementation is
-[actual-path output correction with incremental prefix simulation](active-path-output-learning-v1.md).
-It binds one local output correction to the first error in the actual response,
-and reuses unchanged fixed prefix activity. Its effectiveness is unmeasured.
+a prerequisite. All completed streams are now exposed development material.
+The [current reader and local output correction](active-path-output-learning-v1.md)
+are shared by reading and action payloads. It reconsiders all memory addresses
+at each output step and reuses exact fixed prefix activity. Mechanics checks
+pass, but useful broader answers remain unmet. The saved response and
+resource reviews select the next [context-specific sequence assembly design](context-specific-sequence-assemblies-v1.md),
+which combines local context recruitment with use of all already offered causal
+sequence events. Longer instruction access, missing-logic software and actual
+diagnostic observations belong in that same integration. This is a source-design
+direction, not implemented or measured capability; another
+automatic byte/operation gate or extra rounds on this exposed stream are not selected.
 Continue the saved model and accumulated memory on
 new instruction forms and combinations. Address selection, composition and
 feedback use remain unresolved capability questions. Choose changes for this broader loop, without another

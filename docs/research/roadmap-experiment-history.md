@@ -3393,3 +3393,35 @@ Local B/C/U publication and occasional address switching do not establish
 effective sequence learning. The next shared question is alignment of local
 sequence teaching with actual free generation, alongside measured simulation
 cost; no gain sweep, extra fitting rounds or isolated operation gate is selected.
+
+## 2026-09-07 actual-response output correction in the broader session
+
+Source `fc7f614` continues the full v2 online numerical model, 505-slot tape and
+experience count 92. One direct output-current correction binds to the first
+actual response error; all-target B/C teaching remains separately declared.
+An exact incremental prefix cache avoids 90.0007% of pair reevaluations on the
+recorded trajectories. Ordinary arithmetic, atomicity and real execution
+ownership checks pass without a task-performance prerequisite.
+
+The new 56-episode public session interleaves related instruction forms and
+introduces negation, reordered composition, arithmetic and new code structures.
+Both neuronal routes score 0/24 acquisition first responses, 0/16 fresh transfer,
+0/8 delayed retention and 0/8 recovery. The reference scores 12/24, 6/16, 8/8 and
+0/8; supported fresh scores are 0/12, 0/12 and 5/12. Each neuronal route receives
+172 target symbols and 36 action labels; online publishes 24 actual-event U
+clamps and 24 B/C changes. Fewer output updates do not reduce supplied teacher
+information. Memory stays at 505 slots, extending age without new capacity.
+
+The [result](../../experiments/r4_integrated/persistent_language_action_v3_result.md)
+and [bank](../../benchmarks/persistent_language_action_v3.result.json) preserve
+216 responses, 144 actual executions and both final continuation states. Full
+run and saved audit pass first launch in 60.5972151 seconds at 512.5234375 MiB
+observed peak. Workload, teaching and receipts differ from v2, so the elapsed
+ratio is not an isolated cache-speed comparison.
+
+Saved features show broad overlap between correction contexts, while 22 of 24
+output clamps target the first event and two the second; none teaches EOS.
+Actual outputs change but do not solve the tasks. The next bounded architectural
+review concerns context-specific local learning and effective use of already
+offered sequence information within the same broader learner. It is not an
+automatic extra pass on this now-exposed stream.

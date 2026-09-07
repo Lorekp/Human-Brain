@@ -1,7 +1,8 @@
 # Active-path output correction and incremental prefix simulation
 
-Status: implementation in source review and ordinary QA, 2026-09-07. The v2 broader session
-is complete; this design has not been measured on the broader workload. It continues
+Status: implemented, verified and measured in the third broader session, 2026-09-07.
+The [result](../../experiments/r4_integrated/persistent_language_action_v3_result.md)
+still has zero neuronal task scores in all four groups. It continues
 the [persistent language/action plan](persistent-language-action-development-v1.md)
 and the same saved neuronal model, memory and action loop. It is not a new
 toy-perfection prerequisite or authorization for an epoch/gain sweep.

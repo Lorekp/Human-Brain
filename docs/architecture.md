@@ -7,10 +7,10 @@ package and neither imports the other.
 
 Updated policy pointer: 2026-09-07. The
 [roadmap](research/roadmap-reading-to-coding.md#learning-and-action-architecture) owns the
-simulated-neuron learning commitment and permitted hybrid architecture research.
-Cell equations and GLIF may change. External stores, tokenization, and pretrained
-LLM knowledge components are permitted candidates with disclosed roles and
-measured neuronal contribution; this document does not claim they are integrated.
+simulated-neuron learning commitment and architecture policy.
+Cell equations and GLIF may change. Tokenization and ordinary tools may encode
+observations and execute actions; externally supplied reasoning or answers are
+assisted-system evidence and cannot establish the requested neuron-only capability.
 The main learner now requires local, online cell/synapse updates. Historical
 global-gradient and matrix-solve implementations remain documented comparisons;
 their presence does not satisfy that current learning constraint.
@@ -20,20 +20,25 @@ fidelity constraints apply to those lanes and frozen experiments, not to every
 future architecture. Current integration work follows the
 [persistent language/action plan](research/persistent-language-action-development-v1.md).
 
-The current `RequestConditionedMemoryLearner` materializes fixed raw-request/key
+The current `ActivePathMemoryLearner` materializes fixed raw-request/key
 and earlier-output/key coincidence activities before learned address cells.
 Two fixed threshold layers select among every occupied address at each output
 step. Fixed mixed context cells then supply a locally learned byte/EOS output
 population, with the old codec retained as a fixed current prior. During
-correction, current-position responsibility supplies direct local address
-credit, and output cells use normalized potential-error products with their
-own inputs. No error travels backward through fixed features or history.
-Sequential corrections stage all new parameters before atomic publication.
-See the [exact selected equations](research/request-conditioned-output-v1.md).
+correction, the first mismatch in the actual saved response supplies one direct
+output-current clamp using that event's own selected feature. Full offered
+teacher prefixes still supply B/C address credit with U held; there are no
+all-address U updates. Every proposal is validated before atomic publication.
+No error travels backward through fixed features or history. The incremental
+prefix helper reuses Boolean fixed-cell activity and applies the same full
+float32 normalization at every step. See the
+[exact selected equations](research/active-path-output-learning-v1.md).
 
-`RequestConditionedSpliceLearner` retains this reader and the existing local
-action heads through proposal, real execution and subsequent correction.
-The [completed broader continuation](../experiments/r4_integrated/persistent_language_action_v2_result.md)
+`ActivePathSpliceLearner` retains this reader and the existing local
+action heads through proposal, real execution and subsequent correction. STOP
+corrections and teacher-free actions explicitly resolve the nested reader
+without inventing a payload teacher. The
+[completed third broader session](../experiments/r4_integrated/persistent_language_action_v3_result.md)
 preserves the prior model and whole accumulated tape, but establishes no useful
 task accuracy. Its state and evidence remain available for continued development.
 

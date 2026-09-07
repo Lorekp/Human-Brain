@@ -1,0 +1,666 @@
+{
+  "claim": "Public persistent development; separate acquisition, fresh combinations, exposed retention and teacher-free recovery. No general SWE or protected transfer claim.",
+  "combined_seconds": 60.5972151,
+  "continuation": {
+    "baseline_history_sha256": {
+      "v1": {
+        "attempts.jsonl": "24b4096773ed6fa761715a53688800094ce793445068101789b22b4143ebb71a",
+        "ingests.jsonl": "3f6e6bcaa2bbd0054d57a23a982cf1406e21fa507fc36ecb52918aa973abb147",
+        "manifest.json": "8ff7e338fb7649d8b230fc54507a1265a406cadf3f183c9c6585cbfa47b62ef8",
+        "teachers.jsonl": "98585a318401b5aa77c56e0eb6a2258c121355e634496ec8fc7d294ed5763a6f"
+      },
+      "v2": {
+        "attempts.jsonl": "7b21e2cacc6d39ff0a1b4ab7398e872195c5bed82c190e14a851dd2c85f93ccf",
+        "ingests.jsonl": "040426d1390847bcb51b9035bc39212f00de14b96de835c8109e23f1e2f4eebc",
+        "manifest.json": "efac496ad0f5e8e6de982c5a6b9418621359996ba9064465e117a1e396d5e721",
+        "teachers.jsonl": "10df7e75af48eb6ffc8b82b69640bce5534a601f25be5e16895a7bf4abdf7571"
+      }
+    },
+    "baseline_predict_replays": 0,
+    "baseline_prior_documents": 18,
+    "baseline_prior_edit_demonstrations": 24,
+    "initial_control_policy": "same_online_final_state; disable_current_session_learning",
+    "initial_memory_slots": 505,
+    "memory_pressure": "sustained505slots; longer age with no capacity growth or newfacts",
+    "prior_bank_sha256": "de1eac1cc27a961ba1525c71ee90ff599eb5dff31b25ff8e4f1260bcd09304c8",
+    "prior_documents": [
+      {
+        "document_id": "N00",
+        "sha256": "c31b23ffe602fdcb91cf0b20f4edcf96c546dbc0234f1503a51b6ca3ffcf6ea7",
+        "text_hex": "5468652062616467652069732027626c7565272e0a"
+      },
+      {
+        "document_id": "N01",
+        "sha256": "0b62005dd7785ebcddc409414114c87265efee96ddb802300d0be12ad1742e5a",
+        "text_hex": "486172626f72277320636f646520697320275137272e0a"
+      },
+      {
+        "document_id": "N02",
+        "sha256": "ff0b210ac68b467a4cfec241313ea050f985fda285067d3f1233e62867152116",
+        "text_hex": "526574726965732064656661756c7420746f202733272e0a"
+      },
+      {
+        "document_id": "N03",
+        "sha256": "e976cab05a18a50e2b75804328cbd4518ee0d7e15c1355411892a54ede3c10cf",
+        "text_hex": "4f6e2064656c61792c207761697420273227207365636f6e64732e0a"
+      },
+      {
+        "document_id": "N04",
+        "sha256": "28d174c8fe22ddf8f74f9a89fd6ce51211a4ab4ad120917dd8a70b0222c833f2",
+        "text_hex": "417263686976652066696c65732075736520272e62616b272e0a"
+      },
+      {
+        "document_id": "N05",
+        "sha256": "60a8dc308d1eebc4784ae901d30a2f323c65224fa010e444f386a201905a5639",
+        "text_hex": "4c6f677320617265206e616d656420276175646974272e0a"
+      },
+      {
+        "document_id": "N06",
+        "sha256": "db2932e5f0d0dc55a3b8fba54f77cff43488bddc90645d1bc767fd51646d835c",
+        "text_hex": "4472792072756e73206d616b6520273027207772697465732e0a"
+      },
+      {
+        "document_id": "N07",
+        "sha256": "7973a4e7ec9b4c3c3ac5c612b43bba9bb23bf326af6d4a9e96a7a7a8dc52f228",
+        "text_hex": "42617463682073697a65206973202734272e0a"
+      },
+      {
+        "document_id": "N08",
+        "sha256": "033848445a4c23708c9307c23ddde6d1953db30bc184bea4ef85690d40b4cc66",
+        "text_hex": "546865206261636b757020726567696f6e206973202777657374272e0a"
+      },
+      {
+        "document_id": "N09",
+        "sha256": "b9e39cb17ba618043854aaa22354c0602f8087574c279d60856dcfbd72519f09",
+        "text_hex": "5469636b6574732065787069726520696e2027362720646179732e0a"
+      },
+      {
+        "document_id": "N10",
+        "sha256": "67ab34d370cc37cf064fb8dedce5b6b08ea7dba9e45604322b43e4f045c56e5c",
+        "text_hex": "456d70747920696e7075742072657475726e73202730272e0a"
+      },
+      {
+        "document_id": "N11",
+        "sha256": "e14e86f96dec0a91977d8c9778b9489ef8a83b0d6486a381f4c04956ba3d3465",
+        "text_hex": "4c6162656c732075736520276c6f77657263617365272e0a"
+      },
+      {
+        "document_id": "N12",
+        "sha256": "0577aa4c3a049aabf81d2f74381c6aabf96098e1f397be63e34284e996e891b6",
+        "text_hex": "447572696e672074657374696e672c207468652062616467652069732027677265656e272e0a"
+      },
+      {
+        "document_id": "N13",
+        "sha256": "5439099ac9169c1d951a4bafb144089126725cb398ea2288e50101db7578cfb1",
+        "text_hex": "496e2070726f64756374696f6e2c207468652062616467652069732027626c7565272e0a"
+      },
+      {
+        "document_id": "N14",
+        "sha256": "8decf0e20fcde1d6a4eb27305129ab0991454b59322a1d8f4167afda3cf337e8",
+        "text_hex": "4c61726765206261746368657320636f6e7461696e20273827206a6f62732e0a"
+      },
+      {
+        "document_id": "N15",
+        "sha256": "69ab7f4d11ac998e349516e9816742719e025964b21b4eec33a5eaba6be7a1db",
+        "text_hex": "54656d706f72617279206c6f677320617265206e616d656420277472616365272e0a"
+      },
+      {
+        "document_id": "N16",
+        "sha256": "6768cd3fb7bc7cf3b3962374d48bc517ff870913bf5fccb49dc29781e2333461",
+        "text_hex": "436f6c64206261636b7570732075736520276e6f727468272e0a"
+      },
+      {
+        "document_id": "N17",
+        "sha256": "d072868fc688c434599491c2ab6d94bec8e7f6686579251432264cf8603e963e",
+        "text_hex": "4465627567206c6f67732075736520276465627567272e0a"
+      }
+    ],
+    "prior_final_state_path": ".pytest-tmp/persistent-language-action-v2-run/final-state.pt",
+    "prior_final_state_sha256": "bdc2db89692fee5d49b305935020199c06e8cf0282324e5c1a15bfe6fd9db860",
+    "selected_neural_route": "online"
+  },
+  "counts": {
+    "attempts": 216,
+    "ingests": 0,
+    "teachers": 72
+  },
+  "evidence": {
+    ".pytest-tmp/active-path-qa-v1.launch.json": "87c275e8f8bc5f6af0bb881a7305953a85b00cf70e5f1b2f51431fbe1dd3119e",
+    ".pytest-tmp/active-path-qa-v1.xml": "03a475748836c5ace2490895f7fad9d212caf4bd66c590177bddabfcef102a2a",
+    ".pytest-tmp/active-path-v3-learning-extraction.json": "40b752cc924528455f4a44c3da8cda84d25e49b96acd258f20674560f45a4fce",
+    ".pytest-tmp/dev/doctor-otvm07c7/receipt.json": "b345605bb7527ca6946b5b5391e8d1887f22b8135d47fd1b445ee08f0b22044d",
+    ".pytest-tmp/dev/doctor-pxh9lmh_/receipt.json": "cca3828662339cf3c0db666d94f4439ffd78f648533d7b43081933bf11a0eaab",
+    ".pytest-tmp/incremental-prefix-qa-v1.launch.json": "de059438b42a43b50c06aec7bb55ae47f9847e932e36c57b862e2affa7692a37",
+    ".pytest-tmp/incremental-prefix-qa-v1.xml": "f00bf880b9aaf225925ab84e9e53ef921662e636971f467950af76290b2048b2",
+    ".pytest-tmp/persistent-language-action-v3-reference-attribution-review.json": "91d530b0f52c15ffd65c8995a20481a76bbaf4c06683b14323e9d66dde1242ae",
+    ".pytest-tmp/persistent-language-action-v3-resource-review.json": "6021589dd55add2d6a12692e4e257667d245cd94432139cc04b19855302a5105",
+    ".pytest-tmp/persistent-language-action-v3-review.json": "5b44e096d1ae5a81c4dc93646007c24497e14aed50316f663c66a81f4d3af6e8",
+    ".pytest-tmp/persistent-language-action-v3-review.launch.json": "6625ef734022f5640edeac212b7702278682cccb6339c24c11d8b897643ec9d0",
+    ".pytest-tmp/persistent-language-action-v3-run.launch.json": "e67e051ac878d877a88564b85e3f08d07efeb8ae980d892d49f98f734de8ca77",
+    ".pytest-tmp/persistent-language-action-v3-run/attempts.jsonl": "14bab3ac2908b3977736cadfa5886db2786a73dc48c504630213fa60eabe72d9",
+    ".pytest-tmp/persistent-language-action-v3-run/baseline-restoration.json": "b79d8c13c0f931c4249d07ecf3702ce82302cc93f0fcf06f544248b5d05421a6",
+    ".pytest-tmp/persistent-language-action-v3-run/completion.json": "a9531d61dfc9059eddd9859ad57031bad75c71f24e282b1f70e117aa9c767fcc",
+    ".pytest-tmp/persistent-language-action-v3-run/final-state.pt": "692634352ea323ff7737425a4d5c4e69cd3b39f1bcb9a6c85443a6612e59d03d",
+    ".pytest-tmp/persistent-language-action-v3-run/ingests.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".pytest-tmp/persistent-language-action-v3-run/initialization.json": "4dcbb84163ce6896c241d501992f57d71840f75b41d706eca72895db67d4e6fc",
+    ".pytest-tmp/persistent-language-action-v3-run/launch-record.json": "0da6c92678821666a61910660bd76166da1623098d0bca9c42ccd80737ff27ab",
+    ".pytest-tmp/persistent-language-action-v3-run/manifest.json": "fc83513a6d6accee744c5d03188bc9cec75022db3cd00ff5c49f561745aa3056",
+    ".pytest-tmp/persistent-language-action-v3-run/report.json": "6686e9d2482a5868ff989e628ced6580f9180fd7340ec2ac42cc92bc9cbd7a8b",
+    ".pytest-tmp/persistent-language-action-v3-run/sources.json": "51bb3d8be3932e10f8a4c8f6d46fe3386c3aaf2e02cf33fc1710ecf782887779",
+    ".pytest-tmp/persistent-language-action-v3-run/teachers.jsonl": "b785cb87167e33233a81bb7125e3d2f8cdaa0e60b1009fe9ea100b385099f08f",
+    "docs/research/active-path-output-qa-v1.md": "ad584266bb783e5243686ccd77c7b1a190c2a3539f796dbb01cc66bfbcc036c4",
+    "docs/research/persistent-language-action-v3-cost-review.md": "cf8480784477667adaefe030dbe47b373116770b232f972bd201979690117c8a",
+    "docs/research/persistent-language-action-v3-evaluation-review.md": "2f4ea4f41a122fc4bb9d66a724b2078dcf69d172ea30fbaa5e65b10311a48ba2",
+    "docs/research/persistent-language-action-v3-learning-review.md": "ed647db39e917c1f293b06724d36380252d934e91c6fe26a266d4a73dc119d80"
+  },
+  "exposure": {
+    "learning_disabled": {
+      "action_labels": 36,
+      "active_output_clamp_offers": 24,
+      "active_output_publications": 0,
+      "actual_executions": 48,
+      "corrections": 24,
+      "offered_target_raw_bytes": 148,
+      "offered_target_terminations": 24,
+      "prefix_address_publications": 0,
+      "query_address_publications": 0,
+      "reader_symbol_offers": 172,
+      "responses": 72
+    },
+    "online": {
+      "action_labels": 36,
+      "active_output_clamp_offers": 24,
+      "active_output_publications": 24,
+      "actual_executions": 48,
+      "corrections": 24,
+      "offered_target_raw_bytes": 148,
+      "offered_target_terminations": 24,
+      "prefix_address_publications": 24,
+      "query_address_publications": 24,
+      "reader_symbol_offers": 172,
+      "responses": 72
+    },
+    "simple": {
+      "action_labels": 0,
+      "active_output_clamp_offers": 0,
+      "active_output_publications": 0,
+      "actual_executions": 48,
+      "corrections": 24,
+      "offered_target_raw_bytes": 148,
+      "offered_target_terminations": 24,
+      "prefix_address_publications": 0,
+      "query_address_publications": 0,
+      "reader_symbol_offers": 0,
+      "responses": 72
+    }
+  },
+  "final_checkpoint": {
+    "path": "final-state.pt",
+    "scope": "both model/tape/experience; continued prior online memory",
+    "sha256": "692634352ea323ff7737425a4d5c4e69cd3b39f1bcb9a6c85443a6612e59d03d",
+    "snapshots": 2,
+    "tensor_bytes": 4275920
+  },
+  "manifest_counts": {
+    "action_teacher_labels": 36,
+    "document_eos": 0,
+    "document_raw_bytes": 0,
+    "edit_episodes": 32,
+    "episodes": 56,
+    "initial_occupied_memory_slots": 505,
+    "maximum_action_attempts": 48,
+    "maximum_active_output_clamps": 24,
+    "maximum_episode_attempts": 72,
+    "new_memory_slots": 0,
+    "occupied_memory_slots": 505,
+    "phase_episodes": {
+      "acquisition": 24,
+      "recovery": 8,
+      "retention": 8,
+      "transfer": 16
+    },
+    "reader_teacher_eos": 24,
+    "reader_teacher_raw_bytes": 148,
+    "reader_teacher_symbols": 172,
+    "reading_episodes": 24,
+    "teacher_offers": 24,
+    "unsupported_episodes": 4
+  },
+  "manifest_sha256": "fc83513a6d6accee744c5d03188bc9cec75022db3cd00ff5c49f561745aa3056",
+  "metrics": {
+    "learning_disabled": {
+      "acquisition_blocks": [
+        0,
+        0
+      ],
+      "forgotten": 0,
+      "improved": 0,
+      "phases": {
+        "acquisition": {
+          "edit": {
+            "attempts": 12,
+            "episodes": 12,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 12,
+            "episodes": 12,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        },
+        "recovery": {
+          "edit": {
+            "attempts": 24,
+            "episodes": 8,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 0,
+            "episodes": 0,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        },
+        "retention": {
+          "edit": {
+            "attempts": 4,
+            "episodes": 4,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 4,
+            "episodes": 4,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        },
+        "transfer": {
+          "edit": {
+            "attempts": 8,
+            "episodes": 8,
+            "first_correct": 0,
+            "unsupported": 2
+          },
+          "reading": {
+            "attempts": 8,
+            "episodes": 8,
+            "first_correct": 0,
+            "unsupported": 2
+          }
+        }
+      },
+      "recovery": {
+        "final_attempt_correct": 0,
+        "final_recovered_after_first_failure": 0,
+        "first_failures": 8,
+        "later_correct": 0,
+        "policy": "three fixed attempts; private grade never controls retries",
+        "tool_feedback_consumed": false
+      },
+      "retained": 0,
+      "retention": [
+        {
+          "delayed_correct": false,
+          "episode_id": "T00-R",
+          "initial_correct": false,
+          "prior_acquisition_id": "A00-R",
+          "prior_retention_id": "T00-R",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T00-E",
+          "initial_correct": false,
+          "prior_acquisition_id": "A00-E",
+          "prior_retention_id": "T00-E",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T03-R",
+          "initial_correct": false,
+          "prior_acquisition_id": "A03-R",
+          "prior_retention_id": "T03-R",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T03-E",
+          "initial_correct": false,
+          "prior_acquisition_id": "A03-E",
+          "prior_retention_id": "T03-E",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T08-R",
+          "initial_correct": false,
+          "prior_acquisition_id": "A08-R",
+          "prior_retention_id": "T08-R",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T08-E",
+          "initial_correct": false,
+          "prior_acquisition_id": "A08-E",
+          "prior_retention_id": "T08-E",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T11-R",
+          "initial_correct": false,
+          "prior_acquisition_id": "A11-R",
+          "prior_retention_id": "T11-R",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T11-E",
+          "initial_correct": false,
+          "prior_acquisition_id": "A11-E",
+          "prior_retention_id": "T11-E",
+          "prior_route": "online"
+        }
+      ]
+    },
+    "online": {
+      "acquisition_blocks": [
+        0,
+        0
+      ],
+      "forgotten": 0,
+      "improved": 0,
+      "phases": {
+        "acquisition": {
+          "edit": {
+            "attempts": 12,
+            "episodes": 12,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 12,
+            "episodes": 12,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        },
+        "recovery": {
+          "edit": {
+            "attempts": 24,
+            "episodes": 8,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 0,
+            "episodes": 0,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        },
+        "retention": {
+          "edit": {
+            "attempts": 4,
+            "episodes": 4,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 4,
+            "episodes": 4,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        },
+        "transfer": {
+          "edit": {
+            "attempts": 8,
+            "episodes": 8,
+            "first_correct": 0,
+            "unsupported": 2
+          },
+          "reading": {
+            "attempts": 8,
+            "episodes": 8,
+            "first_correct": 0,
+            "unsupported": 2
+          }
+        }
+      },
+      "recovery": {
+        "final_attempt_correct": 0,
+        "final_recovered_after_first_failure": 0,
+        "first_failures": 8,
+        "later_correct": 0,
+        "policy": "three fixed attempts; private grade never controls retries",
+        "tool_feedback_consumed": false
+      },
+      "retained": 0,
+      "retention": [
+        {
+          "delayed_correct": false,
+          "episode_id": "T00-R",
+          "initial_correct": false,
+          "prior_acquisition_id": "A00-R",
+          "prior_retention_id": "T00-R",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T00-E",
+          "initial_correct": false,
+          "prior_acquisition_id": "A00-E",
+          "prior_retention_id": "T00-E",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T03-R",
+          "initial_correct": false,
+          "prior_acquisition_id": "A03-R",
+          "prior_retention_id": "T03-R",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T03-E",
+          "initial_correct": false,
+          "prior_acquisition_id": "A03-E",
+          "prior_retention_id": "T03-E",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T08-R",
+          "initial_correct": false,
+          "prior_acquisition_id": "A08-R",
+          "prior_retention_id": "T08-R",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T08-E",
+          "initial_correct": false,
+          "prior_acquisition_id": "A08-E",
+          "prior_retention_id": "T08-E",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T11-R",
+          "initial_correct": false,
+          "prior_acquisition_id": "A11-R",
+          "prior_retention_id": "T11-R",
+          "prior_route": "online"
+        },
+        {
+          "delayed_correct": false,
+          "episode_id": "T11-E",
+          "initial_correct": false,
+          "prior_acquisition_id": "A11-E",
+          "prior_retention_id": "T11-E",
+          "prior_route": "online"
+        }
+      ]
+    },
+    "simple": {
+      "acquisition_blocks": [
+        4,
+        8
+      ],
+      "forgotten": 0,
+      "improved": 0,
+      "phases": {
+        "acquisition": {
+          "edit": {
+            "attempts": 12,
+            "episodes": 12,
+            "first_correct": 6,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 12,
+            "episodes": 12,
+            "first_correct": 6,
+            "unsupported": 0
+          }
+        },
+        "recovery": {
+          "edit": {
+            "attempts": 24,
+            "episodes": 8,
+            "first_correct": 0,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 0,
+            "episodes": 0,
+            "first_correct": 0,
+            "unsupported": 0
+          }
+        },
+        "retention": {
+          "edit": {
+            "attempts": 4,
+            "episodes": 4,
+            "first_correct": 4,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 4,
+            "episodes": 4,
+            "first_correct": 4,
+            "unsupported": 0
+          }
+        },
+        "transfer": {
+          "edit": {
+            "attempts": 8,
+            "episodes": 8,
+            "first_correct": 4,
+            "unsupported": 0
+          },
+          "reading": {
+            "attempts": 8,
+            "episodes": 8,
+            "first_correct": 2,
+            "unsupported": 0
+          }
+        }
+      },
+      "recovery": {
+        "final_attempt_correct": 0,
+        "final_recovered_after_first_failure": 0,
+        "first_failures": 8,
+        "later_correct": 0,
+        "policy": "three fixed attempts; private grade never controls retries",
+        "tool_feedback_consumed": false
+      },
+      "retained": 8,
+      "retention": [
+        {
+          "delayed_correct": true,
+          "episode_id": "T00-R",
+          "initial_correct": true,
+          "prior_acquisition_id": "A00-R",
+          "prior_retention_id": "T00-R",
+          "prior_route": "simple"
+        },
+        {
+          "delayed_correct": true,
+          "episode_id": "T00-E",
+          "initial_correct": true,
+          "prior_acquisition_id": "A00-E",
+          "prior_retention_id": "T00-E",
+          "prior_route": "simple"
+        },
+        {
+          "delayed_correct": true,
+          "episode_id": "T03-R",
+          "initial_correct": true,
+          "prior_acquisition_id": "A03-R",
+          "prior_retention_id": "T03-R",
+          "prior_route": "simple"
+        },
+        {
+          "delayed_correct": true,
+          "episode_id": "T03-E",
+          "initial_correct": true,
+          "prior_acquisition_id": "A03-E",
+          "prior_retention_id": "T03-E",
+          "prior_route": "simple"
+        },
+        {
+          "delayed_correct": true,
+          "episode_id": "T08-R",
+          "initial_correct": true,
+          "prior_acquisition_id": "A08-R",
+          "prior_retention_id": "T08-R",
+          "prior_route": "simple"
+        },
+        {
+          "delayed_correct": true,
+          "episode_id": "T08-E",
+          "initial_correct": true,
+          "prior_acquisition_id": "A08-E",
+          "prior_retention_id": "T08-E",
+          "prior_route": "simple"
+        },
+        {
+          "delayed_correct": true,
+          "episode_id": "T11-R",
+          "initial_correct": true,
+          "prior_acquisition_id": "A11-R",
+          "prior_retention_id": "T11-R",
+          "prior_route": "simple"
+        },
+        {
+          "delayed_correct": true,
+          "episode_id": "T11-E",
+          "initial_correct": true,
+          "prior_acquisition_id": "A11-E",
+          "prior_retention_id": "T11-E",
+          "prior_route": "simple"
+        }
+      ]
+    }
+  },
+  "observed_peak_mib": 512.5234375,
+  "qa": {
+    "active_path_nodes_passed": 2,
+    "incremental_prefix_nodes_passed": 1,
+    "scope": "ordinary arithmetic/custody checks, no acquired-skill threshold"
+  },
+  "review_seconds": 3.6428642,
+  "run_seconds": 56.9543509,
+  "schema": "persistent-language-action-result-v3",
+  "source_revision": "fc7f614cfbc7c01489245c6fec05520a9d1c586f",
+  "status": "completed_and_independently_reviewed"
+}

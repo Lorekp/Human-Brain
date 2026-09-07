@@ -10,19 +10,21 @@ with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. No backpropagation is authorized, and
 protected evaluations retain their original access contracts.
 
-The [broader continuation](../experiments/r4_integrated/persistent_language_action_v2_result.md)
-completes 56 episodes per route while continuing the saved model and shared
-memory from 453 to 505 occupied slots. Both the online
+The [third broader session](../experiments/r4_integrated/persistent_language_action_v3_result.md)
+completes 56 episodes per route while continuing all saved numerical model state
+and the complete 505-slot memory. Both the online
 neuronal learner and matched learning-disabled control score 0/24 acquisition
 first responses, 0/16 fresh transfer, 0/8 delayed retention and 0/8 teacher-free
-recovery. The simple retrieval/editing reference scores 13/24, 11/16, 8/8 and 0/8.
+recovery. The simple retrieval/editing reference scores 12/24, 6/16, 8/8 and 0/8.
 Four long-request challenges remain in totals; supported fresh scores are 0/12,
-0/12 and 8/12. The run and independent saved review total 117.97 seconds at
-406.92 MiB observed peak. No useful broader neuronal capability is established.
+0/12 and 5/12. The run and independent saved review total 60.60 seconds at
+512.52 MiB observed peak. No useful broader neuronal capability is established.
 The final model/tape states are saved for continuation; old toy tasks remain
 regressions without an all-perfect prerequisite.
-The request-conditioned output adds local prefix/address and byte/EOS updates,
-with the same system learning and acting. The
+The active-path output rule applies one local correction to the actual first
+error, with exact incremental prefix simulation and the same system learning
+and acting. All 172 reader teacher symbols remain exposed per neuronal route;
+fewer output updates do not mean less teacher information. The
 [first session](../experiments/r4_integrated/persistent_language_action_v1_result.md)
 remains separate evidence; the new result is not a matched speed or score
 comparison across identical workloads.

@@ -1,6 +1,6 @@
 # Public persistent language/action development
 
-Status: first public session and second continuation completed and independently reviewed, 2026-09-07.
+Status: three public sessions completed and independently reviewed, 2026-09-07.
 The byte-coincidence comparison is completed. The proposed five-arm operation
 successor is stopped; its unexecuted source is not the next experiment. This
 document specifies the smallest broader development return using the current
@@ -253,10 +253,22 @@ still scores zero in all four neuronal outcome groups. The reference scores
 13/24 acquisition, 11/16 transfer, 8/8 retention and 0/8 recovery. The complete
 run and saved review take 117.971022 seconds at 406.921875 MiB observed peak;
 both model/tape states are retained for the next selected development change.
-The next implementation follows [active-path output learning](active-path-output-learning-v1.md),
-selected from the saved learning and cost reviews. Its local correction must
-bind to the real preceding response, and its prefix-activity reuse must preserve
-fixed-gate arithmetic. Neither is a measured capability improvement yet.
+The third session implements [active-path output learning](active-path-output-learning-v1.md),
+binding a local correction to the real preceding response and reusing exact fixed
+prefix activity. Its [completed result](../../experiments/r4_integrated/persistent_language_action_v3_result.md)
+still has zero neuronal scores in all four groups; reference scores are 12/24,
+6/16, 8/8 and 0/8. The 505-slot memory and all prior numerical state are retained.
+Twenty-four corrections offer 172 reader symbols and 36 action labels per
+neuronal route, with 24 actual-event U clamps. Related forms are interleaved in
+two blocks of twelve. Full run plus saved audit takes 60.5972151 seconds at
+512.5234375 MiB observed peak; both final states are preserved. This stream is now
+exposed development. The saved learning, evaluation and resource reviews guide
+the next shared change; no new operation gate or extra fitting rounds follow
+automatically. Chronology remains in the [experiment history](roadmap-experiment-history.md).
+The selected [context-specific sequence assembly design](context-specific-sequence-assemblies-v1.md)
+combines local recruitment and whole offered-sequence teaching with broader raw
+instruction/action access. It is one shared integration direction, not a new
+scientific micro-gate or permission to rerun the exposed v3 stream.
 
 ## Implementation verification
 
