@@ -38,8 +38,10 @@ receptive patterns. The old shared theta stays fixed. Four ordinary integration,
 locality and growth QA nodes pass. The [sixth workload](research/persistent-language-action-v6-protocol.md)
 records all acquisition, transfer and retention cases before its timeout, with
 online1/6 exact delayed,0/24 fresh and0/18 prior regressions. There is no final
-V6 checkpoint. Exact factual competition optimization and safe-boundary
-persistence are the shared engineering priorities; the learning review addresses
+V6 checkpoint. The tournament reader/action successor now passes
+[ordinary exact circuit and executed-learning parity QA](research/factual-address-tournament-qa-v1.md),
+with no new checkpoint tensors. Safe-boundary persistence remains an engineering
+priority; the learning review addresses
 the still-unresolved relevance/composition problem.
 
 Preceding measured implementation:

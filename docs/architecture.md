@@ -32,6 +32,15 @@ prototype recognition, not demonstrated semantic abstraction. Ordinary integrati
 QA passes; the [sixth broader result](../experiments/r4_integrated/persistent_language_action_v6_result.md)
 is partial after a time limit and establishes no fresh transfer.
 
+`TournamentRecognitionMemoryLearner` and its combined action wrapper preserve
+those numerical populations while replacing only factual-address competition.
+Fixed adjacent comparators drive exact potential/identity copy relays; all
+occupied addresses compete with lowest-index ties. This usesN-1 comparisons
+and explicit relay stages, rather than the old two-layer all-pairs circuit.
+[Ordinary circuit and executed-learning parity QA](research/factual-address-tournament-qa-v1.md)
+passes. The changed metadata/work schema adds no learned tensor or external
+answer selector; full-workload speedup remains unmeasured.
+
 The preceding reader/action pair uses
 [factorized local sequence routing](research/factorized-sequence-routing-v1.md).
 Fixed byte, adjacent-pair and relative-position populations produce sparse

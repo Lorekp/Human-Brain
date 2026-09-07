@@ -47,13 +47,15 @@ and partial streams are exposed development material, not new holdouts.
 
 The [measured cost review](persistent-language-action-v6-cost-review.md) motivates
 one integral optimization: replace quadratic factual-address competition with
-an exact fixed-neuron tournament, retaining every address, original score
-arithmetic and lower-index ties. Ordinary outcome-parity and lifecycle QA belong
-to integration; no separate skill or speed gate is selected. Existing owned-free
+an [exact fixed-neuron tournament](factual-address-tournament-v1.md), retaining
+every address, original score arithmetic and lower-index ties. Its
+[ordinary circuit and executed-learning parity QA](factual-address-tournament-qa-v1.md)
+passes; full-workload speedup is not yet measured. No separate skill or speed
+gate is selected. Existing owned-free
 validation optimizations remain integral. Future measured sessions also need
 durable state at safe boundaries, so a time limit does not discard completed
 online learning. Do not claim that the missing V6 checkpoint exists or recover
-it through uncounted replay. A bounded learning-design review must explain the
+it through uncounted replay. The [bounded learning-design review](persistent-ordered-context-learning-review-v1.md) must explain the
 persistent relevance/composition failures before another correction-rule tweak.
 Metadata-only repair and sequence latches are not separate active queues.
 Preserve V5's recoverable state and all V6 partial evidence. Another automatic

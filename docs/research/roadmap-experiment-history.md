@@ -3543,3 +3543,17 @@ an exact all-address fixed-neuron tournament as an integral optimization, with
 safe-boundary persistence needed for future sessions. A broader learning-design
 review addresses relevance and composition rather than starting another
 automatic correction tweak, exposed replay or toy-perfection gate.
+
+## 2026-09-07 exact factual competition integration
+
+Source `af975cd9c3ed6fda8a11b8c47c10df4ad9090625` integrates an all-address
+fixed comparator/copy-relay tournament into the persistent recognition actor.
+Original factual scores and downstream numerical state remain unchanged; new
+metadata and work counters describe the different forward circuit. The two
+[ordinary QA nodes](factual-address-tournament-qa-v1.md) pass first launch in
+13.9122443 seconds at688.4765625MiB. Eighteen valid old/new competitions and
+eight input rejections cover exact winners, ties, levels and buffers; two fresh
+actors make four responses, two actual STOP executions and eight local teacher
+offers with exact action/update parity. One in-memory strict state load passes.
+No experimental checkpoint or V6 task is replayed. This is an integral
+simulation improvement, with broader runtime benefit still unmeasured.

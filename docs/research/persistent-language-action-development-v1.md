@@ -24,7 +24,9 @@ the complete V5 checkpoint remains intact, but V6's final state is unavailable.
 [Input-defined recognition](input-defined-recognition-v1.md) and its
 [ordinary QA](input-defined-recognition-qa-v1.md) remain implemented. The
 [cost review](persistent-language-action-v6-cost-review.md) selects exact factual
-competition optimization for this shared broader loop. Future session persistence
+competition optimization for this shared broader loop. The
+[integrated tournament passes ordinary QA](factual-address-tournament-qa-v1.md).
+Future session persistence
 must survive time limits, and the learning review must address relevance and
 composition before selecting another learning change. The roadmap owns selection;
 no repeat of this exposed stream or toy-perfection gate follows.

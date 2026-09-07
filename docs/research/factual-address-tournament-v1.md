@@ -1,8 +1,10 @@
 # Exact factual-address tournament — source implementation
 
 Root selected the factual float32 path after V6's partial resource review. This
-note records its implemented source contract. The source passed explicit Ruff
-format/check; no kernel, model, import probe or QA execution has occurred here.
+note records its implemented source contract. The source passed explicit Ruff;
+its [ordinary circuit and executed-learning parity QA](factual-address-tournament-qa-v1.md)
+now passes on the first launch. That separate report owns actual exposure and
+receipts; no broader speed or skill improvement is measured here.
 The float64 event router remains unchanged. All N occupied factual addresses,
 1 <= N <= 2048, enter the same circuit, without a shortlist or target input.
 
