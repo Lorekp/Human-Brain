@@ -248,12 +248,21 @@ class SequenceAssemblyCells(nn.Module):
     def publish(self, stage: AssemblyStage, work=None) -> None:
         self.validate_stage(stage, work)
         # All semantic/shape/finite checks precede every live copy.
+        self.commit_validated(stage)
+        _add(work, "assembly_publications", 1)
+        _add(work, "assembly_publication_copy_bytes", self.tensor_bytes)
+
+    @torch.no_grad()
+    def commit_validated(self, stage: AssemblyStage) -> None:
+        """Copy-only seam for an owner that prevalidated all component stages.
+
+        Call validate_stage immediately before the synchronous joint commit.
+        Publication counters belong after all components have copied.
+        """
         self.prototypes.copy_(stage.prototypes)
         self.outgoing.copy_(stage.outgoing)
         self.used.copy_(stage.used)
         stage._owner = None
-        _add(work, "assembly_publications", 1)
-        _add(work, "assembly_publication_copy_bytes", self.tensor_bytes)
 
     def _check_evaluation_inputs(self, inputs: Tensor, fallback_currents: Tensor) -> None:
         _tensor(inputs, (self.input_width,), torch.bool, "assembly input")

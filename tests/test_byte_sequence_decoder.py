@@ -12121,3 +12121,305 @@ def test_persistent_1024_competition_and_prefix(tmp_path):
         "competition_work": receipts, "prefix_work": new_work,
         "readers": 0, "teachers": 0, "actual_children": 0, "checkpoint_loads": 0,
     })
+
+
+def test_factorized_router_local_outcome_contract(tmp_path):
+    """Authored routing mechanics only: no reader, old state, workload or child."""
+    from humanbrain.factorized_sequence_features import (
+        INPUT_WIDTH,
+        SENSOR_SYMBOLS,
+        build_candidate_view,
+        build_context,
+    )
+    from humanbrain.factorized_sequence_router import (
+        FactorizedSequenceRouter,
+        compete_float64,
+    )
+
+    def pattern(request):
+        # Independent fixed bit fan-out constructs an actual canonical layout.
+        result = torch.zeros(INPUT_WIDTH, dtype=torch.bool)
+        for position, symbol in enumerate([*request, 256]):
+            for bit in range(9):
+                result[position * 18 + 2 * bit + ((symbol >> bit) & 1)] = True
+        prefix_start = SENSOR_SYMBOLS * 18 + 12
+        for bit in range(9):
+            result[prefix_start + 2 * bit + ((257 >> bit) & 1)] = True
+        result[-129] = True  # Output position zero; absent files/feedback/memory.
+        return result
+
+    vectors = [torch.tensor([1.0, 1.0 + 2**-40, -3.0], dtype=torch.float64),
+               torch.tensor([7.0, 7.0, -1.0], dtype=torch.float64),
+               torch.tensor([-4.0], dtype=torch.float64)]
+    competitions = []
+    for values, expected in zip(vectors, (1, 0, 0), strict=True):
+        receipt = compete_float64(values)
+        n = len(values)
+        pairs = n * (n - 1) // 2
+        scalar_pairs = [float(values[i]) - float(values[j])
+                        for i in range(n) for j in range(i + 1, n)]
+        assert receipt.scores.dtype == torch.float64
+        assert receipt.winner_index == expected
+        assert receipt.pair_currents.tolist() == scalar_pairs
+        assert receipt.comparator_activity.tolist() == [x >= 0 for x in scalar_pairs]
+        assert receipt.winner_activity.tolist() == [i == expected for i in range(n)]
+        assert receipt.work["competition_pairs"] == pairs
+        assert receipt.work["competition_threshold_evaluations"] == pairs + n
+        assert receipt.work["competition_receipt_tensor_bytes"] == 17 * n + 9 * pairs
+        competitions.append(receipt.work)
+    # The genuinely distinct winning scores collapse if illicitly cast to f32.
+    assert vectors[0].float()[0] == vectors[0].float()[1]
+    maximum = torch.finfo(torch.float64).max
+    with pytest.raises(ValueError, match="comparator currents must be finite"):
+        compete_float64(torch.tensor([maximum, -maximum], dtype=torch.float64))
+    with pytest.raises(ValueError, match="scores must be finite"):
+        compete_float64(torch.tensor([float("nan")], dtype=torch.float64))
+
+    raw_patterns = [pattern(b"ab"), pattern(b"ac")]
+    feature_work, work = {}, {}
+    views = [build_candidate_view(raw, work=feature_work) for raw in raw_patterns]
+    current = build_context(raw_patterns[0], work=feature_work)
+    router = FactorizedSequenceRouter()
+    initial = router.snapshot()
+    stage = router.begin_stage(work=work)
+    decision = router.evaluate(current, views, stage=stage, work=work)
+    # Scalar arithmetic over independently constructed fixed population columns.
+    baseline = [math.fsum(float(current.populations[int(index)]) * float(value)
+                          for index, value in zip(view.indices, view.values, strict=True)) / 45
+                for view in views]
+    assert decision.selected_index == 0
+    assert decision.scores.tolist() == pytest.approx(baseline, rel=0, abs=2e-15)
+    assert baseline[0] > baseline[1]
+    assert decision.energy == pytest.approx(0.5, rel=0, abs=2e-15)
+    assert work["router_candidates"] == 2
+    assert work["factorized_activity_calls"] == 3  # All owners, then selected-row custody.
+    assert work["router_weight_products"] == sum(view.indices.numel() + 14 for view in views)
+    assert router.tensor_bytes == 8266432
+
+    # A nested tensor mutation must fail before even a disabled outcome is accepted.
+    held_value = decision.selected_activity[0].item()
+    decision.selected_activity[0] = held_value + 1
+    with pytest.raises(ValueError, match="decision, trace or weights changed"):
+        router.prepare_outcome(decision, 65, 66, stage=stage, learning_enabled=False, work=work)
+    decision.selected_activity[0] = held_value
+    before = stage.theta.clone()
+    frozen = router.prepare_outcome(decision, 65, 66, stage=stage,
+                                    learning_enabled=False, work=work)
+    assert not frozen.staged and not frozen.skipped
+    assert stage.revision == 0 and torch.equal(stage.theta, before)
+    assert torch.equal(router.theta, before)
+
+    indices = decision.selected_indices.tolist()
+    own_inputs = decision.selected_activity.tolist()
+    scalar_energy = math.fsum(x * x for x in own_inputs)
+    scalar_error = -1.0 - baseline[0]
+    scalar_delta = [scalar_error * x / scalar_energy for x in own_inputs]
+    update = router.prepare_outcome(decision, 65, 66, stage=stage, work=work)
+    raw_receipt = {
+        "status": "observed_before_final_assertions", "scores": decision.scores.tolist(),
+        "selected": decision.selected_index, "indices": indices, "activity": own_inputs,
+        "scalar_energy": scalar_energy, "scalar_error": scalar_error,
+        "scalar_delta": scalar_delta, "actual_delta": update.delta.tolist(),
+        "actual_score_after": update.score_after, "disabled_score_after": frozen.score_after,
+        "competition_work": competitions,
+    }
+    _coincidence_qa_save(tmp_path / "factorized-router-raw.json", raw_receipt)
+    assert update.staged and not update.skipped and update.desired == -1
+    assert update.error == pytest.approx(scalar_error, abs=2e-15)
+    assert update.delta.tolist() == pytest.approx(scalar_delta, rel=2e-14, abs=2e-15)
+    expected = torch.zeros_like(stage.theta)
+    expected[torch.tensor(indices, dtype=torch.int64)] = torch.tensor(
+        scalar_delta, dtype=torch.float64)
+    assert torch.allclose(stage.theta, expected, rtol=2e-14, atol=2e-15)
+    assert stage.revision == 1 and torch.equal(router.theta, before)
+    assert update.score_after == pytest.approx(-1, rel=0, abs=2e-14)
+    assert frozen.delta.tolist() == update.delta.tolist()
+    with pytest.raises(ValueError, match="decision, trace or weights changed"):
+        router.prepare_outcome(decision, 65, 66, stage=stage, work=work)
+    router.validate_stage(stage, work=work)
+    router.commit_validated(stage)
+    assert torch.equal(router.theta, stage.theta)
+    assert router.theta.untyped_storage().data_ptr() != stage.theta.untyped_storage().data_ptr()
+    router.load_state_dict(initial)
+    assert torch.equal(router.theta, initial["theta"])
+
+    # Canonical contexts share EOS/BOS, so a genuine nonempty zero lexical row
+    # is not promised. The actual empty-bank decision has zero energy and skips.
+    empty_stage = router.begin_stage(work=work)
+    empty = router.evaluate(current, [], stage=empty_stage, work=work)
+    skipped = router.prepare_outcome(empty, 65, 65, stage=empty_stage, work=work)
+    assert empty.selected_index is None and empty.energy == 0 and empty.competition is None
+    assert skipped.skipped and not skipped.staged and skipped.desired == 1
+    assert empty_stage.revision == 0 and torch.equal(empty_stage.theta, initial["theta"])
+    assert torch.equal(router.theta, initial["theta"])
+    assert work["router_evaluations"] == 2 and work["router_outcome_offers"] == 3
+    assert work["router_staged_updates"] == 1 and work["router_skipped_outcomes"] == 1
+    _coincidence_qa_save(tmp_path / "factorized-router-passed.json", {
+        "status": "passed", "routers": 1, "reader_models": 0,
+        "candidate_builds": 2, "current_builds": 1, "router_evaluations": 2,
+        "activity_calls": 3, "direct_valid_competitions": 3,
+        "direct_rejected_competitions": 2, "internal_competitions": 1,
+        "outcome_attempts": 5, "accepted_outcome_offers": 3,
+        "rejected_tampered_outcomes": 1, "rejected_stale_outcomes": 1,
+        "staged_router_updates": 1, "router_commits": 1,
+        "snapshots": 1, "same_instance_state_restores": 1,
+        "reader_teachers": 0, "ingests": 0, "actual_children": 0, "checkpoint_loads": 0,
+        "feature_work": feature_work, "router_work": work,
+    })
+
+
+def test_factorized_reader_action_persistence_and_atomicity(tmp_path):
+    """One authored persistent actor; full tape, direct corrections and one child."""
+    import copy
+    import time
+    from pathlib import Path
+    from unittest.mock import patch
+
+    from experiments.r4_integrated.persistent_language_action_execution_v2 import (
+        execute_proposal,
+        qualified_launch,
+        workspace_from_records,
+    )
+    from humanbrain import factorized_sequence_memory_learner as module
+    from humanbrain.factorized_sequence_splice_learner import FactorizedSequenceSpliceLearner
+    from humanbrain.sequence_assembly_observation import (
+        RawObservation,
+        SpliceProposal,
+        ToolFeedback,
+    )
+
+    model = FactorizedSequenceSpliceLearner(seed=733)
+    reader = model.reader
+    with torch.no_grad():
+        reader.address_weight.zero_()
+        reader.prefix_weight.zero_()
+        reader.output_weight.zero_()
+        reader.codec.weight.zero_()
+        reader.codec.bias.zero_()
+        reader.codec.bias[256] = 10
+        model.actions.operation_weight.zero_()
+        model.actions.operation_bias.copy_(torch.tensor([10.0, 0.0]))
+    state = model.ingest([b"a" * 512])
+    assert state.used == 513 and state.keys.shape == (1024, 32, 18)
+    tape = state.snapshot()
+    held = copy.deepcopy(model.state_dict())
+    observation = RawObservation(
+        b"Read this complete retained value after the long instruction: \xff", None,
+        ToolFeedback(-7, b"\x00\xff", b"failure\x80", False, False, True, True, False))
+    first = reader.predict_with_receipt(observation, state, max_bytes=2)
+    assert first.generation.data == b"" and first.generation.stop_reason == "eos"
+    assert len(first.steps) == 1 and first.steps[0].address_scores.numel() == 513
+    assert first.steps[0].exact_context is None
+    assert first.work.get("assembly_agreement_cells", 0) == 0
+    taught = reader.teach(observation, b"a", state, prediction=first)
+    assert taught.teacher_count == 2 and taught.output_updated and taught.routing_updated
+    assert int(reader.assemblies.used) == len(reader._candidate_views) == 2
+    assert [r["prefix_hex"] for r in taught.teacher_steps] == ["", "61"]
+    assert [r["target"] for r in taught.teacher_steps] == [97, 256]
+    assert taught.teacher_steps[0]["routing_outcome"]["skipped"]
+    for row in taught.teacher_steps:
+        assert row["routing_outcome"]["desired"] == (1 if row["emitted_byte"] == row["target"] else -1)
+        if not row["routing_outcome"]["skipped"]:
+            assert row["routing_outcome"]["score_after"] == pytest.approx(
+                row["routing_outcome"]["desired"], abs=1e-12)
+    for key, value in held.items():
+        if not key.startswith(("reader.assemblies.", "reader.router.")):
+            actual = model.state_dict()[key]
+            assert torch.equal(actual, value) if isinstance(value, torch.Tensor) else actual == value
+    _assert_nested_equal(state.snapshot(), tape)
+    trained = copy.deepcopy(model.state_dict())
+    views = reader._candidate_views
+    second = reader.predict_with_receipt(observation, state, max_bytes=2)
+    assert all(step.address_scores.numel() == 513 for step in second.steps)
+    assert second.work.get("assembly_agreement_cells", 0) == 0
+    original_score = second.steps[0].routing["selected_score"]
+    second.steps[0].routing["selected_score"] += 1
+    with pytest.raises(ValueError, match="response or work changed"):
+        reader.validate_pending(second, state, observation=observation)
+    second.steps[0].routing["selected_score"] = original_score
+    disabled = reader.teach(observation, b"b", state, prediction=second, learning_enabled=False)
+    assert not disabled.routing_updated and not disabled.output_updated
+    assert all(not row["routing_outcome"]["staged"] and not row["staged"]
+               for row in disabled.teacher_steps)
+    _assert_nested_equal(model.state_dict(), trained)
+    assert reader._candidate_views is views
+    # Strict restoration derives views from actual incoming prototype bytes.
+    model.load_state_dict(trained)
+    assert reader._candidate_views is not views
+    _assert_nested_equal(model.state_dict(), trained)
+    for fault in ("router", "prototype", "fixed"):
+        incoming = copy.deepcopy(trained)
+        incoming["actions.operation_bias"].add_(1)
+        if fault == "router":
+            incoming["reader.router.theta"][0] = float("nan")
+        elif fault == "prototype":
+            incoming["reader.assemblies.prototypes"][0].zero_()
+        else:
+            incoming["reader.context.signs"][0, 0] *= -1
+        with pytest.raises(ValueError):
+            model.load_state_dict(incoming)
+        _assert_nested_equal(model.state_dict(), trained)
+        del incoming
+    del held
+    # A borrowed-buffer replacement must be detected even with identical values.
+    original_route = reader._route
+    borrowed = reader.assemblies.outgoing
+    experience = reader._active_experience
+    failed_events = []
+
+    def replace_after_route(*args, **kwargs):
+        result = original_route(*args, **kwargs)
+        failed_events.append(1)
+        reader.assemblies.outgoing = borrowed.clone()
+        return result
+
+    with patch.object(reader, "_route", side_effect=replace_after_route), pytest.raises(RuntimeError):
+        reader.predict_with_receipt(observation, state, max_bytes=0)
+    reader.assemblies.outgoing = borrowed
+    assert failed_events == [1] and reader._active_experience == experience
+    assert reader.pending_prediction is None
+    workspace = workspace_from_records([{"path": "main.py", "content_hex": b"print(0)\n".hex()}])
+    action_observation = RawObservation(b"Change the printed value to one and retain the statement.", workspace)
+    prediction = model.propose(action_observation, state)
+    assert prediction.payload.observation is action_observation
+    assert prediction.proposal.operation == "STOP"
+    _, execution = execute_proposal(
+        workspace, prediction.proposal, tmp_path / "actual-action",
+        launch=qualified_launch(Path(__file__).resolve().parents[1]), deadline=time.perf_counter() + 10)
+    assert execution["returncode"] == 0 and execution["stdout_hex"] == b"0\n".hex()
+    envelope = {"attempt_id": prediction.attempt_id, "proposal_sha256": prediction.proposal_sha256,
+                "workspace_sha256": workspace.sha256, "execution": execution}
+    teacher = SpliceProposal("SPLICE", "main.py", 6, 7, b"1", "eos", workspace.sha256)
+    failed_validation = []
+
+    def reject_final_views(*args, **kwargs):
+        failed_validation.append(dict(kwargs["work"]))
+        raise ValueError("authored final joint view rejection")
+
+    with patch.object(module, "validate_candidate_view", side_effect=reject_final_views), pytest.raises(
+            ValueError, match="authored final joint"):
+        model.teach(prediction, action_observation, state, teacher, envelope)
+    assert len(failed_validation) == 1
+    assert failed_validation[0]["router_outcome_offers"] == 2
+    assert failed_validation[0]["assembly_output_offers"] == 2
+    _assert_nested_equal(model.state_dict(), trained)
+    assert model._pending is not None and reader.pending_prediction is prediction.payload
+    feedback = model.teach(prediction, action_observation, state, teacher, envelope)
+    assert feedback.reader_feedback.routing_updated and feedback.reader_feedback.output_updated
+    assert model._pending is None and reader.pending_prediction is None
+    assert int(reader.assemblies.used) == len(reader._candidate_views) == 4
+    _assert_nested_equal(state.snapshot(), tape)
+    _coincidence_qa_save(tmp_path / "factorized-integration-passed.json", {
+        "status": "passed", "actors": 1, "readers": 1, "ingests": 1,
+        "ingested_raw_bytes": 512, "ingested_eos": 1, "memory_used": state.used,
+        "reader_predictions": 2, "action_predictions": 1,
+        "completed_free_events": len(first.steps) + len(second.steps) + len(prediction.payload.steps),
+        "failed_free_calls": 1, "failed_free_events": 1,
+        "teacher_calls": 4, "teacher_symbols_including_failed": 8,
+        "successful_enabled_teacher_calls": 2, "disabled_teacher_calls": 1,
+        "failed_teacher_calls": 1, "actual_children": 1,
+        "same_instance_state_restores": 1, "rejected_state_loads": 3,
+        "experimental_checkpoint_loads": 0, "router_updates": {
+            "first": taught.work, "disabled": disabled.work,
+            "failed": failed_validation[0], "action": feedback.work},
+    })
