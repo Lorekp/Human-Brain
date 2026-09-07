@@ -103,7 +103,24 @@ def scan_schedule(observation=None, raw=None):
     return schedule
 
 
-def new_trajectory():
+def new_symbol_exposures():
+    """Counts from checked ticks; free output has no observed target."""
+    return {
+        category: {
+            "ticks": 0,
+            "draws": 0,
+            "sampled_modes": Counter(dict.fromkeys(range(4), 0)),
+            "sampled_gates": Counter(dict.fromkeys(range(8), 0)),
+            "observed_symbols": None if category == "free" else {
+                kind: Counter(offers=0, matches=0)
+                for kind in ("raw_content", "eos", "status")
+            },
+        }
+        for category in ("source_scan", "public_scan", "free", "teacher")
+    }
+
+
+def new_trajectory(*, scan_kind="public_scan"):
     return {
         "ordinal": 0,
         "rng": None,
@@ -116,6 +133,8 @@ def new_trajectory():
         "public_symbols": {},
         "public_successors": {},
         "public_reveal": {},
+        "scan_kind": scan_kind,
+        "symbol_exposures": new_symbol_exposures(),
     }
 
 
@@ -243,6 +262,20 @@ def check_tick(tick, category, trajectory, *, target=None, prior_token=None, add
     if target is not None:
         reward = 1 if token == target else -1
         trajectory["rewards"][category] += reward
+    exposure = trajectory["symbol_exposures"][
+        trajectory["scan_kind"] if category == "scan" else category
+    ]
+    exposure["ticks"] += 1
+    exposure["draws"] += len(draws)
+    exposure["sampled_modes"][mode] += 1
+    exposure["sampled_gates"][gate] += 1
+    if target is not None:
+        kind = (
+            "status" if category == "scan" and tick["status_offer"]
+            else "eos" if target == 256 else "raw_content"
+        )
+        exposure["observed_symbols"][kind]["offers"] += 1
+        exposure["observed_symbols"][kind]["matches"] += int(token == target)
     return token
 
 
@@ -441,7 +474,7 @@ def check_source(feedback, raw, enabled, admitted, baseline):
         and feedback["writes_enabled"] is admitted,
         "one complete admitted/transient source contract",
     )
-    trajectory = new_trajectory()
+    trajectory = new_trajectory(scan_kind="source_scan")
     check_scan(feedback["source_steps"], scan_schedule(raw=raw), trajectory)
     check_resolution(feedback["controller"], trajectory, "source", enabled, baseline)
     work_valid(feedback["work"])
@@ -1237,7 +1270,8 @@ def review(run, launch_path, manifest_sha, *, partial=False):
     costs = {r: {"work": {k: {} for k in ("source", "free", "teacher", "ack")},
                  "elapsed_seconds": dict.fromkeys(("source", "attempt", "teacher"), 0.0),
                  "included_checkpoint_begin_seconds": 0.0} for r in ROUTES}
-    stochastic = {r: {"ticks": Counter(), "draws": 0} for r in ROUTES[:2]}
+    stochastic = {r: {"ticks": Counter(), "draws": 0,
+                      "by_category": new_symbol_exposures()} for r in ROUTES[:2]}
     last_draw_rng = dict.fromkeys(ROUTES[:2])
     source_offers = dict.fromkeys(ROUTES, 0)
     free, actions = dict.fromkeys(ROUTES[:2], 0), dict.fromkeys(ROUTES[:2], 0)
@@ -1271,6 +1305,15 @@ def review(run, launch_path, manifest_sha, *, partial=False):
         last_draw_rng[route] = trajectory["rng"]
         stochastic[route]["ticks"].update(trajectory["ticks"])
         stochastic[route]["draws"] += trajectory["ordinal"]
+        for category, source in trajectory["symbol_exposures"].items():
+            destination = stochastic[route]["by_category"][category]
+            for key in ("ticks", "draws"):
+                destination[key] += source[key]
+            for key in ("sampled_modes", "sampled_gates"):
+                destination[key].update(source[key])
+            if source["observed_symbols"] is not None:
+                for kind, values in source["observed_symbols"].items():
+                    destination["observed_symbols"][kind].update(values)
 
     def controller_transition(route, before, after, *, advanced):
         require(controllers[route] is None or before == controllers[route], "controller published-state hash chain")
@@ -1661,6 +1704,7 @@ def review(run, launch_path, manifest_sha, *, partial=False):
             "run_launch_sha256": scalar.file_sha(launch_path), "saved_tool_sources": saved_tool_sources,
             "attempt_rows": len(compact), "teacher_rows": consumed["teachers"], "ingest_rows": consumed["ingests"],
             "exposures": counts, "source_offers": source_offers, "controller_exposures": stochastic,
+            "controller_exposure_scope": "checked saved ticks only; status includes its framing EOS and is disjoint from raw_content and other eos offers; free has no target or match count; aggregate matches are not a temporal improvement or task-success claim",
             "saved_costs": costs, "metrics": result_metrics, "compact_attempts": compact,
             "pending_transaction": pending, "checkpoint": checkpoint, "journal_frontiers": frontiers,
             "checkpoint_telemetry_counts": dict(telemetry_counts), "checkpoint_telemetry_seconds": dict(telemetry_seconds),
