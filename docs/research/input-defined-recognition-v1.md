@@ -201,6 +201,6 @@ The selected [sixth-session envelope](persistent-language-action-v6-protocol.md)
 now uses 1024 event owners and 2048 factual slots. This makes the actual new
 gain vector 8192 bytes; the512-owner cost examples above remain comparisons.
 Preserve all512 prior event rows and1024 prior tape rows, including unused
-coordinates, when promoting the398-owner/864-fact state. The broader source
-implementation and ordinary QA are in progress; the draft protocol does not
-release the full model run yet.
+coordinates, when promoting the398-owner/864-fact state. The implementation's
+[ordinary numerical, lifecycle and growth QA](input-defined-recognition-qa-v1.md)
+passes. The draft broader protocol does not release the full model run yet.

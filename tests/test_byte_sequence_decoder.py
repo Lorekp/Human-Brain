@@ -13217,3 +13217,191 @@ def test_recognition_reader_growth_and_executed_atomicity(tmp_path):
         "load": load_work, "failed_teacher": failed[0],
         "enabled_teacher": taught.work, "disabled_teacher": disabled.work,
     })
+
+
+def test_persistent_v6_summary_contract(tmp_path):
+    """Authored scalar outcomes only; no task builder, learner, prior or child."""
+    from copy import deepcopy
+
+    from experiments.r4_integrated.persistent_language_action_v6 import summarize
+    from experiments.r4_integrated.persistent_language_action_v6_review import check_metrics
+
+    episodes = []
+    retained_indices = [*range(36, 48), *range(54, 60)]
+    starters, dependents = (19, 21, 23), (27, 31, 35)
+    for index in range(72):
+        phase = ("acquisition" if index < 6 or 18 <= index < 24 or 48 <= index < 54
+                 else "transfer" if 6 <= index < 18 or 24 <= index < 36
+                 else "retention" if index < 60 else "recovery")
+        encounter = ("corrected_first" if index < 6 else "changed_form" if 18 <= index < 24
+                     else "exact_delayed" if 48 <= index < 54
+                     else "fresh" if phase == "transfer"
+                     else "prior_regression" if phase == "retention" else "teacher_free")
+        project = (starters.index(index) if index in starters
+                   else dependents.index(index) if index in dependents else None)
+        episode = {
+            "episode_id": f"E{index:02d}", "phase": phase,
+            "kind": "edit" if phase == "recovery" or index % 2 else "reading",
+            "encounter": encounter, "requirement_changed": encounter == "changed_form",
+            "project_id": None if project is None else f"project-{project}",
+            "predecessor_episode_id": (
+                f"E{starters[project]:02d}" if index in dependents else None),
+            "workspace_lifecycle": "carry_actual_project" if index in dependents else "reset",
+        }
+        if phase == "transfer":
+            episode["fresh_stratum"] = (
+                "instruction_construction" if index < 18 else "structural_combination")
+        if encounter == "exact_delayed":
+            episode["same_session_origin_id"] = f"E{index - 48:02d}"
+        if phase == "retention":
+            episode["previous_session_episode_id"] = f"P{retained_indices.index(index):02d}"
+        episodes.append(episode)
+    manifest = {"episodes": episodes}
+    recovery_correct = (
+        (False, True, False), (False, False, True), (True, False, True),
+        (True, True, False), (False, False, False), (False, True, True),
+        (False, False, False), (False, False, False), (False, False, True),
+        (True, True, True), (False, False, False), (False, False, False),
+    )
+    signatures = (
+        ("x", "x", "x"), ("x", "y", "y"), (None, None, None), ("a", "b", "c"),
+        ("x", "x", "x"), ("x", "x", "y"), ("a", "b", "a"), ("x", "x", None),
+        ("x", "y", "z"), ("m", "m", "m"), (None, None, None), ("q", "q", "q"),
+    )
+    routes = ("online", "learning_disabled", "simple")
+    attempts = []
+    for route in routes:
+        for index, episode in enumerate(episodes):
+            recovery = index >= 60
+            retained = retained_indices.index(index) if index in retained_indices else None
+            for attempt_index in range(1, 4 if recovery else 2):
+                unsupported = route == "online" and (
+                    index == 16 or (index == 71 and attempt_index == 3))
+                correct = (recovery_correct[index - 60][attempt_index - 1] if recovery
+                           else retained in {0, 1, 4, 5, 12, 15} if retained is not None
+                           else index in {0, 3, 6, 9, 18, 21, 24, 25, 27, 48, 49})
+                observation = episode.get("same_session_origin_id", episode["episode_id"])
+                if retained is not None and retained < 9:
+                    observation = f"prior-{retained}"
+                attempts.append({
+                    "route": route, "episode_id": episode["episode_id"],
+                    "phase": episode["phase"], "kind": episode["kind"],
+                    "attempt_index": attempt_index, "correct": correct,
+                    "status": "unsupported" if unsupported else "completed",
+                    "observation_sha256": observation,
+                    "memory_used": 864 if index < 6 else 1836,
+                    "feedback_consumed": recovery and attempt_index > 1
+                    and route != "learning_disabled" and not unsupported,
+                    "proposal_signature": signatures[index - 60][attempt_index - 1]
+                    if recovery else None,
+                    **{name: episode[name] for name in (
+                        "project_id", "predecessor_episode_id", "workspace_lifecycle")},
+                })
+    prior = {
+        route: {
+            f"P{index:02d}": {
+                "attempt_index": 1 if index < 9 else 3,
+                "route_ordinal": 60 + index if index < 9 else index - 9,
+                "correct": (True if route == "learning_disabled"
+                            else index in ({0, 2, 4, 6, 12, 16} if route == "simple"
+                                           else {0, 1, 2, 3, 12, 14})),
+                "observation_sha256": f"prior-{index}",
+            } for index in range(18)
+        } for route in routes
+    }
+    _coincidence_qa_save(tmp_path / "persistent-v6-summary-raw.json", {
+        "manifest": manifest, "attempts": attempts, "prior_outcomes": prior,
+        "scope": {"episodes": 72, "rows_per_route": 96, "rows": 288,
+                  "summary_calls": 3, "independent_metric_calls": 2,
+                  "models": 0, "builders": 0, "checkpoint_loads": 0, "children": 0},
+    })
+    result = summarize(attempts, manifest, prior)
+    _coincidence_qa_save(tmp_path / "persistent-v6-summary-result.json", result)
+    assert check_metrics({"metrics": result}, attempts, manifest, prior) == result
+    wrong = deepcopy(result)
+    wrong["online"]["recovery"]["later_correct"] += 1
+    with pytest.raises(ValueError, match="independent outcomes"):
+        check_metrics({"metrics": wrong}, attempts, manifest, prior)
+    assert len(episodes) == 72 and len(attempts) == 288
+    for route in routes:
+        actual = result[route]
+        assert sum(row["route"] == route for row in attempts) == 96
+        for encounter in ("corrected_first", "changed_form", "exact_delayed"):
+            assert actual["acquisition_encounters"][encounter] == {
+                "reading": {"episodes": 3, "first_correct": 1},
+                "edit": {"episodes": 3, "first_correct": 1},
+                "changed_requirements": 6 if encounter == "changed_form" else 0,
+            }
+        phase_counts = {
+            "acquisition": ((9, 9, 3), (9, 9, 3)),
+            "transfer": ((12, 12, 2), (12, 12, 3)),
+            "retention": ((9, 9, 3), (9, 9, 3)),
+            "recovery": ((0, 0, 0), (12, 36, 3)),
+        }
+        for phase, counts in phase_counts.items():
+            for kind, (count, rows, correct) in zip(("reading", "edit"), counts, strict=True):
+                assert actual["phases"][phase][kind] == {
+                    "episodes": count, "attempts": rows, "first_correct": correct,
+                    "unsupported": int(route == "online" and (
+                        (phase == "transfer" and kind == "reading")
+                        or (phase == "recovery" and kind == "edit"))),
+                }
+        for stratum, groups in {
+            "instruction_construction": ((6, 1, 6, 1), (0, 0, 0, 0)),
+            "structural_combination": ((6, 1, 3, 1), (0, 0, 3, 1)),
+        }.items():
+            for dependency, counts in zip(("independent", "dependent_project"), groups,
+                                           strict=True):
+                for kind, (count, correct) in zip(("reading", "edit"),
+                                                 (counts[:2], counts[2:]), strict=True):
+                    assert actual["fresh_strata"][stratum][dependency][kind] == {
+                        "episodes": count, "first_correct": correct,
+                        "unsupported": int(route == "online" and kind == "reading"
+                                           and stratum == "instruction_construction"
+                                           and dependency == "independent"),
+                    }
+        assert actual["recovery"] == {
+            "first_failures": 9, "first_correct": 3, "later_correct": 4,
+            "final_attempt_correct": 5, "final_recovered_after_first_failure": 3,
+            "policy": "three fixed attempts; private grade never controls retries",
+            "tool_feedback_consumed": route != "learning_disabled",
+            "feedback_consuming_attempts": {"online": 23, "learning_disabled": 0, "simple": 24}[
+                route],
+            "identical_consecutive_proposals": 11,
+        }
+        retention_keys = (
+            "same_session_retained", "same_session_forgotten", "same_session_improved")
+        assert [actual[name] for name in retention_keys] == [1, 1, 1]
+        assert len(actual["same_session_retention"]) == 6
+        for row in actual["same_session_retention"]:
+            assert row["intervening_attempts"] == 47
+            assert row["initial_memory_slots"] == 864 and row["memory_slots"] == 1836
+        assert [actual[name] for name in ("retained", "forgotten", "improved")] == [3, 3, 3]
+        assert len(actual["retention"]) == 18
+        for index, row in enumerate(actual["retention"]):
+            assert row["prior_route"] == ("simple" if route == "simple" else "online")
+            assert row["initial_correct"] == (index in (
+                {0, 2, 4, 6, 12, 16} if route == "simple" else {0, 1, 2, 3, 12, 14}))
+            assert row["intervening_current_attempts"] == retained_indices[index]
+            assert row["intervening_prior_attempts"] == (19 - index if index < 9 else 88 - index)
+            assert row["intervening_attempts"] == (55 if index < 9 else 124 if index < 12 else 130)
+            assert row["prior_attempt_index"] == (1 if index < 9 else 3)
+            assert row["same_raw_observation_as_prior"] == (index < 9)
+        assert [row["workspace_from_actual_predecessor"] for row in actual["project_chains"]] == [
+            False, False, False, True, True, True]
+        assert [row["predecessor_episode_id"] for row in actual["project_chains"]][3:] == [
+            "E19", "E21", "E23"]
+    changed_input = deepcopy(attempts)
+    changed_input[48]["observation_sha256"] = "different public input"
+    with pytest.raises(ValueError, match="same-session exact repeat input or age changed"):
+        summarize(changed_input, manifest, prior)
+    changed_age = list(attempts)
+    changed_age[0], changed_age[1] = changed_age[1], changed_age[0]
+    with pytest.raises(ValueError, match="same-session exact repeat input or age changed"):
+        summarize(changed_age, manifest, prior)
+    _coincidence_qa_save(tmp_path / "persistent-v6-summary-passed.json", {
+        "status": "passed", "summary_calls": 3, "expected_summary_rejections": 2,
+        "independent_metric_calls": 2, "rejected_forged_metric_reports": 1,
+        "authored_episodes": 72, "rows_per_route": 96, "rows": 288,
+        "models": 0, "builders": 0, "checkpoint_loads": 0, "children": 0,
+    })

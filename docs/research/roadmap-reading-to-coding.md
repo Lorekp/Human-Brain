@@ -48,7 +48,8 @@ older-task contrast. The selected next change is
 prior router, give the actual input-activated event its own recognition credit,
 and avoid changing every owner's current through one shared correction vector.
 This remains prototype recognition, not established semantic understanding.
-It proceeds through ordinary integration QA into the next broader workload;
+Its [ordinary integration and lossless-growth QA](input-defined-recognition-qa-v1.md)
+passes. It proceeds into the [next broader workload](persistent-language-action-v6-protocol.md);
 metadata-only repair and sequence latches are not separate active queues.
 The [owned-response routing optimization](factorized-sequence-owned-response-qa-v1.md)
 removes repeated validation and hashing with exact checked-path parity and custody

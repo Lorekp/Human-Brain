@@ -171,8 +171,10 @@ def initialize(prior_path, bank_path, *, seed=733):
                 or tensor_bytes(vars(states[route])) != NEW_TAPE_BYTES):
             raise ValueError("successor growth changed occupancy, zero tail or gain initialization")
         views, wirings = model.reader._candidate_views, model.reader._self_wirings
-        if len(views) != 398 or len(wirings) != 398:
-            raise ValueError("successor wiring does not cover all398 existing owners")
+        if (len(views) != 398 or len(wirings) != 398
+                or work.get("factorized_candidate_builds") != 398
+                or work.get("recognition_self_builds") != 398):
+            raise ValueError("successor must build each of398 existing owner views and self wirings once")
         values = tensors(actual) + tensors(vars(states[route]))
         values += [tensor for view in views for tensor in (view.indices, view.values, view.flags)]
         values += [tensor for wiring in wirings for tensor in (wiring.indices, wiring.values)]

@@ -20,9 +20,11 @@ regressions trail correction-disabled4/16 and simple reference10/16. Keep the
 same local learning/acting system and both saved final states. The roadmap selects
 the next work; no extra round on this exposed stream or toy-perfection gate follows.
 The selected [input-defined recognition change](input-defined-recognition-v1.md)
-addresses ownership of local plastic credit. Its ordinary implementation and
-lossless continuation checks precede one new broader integration, with explicit
-event/factual capacity and complete resource accounting.
+addresses ownership of local plastic credit. Its [ordinary QA](input-defined-recognition-qa-v1.md)
+passes, including lossless growth to1024 event owners and2048 factual slots.
+The [next broader integration](persistent-language-action-v6-protocol.md) combines
+new instruction forms, longer experience and fewer answer corrections, with
+complete resource accounting; its full run remains held during authoring.
 
 The original development specification below retains its historical contracts.
 Its older capacities, phase counts and proposed schedules do not override the

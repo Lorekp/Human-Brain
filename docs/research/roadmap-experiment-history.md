@@ -3493,3 +3493,21 @@ This exposed stream is not replayed or used as a toy-perfection prerequisite;
 coherent wrong answers, shared routing interference and actual feedback use
 remain central capability questions. Owned-response routing validation is the
 selected immediate integral optimization, not an isolated speed/capability gate.
+
+## 2026-09-07 local recognition and capacity integration
+
+Source `ca72658b935050d1d9d913570e5985c1a1812580` adds one locally updated
+recognition gain per input-defined event, retaining the old shared theta as a
+frozen numerical prior. Input-only preparation precedes each current teacher
+byte; the same reader supplies language responses and executed action payloads.
+Explicit successors expand event capacity512→1024 and factual capacity1024→2048
+without dropping old coordinates or fitting gains from prior lessons.
+
+Four [ordinary affected QA nodes](input-defined-recognition-qa-v1.md) pass on
+their first launch in19.2369283 seconds at880.23046875MiB observed peak. They
+check local arithmetic, prior-score parity at zero gains, disabled and atomic
+updates, actual action custody and crossing both old capacity boundaries.
+They establish no new language/SWE result and load no experimental checkpoint.
+The next workload is a72-episode broader continuation with longer retention,
+new constructions/combinations and fewer corrections; its authoring and saved
+audit are prepared separately from this completed implementation verification.
