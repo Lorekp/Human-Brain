@@ -3654,3 +3654,22 @@ before new snapshot leaves HEAD and intent intact, then the fixture's original
 commit succeeds. No experimental checkpoint, V7 lesson or missing task is replayed.
 These checks verify reduced repeated byte work under ownership, not a measured
 broader-workload speedup or an additional capability gate.
+
+## 2026-09-07 reusable context/content learning selection
+
+The V7 learning review identifies a relevance limitation but does not diagnose
+the cause of zero transfer. A proposed field-patch overlay is superseded because
+more exact matching alone supplies neither learned operation reuse nor variable
+binding. The [selected design](public-observation-sequence-context-v1.md) uses
+32 stochastic recurrent context cells, two content cursors and fixed neuronal
+bind/advance/read relays in the same acting reader. Direct own-synapse eligibility
+receives declared observed-symbol and coarse public-consequence signals, with
+weights held through a common input scan and actual/correction branches.
+
+Source/math review corrects future-request visibility, all-field cursor masking,
+RNG reuse across teaching, teacher-prefix prior accounting and the extra
+returncode-EOS address. Both future neural routes will independently continue
+V7 online; its numerical state is retained, but the new stochastic policy does
+not promise old behavior parity. The design is selected for source implementation,
+not a completed model or evidence of useful generalization. Larger raw-experience
+and retained-memory budgets remain to be priced before a broader release.

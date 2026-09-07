@@ -27,8 +27,13 @@ immutable checkpoint traffic. The [owned-payload implementation](persistent-chec
 passes [three ordinary checks](persistent-checkpoint-owned-payload-qa-v1.md),
 including Windows refusal of writes/replacement and exact same-actor state
 continuation. Its broader runtime benefit remains unmeasured.
-The [learning review](persistent-language-action-v7-learning-review.md) selects
-a bounded decision about public-observation relevance in the same sequence cells.
+The [learning review](persistent-language-action-v7-learning-review.md) leads to
+the [selected recurrent context/content design](public-observation-sequence-context-v1.md).
+Local stochastic eligibility trains the neurons choosing binds, advances and
+literal/value output; no backward derivative teaches earlier cells. More exact
+observation matching alone is superseded. Implement this same-reader mechanism
+with causal scan visibility and persistent RNG ownership, then price a varied
+public observation curriculum and explicit memory capacity before its release.
 These support one next broader continuation, not competing toy gates. Preserve
 the clean V7 numerical payloads and source identities; no automatic resume,
 missing-case replay or model restore is claimed. A new continuation must explicitly

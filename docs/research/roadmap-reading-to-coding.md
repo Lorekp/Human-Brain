@@ -52,12 +52,16 @@ checkpoint work as51.83% of runner time. The
 implemented and passes [ordinary persistence QA](persistent-checkpoint-owned-payload-qa-v1.md).
 It avoids repeated protected payload reads while retaining mutable-state,
 source, journal and fresh restore checks; broader runtime benefit is unmeasured.
-The next learning design must address reusable context and values, not merely
-add another exact-context store. Current request-only contacts can outrank a
-prior that sees files and feedback, but more selective matching alone does not
-teach composition. Select one coherent locally learned mechanism and a realistic
-public-experience budget for the next broader continuation, with ordinary
-affected QA and no gain sweep or isolated capability gate.
+The [selected learning design](public-observation-sequence-context-v1.md) adds
+recurrent context cells and two content cursors within the same acting reader.
+Their own stochastic eligibility receives declared observed-symbol or public
+consequence signals, without backward error transport. This makes learned
+binding and value reuse possible; it does not establish that learning will find
+useful policies. A patch-only exact-context store is superseded. Implement the
+causal visibility, state and local update interfaces, then price a broader public
+experience stream with more varied raw observations and explicit retained-memory
+costs. Ordinary affected QA supports that continuation; no gain sweep or isolated
+capability gate follows.
 
 All byte/EOS columns remain eligible, and existing neuronal potentials remain
 the prior. Raw contextual contacts are a falsifiable sequence mechanism, not
