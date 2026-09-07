@@ -218,8 +218,10 @@ Delta W   = (0.01/L)*mean(applicable G categories)
 ```
 
 The public baseline is fixed0, avoiding action-selection dependence. Other
-baselines are prior completed category means, held before scanning; update
-them only after forming all proposals. L is the external upper bound on ticks:
+baselines are prior completed category means, held before scanning. There are
+three stored baseline slots: source scan, public-observation scan and teacher
+output; the first two condition the scan mean on the externally scheduled kind.
+Update them only after forming all proposals. L is the external upper bound on ticks:
 source offer count for a source trajectory; scan offers + offered correction
 symbols +129 for an interaction. Unused free ticks after EOS are absorbing,
 with no draw or eligibility. L never uses policy-dependent generated length.

@@ -13977,6 +13977,370 @@ def test_persistent_checkpoint_actual_actor_continuation(tmp_path, monkeypatch, 
         store.inspect()
 
 
+def test_recurrent_content_local_arithmetic_and_visibility(tmp_path):
+    """One controller, six ticks: scalar local-credit and causal relay mechanics."""
+    import math
+
+    from humanbrain.recurrent_content_controller import (
+        POPULATIONS,
+        SHAPES,
+        RecurrentContentController,
+        SparseActivity,
+    )
+    from humanbrain.recurrent_content_frame import (
+        EOS,
+        apply_gate,
+        context_activity,
+        enter_field,
+        initial_position,
+        public_frame,
+        read_registers,
+        receive,
+        source_frame,
+    )
+    from humanbrain.sequence_assembly_observation import RawObservation
+
+    # Public buffers exist already, but neither Q nor cursor reads see the future.
+    frame = public_frame(RawObservation(b"ax", None), None)
+    position = enter_field(frame, initial_position(frame), 0)
+    assert position.query_indices == ()
+    assert read_registers(frame, position, (0, 1)) == (None, None)
+    position = receive(frame, position, ord("a"))
+    assert set(position.query_indices) == {97, 256 + 257 * 258 + 97,
+                                           256 + 258 * 258 + 97}
+    registers = apply_gate(frame, position, (None, None), 1)
+    assert read_registers(frame, position, registers) == (97, None)
+    advanced = apply_gate(frame, position, registers, 5)
+    assert read_registers(frame, position, advanced) == (None, None)
+    position = receive(frame, position, ord("x"))
+    assert read_registers(frame, position, advanced) == (120, None)
+    assert 256 + 120 * 258 + EOS not in position.query_indices
+    position = receive(frame, position, EOS)
+    assert 256 + 120 * 258 + EOS in position.query_indices
+    advanced = apply_gate(frame, position, advanced, 5)
+    assert read_registers(frame, position, advanced) == (EOS, None)
+    assert apply_gate(frame, position, advanced, 5) == (None, None)
+    activity = context_activity(frame, position, 0, registers)
+    assert activity.width == 69954
+    assert float(activity.values.square().sum()) == pytest.approx(1.0, abs=1e-12)
+    other = source_frame(b"a")
+    with pytest.raises(ValueError, match="another"):
+        read_registers(other, position, registers)
+
+    controller = RecurrentContentController(seed=733)
+    # Authored arithmetic fixture, not a learned policy or a capability score.
+    with torch.no_grad():
+        for name in POPULATIONS:
+            weight = getattr(controller, name + "_weight")
+            weight[:, 0] = torch.arange(weight.shape[0], dtype=torch.float64) / 1000
+        controller.mode_weight[3, 0] = 20
+    oracle_rng = torch.Generator(device="cpu").manual_seed(733)
+    work, draws, proposals = {}, [], []
+    initial_rng = controller.rng_state.clone()
+
+    def tick(stage, category, target=None, prior=None):
+        records = []
+        for name in POPULATIONS:
+            if name == "literal" and records[-1].index != 3:
+                break
+            width = SHAPES[name][1]
+            afferent = SparseActivity(torch.tensor([0, 1]),
+                                      torch.tensor([0.6, 0.8], dtype=torch.float64), width)
+            weights = getattr(controller, name + "_weight")
+            currents = [float(row[0]) * 0.6 + float(row[1]) * 0.8 for row in weights]
+            unnormalized = [math.exp(value - max(currents)) for value in currents]
+            probabilities = [value / sum(unnormalized) for value in unnormalized]
+            before = stage._eligibility[category][name][:, :2].clone()
+            draw = controller.draw(stage, name, afferent, category=category, work=work)
+            uniform = float(torch.rand((), dtype=torch.float64, generator=oracle_rng))
+            assert draw.uniform == uniform
+            cumulative, selected = 0.0, None
+            for index, probability in enumerate(probabilities):
+                cumulative = 1.0 if index == len(probabilities) - 1 else cumulative + probability
+                if selected is None and cumulative > uniform:
+                    selected = index
+            assert draw.index == selected
+            torch.testing.assert_close(draw.logits, torch.tensor(currents, dtype=torch.float64))
+            torch.testing.assert_close(draw.probabilities,
+                                       torch.tensor(probabilities, dtype=torch.float64))
+            expected = torch.tensor([
+                [((index == selected) - probability) * value for value in (0.6, 0.8)]
+                for index, probability in enumerate(probabilities)
+            ], dtype=torch.float64)
+            torch.testing.assert_close(stage._eligibility[category][name][:, :2], before + expected)
+            records.append(draw)
+            draws.append(draw.record())
+        token = controller.complete_tick(stage, prior_token=prior, work=work)
+        if target is not None:
+            reward = controller.observe(stage, target, category=category, work=work)
+            assert reward == (1 if token == target else -1)
+        return token
+
+    stage = controller.begin_stage(kind="source", scan_offers=2, work=work)
+    tick(stage, "scan", 97)
+    tick(stage, "scan", EOS)
+    assert torch.equal(controller.rng_state, initial_rng)
+    assert controller.baseline_count.tolist() == [0, 0, 0]
+    controller.seal_scan(stage)
+    before = controller.context_weight[:, :2].clone()
+    expected = before + 0.01 / 2 * (stage._reward_sums["scan"] / 2) * stage._eligibility["scan"]["context"][:, :2]
+    proposal = controller.finish(stage, learning_enabled=True, work=work)
+    torch.testing.assert_close(proposal.state["context_weight"][:, :2], expected)
+    assert proposal.category_count == 1 and proposal.normalization_ticks == 2
+    controller.validate_stage(proposal, work)
+    controller.commit_validated(proposal, work)
+    proposals.append(proposal.record())
+    assert controller.baseline_count.tolist() == [1, 0, 0]
+    del proposal, stage
+
+    # A teacher credits the common input trajectory, not the independent free branch.
+    stage = controller.begin_stage(kind="edit", scan_offers=1, max_bytes=0, work=work)
+    tick(stage, "scan", 98)
+    controller.seal_scan(stage)
+    tick(stage, "free", prior=EOS)
+    controller.seal_free(stage)
+    fork = controller.fork_stage(stage, work)
+    controller.declare_teacher(fork, 1)
+    tick(fork, "teacher", EOS, prior=EOS)
+    assert controller.baseline_count.tolist() == [1, 0, 0]
+    scan_reward, teacher_reward = fork._reward_sums["scan"], fork._reward_sums["teacher"]
+    expected = controller.context_weight[:, :2].clone()
+    expected += 0.01 / 131 / 3 * (
+        (scan_reward + teacher_reward - 1) * fork._eligibility["scan"]["context"][:, :2]
+        - fork._eligibility["free"]["context"][:, :2]
+        + teacher_reward * fork._eligibility["teacher"]["context"][:, :2])
+    proposal = controller.finish(fork, learning_enabled=True, public_reward=-1, work=work)
+    torch.testing.assert_close(proposal.state["context_weight"][:, :2], expected)
+    assert proposal.category_count == 3 and proposal.normalization_ticks == 131
+    assert proposal.delta_norm <= 0.02 * math.sqrt(8)
+    controller.validate_stage(proposal, work)
+    controller.commit_validated(proposal, work)
+    proposals.append(proposal.record())
+    assert controller.baseline_count.tolist() == [1, 1, 1]
+    del stage, fork, proposal
+
+    saved = copy.deepcopy(controller.state_dict())
+    stage = controller.begin_stage(kind="source", scan_offers=1, work=work)
+    tick(stage, "scan", EOS)
+    controller.seal_scan(stage)
+    proposal = controller.finish(stage, learning_enabled=False, work=work)
+    controller.validate_stage(proposal, work)
+    controller.commit_validated(proposal, work)
+    proposals.append(proposal.record())
+    for name in (*[p + "_weight" for p in POPULATIONS], "baseline_mean", "baseline_count"):
+        assert torch.equal(controller.state_dict()[name], saved[name])
+    assert not torch.equal(controller.rng_state, saved["rng_state"])
+    with pytest.raises(ValueError, match="stale"):
+        controller.validate_stage(proposal)
+    invalid = dict(saved)
+    invalid["rng_state"] = torch.zeros(1, dtype=torch.uint8)
+    with pytest.raises(ValueError):
+        controller.load_state_dict(invalid)
+    controller.load_state_dict(saved)
+    _assert_nested_equal(controller.state_dict(), saved)
+    _coincidence_qa_save(tmp_path / "recurrent-content-arithmetic-passed.json", {
+        "status": "passed", "controllers": 1, "actors": 0, "ticks": 6,
+        "scan_offers": 4, "teacher_offers": 1, "free_ticks": 1,
+        "children": 0, "checkpoint_loads": 0, "strict_loads": 1,
+        "rejected_strict_loads": 1, "frame_only_receives": 3,
+        "draws": draws, "proposals": proposals, "work": work,
+    })
+
+
+def test_recurrent_content_same_actor_online_lifecycle(tmp_path, monkeypatch):
+    """Two actors, one actual child, and no historical checkpoint or task fitting."""
+    import time
+    from pathlib import Path
+
+    from experiments.r4_integrated.persistent_language_action_execution_v2 import (
+        execute_proposal,
+        qualified_launch,
+        workspace_from_records,
+    )
+    from humanbrain.neuronal_splice_learner import _digest
+    from humanbrain.recurrent_content_frame import (
+        EOS,
+        PUBLIC_CAPACITY,
+        apply_gate,
+        enter_field,
+        initial_position,
+        output_position,
+        public_frame,
+        read_registers,
+        receive,
+    )
+    from humanbrain.recurrent_content_learner import RecurrentContentSpliceLearner
+    from humanbrain.sequence_assembly_observation import RawObservation, SpliceProposal
+
+    online, disabled = (RecurrentContentSpliceLearner(seed=733) for _ in range(2))
+    sources, states, held_hashes = [], [], []
+
+    def held_numeric(reader):
+        return _digest({name: value for name, value in reader.state_dict().items()
+                        if isinstance(value, torch.Tensor) and not name.startswith("controller.")})
+
+    def slow_numeric(controller):
+        return _digest({name: value for name, value in controller.state_dict().items()
+                        if isinstance(value, torch.Tensor) and name != "rng_state"})
+
+    for actor, enabled in ((online, True), (disabled, False)):
+        reader = actor.reader
+        # Explicit mechanics fixture: old prior emits EOS and the motor selects STOP.
+        # The controller mode fixture favors that prior; no example is fit or replayed.
+        with torch.no_grad():
+            reader.address_weight.zero_()
+            reader.prefix_weight.zero_()
+            reader.output_weight.zero_()
+            reader.codec.weight.zero_()
+            reader.codec.bias.zero_()
+            reader.codec.bias[EOS] = 1
+            reader.controller.mode_weight[0, -1] = 100
+            actor.actions.operation_weight.zero_()
+            actor.actions.operation_bias.copy_(torch.tensor([10.0, 0.0]))
+        held_hashes.append(held_numeric(reader))
+        slow_before, rng_before = slow_numeric(reader.controller), reader.controller.rng_state.clone()
+        state, source = actor.ingest_with_receipt([b"a"], learning_enabled=enabled)
+        assert state.used == 2 and source.symbol_count == 2 and source.fact_admitted
+        assert source.writes_enabled and source.controller["learning_enabled"] == enabled
+        assert source.work.get("content_held_prior_calls", 0) == 0
+        assert [row["observed_token"] for row in source.source_steps] == [97, EOS]
+        assert all(row["prior_token"] is None for row in source.source_steps)
+        assert source.model_after_sha256 == _digest(reader.state_dict())
+        assert not torch.equal(reader.controller.rng_state, rng_before)
+        assert (slow_numeric(reader.controller) != slow_before) == enabled
+        memory_before = _digest(vars(state))
+        transient, observed = actor.observe_source(b"b", state, learning_enabled=enabled)
+        assert transient is state and _digest(vars(state)) == memory_before
+        assert not observed.fact_admitted and not observed.writes_enabled
+        assert observed.symbol_count == 2
+        assert observed.work.get("content_source_tape_allocated_bytes", 0) == 0
+        assert held_numeric(reader) == held_hashes[-1]
+        sources.extend((source, observed))
+        states.append(state)
+    _assert_nested_equal(states[0].snapshot(), states[1].snapshot())
+
+    workspace = workspace_from_records([{"path": "main.py", "content_hex": b"print('a')\n".hex()}])
+    observation = RawObservation(b"b", workspace)
+    frame = public_frame(observation, states[0])
+    position = initial_position(frame)
+    for index, item in enumerate(frame.fields):
+        position = enter_field(frame, position, index)
+        for symbol in item.tokens:
+            position = receive(frame, position, symbol)
+    position = output_position(frame, position)
+    registers = apply_gate(frame, position, (None, None), 3, retrieved_index=0)
+    assert registers == (PUBLIC_CAPACITY, None)
+    assert read_registers(frame, position, registers) == (97, None)
+    registers = apply_gate(frame, position, registers, 5)
+    assert read_registers(frame, position, registers) == (EOS, None)
+    assert apply_gate(frame, position, registers, 5) == registers
+
+    reader = disabled.reader
+    disabled_slow, disabled_rng = slow_numeric(reader.controller), reader.controller.rng_state.clone()
+    prediction_disabled = reader.predict_with_receipt(observation, states[1], max_bytes=1,
+                                                      interaction_kind="reading")
+    assert prediction_disabled.generation.data == b"" and len(prediction_disabled.steps) == 1
+    assert torch.equal(reader.controller.rng_state, disabled_rng)
+    original_symbol = prediction_disabled.scan_steps[0]["observed_token"]
+    try:
+        prediction_disabled.scan_steps[0]["observed_token"] ^= 1
+        with pytest.raises(ValueError, match="trace changed"):
+            reader.validate_pending(prediction_disabled, states[1])
+    finally:
+        prediction_disabled.scan_steps[0]["observed_token"] = original_symbol
+    feedback_disabled = reader.teach(observation, b"b", states[1], prediction=prediction_disabled,
+                                     learning_enabled=False)
+    assert feedback_disabled.teacher_count == 2
+    assert not feedback_disabled.controller["learning_enabled"]
+    assert slow_numeric(reader.controller) == disabled_slow
+    assert not torch.equal(reader.controller.rng_state, disabled_rng)
+    rng_before_ack = reader.controller.rng_state.clone()
+    acknowledged = reader.predict_with_receipt(observation, states[1], max_bytes=0,
+                                               interaction_kind="reading")
+    assert len(acknowledged.steps) == 1
+    ack_work = reader.acknowledge(acknowledged, states[1], learning_enabled=False)
+    assert slow_numeric(reader.controller) == disabled_slow
+    assert not torch.equal(reader.controller.rng_state, rng_before_ack)
+    assert reader.pending_prediction is None
+
+    prediction = online.propose(observation, states[0])
+    assert prediction.proposal.operation == "STOP"
+    assert prediction.payload.generation.data == b"" and len(prediction.payload.steps) == 1
+    with pytest.raises(ValueError, match="resolve"):
+        online.snapshot(states[0])
+    after_files, execution = execute_proposal(
+        workspace, prediction.proposal, tmp_path / "actual-action",
+        launch=qualified_launch(Path(__file__).resolve().parents[1]),
+        deadline=time.perf_counter() + 10)
+    assert execution["returncode"] == 0 and execution["stdout_hex"] == b"a\n".hex()
+    assert after_files == [{"path": "main.py", "content_hex": b"print('a')\n".hex()}]
+    envelope = {"attempt_id": prediction.attempt_id, "proposal_sha256": prediction.proposal_sha256,
+                "workspace_sha256": workspace.sha256, "execution": execution}
+    teacher = SpliceProposal("SPLICE", "main.py", 7, 8, b"b", "eos", workspace.sha256)
+    correction = online.teach(prediction, observation, states[0], teacher, envelope)
+    feedback = correction.reader_feedback
+    assert feedback.teacher_count == 2 and feedback.controller["learning_enabled"]
+    assert feedback.controller["category_count"] == 3
+    assert feedback.controller["rewards"]["public"] == 0
+    assert set(correction.action_updates) == {"start", "end", "operation"}
+    assert any(correction.action_updates.values())
+    for free, corrected in ((prediction_disabled, feedback_disabled), (prediction.payload, feedback)):
+        assert len(free.scan_steps) == frame.offer_count
+        assert free.work["content_held_prior_calls"] == len(free.steps)
+        assert corrected.work["content_held_prior_calls"] == 2
+        assert [row["prefix_hex"] for row in corrected.teacher_steps] == ["", "62"]
+        first_teacher = corrected.teacher_steps[0]["controller"]
+        assert first_teacher["h_before"] == free.controller["preoutput_h"]
+        assert first_teacher["cursors_before"] == free.controller["preoutput_cursors"]
+        last_draw = free.steps[-1].controller["draws"][-1]
+        assert first_teacher["draws"][0]["rng_before_sha256"] == last_draw["rng_after_sha256"]
+    assert online._pending is None and online.reader.pending_prediction is None
+    for actor, original in zip((online, disabled), held_hashes, strict=True):
+        assert held_numeric(actor.reader) == original
+
+    # Late rejection occurs after two genuine transient offers and before publication.
+    reader, state = online.reader, states[0]
+    before_rejection, memory_before = _digest(online.state_dict()), _digest(vars(state))
+    original_validate, rejected_work = reader.controller.validate_stage, {}
+
+    def reject_final(proposal, work=None):
+        original_validate(proposal, work)
+        rejected_work.update(work)
+        raise ValueError("authored late recurrent publication rejection")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(reader.controller, "validate_stage", reject_final)
+        with pytest.raises(ValueError, match="authored late"):
+            online.observe_source(b"c", state)
+    assert rejected_work["controller_offers"] == 2
+    assert _digest(online.state_dict()) == before_rejection
+    assert _digest(vars(state)) == memory_before and reader.controller.pending_stage is None
+    with pytest.raises(ValueError, match="exactly one"):
+        online.ingest_with_receipt([b"d", b"e"], state)
+    saved = copy.deepcopy(online.state_dict())
+    invalid = dict(saved)
+    invalid["reader.controller.baseline_count"] = saved["reader.controller.baseline_count"].clone()
+    invalid["reader.controller.baseline_count"][0] = -1
+    with pytest.raises(ValueError):
+        online.load_state_dict(invalid)
+    assert _digest(online.state_dict()) == before_rejection
+    online.load_state_dict(saved)
+    _assert_nested_equal(online.state_dict(), saved)
+    _coincidence_qa_save(tmp_path / "recurrent-content-same-actor-passed.json", {
+        "status": "passed", "actors": 2, "admitted_documents": 2,
+        "transient_documents": 3, "successful_source_offers": 8,
+        "rejected_source_offers": 2, "free_calls": 3, "free_ticks": 3,
+        "public_scan_offers": 3 * frame.offer_count, "teacher_offers": 4,
+        "held_prior_calls": 7, "action_labels": 3, "children": 1,
+        "strict_loads": 1, "rejected_strict_loads": 1, "checkpoint_file_loads": 0,
+        "sources": sources, "free": [prediction_disabled, acknowledged, prediction.payload],
+        "teacher": [feedback_disabled, feedback], "execution": execution,
+        "disabled_ack_work": ack_work, "rejected_modified_trace": 1,
+        "rejected_work": rejected_work, "held_old_reader_sha256": held_hashes,
+        "frame_only_receives": frame.token_count,
+    })
+
+
 def test_dendritic_same_actor_source_and_correction(tmp_path, monkeypatch):
     """Counted source observations, actual action, local correction and atomic refusal."""
     import time
