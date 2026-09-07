@@ -1,0 +1,208 @@
+# Eighth persistent language/action session
+
+Status: selected for source preparation, 2026-09-07. Runtime is NOT released.
+Root selects this single curriculum scope and public protected-driver policy.
+The resource envelope remains proposed until source, serializer and author review.
+Authored source is held in
+[v8_workload.py](../../experiments/r4_integrated/persistent_language_action_v8_workload.py)
+and [v8_sources.py](../../experiments/r4_integrated/persistent_language_action_v8_sources.py).
+Static AST/literal accounting and Ruff pass. Root releases one pure manifest
+build under a60-second/1GiB watchdog; it reads authenticated historical JSON and
+checks source syntax/splice arithmetic, with zero models, decoders or children.
+The broader runner and authored-program execution remain held.
+The two ordinary controller/actor nodes passed under the root's recorded QA;
+that supports mechanics, not the capability predictions below.
+
+## Scope and continuation
+
+Use the selected recurrent controller inside the same reading/editing actor.
+Initialize both neural routes independently from authenticated V7 ONLINE safe
+state, including its 1,614 occupied factual slots. Preserve every old tensor
+and factual row, initialize the new four matrices/baselines to zero, and use the
+single declared seed733 for both routes. The simple reference restores its own
+actual V7 history. Do not replay V7's750 source or71 answer symbols. Initial
+behavior changes because the new controller samples; this is not V7 policy parity.
+
+Online publishes source/observation/answer/public-consequence controller updates
+and the existing action corrections. Disabled computes those activities and
+proposals but publishes no weights/baselines; it still advances acknowledged RNG
+and performs the same ordinary factual association writes. This bundles several
+learning sources, so the comparison does not isolate the value of any one reward.
+
+## New public experience
+
+The source literals contain24 distinct complete documents, each offered once:
+
+* Four retained notes,364 raw bytes total plus4 EOS (ceiling400 raw). They supply short
+  factual revisions, contextual exceptions and ordered inventory information.
+  Final factual occupancy is1,982/2,048; no eviction or partial admission.
+* Twenty transient documents totaling9,496 raw bytes, plus20 EOS, ranging from
+  372–583 bytes per document. No padding is added to meet an exact size.
+  Ten are ordinary prose/instruction-and-observation accounts; ten are ordinary
+  small Python modules with readable examples/assertions. They vary content and
+  wording while recurring in operations such as copying a selected value,
+  filtering, ordering, joining, bounds and exception precedence.
+
+Static literal accounting gives9,860 raw source bytes plus24 EOS =9,884 new
+source offers per neural route, within the10,500 ceiling. One separately released
+pure build will freeze the complete manifest and independently derive its counts.
+These are source next-symbol rewards, not answer corrections or retained facts.
+Each transient document uses observe_source against the old admitted tape,
+resets its neural/cursor trajectory, and preserves the tape object. Every
+document is complete within the3,484 raw-byte source bound. Four admitted notes
+use the same causal scan before their privately staged factual write becomes live.
+
+No new source contains a held-out full request/answer pair or the full composed
+program of a fresh combination. Sources deliberately show constituent operations on different
+values and structures. Task authors disclose semantic/template overlap instead
+of claiming historical independence. Source text has no task IDs, relevance tags,
+supplied spans, selected-address hints or teacher-episode groups.
+
+The simple reference receives the same documents once. Its transparent lexical
+store can retain transient text, while neural transient text is only eligible
+for learning. Disclose this memory asymmetry; do not claim equal long-term text
+storage. Keep the retained-note retrieval subset identifiable in analysis.
+
+## One fixed roster
+
+| Phase/encounter | Episodes | Reading/editing | Corrections |
+|---|---:|---:|---:|
+| Acquisition first |2|1/1|One each|
+| Acquisition pure paraphrase |2|1/1|None|
+| Acquisition exact delayed |2|1/1|None|
+| Fresh instruction constructions |10|5/5|None|
+| Fresh structural combinations |10|5/5|None|
+| Exposed V7 regressions |14|7/7|None|
+| Recovery |8|0/8|None; exactly3 attempts each|
+
+This is48 episodes,64 attempts and44 actual execution verifications per route;
+192 attempts and132 verifications across three routes. Offer only TWO answer
+corrections (one reading, one SPLICE),33 raw bytes plus2 EOS and three
+action-head labels per neural route. These are fewer answer occasions and
+symbols than V7's four/71, alongside substantially more source and public-input
+learning. They are not a claim of reduced total supervision.
+
+Use six fixed eight-episode blocks, with one new document observed before each
+of the first four episodes in every block (one retained note at the start of
+each of the first four blocks). Each source is its own route transaction.
+Put the two corrected first
+responses in block1, the unchanged-requirement paraphrases in block2, and the two
+exact repeats in block6. Four recovery episodes occur in blocks1–3, the remaining
+four in blocks4–5; all recovery finishes before the final exact repeats. Intermix
+fresh cases and older regressions throughout the blocks. Freeze the precise
+roster before execution; each exact repeat has61 intervening route attempts.
+Do not select a delay or retry count using correctness or outputs.
+
+Fresh constructions withhold whole instruction forms from this continuation's
+source requests and corrections. Fresh combinations require at least two
+demonstrated constituent operations in a previously unseen arrangement; include
+ordered and negative/empty cases. Half of each stratum reads, half edits. Two
+two-stage project chains carry the actual workspace and raw feedback from an
+earlier edit into a later combination case. Report those dependent cases
+separately from independently initialized combinations.
+
+The14 old cases include the12 V7 regression observations plus the
+observed correct delayed reading A04-R and fully observed editing case A00-E.
+Bind each to actual saved V7 request/files/feedback/outcome, not nominal lesson
+metadata. Prefer observations identical across old routes; explicitly disclose
+any route-dependent old observation instead of asserting matched input. Compare
+the new online/disabled routes on the same selected raw observation; separately
+state which historical route's success is the retention reference. Never fill
+one of V7's seven missing attempts with a reconstructed outcome.
+
+## Authentic public checks and recovery
+
+Every new edit contains an ordinary readable main.py of at most512 bytes that
+imports the working module and actually exercises its public contract. Use
+compact assertions with distinct real inputs, including a boundary/empty case,
+and concise assertion messages. The missing program logic must be absent from
+the editable module: provide interface/stub context, not a nearly complete
+solution whose last task is renaming a literal. The raw request and main.py are
+visible to all routes; assertions are public observations, never private grade
+bits routed to the controller.
+
+Recovery begins with diverse broken programs (wrong boundary, reversed order,
+incorrect empty handling, broken combination), receives no answer, and always
+makes three actual attempts. Each later attempt sees the actual previous files
+and captured diagnostics. The existing same actor's sealed eligibility receives
+public failure=-1, otherwise0; STOP's unused payload retains reward0. Public
+success is not a positive task-correctness reward. Private grading can retain
+additional behavioral cases, but never selects retries, prompts, sources or
+controller rewards.
+
+Root selects this execution-integrity change before authoring: the current executor
+can apply a splice to main.py, and removing assertions can yield exit0 despite
+private protected-file failure. Use a transparent public protected-driver
+rule: declare main.py immutable to the actor and have the actual executor reject
+such writes before application, with accepted=False in ordinary public feedback.
+This is a fixed execution permission, not a target-dependent patch selector or
+second learned executor. Enforce it uniformly for neural and reference proposals;
+the protected path and policy are public, never selected from hidden targets.
+
+## Reporting and exposure ledger
+
+Keep four primary outcomes separate: acquisition (first/paraphrase/exact), fresh
+transfer (construction/combination and independent/project-dependent), historical
+retention, and recovery (first/any-later/terminal, plus changed proposals).
+Record exact-repeat attempt age, actual raw observation equality and losses of
+previously successful behavior separately from repeated old failures.
+
+Also report generated length/EOS/limits, complete payloads and behavior, not
+reward or NLL alone. The controller's prior NLL is a frozen-prior diagnostic,
+not the probability of its stochastic emitted token. Source recognition,
+increased stopping, changed proposals and public-check avoidance do not establish
+wording understanding, composition or learned repair.
+
+Separate counts: admitted raw bytes/EOS; transient raw bytes/EOS; all actual
+request/path/file/diagnostic/returncode predictive offers;13 flag/status offers
+per public scan; answer bytes/EOS; action labels; free/teacher draws and prior
+calls; public consequence categories, including zero STOP categories. Repeated
+workspace/feedback input on retries is another learning exposure. Target a
+nominal public-scan sum below30,000 offers/route through concise workspaces, but
+do not promise that bound after arbitrary actual edits/diagnostics. The formal
+interface bound is64*3,485=223,040; unsupported states remain visible rather
+than truncated or silently skipped. Freeze nominal and worst-case counts.
+
+## Feasibility and durable boundaries
+
+Propose one3,600-second run ceiling, reserving its last120 seconds to stop before
+new work and publish a resolved checkpoint; allow a separate120-second saved
+review. Use a4GiB RSS ceiling. These are conservative planning limits, not a
+runtime prediction: old all-memory prior calls still dominate long outputs.
+At most8,256 free prior calls per neural route (64*129), plus35 causal
+teacher prior calls; scans invoke no prior. The9,884 source ticks imply at
+most26.8 million sparse current products per route at the source bound2,709/tick,
+excluding dense eligibility initialization, finishing, validation, record work
+and old-prior calls. Do not extrapolate QA duration into a speed claim.
+
+Reuse the existing owned-payload checkpoint mechanism, which serializes the
+FULL actor for each changed neural payload. It does not split retained prior
+weights from new controller state. Publish a safe boundary after every resolved
+route transaction; do not defer either neural route's learning durability until
+the other routes finish a matched round. The planned boundary count is1 initial
++72 source-route transactions +192 attempts =265. Each optional teacher row
+co-publishes with its actual attempt rather than adding a separate boundary.
+Preserve the exact route/frontier in each boundary and stop before admitting new
+work when the reserve is reached. Durable journal rows beyond a failed boundary
+remain explicitly outside its recoverable state; never silently replay them.
+
+Plan178 neural payload versions at approximately115MB each: about20.5GB of neural
+payload bytes before journals, reference snapshots and other receipts. This is
+a conservative serializer estimate, not a measured payload count or a guarantee
+that unchanged disabled weights avoid serialization: their acknowledged RNG
+changes. Exact sizes and version counts must be checked against the actual
+serializer before runtime release. No new storage architecture is selected.
+
+Set a26GiB new-artifact cap and require at least34GiB free before release. Root's
+fresh reported free space is40,810,737,664 bytes, approximately38GiB; it must be
+rechecked at launch. Preserve all historical evidence and every new receipt;
+there is no deletion policy. If actual journal or checkpoint size invalidates
+the budget, retain the last safe boundary and stop without automatically
+extending disk or runtime limits.
+
+This is one development stream and one mechanism. No gain/seed sweep, repeated
+fitting, isolated correctness gate, corpus download or completion claim is
+authorized by this source-preparation draft. Broader data could teach reusable state/gate
+policies;32 context cells and sparse outcome signals may still learn common-byte
+shortcuts. The planned transfer and public-check recovery cases make that
+limitation observable rather than presuming10,000 symbols resolve it.
