@@ -42,10 +42,14 @@ reuses fixed prefix activity and locally teaches all offered causal sequence
 events. The complete broader session includes longer instructions, missing
 program logic and actual diagnostic observations. Its [ordinary lifecycle QA](sequence-assembly-integration-qa-v1.md)
 and saved audit pass. Online generation changes substantially, but neither
-correct composition nor useful action/recovery is established. Use the saved
-learning, evaluation and resource reviews to select the next shared change.
-Preserve this state and expose the successor to broader learning opportunities
-and fresh problems. Another
+correct composition nor useful action/recovery is established. The selected next
+design is [factorized local sequence routing](factorized-sequence-routing-v1.md),
+with direct outcome teaching, retained state, larger unselected factual memory
+and interleaved broader learning opportunities. Its source/math review must
+resolve credit, sparse geometry and atomic publication before a measured run.
+An [owned-response optimization](sequence-assembly-owned-response-qa-v1.md)
+already removes redundant validation with checked-path parity and custody QA.
+Preserve this state and expose the successor to fresh problems. Another
 automatic byte/operation gate or extra rounds on this exposed stream are not selected.
 Continue the saved model and accumulated memory on
 new instruction forms and combinations. Address selection, composition and
