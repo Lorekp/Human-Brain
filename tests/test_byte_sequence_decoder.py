@@ -10882,3 +10882,413 @@ def test_active_path_reader_clamp_custody_and_atomicity(tmp_path):
         "raw_sha256": hashlib.sha256(raw_path.read_bytes()).hexdigest(),
         "claim": "actual-path arithmetic, custody and atomicity; no acquired skill",
     }, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8")
+
+
+def test_sequence_assembly_cells_local_staging_contract(tmp_path):
+    """One small standalone bank: local arithmetic and custody, not task learning."""
+    import hashlib
+    import json
+
+    from humanbrain import sequence_assembly_cells as module
+
+    raw_path = tmp_path / "assembly-cells-raw.jsonl"
+
+    def save(row):
+        with raw_path.open("a", encoding="utf-8") as output:
+            output.write(json.dumps(row, sort_keys=True, allow_nan=False) + "\n")
+
+    def snapshot_equal(actual, expected):
+        assert actual["_extra_state"] == expected["_extra_state"]
+        for key in ("prototypes", "outgoing", "used"):
+            assert torch.equal(actual[key], expected[key])
+
+    bank = module.SequenceAssemblyCells(input_width=10)
+    fallback = torch.linspace(-0.5, 0.5, 257, dtype=torch.float64)
+    a = torch.zeros(10, dtype=torch.bool)
+    b = a.clone()
+    b[:2] = True
+    c = a.clone()
+    c[2] = True
+    tie = a.clone()
+    tie[0] = True
+    work = {}
+    initial = bank.snapshot()
+    stage = bank.begin_stage(work)
+    empty = bank.evaluate(a, fallback, work=work)
+    save({"phase": "empty", "winner": empty.winner_index,
+          "currents": empty.currents.tolist(), "work": dict(work)})
+    assert empty.winner_index is None and not empty.exact
+    assert torch.equal(empty.currents, fallback)
+
+    for inputs, target in ((a, 65), (b, 66), (a, 67)):
+        context = bank.prepare_context(inputs, fallback, stage=stage, work=work)
+        before = context.initial_currents.tolist()
+        held_others = stage.outgoing.clone()
+        update = bank.prepare_teach(context, target, stage=stage, work=work)
+        expected = [old + ((math.log(256) if i == target else 0.0) - old) * 1.0 / 1.0
+                    for i, old in enumerate(before)]
+        save({"phase": "local_offer", "target": target, "selected": update.selected_index,
+              "recruited": update.recruited, "before": before,
+              "actual": update.currents_after.tolist(), "expected": expected,
+              "used": int(stage.used), "work": dict(work)})
+        assert update.staged and not update.exhausted
+        assert update.currents_after.tolist() == expected
+        assert update.error.tolist() == [
+            (math.log(256) if i == target else 0.0) - old for i, old in enumerate(before)]
+        for index in range(512):
+            if index != update.selected_index:
+                assert torch.equal(stage.outgoing[index], held_others[index])
+        snapshot_equal(bank.snapshot(), initial)
+    assert int(stage.used) == 2 and stage.revision == 3
+    assert torch.equal(stage.prototypes[0], a) and torch.equal(stage.prototypes[1], b)
+    bank.publish(stage, work)
+    published = bank.snapshot()
+    assert int(bank.used) == 2
+    tied = bank.evaluate(tie, fallback, work=work)
+    oracle_counts = [sum(int(x == y) for x, y in zip(tie.tolist(), row, strict=True))
+                     for row in bank.prototypes[:2].tolist()]
+    save({"phase": "tie", "counts": tied.agreement_counts.tolist(),
+          "oracle_counts": oracle_counts, "winner": tied.winner_index,
+          "pair_currents": tied.competition.pair_currents.tolist(), "work": dict(work)})
+    assert oracle_counts == [9, 9] and tied.agreement_counts.tolist() == oracle_counts
+    assert tied.winner_index == 0 and not tied.exact
+    assert tied.competition.comparator_activity.tolist() == [True]
+    assert tied.competition.winner_activity.tolist() == [True, False]
+    assert torch.equal(tied.currents, bank.outgoing[0])
+
+    stage = bank.begin_stage(work)
+    context = bank.prepare_context(c, fallback, stage=stage, work=work)
+    frozen_stage = (stage.prototypes.clone(), stage.outgoing.clone(), stage.used.clone())
+    disabled = bank.prepare_teach(context, 68, stage=stage, learning_enabled=False, work=work)
+    save({"phase": "disabled", "staged": disabled.staged,
+          "recruited": disabled.recruited, "work": dict(work)})
+    assert disabled.recruited and not disabled.staged and stage.revision == 0
+    for actual, expected in zip(
+            (stage.prototypes, stage.outgoing, stage.used), frozen_stage, strict=True):
+        assert torch.equal(actual, expected)
+
+    original_finite = module._finite
+
+    def fail_final(value, label):
+        if label == "assembly output proposal":
+            raise ValueError("authored late finite failure")
+        return original_finite(value, label)
+
+    with (patch.object(module, "_finite", fail_final),
+          pytest.raises(ValueError, match="authored late finite failure")):
+        bank.prepare_teach(context, 69, stage=stage, work=work)
+    save({"phase": "late_failure", "used": int(stage.used),
+          "revision": stage.revision, "work": dict(work)})
+    for actual, expected in zip(
+            (stage.prototypes, stage.outgoing, stage.used), frozen_stage, strict=True):
+        assert torch.equal(actual, expected)
+    snapshot_equal(bank.snapshot(), published)
+    context.inputs[0] = ~context.inputs[0]
+    with pytest.raises(ValueError, match="prepared assembly context"):
+        bank.prepare_teach(context, 70, stage=stage, work=work)
+    context.inputs[0] = ~context.inputs[0]
+    stage.outgoing[0, 0] = torch.nan
+    with pytest.raises(ValueError, match="assembly outgoing"):
+        bank.publish(stage, work)
+    snapshot_equal(bank.snapshot(), published)
+
+    malformed = bank.snapshot()
+    malformed["prototypes"][0, 0] = True
+    malformed["outgoing"][0, 0] = torch.nan
+    with pytest.raises(ValueError, match="assembly outgoing"):
+        bank.load_state_dict(malformed)
+    snapshot_equal(bank.snapshot(), published)
+    save({"phase": "custody_rejections", "mutated_context": True,
+          "nonfinite_stage": True, "nonfinite_load": True})
+
+    # Authored full bank:512 distinct9-bit inputs, not512 teacher calls or a fit.
+    full = bank.snapshot()
+    full["used"].fill_(512)
+    full["prototypes"].zero_()
+    for index in range(512):
+        for bit in range(9):
+            full["prototypes"][index, bit] = bool((index >> bit) & 1)
+    full["outgoing"].zero_()
+    full["outgoing"][:, 65] = 1.0
+    bank.load_state_dict(full)
+    stage = bank.begin_stage(work)
+    novel = a.clone()
+    novel[9] = True
+    exhausted_context = bank.prepare_context(novel, fallback, stage=stage, work=work)
+    exhausted = bank.prepare_teach(exhausted_context, 71, stage=stage, work=work)
+    exact_context = bank.prepare_context(a, fallback, stage=stage, work=work)
+    exact_disabled = bank.prepare_teach(
+        exact_context, 72, stage=stage, learning_enabled=False, work=work)
+    save({"phase": "full", "exhausted": exhausted.exhausted,
+          "novel_counts": exhausted_context.evaluation.agreement_counts.tolist(),
+          "exact_selected": exact_disabled.selected_index, "work": dict(work)})
+    assert exhausted.exhausted and not exhausted.staged and exhausted.selected_index is None
+    assert exact_context.evaluation.exact and exact_disabled.selected_index == 0
+    assert not exact_disabled.exhausted and not exact_disabled.staged
+    assert stage.revision == 0
+    snapshot_equal(bank.snapshot(), full)
+    assert torch.equal(stage.prototypes, full["prototypes"])
+    assert torch.equal(stage.outgoing, full["outgoing"])
+    assert int(stage.used) == 512
+    assert work["assembly_evaluations"] == 8
+    assert work["assembly_candidates"] == 1031
+    assert work["assembly_agreement_cells"] == 10310
+    assert work["assembly_agreement_thresholds"] == 30930
+    assert work["assembly_agreement_input_applications"] == 41240
+    assert work["assembly_output_offers"] == 7
+    assert work["assembly_staged_output_updates"] == 3
+    assert work["assembly_staged_recruitments"] == 2
+    assert work["assembly_exhausted_offers"] == 1
+    assert work["assembly_publications"] == 1
+    assert work["assembly_output_local_products"] == 6 * 257
+    assert all(name in module.WORK_KEYS for name in work)
+    assert not list(bank.parameters())
+    (tmp_path / "assembly-cells-passed.json").write_text(json.dumps({
+        "status": "passed", "standalone_banks": 1, "input_width": 10,
+        "evaluations": 8, "teacher_calls": 8, "offers_entered": 7,
+        "completed_offers": 6, "staged_updates": 3, "recruits": 2,
+        "publications": 1, "late_failed_offers": 1, "disabled_offers": 2,
+        "exhausted_skips": 1, "reader_models": 0, "actions": 0,
+        "checkpoint_loads": 0, "authored_full_bank_loads": 1,
+        "work": work, "raw_sha256": hashlib.sha256(raw_path.read_bytes()).hexdigest(),
+        "claim": "local assembly mechanics; no acquired task skill",
+    }, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def test_sequence_assembly_rolling_prefix_exact_boundaries(tmp_path):
+    """One129-slot cache reaches128 outputs, comparing six declarative lag banks."""
+    import hashlib
+    import json
+
+    from humanbrain.neuronal_byte_coincidence import coincidence_features, encode_symbol_rails
+    from humanbrain.sequence_assembly_prefix import RollingPrefixCoincidence
+
+    n = 129
+    symbols = torch.arange(n * 32, dtype=torch.int64).reshape(n, 32) % 256
+    keys = encode_symbol_rails(symbols)
+    lengths = torch.arange(n, dtype=torch.int64) % 33
+    keys &= (torch.arange(32)[None, :] < lengths[:, None])[:, :, None]
+    reference_keys = keys.clone()
+    work = {}
+    cache = RollingPrefixCoincidence(keys, work=work)
+    keys.zero_()
+    raw = bytes((index * 37 + 11) % 256 for index in range(128))
+    boundaries = {0, 16, 31, 32, 127, 128}
+    records = []
+    full_calls = 0
+    raw_path = tmp_path / "assembly-prefix-raw.jsonl"
+    weights = torch.arange(1024, dtype=torch.float32).reshape(32, 32) / 1024
+    for position in range(129):
+        if position:
+            cache.advance(raw[position - 1])
+        if position not in boundaries:
+            continue
+        prefix_symbols = [257, *raw[:position]][-32:]
+        encoded = encode_symbol_rails(torch.tensor(prefix_symbols, dtype=torch.int64))
+        lags = torch.zeros(32, 18, dtype=torch.bool)
+        lags[:len(prefix_symbols)].copy_(encoded.flip(0))
+        expected = torch.empty(n, 32, 32, dtype=torch.float32)
+        for first in range(0, n, 128):
+            expected[first:first + 128].copy_(
+                coincidence_features(lags, reference_keys[first:first + 128]))
+            full_calls += 1
+        actual = cache.features()
+        row = {"position": position, "occupied": cache.occupied_lags,
+               "raw_count": cache.raw_count, "equal": torch.equal(actual, expected),
+               "oldest_symbol": prefix_symbols[0], "newest_symbol": prefix_symbols[-1],
+               "score_equal": torch.equal((actual * weights).sum((1, 2)),
+                                           (expected * weights).sum((1, 2))),
+               "actual_sha256": hashlib.sha256(actual.numpy().tobytes()).hexdigest(),
+               "expected_sha256": hashlib.sha256(expected.numpy().tobytes()).hexdigest(),
+               "work": dict(work)}
+        with raw_path.open("a", encoding="utf-8") as output:
+            output.write(json.dumps(row, sort_keys=True) + "\n")
+        records.append(row)
+        assert row["equal"] and row["score_equal"]
+        assert cache.raw_count == position and cache.occupied_lags == min(position + 1, 32)
+        assert (257 in prefix_symbols) == (position < 32)
+    before = dict(work)
+    for invalid in (True, 256, 0):
+        with pytest.raises(ValueError):
+            cache.advance(invalid)
+        assert work == before and cache.raw_count == 128
+    actual.zero_()
+    final = cache.features()
+    assert torch.equal(final, expected)
+    pairs = n * 1024 + 128 * n * 32
+    assert work["prefix_cache_constructions"] == 1
+    assert work["prefix_cache_advances"] == 128
+    assert work["prefix_cache_rolling_drops"] == 97
+    assert work["prefix_cache_feature_calls"] == 7
+    assert work["prefix_cache_lag_pairs"] == pairs
+    assert work["prefix_cache_threshold_evaluations"] == 19 * pairs
+    assert work["prefix_cache_input_applications"] == 54 * pairs
+    assert work["prefix_cache_gate_blocks"] == 2 * 129
+    assert work["prefix_cache_reused_activity_values"] == 128 * n * 31 * 32
+    assert work["prefix_cache_shift_copy_values"] == 256 * n * 31 * 32
+    assert work["prefix_cache_feature_scalings"] == 7 * n * 1024
+    assert work["prefix_cache_held_key_bytes"] == n * 32 * 18
+    assert work["prefix_cache_held_match_bytes"] == n * 32 * 32
+    assert work["prefix_cache_held_count_bytes"] == n * 4
+    assert full_calls == 12
+    (tmp_path / "assembly-prefix-passed.json").write_text(json.dumps({
+        "status": "passed", "candidates": n, "cache_constructions": 1,
+        "valid_advances": 128, "rejected_advances": 3, "feature_calls": 7,
+        "full_reference_calls": full_calls, "boundaries": sorted(boundaries),
+        "records": records, "work": work, "reader_models": 0, "teachers": 0,
+        "actions": 0, "checkpoint_loads": 0,
+        "raw_sha256": hashlib.sha256(raw_path.read_bytes()).hexdigest(),
+    }, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def test_sequence_assembly_raw_observation_and_execution(tmp_path):
+    """Two actual children, one pure framing contract; zero neuronal calls."""
+    import json
+    import time
+    from pathlib import Path
+
+    import pytest
+
+    from experiments.r4_integrated.persistent_language_action_execution_v2 import (
+        execute_proposal,
+        feedback_from_receipt,
+        grade_execution,
+        qualified_launch,
+        workspace_from_records,
+    )
+    from humanbrain.sequence_assembly_observation import (
+        RawObservation,
+        SpliceProposal,
+        ToolFeedback,
+        apply_splice,
+    )
+
+    def save(name, value):
+        with (tmp_path / name).open("x", encoding="utf-8") as handle:
+            json.dump(value, handle, indent=2, sort_keys=True)
+
+    all_bytes = bytes(range(256))
+    maximal_files = [
+        {"path": ("a" * 28 + ".py") if i == 0 else f"f{i}.py", "content_hex": (all_bytes * 2).hex()}
+        for i in range(4)
+    ]
+    maximal = workspace_from_records(maximal_files)
+    feedback = ToolFeedback(
+        0xC0000005, all_bytes * 2, all_bytes[::-1] * 2, True, False, True, True, False
+    )
+    observation = RawObservation(all_bytes, maximal, feedback)
+    frame = observation.sensor_frame()
+    absent = RawObservation(b"", None).query_frame()
+    empty = RawObservation(
+        b"", None, ToolFeedback(0, b"", b"", True, False, True, True, False)
+    ).query_frame()
+    save(
+        "framing-raw.json",
+        {
+            "observation": observation.to_record(),
+            "symbols": frame.symbols,
+            "flags": frame.flags,
+            "absent": vars(absent),
+            "empty": vars(empty),
+        },
+    )
+    assert len(frame.symbols) == 3471 and len(frame.flags) == 12
+    assert frame.symbols[:257] == (*all_bytes, 256)
+    assert frame.symbols[257:770] == (*all_bytes, *all_bytes, 256)
+    assert frame.symbols[770:1283] == (*all_bytes[::-1], *all_bytes[::-1], 256)
+    assert frame.symbols[1283:1291] == tuple((0xC0000005).to_bytes(8, "little", signed=True))
+    assert absent.symbols[257] == -1 and empty.symbols[257] == 256
+    assert absent.flags[0] is False and empty.flags[0] is True
+    assert len(maximal.boundaries) == 2052
+    stop = SpliceProposal("STOP", "", 999, -1, b"x" * 128, "limit", maximal.sha256)
+    assert apply_splice(maximal, stop) == maximal.files
+    with pytest.raises(ValueError):
+        apply_splice(maximal, SpliceProposal("SPLICE", "f1.py", 0, 1, b"x", "eos", "0" * 64))
+    with pytest.raises(ValueError):
+        workspace_from_records([{"path": "CON/main.py", "content_hex": ""}])
+
+    original = b"def value():\n    return b'old'\n" + b"#" + b"x" * 150 + b"\n"
+    main = (
+        b"import app,sys\nsys.stdout.buffer.write(app.value())\n"
+        b"sys.stderr.buffer.write(b'\\x80'*512)\n"
+    )
+    records = [
+        {"path": "app.py", "content_hex": original.hex()},
+        {"path": "main.py", "content_hex": main.hex()},
+    ]
+    workspace = workspace_from_records(records)
+    expression = b"(b'\\xff\\x00'+b'a'*510)"
+    replacement = expression + b" " * (128 - len(expression))
+    start = original.index(b"b'old'")
+    proposal = SpliceProposal(
+        "SPLICE", "app.py", start, start + 6, replacement, "eos", workspace.sha256
+    )
+    save("execution-input.json", {"files": records, "proposal": proposal.to_record()})
+    launch = qualified_launch(Path(__file__).resolve().parents[1])
+    after, receipt = execute_proposal(
+        workspace,
+        proposal,
+        tmp_path / "exact-byte-child",
+        launch=launch,
+        deadline=time.perf_counter() + 10,
+    )
+    save("exact-byte-execution.json", receipt)
+    public = feedback_from_receipt(receipt)
+    grade = {
+        "expected_returncode": 0,
+        "expected_stdout_hex": (b"\xff\x00" + b"a" * 510).hex(),
+        "protected_paths": ["main.py"],
+    }
+    graded = grade_execution(receipt, grade, records)
+    save(
+        "exact-byte-outcome.json",
+        {"feedback": public.to_record(), "grade": graded, "after_files": after},
+    )
+    assert graded["task_success"] and receipt["accepted"]
+    assert public.stdout == b"\xff\x00" + b"a" * 510 and public.stderr == b"\x80" * 512
+    assert public.capture_complete and not public.output_limit_exceeded
+    assert public.to_record().keys() == {
+        "returncode",
+        "stdout_hex",
+        "stderr_hex",
+        "accepted",
+        "timeout",
+        "capture_complete",
+        "files_complete",
+        "output_limit_exceeded",
+    }
+    assert receipt["workspace_sha256"] == workspace.sha256
+    assert receipt["proposal_sha256"] == proposal.sha256
+
+    oversized = workspace_from_records(
+        [
+            {
+                "path": "main.py",
+                "content_hex": b"import sys\nsys.stdout.buffer.write(b'Z'*513)\n".hex(),
+            }
+        ]
+    )
+    _, overflow = execute_proposal(
+        oversized,
+        None,
+        tmp_path / "overflow-child",
+        launch=launch,
+        deadline=time.perf_counter() + 10,
+    )
+    save("overflow-execution.json", overflow)
+    capped = feedback_from_receipt(overflow)
+    save(
+        "overflow-outcome.json",
+        {"feedback": capped.to_record(), "actual_children": 2, "models": 0, "teachers": 0},
+    )
+    assert capped.stdout == b"Z" * 512 and capped.output_limit_exceeded
+    assert not capped.capture_complete and overflow["stdout_observed_bytes"] == 513
+    assert not grade_execution(
+        overflow,
+        {
+            "expected_returncode": 0,
+            "expected_stdout_hex": (b"Z" * 512).hex(),
+            "protected_paths": [],
+        },
+        [],
+    )["task_success"]
