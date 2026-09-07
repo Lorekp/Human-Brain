@@ -14409,3 +14409,84 @@ def test_dendritic_binding_local_arithmetic_contract(tmp_path):
             "work": work,
         },
     )
+
+
+def test_persistent_v7_separate_metrics_and_journal(tmp_path):
+    """Synthetic outcomes distinguish delayed learning, retention and transient recovery."""
+    import hashlib
+
+    from experiments.r4_integrated.persistent_language_action_v7 import (
+        ROUTES,
+        SessionJournal,
+        encode,
+        summarize,
+    )
+
+    episodes = [
+        {"episode_id": "a", "phase": "acquisition", "kind": "reading", "encounter": "first"},
+        {"episode_id": "b", "phase": "acquisition", "kind": "reading",
+         "encounter": "changed_form", "same_session_origin_id": "a", "intervening_attempts": 0},
+        {"episode_id": "f", "phase": "transfer", "kind": "edit", "encounter": "fresh",
+         "fresh_stratum": "structural_combination", "predecessor_episode_id": "a"},
+        {"episode_id": "r0", "phase": "recovery", "kind": "edit", "encounter": "recovery"},
+        {"episode_id": "r1", "phase": "recovery", "kind": "edit", "encounter": "recovery"},
+        {"episode_id": "t", "phase": "retention", "kind": "reading", "encounter": "historical",
+         "previous_session_episode_id": "old"},
+        {"episode_id": "d", "phase": "acquisition", "kind": "reading",
+         "encounter": "exact_delayed", "same_session_origin_id": "a", "intervening_attempts": 9},
+    ]
+    attempts = []
+    prior = {route: {"old": {"route_ordinal": 70, "attempt_index": 1,
+                            "correct": route == "simple", "observation_sha256": "old"}}
+             for route in ROUTES}
+    for episode in episodes:
+        for route in ROUTES:
+            eid = episode["episode_id"]
+            for index in range(1, 4 if episode["phase"] == "recovery" else 2):
+                correct = (
+                    (eid in ("b", "t", "d") and route == "online")
+                    or (eid == "f" and route == "simple")
+                    or (eid == "r0" and index == 2)
+                    or (eid == "r1" and index == 1)
+                )
+                attempts.append({
+                    "route": route, "episode_id": eid, "phase": episode["phase"],
+                    "kind": episode["kind"], "attempt_index": index, "correct": correct,
+                    "status": "completed", "memory_used": 900,
+                    "observation_sha256": "a" if eid in ("a", "d") else "old" if eid == "t" else eid,
+                    "feedback_consumed": episode["phase"] == "recovery" and index > 1,
+                    "proposal_signature": eid,
+                    "project_id": "chain" if eid == "f" else None,
+                    "predecessor_episode_id": episode.get("predecessor_episode_id"),
+                    "workspace_lifecycle": "carry_actual_project" if eid == "f" else "reset",
+                })
+    metrics = summarize(attempts, {"episodes": episodes}, prior)
+    online = metrics["online"]
+    assert online["acquisition_encounters"]["first"]["reading"]["first_correct"] == 0
+    assert online["acquisition_encounters"]["changed_form"]["reading"]["first_correct"] == 1
+    assert online["changed_form_encounters"][0]["intervening_attempts"] == 0
+    assert online["same_session_improved"] == 1
+    assert online["same_session_retention"][0]["intervening_attempts"] == 9
+    assert online["improved"] == 1 and metrics["simple"]["forgotten"] == 1
+    assert metrics["learning_disabled"]["retention"][0]["prior_route"] == "online"
+    assert online["retention"][0]["intervening_attempts"] == 18
+    recovery = online["recovery"]
+    assert (recovery["first_failures"], recovery["first_correct"], recovery["later_correct"]) == (1, 1, 1)
+    assert recovery["final_recovered_after_first_failure"] == recovery["final_attempt_correct"] == 0
+    assert recovery["feedback_consuming_attempts"] == recovery["identical_consecutive_proposals"] == 4
+    assert metrics["simple"]["fresh_strata"]["structural_combination"]["dependent_project"]["edit"]["first_correct"] == 1
+    assert online["project_chains"][0]["workspace_from_actual_predecessor"]
+    damaged = copy.deepcopy(attempts)
+    damaged[-1]["observation_sha256"] = "not-the-original"
+    with pytest.raises(ValueError, match="exact repeat input or age"):
+        summarize(damaged, {"episodes": episodes}, prior)
+
+    path = tmp_path / "synthetic-metrics.jsonl"
+    journal = SessionJournal(path)
+    raw = encode(metrics)
+    assert journal.append(metrics) == hashlib.sha256(raw).hexdigest()
+    journal.close()
+    assert path.read_bytes() == raw
+    assert journal.metrics()["rows"] == 1
+    assert journal.metrics()["bytes_written"] == journal.metrics()["max_row_bytes"] == len(raw)
+    assert journal.metrics()["append_seconds"] >= 0
