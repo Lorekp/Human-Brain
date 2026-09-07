@@ -370,4 +370,3 @@ prior call and complete persistence before choosing the broader exposure budget.
 Root can then release one broader curriculum measuring acquisition,
 new forms/combinations, retention and genuine recovery; no toy-perfection gate
 or gain sweep is implied.
-
