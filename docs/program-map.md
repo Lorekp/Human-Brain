@@ -8,8 +8,9 @@ owns measured evidence. Older "next" steps below are local historical context.
 
 The active target is [broader persistent language/action](research/persistent-language-action-development-v1.md):
 unseen instruction constructions, new code structures, longer shared memory and
-reduced teacher dependence on the same neuronal learner. Four broader sessions
-are completed; neuronal scores are zero and remain visible.
+reduced teacher dependence on the same neuronal learner. Five broader sessions
+are completed; one exposed delayed reading response succeeds, with no fresh
+transfer, correct broader software edit or teacher-free recovery.
 
 ## Goal ladder
 
@@ -36,11 +37,14 @@ neuronal competition. Direct own-emission outcome teaching and separate exact
 recruitment stage with assembly/action updates. Canonical sparse views are derived
 runtime state, validated before loading/publication and bound by response custody.
 [Three ordinary QA nodes pass](research/factorized-sequence-integration-qa-v1.md).
-The [fifth workload](research/persistent-language-action-v5-protocol.md) is prepared:
-64 episodes, eight corrections, shared memory growth and explicit delayed repeats.
-It has not yet produced a measured capability result.
+The [fifth workload](research/persistent-language-action-v5-protocol.md) completes:
+64 episodes, eight corrections,505→864 factual slots and explicit delayed repeats.
+The [saved result](../experiments/r4_integrated/persistent_language_action_v5_result.md)
+has online1/8 exact delayed repeats,0/16 fresh,0/16 prior regressions and0/8
+recovery. Correction-disabled4/16 prior regressions exceed online0/16. The full
+run and audit preserve both final states and pass within the complete budget.
 
-Last measured frontier:
+Preceding measured implementation:
 
 `sequence_assembly_cells.py` adds target-independent local context recruitment,
 simulated agreement/competition and outgoing byte/EOS currents. The same

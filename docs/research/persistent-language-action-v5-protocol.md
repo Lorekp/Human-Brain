@@ -1,9 +1,10 @@
 # Fifth broader persistent continuation
 
-Status: one full run and its saved audit released, 2026-09-07. Numerical,
-lifecycle and reporting QA pass; independent scalar and main/custody source
-reviews pass. The release permits one840-second run and one60-second saved audit,
-each within2048 MiB. The manifest build and author-data validation query no
+Status: full run and independent saved audit completed on their first launches,
+2026-09-07; see the [result](../../experiments/r4_integrated/persistent_language_action_v5_result.md).
+Numerical, lifecycle and reporting QA pass. The frozen release permits
+one840-second run and one60-second saved audit, each within2048 MiB.
+The manifest build and author-data validation query no
 learner. The [roadmap](roadmap-reading-to-coding.md) owns priorities. This stream
 does not require perfect earlier tasks and is not a new byte or operation gate.
 

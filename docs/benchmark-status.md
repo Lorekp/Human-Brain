@@ -10,7 +10,21 @@ with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. No backpropagation is authorized, and
 protected evaluations retain their original access contracts.
 
-The [fourth broader session](../experiments/r4_integrated/persistent_language_action_v4_result.md)
+The [fifth broader session](../experiments/r4_integrated/persistent_language_action_v5_result.md)
+completes64 episodes per route,240 attempts and156 actual verifications while
+memory grows505→864 slots. Online scores0/8 corrected first responses,0/8
+changed-form encounters,1/8 exact delayed repeats,0/16 fresh transfer,0/16 prior
+regressions and0/8 teacher-free recovery. Correction-disabled scores0/8 delayed
+repeats and4/16 prior regressions; the simple reference scores4/8 and10/16. All
+routes score zero on fresh transfer and recovery. All observations are supported.
+Eight corrections offer163 byte/EOS symbols and twelve action labels per neural
+route. The same local learning/acting system preserves both final states, with
+398 online event owners and235 disabled. Full run and saved audit pass on first
+launches in566.9125368 seconds at723.078125 MiB observed peak. Current correction
+learning harms the older-task contrast despite one exposed delayed reading
+success; no useful broader advantage or software-edit success is established.
+
+The preceding [fourth broader session](../experiments/r4_integrated/persistent_language_action_v4_result.md)
 completes 56 episodes per route while continuing the saved numerical reader,
 embedded action weights and complete 505-slot memory. Both the online
 neuronal learner and matched learning-disabled control score 0/24 acquisition

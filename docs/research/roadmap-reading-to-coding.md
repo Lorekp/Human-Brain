@@ -12,19 +12,19 @@ knowledge, understands language, combines learned structure, acts in software
 workspaces and recovers from failures. Local simulated-neuron learning and useful
 real-world behavior are the central commitments.
 
-The [fourth broader persistent session is complete](../../experiments/r4_integrated/persistent_language_action_v4_result.md).
-Both neuronal routes score zero on acquisition first responses, fresh transfer,
-delayed retention and teacher-free recovery. The simple retrieval/editing
-reference scores 0/24, 0/16, 8/8 and 0/8 respectively. The same learner continues
-its saved numerical reader and whole 505-slot memory across 56 episodes per route;
-both final states are saved. Local context recruitment, full offered-sequence
-teaching, longer raw inputs and actual project feedback are implemented, but
-useful broader competence is not established.
+The [fifth broader persistent session is complete](../../experiments/r4_integrated/persistent_language_action_v5_result.md).
+Online scores0/8 corrected first responses,0/8 changed-form encounters,1/8 exact
+delayed repeats,0/16 fresh transfer,0/16 prior regressions and0/8 teacher-free
+recovery. Correction-disabled and simple references score4/16 and10/16 on prior
+regressions. The same learning/acting system continues its state across64 episodes
+per route while memory grows505→864 slots. Both final states are saved. Local
+learning establishes one exposed delayed reading success, but no useful broader
+advantage or correct software edit.
 
 The prepared [byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 is also completed and independently audited. Its narrow successes remain
-regression evidence. The [current result bank](../../benchmarks/persistent_language_action_v4.result.json)
-and [learning review](persistent-language-action-v4-learning-review.md) own the
+regression evidence. The [current result bank](../../benchmarks/persistent_language_action_v5.result.json)
+and [learning review](persistent-language-action-v5-learning-review.md) own the
 broader measurements and failure analysis.
 The [experiment history](roadmap-experiment-history.md) owns chronology and retired
 directions. Do not append another experiment diary to this roadmap.
@@ -36,22 +36,20 @@ Continue the learner on a workload that combines reading,
 retained knowledge, raw software actions and observation of their consequences.
 Expose it to broader problems now; perfection on the current toy cohort is not
 a prerequisite. All completed streams are now exposed development material.
-The [last measured context assembly learner](context-specific-sequence-assemblies-v1.md)
-is shared by reading and action payloads. It reconsiders all memory addresses,
-reuses fixed prefix activity and locally teaches all offered causal sequence
-events. The complete broader session includes longer instructions, missing
-program logic and actual diagnostic observations. Its [ordinary lifecycle QA](sequence-assembly-integration-qa-v1.md)
-and saved audit pass. Online generation changes substantially, but neither
-correct composition nor useful action/recovery is established. The selected next
-design is [factorized local sequence routing](factorized-sequence-routing-v1.md),
-with direct outcome teaching, retained state, larger unselected factual memory
-and interleaved broader learning opportunities. Its direct local credit, sparse
-geometry and atomic publication pass [ordinary integration QA](factorized-sequence-integration-qa-v1.md).
-The [broader workload, continuation loader and saved audit](persistent-language-action-v5-protocol.md)
-are reviewed and released for one bounded continuation.
+The [measured factorized local sequence router](factorized-sequence-routing-v1.md)
+is shared by reading and action payloads. It considers every event owner and
+factual address, reuses fixed prefix activity, and receives direct local
+own-emission outcomes with separate causal assembly teaching. Its
+[ordinary integration QA](factorized-sequence-integration-qa-v1.md) and
+[complete broader saved audit](persistent-language-action-v5-protocol.md) pass.
+Generation changes substantially, but correction learning also harms the
+older-task contrast. Use the saved learning/evaluation reviews to resolve entry
+relevance and shared-update interference before selecting another mechanism.
+The immediate integral speed work is owned-response routing validation, guided
+by the [measured cost review](persistent-language-action-v5-cost-review.md).
 An [owned-response optimization](sequence-assembly-owned-response-qa-v1.md)
 already removes redundant validation with checked-path parity and custody QA.
-Preserve this state and expose the successor to fresh problems. Another
+Preserve the864-slot state and expose its successor to fresh problems. Another
 automatic byte/operation gate or extra rounds on this exposed stream are not selected.
 Continue the saved model and accumulated memory on
 new instruction forms and combinations. Address selection, composition and

@@ -3452,3 +3452,44 @@ and makes 2,079 free output decisions versus 8,405 disabled. Whole sequence
 storage and stopping change, but correct context transfer, composition and action
 remain unmet. The saved reviews inform one shared successor; no extra fitting
 round on this exposed stream or automatic byte/operation gate is selected.
+
+## 2026-09-07 factorized routing and growing persistent experience
+
+Source `c2b3f92` continues the actual v4 online state into two independent
+learning/acting copies. The new shared local router compares fixed byte/pair/
+relative-position field activity over every stored event owner, with float64
+competition and direct own-emission outcome clamps. Separate target-free exact
+preparation recruits the assembly whose outgoing byte receives its local teacher.
+The old numerical priors remain intact. Three ordinary integration QA nodes and
+one reporting QA node pass; there is no scientific byte/operation gate.
+
+The64-episode stream gives eight corrections, changed forms, delayed exact
+repeats, sixteen fresh combinations, eight three-attempt recoveries and sixteen
+older regressions. Six documents add353 raw bytes plus6 EOS, growing complete
+memory505→864 slots. Corrections offer163 external symbols per neuronal route,
+with two internal uses and twelve action-head labels. Across three routes the
+run completes240 attempts,156 actual child verifications,24 correction occasions
+and18 document appends.
+
+Online scores0/8 corrected first responses,0/8 changed forms,1/8 exact delayed
+repeats,0/16 fresh,0/16 prior regressions and0/8 recovery. Disabled scores0/8 exact
+repeats and4/16 prior regressions; the simple reference scores4/8 and10/16. Both
+also fail every fresh/recovery task. All80 observations per route are supported.
+The neuronal historical failures remain failures rather than forgotten skills;
+the current online/control contrast nevertheless exposes adverse correction
+effects. Online's one delayed success is the reading answer `idle`.
+
+The [result](../../experiments/r4_integrated/persistent_language_action_v5_result.md)
+and [bank](../../benchmarks/persistent_language_action_v5.result.json) preserve
+both final states under checkpoint `a141230e...`,100,830,448 tensor bytes. Online
+finishes with398 event owners and disabled235. The first full run and saved audit
+pass in558.5371355 plus8.3754013 seconds,566.9125368 total, at723.078125 MiB
+observed peak. Ordinary authored-data validation has one retained36-check harness
+failure and a36/36 qualified-executor pass on the same once-built manifest,
+total72 author-only children and no learner calls.
+
+Saved learning, evaluation and cost reviews guide the shared continuation.
+This exposed stream is not replayed or used as a toy-perfection prerequisite;
+coherent wrong answers, shared routing interference and actual feedback use
+remain central capability questions. Owned-response routing validation is the
+selected immediate integral optimization, not an isolated speed/capability gate.

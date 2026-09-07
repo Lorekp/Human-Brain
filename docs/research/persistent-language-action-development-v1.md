@@ -1,6 +1,6 @@
 # Public persistent language/action development
 
-Status: four public continuations completed and independently reviewed,
+Status: five public continuations completed and independently reviewed,
 2026-09-07.
 The byte-coincidence comparison is completed. The proposed five-arm operation
 successor is stopped; its unexecuted source is not the next experiment. This
@@ -8,7 +8,24 @@ document specifies the smallest broader development return using the current
 core. It does not itself launch tasks, load models or authorize a separate fit. The roadmap owns
 selection and implementation order.
 
-## Current selected continuation
+## Current continuation and frozen history
+
+The [fifth protocol](persistent-language-action-v5-protocol.md) and
+[completed result](../../experiments/r4_integrated/persistent_language_action_v5_result.md)
+own current measurements. Its64 episodes per route interleave eight corrections,
+changed-form encounters, exact delayed repeats, fresh combinations, recovery and
+older regressions. Whole factual memory grows505→864 slots. Online learns one
+delayed reading response but has no fresh transfer or recovery, and its0/16 prior
+regressions trail correction-disabled4/16 and simple reference10/16. Keep the
+same local learning/acting system and both saved final states. The roadmap selects
+the next work; no extra round on this exposed stream or toy-perfection gate follows.
+
+The original development specification below retains its historical contracts.
+Its older capacities, phase counts and proposed schedules do not override the
+current linked protocol. Subsequent chronology belongs in the
+[experiment history](roadmap-experiment-history.md).
+
+## Earlier continuation contracts
 
 The [context assembly contract](context-specific-sequence-assemblies-v1.md)
 specifies the released v4 successor. It accepts whole bounded 256-byte requests,
@@ -46,8 +63,9 @@ is implemented with integrated 1024-slot memory and passes
 [owned-response optimization](sequence-assembly-owned-response-qa-v1.md) passes
 ordinary parity/custody QA. This is one shared successor. Its
 [64-episode workload](persistent-language-action-v5-protocol.md) is built and its
-authored program answers are checked. The full runner and saved audit pass source
-review and reporting QA, and are released for one bounded fifth session.
+authored program answers are checked. Its full run and saved audit complete in
+566.9125368 seconds at723.078125 MiB observed peak; all240 attempts and156 actual
+child verifications are preserved.
 
 ## Purpose
 
