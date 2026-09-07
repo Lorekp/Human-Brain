@@ -1,6 +1,15 @@
 # Seventh persistent language/action session
 
-Status: **one broader learner session released**, 2026-09-07. The one build and all28
+Status: **frozen session closed with checked partial evidence**, 2026-09-07.
+The [result](../../experiments/r4_integrated/persistent_language_action_v7_result.md)
+records185/192 attempts and a clean checkpoint, with all fresh/prior/recovery
+cases complete. Seven late acquisition attempts are unrun. The
+[final measurement](../../benchmarks/persistent_language_action_v7.measurement.json)
+includes the failed first audit and its corrected saved-only successor; it does
+not extend the frozen runtime or complete the workload. The release contract
+below retains its original budget and schedule.
+
+The one build and all28
 nominal author witnesses pass; [receipts](persistent-language-action-v7-author-qa.md)
 bind manifest `c2e1cb6237fdff468c6d413ce62c9dfbf514a607fb1a8af45bdde285c3f4b898`.
 Root selects the complete bounded runtime below. The committed release revision

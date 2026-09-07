@@ -10,7 +10,30 @@ with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. No backpropagation is authorized, and
 protected evaluations retain their original access contracts.
 
-The [sixth broader session](../experiments/r4_integrated/persistent_language_action_v6_result.md)
+The [seventh broader session](../experiments/r4_integrated/persistent_language_action_v7_result.md)
+preserves185/192 attempts,128 actual verifications and a clean checkpoint after
+222 safe publications. Online/disabled/simple score0/4,0/4,1/4 before four
+corrections;0/4,0/4,2/4 on changed forms; and1/2,0/2,0/1 on observed exact
+delayed repeats. Seven late acquisition attempts remain unrun. All routes score
+0/16 fresh transfer and0/8 recovery; prior regressions score0/12,1/12,8/12.
+The enabled learner loses the one formerly correct reading retained by disabled.
+No correct neuronal software edit is established. Four answer corrections offer
+71 symbols and six action labels per neural route, while12 whole sources offer
+750 additional symbols and grow factual memory864→1614. Both routes learn/act
+through the same circuit, with slow publications disabled only in the control.
+
+The runner stops cleanly before admitting new work at1771.0604454seconds.
+An initial saved reviewer fails because a boundary-hash variable is shadowed;
+the narrow repair passes on unchanged evidence. The
+[final outer receipt](../benchmarks/persistent_language_action_v7.measurement.json)
+counts the run, both reviews and banking:1829.1531607seconds and818.6484375MiB
+maximum observed peak. The original bank remains unchanged. Payload bytes are
+authenticated without decoding or resuming V7. The
+[cost review](research/persistent-language-action-v7-cost-review.md) assigns
+917.9653919seconds (51.83%) to checkpoint work; this motivates an integral
+persistence optimization, with no isolated V6–V7 speedup claim.
+
+The preceding [sixth broader session](../experiments/r4_integrated/persistent_language_action_v6_result.md)
 times out at840.4533474 seconds and890.42578125MiB observed peak. It preserves182
 of288 planned attempts,18 correction records,36 document appends and92 actual
 verifications. All acquisition/fresh/prior cases finish; recovery is incomplete.
@@ -21,14 +44,14 @@ attempts are recorded, both failed; missing recovery outcomes are unmeasured.
 Six corrections offer135 reader symbols and nine action labels per neural route.
 The live tapes grow864→1760 and online owners398→533 with local recognition,
 but no final checkpoint or completed audit is saved. Three saved-only partial
-reviews bind observed evidence; V5 remains the last recoverable checkpoint.
+reviews bind observed evidence; V5 was then the last recoverable checkpoint.
 No correct broader neuronal software edit or fresh advantage is established.
 
 New integration mechanics are verified: [safe-boundary checkpoints](research/persistent-session-checkpoint-qa-v1.md)
 pass after an empty-tuple test assertion repair, and [paired dendritic learning](research/dendritic-request-binding-qa-v1.md)
 passes both ordinary nodes first launch in13.8375434seconds at763.66015625MiB.
-These are not new benchmark outcomes. The next broader session is still being
-prepared from the complete V5 state, with no reconstruction or replay of V6.
+These ordinary checks preceded V7, which continued complete V5 state without
+reconstructing or replaying V6.
 
 The preceding [fifth broader session](../experiments/r4_integrated/persistent_language_action_v5_result.md)
 completes64 episodes per route,240 attempts and156 actual verifications while

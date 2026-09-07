@@ -12,19 +12,20 @@ knowledge, understands language, combines learned structure, acts in software
 workspaces and recovers from failures. Local simulated-neuron learning and useful
 real-world behavior are the central commitments.
 
-The [sixth broader session](../../experiments/r4_integrated/persistent_language_action_v6_result.md)
-hits its time limit after182 of288 attempts. All acquisition, fresh and retention
-cases are recorded; recovery is incomplete. Online scores1/6 exact delayed
-repeats,0/24 fresh transfer and0/18 prior regressions, versus0/6,0/24,1/18 for
-correction-disabled and4/6,0/24,11/18 for the simple reference. Memory reaches1760
-slots in the live system, but no final checkpoint is saved. The complete V5
-checkpoint remains the last recoverable state. No useful broader advantage or
-correct neuronal software edit is established.
+The [seventh broader session](../../experiments/r4_integrated/persistent_language_action_v7_result.md)
+preserves185 of192 attempts and a clean safe checkpoint at the deadline reserve
+before admitting new work.
+Online scores0/4 changed forms,1/2 observed exact delayed repeats,0/16 fresh
+transfer,0/12 prior regressions and0/8 teacher-free recovery. Disabled retains
+one prior success and the simple reference retains eight; online loses that
+previously correct reading. All fresh, prior and recovery cases finish; seven
+late acquisition attempts remain unrun. Memory reaches1614 factual slots.
+No useful broader advantage or correct neuronal software edit is established.
 
 The prepared [byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 is also completed and independently audited. Its narrow successes remain
-regression evidence. The [current result bank](../../benchmarks/persistent_language_action_v6.result.json)
-and [learning review](persistent-language-action-v6-learning-review.md) own the
+regression evidence. The [current result bank](../../benchmarks/persistent_language_action_v7.result.json)
+and [learning review](persistent-language-action-v7-learning-review.md) own the
 broader measurements and failure analysis, with partial evidence distinguished
 from a completed evaluation.
 The [experiment history](roadmap-experiment-history.md) owns chronology and retired
@@ -36,23 +37,24 @@ The active plan is [persistent language-and-action development](persistent-langu
 Continue the learner on a workload that combines reading,
 retained knowledge, raw software actions and observation of their consequences.
 Expose it to broader problems now; perfection on the current toy cohort is not
-a prerequisite. All completed streams are now exposed development material.
-The [seventh session](persistent-language-action-v7-protocol.md) combines new
-instruction constructions, structural combinations, two actual project chains,
-longer factual memory and eight recovery episodes distributed through the stream.
-Only four answer corrections are offered. New whole sources additionally teach
-the same acting reader through [paired dendritic branches](dendritic-request-binding-v1.md);
-count source and answer supervision separately. The frozen48-episode workload
-passes [author and metric checks](persistent-language-action-v7-author-qa.md).
-Expose the learner to this broader stream without another toy capability gate.
+a prerequisite. All observed streams are now exposed development material.
+The completed portion of the [seventh session](persistent-language-action-v7-protocol.md)
+offers four answer corrections and12 whole sources to the same acting reader:
+71 answer symbols plus750 source symbols per neural route. Its two actual
+project chains and eight recovery episodes expose failures beyond exact recall.
+Preserve these as regressions; do not automatically finish or replay the frozen
+stream. The clean V7 boundary preserves resolved learning for a new explicitly
+initialized continuation; restore has not yet been demonstrated on those bytes.
 
-Continue the complete V5 online state in both neural routes, with local updates
-disabled in the matched control and factual writes retained in both. Preserve
-V6's partial evidence; its missing state must not be reconstructed by replay.
-The [exact factual tournament](factual-address-tournament-v1.md) remains integral
-to execution, and [safe-boundary checkpoints](persistent-session-checkpoint-v1.md)
-preserve resolved learning. One guarded session has1800 runner seconds plus120
-saved-review seconds at2048 MiB; full-workload speed and usefulness are unmeasured.
+The [cost review](persistent-language-action-v7-cost-review.md) identifies
+checkpoint work as51.83% of runner time. First design an owned immutable-payload
+path that avoids repeated historical payload reads while retaining mutable-state,
+source, journal and restore checks. In parallel, review selective binding of
+sequence predictions to the actual public observation: current request-only
+apical contacts can outrank a prior that also sees files and feedback. This is a
+source-based design concern, not a diagnosed cause of the measured failures.
+Select one coherent learning change for the next broader continuation, with
+ordinary affected QA and no gain sweep or isolated capability gate.
 
 All byte/EOS columns remain eligible, and existing neuronal potentials remain
 the prior. Raw contextual contacts are a falsifiable sequence mechanism, not

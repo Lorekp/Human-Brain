@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "status": "complete_outer_measurement_of_incomplete_session",
+  "session_status": "incomplete_resource_or_runtime_failure",
+  "saved_review_status": "passed_partial",
+  "session_revision": "a1d900a688d353fcc00e43b86ccb14b1547f3065",
+  "saved_tools_revision": "827a2de427f6b69c87d61b2f7069835c32da5b3e",
+  "result_bank": {
+    "path": "benchmarks/persistent_language_action_v7.result.json",
+    "sha256": "b11b0e0517ef7939cf624e68dfdce05cdd75bc75aa8a81e400ddfd7974fcc67e",
+    "original_bank_unchanged": true,
+    "supersedes_only": "complete_outer_measurement_pending and incomplete outer-cost subtotal, not scientific outcome"
+  },
+  "processes": [
+    {
+      "role": "run",
+      "path": ".pytest-tmp/persistent-language-action-v7-run.launch.json",
+      "sha256": "ec54857e8c5ed73f50a761919d8cd239f01ecc4ea0ed5d65042715456f75b48f",
+      "status": "failed",
+      "exit_code": 1,
+      "elapsed_seconds": 1771.0604454,
+      "observed_tree_peak_sum_mib": 818.6484375,
+      "seconds_limit": 1800,
+      "started_utc": "2026-09-07T06:12:54.8859578Z",
+      "finished_utc": "2026-09-07T06:42:25.9253872Z"
+    },
+    {
+      "role": "review-v1",
+      "path": ".pytest-tmp/persistent-language-action-v7-review-v1.launch.json",
+      "sha256": "98ff905586989f48ad7730f8af274ef0d60111bee1884fb53eb7ac8d80b04ee4",
+      "status": "failed",
+      "exit_code": 1,
+      "elapsed_seconds": 12.9411646,
+      "observed_tree_peak_sum_mib": 82.359375,
+      "seconds_limit": 100,
+      "started_utc": "2026-09-07T06:43:56.9410446Z",
+      "finished_utc": "2026-09-07T06:44:09.8793501Z"
+    },
+    {
+      "role": "review-v1-repaired",
+      "path": ".pytest-tmp/persistent-language-action-v7-review-v1-repaired.launch.json",
+      "sha256": "3cd8f77a80435b035071972d45bcca350c04a9e17819aee33aa15d9541ca3e69",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 42.3644378,
+      "observed_tree_peak_sum_mib": 85.79296875,
+      "seconds_limit": 85,
+      "started_utc": "2026-09-07T06:46:55.0941246Z",
+      "finished_utc": "2026-09-07T06:47:37.4557623Z"
+    },
+    {
+      "role": "bank-v1",
+      "path": ".pytest-tmp/persistent-language-action-v7-bank-v1.launch.json",
+      "sha256": "4b91bf8b498cfad0c74fd8964a52eed44074df6f4d896db8dd940f5ca939354d",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 2.7871129,
+      "observed_tree_peak_sum_mib": 48.10546875,
+      "seconds_limit": 20,
+      "started_utc": "2026-09-07T06:48:14.4128743Z",
+      "finished_utc": "2026-09-07T06:48:17.1989548Z"
+    }
+  ],
+  "total_outer_seconds": 1829.1531607,
+  "saved_review_and_bank_seconds": 58.092715299999995,
+  "maximum_observed_tree_peak_sum_mib": 818.6484375,
+  "runner_budget_seconds": 1800,
+  "saved_review_and_bank_budget_seconds": 120,
+  "observed_attempts": 185,
+  "planned_attempts": 192,
+  "actual_execution_receipts": 128,
+  "planned_executions": 132,
+  "safe_boundaries": 222,
+  "final_boundary_sequence": 221,
+  "stop_reason": "whole-session deadline reserve reached before new work",
+  "no_outstanding_intent": true,
+  "checkpoint_decoded_by_saved_review": false,
+  "scope": "Sum of four measured owned process runs, including failed first audit. Includes banking outer time. Excludes earlier author/core QA, source development, documentation and this administrative receipt assembly. Does not extend or complete the frozen session.",
+  "memory_method": "Maximum simultaneous sum of live owned process peak working sets, sampled every 500ms. Brief unobserved children may be missed."
+}

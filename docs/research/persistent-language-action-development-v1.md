@@ -1,7 +1,7 @@
 # Public persistent language/action development
 
-Status: five public continuations completed; the sixth has independently checked
-partial evidence after a runner timeout,
+Status: five public continuations completed; the sixth and seventh have checked
+partial evidence, with a clean safe checkpoint preserved by the seventh,
 2026-09-07.
 The byte-coincidence comparison is completed. The proposed five-arm operation
 successor is stopped; its unexecuted source is not the next experiment. This
@@ -11,18 +11,29 @@ selection and implementation order.
 
 ## Current continuation and frozen history
 
-The active implementation is the [seventh session](persistent-language-action-v7-protocol.md).
-Its48-episode manifest and28 nominal author edits pass
-[ordinary author/metric QA](persistent-language-action-v7-author-qa.md).
-Four answer corrections and12 new whole source observations teach the same
-dendritic actor, with actual projects and teacher-free recovery interleaved.
-Run this broader continuation from V5 with safe-boundary persistence; no further
-toy gate or perfection prerequisite follows. The complete one-run envelope is
-1800 runner seconds plus120 saved-only review seconds at2048 MiB.
+The current implementation is the [seventh session](persistent-language-action-v7-protocol.md).
+Its [partial result](../../experiments/r4_integrated/persistent_language_action_v7_result.md)
+preserves185/192 attempts and222 safe boundaries. All fresh, prior and recovery
+cases finish. Online scores0/4 changed wording,1/2 observed exact delayed,
+0/16 fresh,0/12 prior and0/8 recovery; disabled retains one prior success and
+the simple reference eight. Seven late acquisition outcomes remain unknown.
+Four corrections offer71 answer symbols, and12 source observations offer750
+additional symbols per neural route to the same locally learning/acting reader.
+The run, failed and repaired saved reviews, and banking total1829.1531607seconds
+at818.6484375MiB observed peak; the runner itself stops before a new transaction.
+
+The [cost review](persistent-language-action-v7-cost-review.md) selects repeated
+immutable checkpoint traffic for an ownership-preserving optimization design.
+The [learning review](persistent-language-action-v7-learning-review.md) selects
+a bounded decision about public-observation relevance in the same sequence cells.
+These support one next broader continuation, not competing toy gates. Preserve
+the clean V7 numerical payloads and source identities; no automatic resume,
+missing-case replay or model restore is claimed. A new continuation must explicitly
+authenticate and initialize from that retained state without replaying lessons.
 
 The [sixth protocol](persistent-language-action-v6-protocol.md) and
 [partial result](../../experiments/r4_integrated/persistent_language_action_v6_result.md)
-own current measurements. The840-second cutoff leaves182 of288 attempts and no
+own the preceding measurements. The840-second cutoff leaves182 of288 attempts and no
 final checkpoint. All acquisition, transfer and prior-regression cases finish;
 recovery remains incomplete. Online scores1/6 exact delayed,0/24 fresh and0/18
 prior cases; matched disabled scores0/6,0/24,1/18 and simple scores4/6,0/24,11/18.
@@ -41,7 +52,7 @@ learning review selects paired dendritic request/prefix learning as one concrete
 implementation for this broader loop, with observed source and correction symbols
 counted separately and no backpropagation. [Ordinary core and same-actor QA](dendritic-request-binding-qa-v1.md)
 passes, as does [safe-boundary checkpoint QA](persistent-session-checkpoint-qa-v1.md).
-Its usefulness remains to be measured in the next broader session.
+V7 measures one exact delayed recall but no fresh or recovery usefulness.
 The roadmap owns selection;
 no repeat of this exposed stream or toy-perfection gate follows.
 

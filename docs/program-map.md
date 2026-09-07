@@ -9,9 +9,10 @@ owns measured evidence. Older "next" steps below are local historical context.
 The active target is [broader persistent language/action](research/persistent-language-action-development-v1.md):
 unseen instruction constructions, new code structures, longer shared memory and
 reduced teacher dependence on the same neuronal learner. Five broader sessions
-are completed and the sixth is partial after a time limit. Exposed delayed
-reading responses succeed, with no fresh transfer or correct broader software
-edit; sixth-session recovery remains incomplete.
+are completed; the sixth and seventh are partial after time limits. V7 retains
+a clean safe checkpoint and finishes all fresh, prior and recovery cases.
+Exposed delayed reading responses succeed, with no fresh transfer, useful
+teacher-free recovery or correct broader software edit.
 
 ## Goal ladder
 
@@ -45,8 +46,14 @@ passes durability/actor-continuation QA and preserves resolved transaction state
 `DendriticSequenceMemoryLearner` and its combined action wrapper now integrate
 paired raw-prefix/request contacts with observed-symbol local learning, retaining
 the old prior. [Core and same-actor QA](research/dendritic-request-binding-qa-v1.md)
-passes first launch. Fresh broader usefulness remains unmeasured; the next
-48-episode workload and durable runner are in preparation.
+passes first launch. The [V7 result](../experiments/r4_integrated/persistent_language_action_v7_result.md)
+records185/192 attempts, one exact delayed reading, zero fresh transfer and
+zero successful recovery. Both factual tapes reach1614 slots;222 safe boundaries
+preserve the latest actors, actual projects and evidence. Source and correction
+offers total821 symbols per neural route. No V7 payload restore is claimed.
+Checkpoint work consumes51.83% of runner time; immutable-payload ownership and
+selective public-observation context are the current bounded design work for
+one broader successor, not additional toy capability gates.
 
 Preceding measured implementation:
 

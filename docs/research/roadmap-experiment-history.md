@@ -3596,3 +3596,41 @@ The manifest binds actual prior regression observations and separately declares
 changed instruction forms, actual project chains and fixed teacher-free recovery
 share one persistent session. Root selects a1800+120-second/2048-MiB complete
 envelope; learner utility is not established by these author checks.
+
+## 2026-09-07 seventh broader stream with durable partial state
+
+Released source `a1d900a688d353fcc00e43b86ccb14b1547f3065` executes the frozen
+48-episode stream. The1800-second runner ceiling and30-second admission reserve
+stop it cleanly after185/192 attempts, at1771.0604454seconds and818.6484375MiB
+observed peak. All fresh, prior and fixed recovery cases finish; seven late
+acquisition outcomes remain unknown. Online scores0/4 changed forms,1/2 observed
+exact repeats,0/16 fresh,0/12 prior and0/8 recovery. Disabled retains the one
+previously correct V5 reading, while online loses it; the reference retains
+eight prior successes. No correct neuronal software edit occurs.
+
+Four answer corrections offer71 symbols plus six action labels per neural route.
+Twelve whole sources offer750 additional causal next-symbol observations and
+grow factual memory864→1614. The same online reader publishes local branch
+learning; the matched control computes proposals without publishing them, with
+factual writes in both. The128 actual child receipts,36 appends and12 teacher
+rows remain bound to222 safe checkpoints. HEAD has no outstanding intent or
+tail. Numeric payloads are authenticated, but no actual V7 restore is performed.
+
+Saved review source `fe627208900e27253eb2ef708ad0225df4b0d75c` fails because its
+initial-binding loop shadows the previous boundary hash. The narrow repair in
+`827a2de427f6b69c87d61b2f7069835c32da5b3e` passes on unchanged saved evidence.
+The failed review's12.9411646seconds, corrected review's42.3644378seconds and
+banker's2.7871129seconds are retained: all four outer processes total
+1829.1531607seconds. The [result](../../experiments/r4_integrated/persistent_language_action_v7_result.md),
+[bank](../../benchmarks/persistent_language_action_v7.result.json) and
+[outer receipt](../../benchmarks/persistent_language_action_v7.measurement.json)
+separate incomplete scientific outcomes from completed saved checking.
+
+The [cost review](persistent-language-action-v7-cost-review.md) measures
+917.9653919seconds of checkpoint work after subtracting attempt/begin overlap.
+Root selects immutable-payload ownership design to reduce repeated integrity
+reads, preserving all mutable-state and restore checks. The parallel
+[learning review](persistent-language-action-v7-learning-review.md) identifies
+public-observation relevance as a bounded design question, not a measured
+causal diagnosis. These feed one broader continuation; no exposed replay,
+gain sweep or automatic toy gate follows.

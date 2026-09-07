@@ -48,14 +48,23 @@ the same branch. Source bytes teach basal contacts, and declared correction
 bytes teach their own sensory columns with local signed/clipped permanence
 updates. All byte columns enter a class/prior/identity tournament. Old neuronal
 priors stay fixed while these contacts and the acting heads receive their own
-local signals. [Ordinary QA](research/dendritic-request-binding-qa-v1.md) passes;
-language generalization and feedback-driven repair remain unestablished.
+local signals. [Ordinary QA](research/dendritic-request-binding-qa-v1.md) passes.
+The [V7 partial result](../experiments/r4_integrated/persistent_language_action_v7_result.md)
+finds one exposed exact reading recall,0/4 changed forms,0/16 fresh and0/8
+recovery; online loses one prior success that disabled retains. Current apical
+contacts see request bytes, while files and feedback enter the inherited prior.
+Categorical branch priority makes observation relevance a concrete design concern,
+but the saved aggregates do not identify it as the cause of these failures.
 
 The [parent checkpoint store](research/persistent-session-checkpoint-v1.md) binds
 both actors, tapes, actual workspace/feedback, reference history and evidence
 frontiers to a single safe boundary. It is development/evidence infrastructure,
 not neuronal memory or an answer source. An outstanding interrupted intent
-prevents automatic replay; V6's missing final state remains unavailable.
+prevents automatic replay; V6's missing final state remains unavailable. V7
+preserves a clean boundary after185 attempts with authenticated numeric payloads;
+the saved review does not decode or restore them. Its measured repeated checkpoint
+traffic motivates an owned immutable-payload optimization while retaining mutable
+actor, tape, source, journal and fresh-restore integrity checks.
 
 The preceding reader/action pair uses
 [factorized local sequence routing](research/factorized-sequence-routing-v1.md).
