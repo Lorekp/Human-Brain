@@ -12290,6 +12290,37 @@ def test_factorized_reader_action_persistence_and_atomicity(tmp_path):
 
     model = FactorizedSequenceSpliceLearner(seed=733)
     reader = model.reader
+    original_owned = reader.router._evaluate_owned_free
+    checked_router_events = []
+
+    def checked_owned(context, candidates, owned, *, work=None):
+        before = dict(work)
+        actual = original_owned(context, candidates, owned, work=work)
+        actual_work = {key: value - before.get(key, 0) for key, value in work.items()}
+        reference_work = {}
+        reference = reader.router.evaluate(context, candidates, work=reference_work)
+        for decision in (actual, reference):
+            assert decision._stage is None
+        actual_fields, reference_fields = dict(vars(actual)), dict(vars(reference))
+        for fields in (actual_fields, reference_fields):
+            competition = fields["competition"]
+            fields["competition"] = None if competition is None else vars(competition)
+        _assert_nested_equal(actual_fields, reference_fields)
+        # Same arithmetic/receipt work; only the redundant checked entry is absent.
+        omitted = {
+            "factorized_validation_values": 1_033_304,
+            "factorized_validation_norm_products": 1_033_290,
+            "factorized_validation_norm_reductions": 1_033_290 - 45,
+            "factorized_validation_cast_values": 1_033_290,
+            "factorized_named_tensor_bytes": 16 * 1_033_290,
+            "router_validation_values": 1_033_304,
+            "router_custody_bytes_hashed": 8 * 1_033_304,
+        }
+        for key in actual_work.keys() | reference_work.keys() | omitted.keys():
+            assert reference_work.get(key, 0) - actual_work.get(key, 0) == omitted.get(key, 0)
+        checked_router_events.append(len(candidates))
+        return actual
+
     with torch.no_grad():
         reader.address_weight.zero_()
         reader.prefix_weight.zero_()
@@ -12306,7 +12337,8 @@ def test_factorized_reader_action_persistence_and_atomicity(tmp_path):
     observation = RawObservation(
         b"Read this complete retained value after the long instruction: \xff", None,
         ToolFeedback(-7, b"\x00\xff", b"failure\x80", False, False, True, True, False))
-    first = reader.predict_with_receipt(observation, state, max_bytes=2)
+    with patch.object(reader.router, "_evaluate_owned_free", side_effect=checked_owned):
+        first = reader.predict_with_receipt(observation, state, max_bytes=2)
     assert first.generation.data == b"" and first.generation.stop_reason == "eos"
     assert len(first.steps) == 1 and first.steps[0].address_scores.numel() == 513
     assert first.steps[0].exact_context is None
@@ -12318,18 +12350,22 @@ def test_factorized_reader_action_persistence_and_atomicity(tmp_path):
     assert [r["target"] for r in taught.teacher_steps] == [97, 256]
     assert taught.teacher_steps[0]["routing_outcome"]["skipped"]
     for row in taught.teacher_steps:
-        assert row["routing_outcome"]["desired"] == (1 if row["emitted_byte"] == row["target"] else -1)
+        desired = 1 if row["emitted_byte"] == row["target"] else -1
+        assert row["routing_outcome"]["desired"] == desired
         if not row["routing_outcome"]["skipped"]:
             assert row["routing_outcome"]["score_after"] == pytest.approx(
                 row["routing_outcome"]["desired"], abs=1e-12)
     for key, value in held.items():
         if not key.startswith(("reader.assemblies.", "reader.router.")):
             actual = model.state_dict()[key]
-            assert torch.equal(actual, value) if isinstance(value, torch.Tensor) else actual == value
+            assert (
+                torch.equal(actual, value) if isinstance(value, torch.Tensor) else actual == value
+            )
     _assert_nested_equal(state.snapshot(), tape)
     trained = copy.deepcopy(model.state_dict())
     views = reader._candidate_views
-    second = reader.predict_with_receipt(observation, state, max_bytes=2)
+    with patch.object(reader.router, "_evaluate_owned_free", side_effect=checked_owned):
+        second = reader.predict_with_receipt(observation, state, max_bytes=2)
     assert all(step.address_scores.numel() == 513 for step in second.steps)
     assert second.work.get("assembly_agreement_cells", 0) == 0
     original_score = second.steps[0].routing["selected_score"]
@@ -12361,6 +12397,21 @@ def test_factorized_reader_action_persistence_and_atomicity(tmp_path):
         _assert_nested_equal(model.state_dict(), trained)
         del incoming
     del held
+    # Force three raw output events without fitting: exercise digest reuse across
+    # changing prefixes. Restore the same live tensors after teacher-free ack.
+    borrowed_currents = reader.assemblies.outgoing.clone()
+    with torch.no_grad():
+        reader.assemblies.outgoing[:2].zero_()
+    with patch.object(reader.router, "_evaluate_owned_free", side_effect=checked_owned):
+        bounded = reader.predict_with_receipt(observation, state, max_bytes=2)
+    assert len(bounded.steps) == 3 and bounded.generation.data == b"\x00\x00"
+    assert bounded.generation.stop_reason == "limit"
+    reader.acknowledge(bounded, state)
+    with torch.no_grad():
+        reader.assemblies.outgoing.copy_(borrowed_currents)
+    _assert_nested_equal(model.state_dict(), trained)
+    _assert_nested_equal(state.snapshot(), tape)
+    assert checked_router_events == [0] + [2] * (len(second.steps) + 3)
     # A borrowed-buffer replacement must be detected even with identical values.
     original_route = reader._route
     borrowed = reader.assemblies.outgoing
@@ -12373,19 +12424,61 @@ def test_factorized_reader_action_persistence_and_atomicity(tmp_path):
         reader.assemblies.outgoing = borrowed.clone()
         return result
 
-    with patch.object(reader, "_route", side_effect=replace_after_route), pytest.raises(RuntimeError):
+    with (patch.object(reader, "_route", side_effect=replace_after_route),
+          pytest.raises(RuntimeError)):
         reader.predict_with_receipt(observation, state, max_bytes=0)
     reader.assemblies.outgoing = borrowed
     assert failed_events == [1] and reader._active_experience == experience
     assert reader.pending_prediction is None
+    routing_failures = []
+    for fault in ("theta_rebind", "theta_numpy", "theta_version", "owner_rebind"):
+        borrowed_theta = reader.router.theta
+        original_theta = borrowed_theta.clone()
+        original_owner = reader.router._owner
+        original_version = borrowed_theta._version
+        events = []
+
+        def corrupt_after_route(*args, fault=fault, tensor=borrowed_theta,
+                                version=original_version, events=events, **kwargs):
+            result = original_route(*args, **kwargs)
+            events.append(1)
+            if fault == "theta_rebind":
+                reader.router.theta = tensor.clone()
+            elif fault == "theta_numpy":
+                tensor.numpy()[0] += 1
+                assert tensor._version == version
+            elif fault == "theta_version":
+                with torch.no_grad():
+                    tensor.add_(0)
+                assert tensor._version != version
+            else:
+                reader.router._owner = object()
+            return result
+
+        try:
+            with patch.object(reader, "_route", side_effect=corrupt_after_route), pytest.raises(
+                    RuntimeError):
+                reader.predict_with_receipt(observation, state, max_bytes=0)
+        finally:
+            reader.router.theta = borrowed_theta
+            reader.router._owner = original_owner
+            with torch.no_grad():
+                borrowed_theta.copy_(original_theta)
+        assert events == [1] and reader._active_experience == experience
+        assert reader.pending_prediction is None
+        _assert_nested_equal(model.state_dict(), trained)
+        _assert_nested_equal(state.snapshot(), tape)
+        routing_failures.append(fault)
     workspace = workspace_from_records([{"path": "main.py", "content_hex": b"print(0)\n".hex()}])
-    action_observation = RawObservation(b"Change the printed value to one and retain the statement.", workspace)
+    action_observation = RawObservation(
+        b"Change the printed value to one and retain the statement.", workspace)
     prediction = model.propose(action_observation, state)
     assert prediction.payload.observation is action_observation
     assert prediction.proposal.operation == "STOP"
     _, execution = execute_proposal(
         workspace, prediction.proposal, tmp_path / "actual-action",
-        launch=qualified_launch(Path(__file__).resolve().parents[1]), deadline=time.perf_counter() + 10)
+        launch=qualified_launch(Path(__file__).resolve().parents[1]),
+        deadline=time.perf_counter() + 10)
     assert execution["returncode"] == 0 and execution["stdout_hex"] == b"0\n".hex()
     envelope = {"attempt_id": prediction.attempt_id, "proposal_sha256": prediction.proposal_sha256,
                 "workspace_sha256": workspace.sha256, "execution": execution}
@@ -12396,8 +12489,8 @@ def test_factorized_reader_action_persistence_and_atomicity(tmp_path):
         failed_validation.append(dict(kwargs["work"]))
         raise ValueError("authored final joint view rejection")
 
-    with patch.object(module, "validate_candidate_view", side_effect=reject_final_views), pytest.raises(
-            ValueError, match="authored final joint"):
+    with (patch.object(module, "validate_candidate_view", side_effect=reject_final_views),
+          pytest.raises(ValueError, match="authored final joint")):
         model.teach(prediction, action_observation, state, teacher, envelope)
     assert len(failed_validation) == 1
     assert failed_validation[0]["router_outcome_offers"] == 2
@@ -12412,9 +12505,15 @@ def test_factorized_reader_action_persistence_and_atomicity(tmp_path):
     _coincidence_qa_save(tmp_path / "factorized-integration-passed.json", {
         "status": "passed", "actors": 1, "readers": 1, "ingests": 1,
         "ingested_raw_bytes": 512, "ingested_eos": 1, "memory_used": state.used,
-        "reader_predictions": 2, "action_predictions": 1,
-        "completed_free_events": len(first.steps) + len(second.steps) + len(prediction.payload.steps),
-        "failed_free_calls": 1, "failed_free_events": 1,
+        "reader_predictions": 3, "action_predictions": 1,
+        "completed_free_events": (len(first.steps) + len(second.steps)
+                                  + len(bounded.steps) + len(prediction.payload.steps)),
+        "checked_router_calls": len(checked_router_events),
+        "checked_router_owner_counts": checked_router_events,
+        "teacher_free_acknowledgements": 1,
+        "failed_free_calls": 1 + len(routing_failures),
+        "failed_free_events": 1 + len(routing_failures),
+        "routing_custody_failures": routing_failures,
         "teacher_calls": 4, "teacher_symbols_including_failed": 8,
         "successful_enabled_teacher_calls": 2, "disabled_teacher_calls": 1,
         "failed_teacher_calls": 1, "actual_children": 1,

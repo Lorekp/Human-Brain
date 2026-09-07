@@ -204,9 +204,14 @@ class FactorizedSequenceMemoryLearner(SequenceAssemblyMemoryLearner):
         _add(work, "output_address_synapse_products", xq.shape[0] * 2048)
         return inputs, fallback, selected, scores
 
-    def _route(self, inputs, fallback, views, outgoing, work, *, stage=None):
+    def _route(self, inputs, fallback, views, outgoing, work, *, stage=None, owned_free=None):
         context = build_context(inputs, work=work)
-        decision = self.router.evaluate(context, views, stage=stage, work=work)
+        if owned_free is None:
+            decision = self.router.evaluate(context, views, stage=stage, work=work)
+        else:
+            if stage is not None:
+                raise ValueError("owned free routing cannot use a teacher stage")
+            decision = self.router._evaluate_owned_free(context, views, owned_free, work=work)
         logits = (fallback.clone() if decision.selected_index is None
                   else outgoing[decision.selected_index].clone())
         _finite(logits, "factorized selected outgoing currents")
@@ -228,12 +233,16 @@ class FactorizedSequenceMemoryLearner(SequenceAssemblyMemoryLearner):
         assemblies, router = self.assemblies, self.router
         views, outgoing = self._candidate_views, assemblies.outgoing
         prototypes, used, theta = assemblies.prototypes, assemblies.used, router.theta
+        # _prepare_observation already validated all live parameters and views.
+        # This digest is borrowed only until the full end byte checks below.
+        owned_free = router._begin_validated_free_response(work)
         view_tensors = tuple((view.indices, view.values, view.flags) for view in views)
         output, steps = bytearray(), []
         for position in range(max_bytes + 1):
             prefix = bytes(output)
             inputs, fallback, address, scores = self._context_forward(prepared, prefix, cache, work)
-            decision, logits = self._route(inputs, fallback, views, outgoing, work)
+            decision, logits = self._route(
+                inputs, fallback, views, outgoing, work, owned_free=owned_free)
             token = int(logits.argmax().item())
             nll = float(-F.log_softmax(logits, dim=0)[token].item())
             _add(work, "factorized_output_argmaxes", 1)
@@ -254,6 +263,7 @@ class FactorizedSequenceMemoryLearner(SequenceAssemblyMemoryLearner):
                        or view.flags is not held[2]
                        for view, held in zip(views, view_tensors, strict=True))):
             raise RuntimeError("free factorized response rebound owned routing storage")
+        router._check_owned_free_response(owned_free)
         self._check_conditioned_parameters(work)
         if (_digest(self.state_dict(), work) != model_hash
                 or _digest(vars(state), work) != memory_hash):

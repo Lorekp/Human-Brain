@@ -136,6 +136,16 @@ class RouterStage:
 
 
 @dataclass(frozen=True)
+class _OwnedFreeRouting:
+    """Call-local borrowed weights; never installed on the router or checkpoint."""
+
+    theta: Tensor
+    version: int
+    weights_sha256: str
+    owner: object
+
+
+@dataclass(frozen=True)
 class RoutingDecision:
     scores: Tensor
     selected_index: int | None
@@ -269,6 +279,32 @@ class FactorizedSequenceRouter(nn.Module):
                            tuple(sorted(competition.work.items()))))
         return _hash(*fields, work=work)
 
+    def _begin_validated_free_response(self, work=None):
+        """Borrow weights after the synchronous reader's full entry validation.
+
+        The reader must retain its end model/view/tape byte checks before
+        publishing anything. Version checks do not detect NumPy writes.
+        """
+        return _OwnedFreeRouting(self.theta, self.theta._version,
+                                 _hash(self.theta, work=work), self._owner)
+
+    def _check_owned_free_response(self, owned):
+        if (not isinstance(owned, _OwnedFreeRouting) or owned.owner is not self._owner
+                or owned.theta is not self.theta or owned.version != self.theta._version):
+            raise RuntimeError("owned free routing weights changed or were rebound")
+
+    @torch.no_grad()
+    def _evaluate_owned_free(self, current_context, candidate_views, owned, *, work=None):
+        """Use a freshly build_context-validated population inside its owner call.
+
+        Candidate activity checks and every numerical operation remain in the
+        shared kernel. Public evaluation and all teacher stages stay checked.
+        """
+        self._check_owned_free_response(owned)
+        return self._evaluate_validated(
+            current_context, candidate_views, theta=owned.theta, stage=None,
+            weights_sha256=owned.weights_sha256, work=work)
+
     @torch.no_grad()
     def evaluate(self, current_context: FactorizedContext, candidate_views: Sequence[CandidateView],
                  *, stage: RouterStage | None = None, work=None) -> RoutingDecision:
@@ -284,6 +320,12 @@ class FactorizedSequenceRouter(nn.Module):
         else:
             self.validate_stage(stage, work)
             theta = stage.theta
+        return self._evaluate_validated(
+            current_context, candidate_views, theta=theta, stage=stage, work=work)
+
+    def _evaluate_validated(self, current_context, candidate_views, *, theta, stage,
+                            work=None, weights_sha256=None):
+        """Identical ordered float64 arithmetic for public and owned callers."""
         count = len(candidate_views)
         scores = torch.empty(count, dtype=torch.float64, device="cpu")
         _add(work, "router_evaluations", 1)
@@ -318,7 +360,8 @@ class FactorizedSequenceRouter(nn.Module):
         decision = RoutingDecision(
             scores, selected, float(scores[selected].item()) if count else 0.0, indices, values,
             best_row.baseline if count else 0.0, best_row.energy if count else 0.0,
-            competition, current_context.raw_context_sha256, _hash(theta, work=work),
+            competition, current_context.raw_context_sha256,
+            _hash(theta, work=work) if weights_sha256 is None else weights_sha256,
             stage.revision if stage is not None else None, stage, self._owner, "")
         object.__setattr__(decision, "_seal", self._seal(decision, work))
         _add(work, "router_named_allocated_bytes", indices.numel() * 12)
