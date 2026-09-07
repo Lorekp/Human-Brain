@@ -1,9 +1,10 @@
 # Eighth persistent language/action session
 
-Status: one broader run and its saved audit released, 2026-09-07.
+Status: first launch stopped on a receipt transport bug; its saved prefix is
+audited. Corrected source is held for ordinary serialization QA, 2026-09-07.
 Root selects the frozen curriculum, public protected-driver policy and resource
 envelope after source, serializer, ordinary mechanics and authored-program review.
-Release permits one fresh continuation, no replay or automatic budget extension.
+The first release permitted one fresh continuation, no automatic budget extension.
 Authored source is held in
 [v8_workload.py](../../experiments/r4_integrated/persistent_language_action_v8_workload.py)
 and [v8_sources.py](../../experiments/r4_integrated/persistent_language_action_v8_sources.py).
@@ -25,7 +26,7 @@ under120 seconds/512MiB with a5-second timeout per authored child. Historical
 programs and duplicate revisit witnesses are not replayed. This checks actual
 expected outputs and real failing assertions, with no learner and no teaching.
 The frozen build's zero author-child authorization records its earlier pure-build
-scope; this separate QA adds27 counted children. The broader runner remains held.
+scope; that separate QA added27 counted children before runtime release.
 
 The first authored check at `e93c0f7` failed its stdout comparison in2.5223246
 watchdog seconds,32.34375MiB observed peak. All19 canonical children exited0
@@ -56,7 +57,7 @@ It independently checks saved probabilities/draw choices, public causal relays,
 reward/baseline/normalization arithmetic, actual execution and safe frontiers.
 Omitted eligibility tensors, factual successor/read values and learned weight
 arithmetic remain bound by source/custody rather than independently reconstructed.
-The checker has not yet run on V8 evidence. Its source and the saved-only banker
+The checker passes the first failed launch's saved prefix. Its source and the saved-only banker
 are explicitly excluded from the runner's frozen source inventory.
 Fresh pre-release C: free space is40,791,040,000bytes; launch checks it again.
 Use `.pytest-tmp/persistent-language-action-v8-run` as the new evidence directory,
@@ -64,6 +65,36 @@ its adjacent `.pytest-tmp/persistent-language-action-v8.launch.json` monitor,
 and the frozen external manifest. Final safe HEAD owns learned state; no redundant
 final tensor export is selected. Account for preparation separately from the
 3,600-second runner and120-second saved audit.
+
+### First runtime failure and selected repair
+
+The first run at `0a9002d829d1edb9f000ec02585d7cde3d1db59f` stopped after
+15.5702892 seconds at684.25MiB when the inherited plain-value converter left a
+`RecurrentContentSourceFeedback` dataclass unconverted. Its first source row
+could not be JSON encoded. Actual V7 initialization and HEAD0 succeeded, but
+no task, source or teacher journal row became durable. Source/control-flow
+evidence implies N36's88 bytes plus EOS were locally resolved online before
+the failure; those89 offers and its lost update must not disappear from the
+development ledger. The exact draws/rewards/post-source state are unavailable.
+Intent1 remains dirty; no model state is recovered from that unsaved update.
+
+The saved partial audit passes first launch in4.5379221seconds without model
+or decoder calls. A direct root-released call to the saved bank function at
+its audit-bound hash preserves the result in
+`benchmarks/persistent_language_action_v8_initialization_failure.result.json`;
+the held banker CLI is unchanged. Banking takes0.5846162 outer seconds.
+The failed runtime, audit and banking total20.6928275seconds, separately from
+the completed8.4038153seconds of manifest/author preparation.
+
+Root selects a V8-local recursive dataclass converter, leaving historical
+serializers unchanged, and the ordinary existing-test-home node
+`test_recurrent_v8_nested_receipt_serialization` under120 seconds/1024MiB.
+It journals an authored real source-feedback dataclass and nested teacher/draw,
+bytes and tensor fixtures: zero models, learning offers, children or decoders.
+After this QA, the next explicit release will be a new corrected session from
+the authenticated V7 online prior, with the same frozen workload and declared
+N36 reoffering. It will not resume/clear the dirty intent or pretend to retain
+the lost source update. The failed cohort is exposed development material.
 
 ## Scope and continuation
 
@@ -74,6 +105,9 @@ and factual row, initialize the new four matrices/baselines to zero, and use the
 single declared seed733 for both routes. The simple reference restores its own
 actual V7 history. Do not replay V7's750 source or71 answer symbols. Initial
 behavior changes because the new controller samples; this is not V7 policy parity.
+Historical-to-current changes therefore mix new-policy initialization and new
+experience. Current online versus current disabled is the matched publication
+comparison; previously correct retention and repeated old failures stay separate.
 
 Online publishes source/observation/answer/public-consequence controller updates
 and the existing action corrections. Disabled computes those activities and
@@ -152,6 +186,10 @@ ordered and negative/empty cases. Half of each stratum reads, half edits. Two
 two-stage project chains carry the actual workspace and raw feedback from an
 earlier edit into a later combination case. Report those dependent cases
 separately from independently initialized combinations.
+Fresh here means first task encounters without answer corrections. Weights stay
+held through the current observation scan and free answer; after resolution,
+earlier public observations can train the persistent online system. Count that
+observed-symbol supervision rather than claiming frozen-policy transfer.
 
 The14 old cases include the12 V7 regression observations plus the
 observed correct delayed reading A04-R and fully observed editing case A00-E.

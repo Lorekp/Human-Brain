@@ -14,6 +14,8 @@ import os
 import shutil
 import sys
 import time
+from collections.abc import Mapping
+from dataclasses import fields, is_dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -23,13 +25,12 @@ if str(ROOT) not in sys.path:
 from experiments.r4_integrated.persistent_language_action_v7 import (  # noqa: E402
     ROUTES,
     SessionJournal,
-    _plain,
     encode,
     save,
     sha,
 )
 
-DRAFT = False
+DRAFT = True
 MANIFEST_SHA = "66b0bd96be3b9e97c4eb5f9812c2b5977f294fc5900d55109445c0a303e522d0"
 RUNNER_SECONDS = 3600.0
 AUDIT_SECONDS = 120.0
@@ -41,6 +42,21 @@ SAVED_REVIEW_SOURCES = {
     "experiments/r4_integrated/persistent_language_action_v8_review.py",
     "experiments/r4_integrated/bank_persistent_language_action_v8.py",
 }
+
+
+def _plain(value):
+    """Convert nested V8 receipts without deep-copying their tensor payloads."""
+    if isinstance(value, bytes):
+        return {"bytes_hex": value.hex()}
+    if is_dataclass(value) and not isinstance(value, type):
+        return {field.name: _plain(getattr(value, field.name)) for field in fields(value)}
+    if isinstance(value, Mapping):
+        return {key: _plain(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_plain(item) for item in value]
+    if hasattr(value, "tolist"):
+        return _plain(value.tolist())
+    return value
 
 
 def reader_summary(prediction):

@@ -15101,3 +15101,84 @@ def test_persistent_checkpoint_payload_lease(tmp_path, monkeypatch):
         "models": 0, "teacher_symbols": 0, "tensor_loads": 0, "children": 0,
         "scope": "three authored byte files; actual Windows sharing/identity/hash checks",
     })
+
+
+def test_recurrent_v8_nested_receipt_serialization(tmp_path):
+    """Authored receipts reach the real journal encoder without neural execution."""
+    import json
+    from dataclasses import dataclass
+    from types import MappingProxyType
+
+    from experiments.r4_integrated.persistent_language_action_v8 import (
+        SessionJournal,
+        _plain,
+        encode,
+    )
+    from humanbrain.recurrent_content_learner import RecurrentContentSourceFeedback
+
+    @dataclass(frozen=True)
+    class AuthoredDraw:
+        logits: object
+        probabilities: object
+        ordinal: int
+
+    @dataclass(frozen=True)
+    class AuthoredTeacher:
+        prefix: bytes
+        steps: tuple
+        controller: object
+
+    logits = torch.tensor([-0.5, 0.5], dtype=torch.float64)
+    probabilities = torch.tensor([0.25, 0.75], dtype=torch.float64)
+    tokens = torch.tensor([0, 255, 256], dtype=torch.int64)
+    flags = torch.tensor([[True, False]], dtype=torch.bool)
+    draw = AuthoredDraw(logits, probabilities, 1)
+    controller = MappingProxyType({"draws": (draw,), "enabled": False, "optional": None})
+    receipt = RecurrentContentSourceFeedback(
+        document_count=1, raw_bytes=2, symbol_count=3,
+        learning_enabled=False, writes_enabled=False, fact_admitted=False,
+        source_steps=({"observed_token": 0, "draws": (draw,), "raw": b"\x00\xff"},),
+        controller=controller, model_before_sha256="a" * 64, model_after_sha256="b" * 64,
+        memory_before_sha256=None, memory_after_sha256="c" * 64,
+        work={"authored_counter": 1},
+    )
+    teacher = AuthoredTeacher(b"", ({"tokens": tokens, "flags": flags},), controller)
+    plain_draw = {"logits": [-0.5, 0.5], "probabilities": [0.25, 0.75], "ordinal": 1}
+    plain_controller = {"draws": [plain_draw], "enabled": False, "optional": None}
+    expected = {
+        "source_feedback": {
+            "document_count": 1, "raw_bytes": 2, "symbol_count": 3,
+            "learning_enabled": False, "writes_enabled": False, "fact_admitted": False,
+            "source_steps": [{"observed_token": 0, "draws": [plain_draw],
+                              "raw": {"bytes_hex": "00ff"}}],
+            "controller": plain_controller, "model_before_sha256": "a" * 64,
+            "model_after_sha256": "b" * 64, "memory_before_sha256": None,
+            "memory_after_sha256": "c" * 64, "work": {"authored_counter": 1},
+        },
+        "teacher_feedback": {"prefix": {"bytes_hex": ""},
+                             "steps": [{"tokens": [0, 255, 256], "flags": [[True, False]]}],
+                             "controller": plain_controller},
+        "mixed": [{"bytes_hex": "61"}, [{"bytes_hex": "62"}, 7, True, None]],
+    }
+    encoded_row = _plain({"source_feedback": receipt, "teacher_feedback": teacher,
+                          "mixed": (b"a", [b"b", 7, True, None])})
+    assert encoded_row == expected
+    journal = SessionJournal(tmp_path / "receipts.jsonl")
+    try:
+        identity = journal.append(encoded_row)
+    finally:
+        journal.close()
+    raw = journal.path.read_bytes()
+    assert raw == encode(expected)
+    assert json.loads(raw) == expected
+    assert journal.rows == 1 and journal.bytes_written == len(raw)
+    assert receipt.source_steps[0]["draws"][0] is draw and teacher.controller is controller
+    assert logits.tolist() == [-0.5, 0.5] and probabilities.tolist() == [0.25, 0.75]
+    assert tokens.tolist() == [0, 255, 256] and flags.tolist() == [[True, False]]
+    _coincidence_qa_save(tmp_path / "v8-receipt-serialization-passed.json", {
+        "status": "passed", "journal_sha256": identity, "journal_bytes": len(raw),
+        "serializer_calls": 1, "journal_appends": 1, "authored_tensors": 4,
+        "models": 0, "source_offers": 0, "teacher_offers": 0, "children": 0,
+        "checkpoint_decodes": 0,
+        "scope": "authored dataclass/mapping/bytes/tuple/tensor serialization only",
+    })

@@ -1,0 +1,1376 @@
+{
+  "all_saved_review_seconds": 4.5379221,
+  "bank_preparation_seconds": 0.19023470001411624,
+  "checkpoint": {
+    "boundaries": 1,
+    "boundary_events": [
+      {
+        "cursor": {
+          "append_done": false,
+          "attempt_index": 1,
+          "episode_index": 0,
+          "route_index": 0
+        },
+        "host_cursor": {
+          "append_done": false,
+          "attempt_index": 1,
+          "episode_index": 0,
+          "route_index": 0
+        },
+        "kind": "initialize",
+        "sequence": 0,
+        "sha256": "437acb05c1cee8ef93760d27ff39c489bc67005dc309ae287e521edee2d6f6e4"
+      }
+    ],
+    "checkpoint_decodes": 0,
+    "dirty": true,
+    "execution_directories_beyond_head": [],
+    "execution_files_beyond_head": [],
+    "head": {
+      "manifest": "boundary-000000000.json",
+      "schema": "persistent-session-checkpoint-head-v1",
+      "sequence": 0,
+      "sha256": "437acb05c1cee8ef93760d27ff39c489bc67005dc309ae287e521edee2d6f6e4"
+    },
+    "head_sha256": "629ae813be93569b70e3897c1e0ee7528eccf3b900b3ffe6962b8438e2a734ed",
+    "journal_bytes_beyond_head": {
+      "attempts": 0,
+      "ingests": 0,
+      "teachers": 0
+    },
+    "journal_rows_beyond_head": {
+      "attempts": 0,
+      "ingests": 0,
+      "teachers": 0
+    },
+    "last_baseline": {
+      "demonstrations": [
+        {
+          "old": "276f6c6427",
+          "query": "536574206366672e707920746f2074686520626164676520636f6c6f7572",
+          "query_sha256": "a48cac20921f246e46d5cc0564833ead056113616813bc556fd240a5b5134e37",
+          "replacement": "27626c756527",
+          "source_sha256": "52632d7f5f7abf489445fe5c9989af8868ffd3587f0cb1f12cacbd706ba5c580"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "536574206170702e707920746f20486172626f72277320636f6465",
+          "query_sha256": "442b2edbee2f8c4d4e8a962d0ee22b46a803fb0d87eaf4e1f4589483c42d1989",
+          "replacement": "27513727",
+          "source_sha256": "5481db8a71dbe48dafaec4b7fd7ab18c3c57e4107ba1ba4301f4680a6d053014"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "536574206366672e707920746f2064656661756c742072657472696573",
+          "query_sha256": "861226a3fcc6883a4a9d75d5f3994f064f8ff52ee8709f904b39b6710df5909f",
+          "replacement": "33",
+          "source_sha256": "52632d7f5f7abf489445fe5c9989af8868ffd3587f0cb1f12cacbd706ba5c580"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "536574206170702e707920746f207468652064656c61792074696d65",
+          "query_sha256": "a4083f2685063ed01dbbef618a0fbf042fab03a0fbf91f097e5f1bc09c02ec34",
+          "replacement": "32",
+          "source_sha256": "5481db8a71dbe48dafaec4b7fd7ab18c3c57e4107ba1ba4301f4680a6d053014"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "536574206366672e707920746f206172636869766520737566666978",
+          "query_sha256": "73a82ffdd9084e78ed4301a0e501ed47569d350ab858e519e09caee62bd26036",
+          "replacement": "272e62616b27",
+          "source_sha256": "52632d7f5f7abf489445fe5c9989af8868ffd3587f0cb1f12cacbd706ba5c580"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "536574206170702e707920746f20746865206c6f67206e616d65",
+          "query_sha256": "44a65510dafd93b0b42ed6b407a3a8eb4b12c4a0dcb05f0b6e542473491f319e",
+          "replacement": "27617564697427",
+          "source_sha256": "5481db8a71dbe48dafaec4b7fd7ab18c3c57e4107ba1ba4301f4680a6d053014"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "536574206366672e707920746f206472792072756e20777269746573",
+          "query_sha256": "7de4df6e40901366c775c534256af2e6f4e0bb938001de21250390589be84213",
+          "replacement": "30",
+          "source_sha256": "52632d7f5f7abf489445fe5c9989af8868ffd3587f0cb1f12cacbd706ba5c580"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "536574206170702e707920746f2062617463682073697a65",
+          "query_sha256": "af1c7cc3958253d81c15d3d97ee3e74d193dc28cc197b44e496458126b1a4ca3",
+          "replacement": "34",
+          "source_sha256": "5481db8a71dbe48dafaec4b7fd7ab18c3c57e4107ba1ba4301f4680a6d053014"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "536574206366672e707920746f206261636b757020726567696f6e",
+          "query_sha256": "c1813f5a451ccfbb4f64f1ec91c3a1ab52aaa6ab18327c63d7670d83c082cc22",
+          "replacement": "277765737427",
+          "source_sha256": "52632d7f5f7abf489445fe5c9989af8868ffd3587f0cb1f12cacbd706ba5c580"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "536574206170702e707920746f207469636b65742064617973",
+          "query_sha256": "d536af0bbea72913403b097363e4527d56d9c92839762ac5454eb18903488cc1",
+          "replacement": "36",
+          "source_sha256": "5481db8a71dbe48dafaec4b7fd7ab18c3c57e4107ba1ba4301f4680a6d053014"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "536574206366672e707920746f20656d707479206f7574707574",
+          "query_sha256": "4350ed4ac87c5d13a1bfb3971a604dd0588f667300dcd206752b32306ebccadf",
+          "replacement": "30",
+          "source_sha256": "52632d7f5f7abf489445fe5c9989af8868ffd3587f0cb1f12cacbd706ba5c580"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "536574206170702e707920746f206c6162656c2063617365",
+          "query_sha256": "0086f3cee7eff63d493649bfa1a3bac02d5ea3c52debb888c4d649ba250cd192",
+          "replacement": "276c6f7765726361736527",
+          "source_sha256": "5481db8a71dbe48dafaec4b7fd7ab18c3c57e4107ba1ba4301f4680a6d053014"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "4368616e6765206170702e70793a20626164676520636f6c6f7572",
+          "query_sha256": "e86002e2ce391daa621ab0d698ab914d8e98f2f07dcc15ae07ac989b3a786792",
+          "replacement": "27626c756527",
+          "source_sha256": "b7c980cbdbb8dad646dd3933c2589b316c0c49b60a2834c5072afd520c2c99ae"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "4368616e6765206170702e70793a20486172626f7220636f6465",
+          "query_sha256": "cc60406c0a83174600b9f9b60ee3dee659f524ac81d307b7ecabfe18eb9dd547",
+          "replacement": "27513727",
+          "source_sha256": "c891f84cc3b97b0d22d43d6d91fc447a423b9919da58b9c90e5600a09e6af073"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "4368616e6765206170702e70793a2064656661756c742072657472696573",
+          "query_sha256": "67d5e9745545f51c8c30a2fadb52fce30fc14587125914c53c8efd75c17cf6c1",
+          "replacement": "33",
+          "source_sha256": "b7c980cbdbb8dad646dd3933c2589b316c0c49b60a2834c5072afd520c2c99ae"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "4368616e6765206170702e70793a2064656c6179206475726174696f6e",
+          "query_sha256": "186ebf4d660c232653df30e63b69885945313487b088cbe14383c54fd88f9da1",
+          "replacement": "32",
+          "source_sha256": "c891f84cc3b97b0d22d43d6d91fc447a423b9919da58b9c90e5600a09e6af073"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "4368616e6765206170702e70793a206172636869766520656e64696e67",
+          "query_sha256": "88f6248dd3e3a27fd11a017ae318bbb6af6dcd95a63598b5bc545980a2fcb4fb",
+          "replacement": "272e62616b27",
+          "source_sha256": "b7c980cbdbb8dad646dd3933c2589b316c0c49b60a2834c5072afd520c2c99ae"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "4368616e6765206170702e70793a206f7264696e617279206c6f6773",
+          "query_sha256": "5d415cf06e1e0500bd031fab1923d9df3bb0ec7a128ce64860e915f03fe9ca31",
+          "replacement": "27617564697427",
+          "source_sha256": "c891f84cc3b97b0d22d43d6d91fc447a423b9919da58b9c90e5600a09e6af073"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "4368616e6765206170702e70793a206465627567206c6f6773",
+          "query_sha256": "dec479da2003704bdb7269a5220be7ab02481d6df5af268f04b22d193dd10567",
+          "replacement": "27646562756727",
+          "source_sha256": "b7c980cbdbb8dad646dd3933c2589b316c0c49b60a2834c5072afd520c2c99ae"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "4368616e6765206170702e70793a206472792d72756e20777269746573",
+          "query_sha256": "6f629a567792f7fab375a06630b9413350795a04f86440845e164a3932d3ab1b",
+          "replacement": "30",
+          "source_sha256": "c891f84cc3b97b0d22d43d6d91fc447a423b9919da58b9c90e5600a09e6af073"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "4368616e6765206170702e70793a20757375616c2062617463682073697a65",
+          "query_sha256": "64e5d683ad7f07e2d06d5f8a68c6c9dcab53d936d26f1c8e6a7deba456718f04",
+          "replacement": "34",
+          "source_sha256": "b7c980cbdbb8dad646dd3933c2589b316c0c49b60a2834c5072afd520c2c99ae"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "4368616e6765206170702e70793a20636f6c64206261636b757073",
+          "query_sha256": "a569297a28a0af24e003dca6f29141fd11e877fe61b6e81d8f0abb234ffb55bf",
+          "replacement": "276e6f72746827",
+          "source_sha256": "c891f84cc3b97b0d22d43d6d91fc447a423b9919da58b9c90e5600a09e6af073"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "4368616e6765206170702e70793a207469636b6574206c69666574696d65",
+          "query_sha256": "25ba859d8aed80eae0eef3a2faa1d4bed2c72e1ce56a235d757a288a78a496c0",
+          "replacement": "36",
+          "source_sha256": "b7c980cbdbb8dad646dd3933c2589b316c0c49b60a2834c5072afd520c2c99ae"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "4368616e6765206170702e70793a20656d70747920696e707574",
+          "query_sha256": "3bf4283fb52213fd0310791600b56a8d6aec045dd0215f0dcb27be1c1d467366",
+          "replacement": "30",
+          "source_sha256": "c891f84cc3b97b0d22d43d6d91fc447a423b9919da58b9c90e5600a09e6af073"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "6170702e7079206d7573742073686f772070726f6420636f6c6f75722e",
+          "query_sha256": "92f761f0a9f9b26053fe9a434536da542157525fb8dc60b20009c5c3cd49c317",
+          "replacement": "27626c756527",
+          "source_sha256": "a1ed233b127f0393895227c09826b5d62ac47098f8bc9366e4f92742416ff171"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "6170702e7079206d7573742073686f7720636f6c64206261636b75702e",
+          "query_sha256": "e94297cef3c5d5d217ad6af047ae8834fa6478af6d85554e3d0289de38a8f255",
+          "replacement": "276e6f72746827",
+          "source_sha256": "a1ed233b127f0393895227c09826b5d62ac47098f8bc9366e4f92742416ff171"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "6170702e7079206d7573742073686f77206465627567206c6f67732e",
+          "query_sha256": "7c7b58047eaebaa7729f9f351ff38c1d6f0acd55dd2fea2887ac709002b4f7e4",
+          "replacement": "27646562756727",
+          "source_sha256": "a1ed233b127f0393895227c09826b5d62ac47098f8bc9366e4f92742416ff171"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "6170702e7079206d7573742073686f77206172636869766520656e642e",
+          "query_sha256": "4ce280ba865ab840166c4a086c042158c00dfd0e410c33f114914a90645aa14f",
+          "replacement": "272e62616b27",
+          "source_sha256": "a1ed233b127f0393895227c09826b5d62ac47098f8bc9366e4f92742416ff171"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "6170702e70793a20726574726965732f64656c6179207573696e67202f",
+          "query_sha256": "937641c8a883acf92ee0ecbfb1d4abbc67732cfb854ded7f894e9a078d1da3fa",
+          "replacement": "27332f3227",
+          "source_sha256": "a1ed233b127f0393895227c09826b5d62ac47098f8bc9366e4f92742416ff171"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "6170702e70793a2074657374732f70726f64207573696e67202f",
+          "query_sha256": "bee57d9d272598fb2c44895f3bb78e29c4bf8c7784d139cbee9dbd43e2e59b88",
+          "replacement": "27677265656e2f626c756527",
+          "source_sha256": "a1ed233b127f0393895227c09826b5d62ac47098f8bc9366e4f92742416ff171"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "4e6565642070726f6420636f6c6f75722066726f6d206170702e7079",
+          "query_sha256": "bdb5fe923204d552387af766a4dbe7bf6789262f60d0e422e2828dfea440e834",
+          "replacement": "27626c756527",
+          "source_sha256": "db396151861f5e104f2d8b1c5e8cf6c5c87c97e05b4b171eacaa94a2e3dcde79"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "4e65656420636f6c64206261636b75702066726f6d206170702e7079",
+          "query_sha256": "24f44de0a711c1677773f64fa54b081dd16e4defc05baefc1621d59b860d6537",
+          "replacement": "276e6f72746827",
+          "source_sha256": "db396151861f5e104f2d8b1c5e8cf6c5c87c97e05b4b171eacaa94a2e3dcde79"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "4e656564206465627567206c6f67732066726f6d206170702e7079",
+          "query_sha256": "28df7a8b460fc8509574520084917e30977ac3a6225faf95ae80044264800832",
+          "replacement": "27646562756727",
+          "source_sha256": "db396151861f5e104f2d8b1c5e8cf6c5c87c97e05b4b171eacaa94a2e3dcde79"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "4e65656420617263686976652073756666697820696e206170702e7079",
+          "query_sha256": "bc4b9665a197c309a0701424ced9493eff73e359d38a73a914824a90fb1d7f9f",
+          "replacement": "272e62616b27",
+          "source_sha256": "db396151861f5e104f2d8b1c5e8cf6c5c87c97e05b4b171eacaa94a2e3dcde79"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "6170702e70793a206a6f696e20726574726965732f64656c6179206279202f",
+          "query_sha256": "2bcb0f62584d878d72b0994269de97dc182863a1641547289a318d3c9aa97ddf",
+          "replacement": "27332f3227",
+          "source_sha256": "db396151861f5e104f2d8b1c5e8cf6c5c87c97e05b4b171eacaa94a2e3dcde79"
+        },
+        {
+          "old": "276f6c6427",
+          "query": "6170702e70793a206a6f696e2074657374732f70726f64206279202f",
+          "query_sha256": "1115dd805877f4eba33bec5e3667fdb2cdd935f394afa5ad9aa7353eb2dde0c0",
+          "replacement": "27677265656e2f626c756527",
+          "source_sha256": "db396151861f5e104f2d8b1c5e8cf6c5c87c97e05b4b171eacaa94a2e3dcde79"
+        },
+        {
+          "old": "4e6f6e65",
+          "query": "496d706c656d656e7420636f6c6f7572286d6f64652920696e206170702e70793a2074657374696e67206d6f64652075736573207468652072657461696e65642074657374696e6720636f6c6f757220616e64206576657279206f74686572206d6f64652075736573207468652070726f64756374696f6e20636f6c6f75723b207072657365727665206d61696e2e70792e",
+          "query_sha256": "ddc0ff9a0b4f32920f19145c412435a0d86d688a665518ead1c9c6fd9b316520",
+          "replacement": "27677265656e27206966206d6f6465203d3d2027746573742720656c73652027626c756527",
+          "source_sha256": "ed68e0b35b8a7c9ecb735f14c1e27f899cd255b8a82bd35f32c940205e4e60ef"
+        },
+        {
+          "old": "4e6f6e65",
+          "query": "436f6d706c65746520726567696f6e28636f6c642920696e206170702e707920736f2061207472756520636f6c642d6261636b757020666c61672063686f6f7365732069747320646f63756d656e74656420726567696f6e20616e6420612066616c736520666c61672063686f6f73657320746865206f7264696e61727920726567696f6e3b206b656570206d61696e2e70792e",
+          "query_sha256": "65046afd692caa296af6b4afa09b30f35c0ab271e06d4aae76acd17f5274ae7d",
+          "replacement": "276e6f7274682720696620636f6c6420656c736520277765737427",
+          "source_sha256": "876ce509ff8570d309f89e9e4766b7a22cf2a54b33523a20c949a361cd12ccc9"
+        },
+        {
+          "old": "4e6f6e65",
+          "query": "46696c6c20696e206c6f675f6e616d652864656275672920696e206170702e70793a2075736520746865206465627567206c6f67207768656e2074686520666c6167206973207472756520616e6420746865206e6f726d616c206c6f67206f74686572776973652c207573696e67207468652072657461696e6564206e6f7465733b206c65617665206d61696e2e707920616c6f6e652e",
+          "query_sha256": "3e3b6c8099ea238d4612231e27a1db626099a90b63a736b8b3ac9da58b0017a0",
+          "replacement": "2764656275672720696620646562756720656c73652027617564697427",
+          "source_sha256": "f06b335ef4e5a015ad5f7aa952cb05a5b9acec83a91ce4ece264957e07d52061"
+        },
+        {
+          "old": "4e6f6e65",
+          "query": "496d706c656d656e742061726368697665286e616d652920696e206170702e707920627920617070656e64696e672074686520646f63756d656e74656420617263686976652073756666697820746f2074686520737570706c696564206e616d652c20696e636c7564696e6720616e20656d707479206e616d653b20646f206e6f7420616c746572206d61696e2e70792e",
+          "query_sha256": "f0691b543d8fd8528dfaa03b5e16b3908c4b44f9eb0e9e9be68ad2f441bd9a38",
+          "replacement": "6e616d65202b20272e62616b27",
+          "source_sha256": "78dde34e181a5549f9ae7a1ee18eb81445e917b70ade5f98f16c3bf45fbe1967"
+        },
+        {
+          "old": "4e6f6e65",
+          "query": "496d706c656d656e7420627564676574286e2920696e206170702e70793a206e656761746976652072657175657374732072656365697665207a65726f20726574726965732c20736d616c6c206e6f6e6e65676174697665207265717565737473206b65657020746865697220636f756e742c20616e64206c61726765722072657175657374732075736520746865206e6f746564206361702e",
+          "query_sha256": "8fab68d3327410ac383ddcd03b3357c79089eda7da7417808a554b65a37ed493",
+          "replacement": "6d617828302c206d696e286e2c20332929",
+          "source_sha256": "e62c22b8c6717bd42f0685b191f5ec5867b9b6f5ff76f06b0e37a3231c7ed593"
+        },
+        {
+          "old": "4e6f6e65",
+          "query": "436f6d706c6574652073756d6d617279286d6f64652920696e206170702e707920746f20636f6d62696e6520697473206d6f646520636f6c6f757220776974682074686520646f63756d656e74656420726574727920636f756e7420616e642064656c617920617320636f6c6f75723a726574726965732f64656c61793b20707265736572766520746865206472697665722e",
+          "query_sha256": "792a347633ba8e47adf6510a8095cac8d406a80a0704e547ae93c0feb6d4252e",
+          "replacement": "2827677265656e27206966206d6f6465203d3d2027746573742720656c73652027626c75652729202b20273a332f3227",
+          "source_sha256": "c8c40053d41200501dc1e2c5905a92bbe403b726c86c8ae4c65c3e8a31397a9f"
+        },
+        {
+          "old": "70617373",
+          "query": "496d706c656d656e7420616c65727428757267656e742920696e206170702e7079207573696e67207468652072657461696e656420717569657420616e6420757267656e74206e616d65733b20757365206f7264696e6172792074727574682074657374696e6720616e64207072657365727665206d61696e2e70792e",
+          "query_sha256": "17ecab40f93dadf607cd2c7cdfda7af5d70aa52c2f8485b3540c515fd89d73f0",
+          "replacement": "72657475726e202770696e672720696620757267656e7420656c736520276d75746527",
+          "source_sha256": "e40536d52cf6045c7e63c196a13be77438d0355e2a3b589e7acd36ff5d851f71"
+        },
+        {
+          "old": "70617373",
+          "query": "436f6d706c657465206c69666574696d6528726567696f6e2920696e206170702e7079207573696e6720746865206c61746573742072657461696e6564206561737420616e642077657374206361636865206c69666574696d65733b207468652064726976657220737570706c6965732074686f73652074776f20726567696f6e732e",
+          "query_sha256": "c5ca88bde9848c476709dd37d7529bad43bfbe0ab0ff2c96733ab55b2f67be28",
+          "replacement": "72657475726e203520696620726567696f6e203d3d2027656173742720656c73652039",
+          "source_sha256": "ea3e377de440ff80929547b9903d51e3ce76923d361a291d7c849b96100b5177"
+        },
+        {
+          "old": "70617373",
+          "query": "436f6d706c65746520746167286e616d652920696e206170702e7079207573696e67207468652072657461696e6564207461672070726566697820616e64206c6f776572636173652072756c652c20696e636c7564696e6720616e20656d707479206e616d653b20707265736572766520746865206472697665722e",
+          "query_sha256": "0ad0b335ecc95e14c8e62dc277a8aad7bc1778be037e5de5fa739746ab4f2ea2",
+          "replacement": "72657475726e20276c6f673a27202b206e616d652e6c6f7765722829",
+          "source_sha256": "f31460f77182b70b9e4f75a3a953ec0292ea4e91c25be5e4fffa9edebd6b956f"
+        },
+        {
+          "old": "70617373",
+          "query": "496d706c656d656e74207175657565286a6f62732920696e206170702e70792066726f6d207468652072657461696e65642071756575652072756c652c2072657475726e696e67207468652066697273742077616974696e67206a6f62206f722074686520646f63756d656e74656420656d70747920726573756c742e",
+          "query_sha256": "2bf26271d383fa230d29a33e87b2fae07361300f3236f43067f0ba7991f8207f",
+          "replacement": "72657475726e206a6f62735b305d206966206a6f627320656c7365202769646c6527",
+          "source_sha256": "ad18dad3f8ec90cb5478478c96f6653b6233d06fefdaecdc5fdaa12f44dc93a0"
+        },
+        {
+          "old": "70617373",
+          "query": "496d706c656d656e742073746f726167652866726f7a656e2c2066726167696c653d46616c73652920696e206170702e70792066726f6d20746865206465706f742073746f72616765206e6f746520646174656420323032362d30392d31302e20546869732064617465642076657273696f6e2069676e6f7265732066726167696c652e205072657365727665206d61696e2e70792e",
+          "query_sha256": "694e718e56b8a71ba7de29919794f422d0b9ea0913cda99d139ee1b854a46909",
+          "replacement": "72657475726e2027636f6c64272069662066726f7a656e20656c736520277761726d27",
+          "source_sha256": "57aa026d62738da0885fd6c1fb79ddcf84ef7c066d35fb885b434a078b352855"
+        },
+        {
+          "old": "70617373",
+          "query": "496d706c656d656e742071756f7461286e2c20726567696f6e3d276e6f727468272920696e206170702e70792066726f6d20746865206465706f742071756f746120646174656420323032362d30392d31303a206e6567617469766573206265636f6d65207a65726f2c206c61726765722076616c7565732073746f7020617420697473206361702c20616e6420726567696f6e2069732069676e6f7265642e205072657365727665206d61696e2e70792e",
+          "query_sha256": "39770af5f8c6006e1409b24d22c51e5b699932175dcd1b95071d9870248a3506",
+          "replacement": "72657475726e206d617828302c6d696e286e2c322929",
+          "source_sha256": "ef74f8814228fc52463b3e0b8aa8992a252ebe78bfd5a4c8b10e223047100e12"
+        }
+      ],
+      "documents_hex": [
+        "5468652062616467652069732027626c7565272e0a",
+        "486172626f72277320636f646520697320275137272e0a",
+        "526574726965732064656661756c7420746f202733272e0a",
+        "4f6e2064656c61792c207761697420273227207365636f6e64732e0a",
+        "417263686976652066696c65732075736520272e62616b272e0a",
+        "4c6f677320617265206e616d656420276175646974272e0a",
+        "4472792072756e73206d616b6520273027207772697465732e0a",
+        "42617463682073697a65206973202734272e0a",
+        "546865206261636b757020726567696f6e206973202777657374272e0a",
+        "5469636b6574732065787069726520696e2027362720646179732e0a",
+        "456d70747920696e7075742072657475726e73202730272e0a",
+        "4c6162656c732075736520276c6f77657263617365272e0a",
+        "447572696e672074657374696e672c207468652062616467652069732027677265656e272e0a",
+        "496e2070726f64756374696f6e2c207468652062616467652069732027626c7565272e0a",
+        "4c61726765206261746368657320636f6e7461696e20273827206a6f62732e0a",
+        "54656d706f72617279206c6f677320617265206e616d656420277472616365272e0a",
+        "436f6c64206261636b7570732075736520276e6f727468272e0a",
+        "4465627567206c6f67732075736520276465627567272e0a",
+        "517569657420616c657274732075736520276d757465273b20757267656e7420616c6572747320757365202770696e67272e",
+        "45617374206361636865206c69666574696d65206973206e6f7720273527206d696e757465733b20776573742072656d61696e73202739272e",
+        "41207265706f72742074616720737461727473207769746820276c6f673a2720616e6420757365732061206c6f77657263617365206e616d652e",
+        "456d707479207175657565732070726f64756365202769646c65273b206f74686572776973652075736520746865206669727374206a6f622e",
+        "64656620696e697469616c73286e616d6573293a0a2020202072657475726e2027272e6a6f696e286e616d655b305d20666f72206e616d6520696e206e616d6573206966206e616d65290a",
+        "64656620626f756e646564286e2c206c696d6974293a0a2020202072657475726e206d617828302c206d696e286e2c206c696d697429290a",
+        "323032362d30392d3130206465706f742073746f726167653a2066726f7a656e20676f6f6473207573652027636f6c64273b206f7468657220676f6f64732075736520277761726d272e",
+        "323032362d30392d3130206465706f742071756f74613a206174206d6f73742027322720756e69747320706572206f726465723b206e6567617469766520756e69747320636f756e74206173207a65726f2e",
+        "323032362d30392d3131206465706f742073746f726167653a2066726167696c6520676f6f647320757365202770616464656427206576656e207768656e2066726f7a656e2e",
+        "323032362d30392d3131206465706f742071756f74613a206e6f72746820616c6c6f77732027332720756e6974732c20736f757468202735273b207265706c61636520746865206561726c696572206361702e",
+        "4465706f74206f72646572732c20696e206f726465723a20656c6d2f6e6f7274682f342c206173682f736f7574682f2d312c206f616b2f736f7574682f372c20656c6d2f6e6f7274682f342e",
+        "556e72656c617465642067616c6c6572792073746f726167652069732027647279273b206974732071756f7461206973202738272e204465706f74206e616d6573206b65657020696e707574206f726465722e",
+        "64656620706f736974697665287873293a0a2020202072657475726e205b7820666f72207820696e20787320696620783e305d0a",
+        "646566206e6f726d616c2873293a0a2020202072657475726e20732e737472697028292e6c6f77657228290a",
+        "64656620756e69717565287873293a0a2020202072657475726e206c69737428646963742e66726f6d6b65797328787329290a",
+        "64656620626f756e646564286e2c636170293a0a2020202072657475726e206d617828302c6d696e286e2c63617029290a",
+        "646566206a6f696e6564287873293a0a2020202072657475726e20277c272e6a6f696e287873290a",
+        "64656620746f74616c287873293a0a2020202072657475726e2073756d287873290a"
+      ],
+      "new_teacher_offers": {
+        "SPLICE": 2,
+        "STOP": 0,
+        "reading": 2
+      }
+    },
+    "last_host": {
+      "budget_mib": 4096,
+      "budget_seconds": 3720.0,
+      "counters": {
+        "learning_disabled": {
+          "action_labels": 0,
+          "attempts": 0,
+          "executions": 0,
+          "ingest_documents": 0,
+          "ingest_eos": 0,
+          "ingest_raw_bytes": 0,
+          "reader_offers": 0,
+          "teacher_occasions": 0
+        },
+        "online": {
+          "action_labels": 0,
+          "attempts": 0,
+          "executions": 0,
+          "ingest_documents": 0,
+          "ingest_eos": 0,
+          "ingest_raw_bytes": 0,
+          "reader_offers": 0,
+          "teacher_occasions": 0
+        },
+        "simple": {
+          "action_labels": 0,
+          "attempts": 0,
+          "executions": 0,
+          "ingest_documents": 0,
+          "ingest_eos": 0,
+          "ingest_raw_bytes": 0,
+          "reader_offers": 0,
+          "teacher_occasions": 0
+        }
+      },
+      "current": null,
+      "cursor": {
+        "append_done": false,
+        "attempt_index": 1,
+        "episode_index": 0,
+        "route_index": 0
+      },
+      "elapsed_seconds": 10.802982599998359,
+      "initial_bindings": {
+        "initialization.json": "1c4cb9885c7b5e7de01dd5026dc3bf386d766b7f714c3eda7cd8cc95d00ca5b7",
+        "launch-record.json": "0da6c92678821666a61910660bd76166da1623098d0bca9c42ccd80737ff27ab",
+        "manifest.json": "66b0bd96be3b9e97c4eb5f9812c2b5977f294fc5900d55109445c0a303e522d0",
+        "sources.json": "45371beaad7ae83977fce5959dac7cddd745e2b143b33ee845205ab85602884a"
+      },
+      "projects": {
+        "learning_disabled": {},
+        "online": {},
+        "simple": {}
+      }
+    },
+    "last_routes": {
+      "learning_disabled": {
+        "actor_class": "humanbrain.recurrent_content_learner.RecurrentContentSpliceLearner",
+        "bytes": 115712128,
+        "experience": 281,
+        "memory_sha256": "f4201afc7b2322994f7a9caafeffd02c570d7760ec6cb0f6f6613b3e737c825e",
+        "mode": "learned",
+        "model_sha256": "309d668263d9f4c751dae3500783d0a7e7c2b28561c7c899b6592fae44544056",
+        "payload": "route-learning_disabled-000000000.pt",
+        "reader_experience": 214,
+        "seed": 733,
+        "sha256": "19bdd0267067a447625f906dc126fd7d58b1963d3850bb58f2776f1d91caa7bd"
+      },
+      "online": {
+        "actor_class": "humanbrain.recurrent_content_learner.RecurrentContentSpliceLearner",
+        "bytes": 115712128,
+        "experience": 281,
+        "memory_sha256": "f4201afc7b2322994f7a9caafeffd02c570d7760ec6cb0f6f6613b3e737c825e",
+        "mode": "learned",
+        "model_sha256": "309d668263d9f4c751dae3500783d0a7e7c2b28561c7c899b6592fae44544056",
+        "payload": "route-online-000000000.pt",
+        "reader_experience": 214,
+        "seed": 733,
+        "sha256": "19bdd0267067a447625f906dc126fd7d58b1963d3850bb58f2776f1d91caa7bd"
+      }
+    },
+    "outstanding_intents": [
+      1
+    ],
+    "unique_hashed_payload_and_execution_files": 2,
+    "v8_fresh_inspector_seconds": 0.9118868999939878,
+    "v8_fresh_inspector_work": {
+      "checkpoint_bytes_read": 518746,
+      "checkpoint_file_hash_passes": 695,
+      "checkpoint_hash_bytes_read": 248791718,
+      "checkpoint_payload_fresh_hash_checks": 2,
+      "checkpoint_payload_full_hash_checks": 2,
+      "checkpoint_v8_manifest_source_bytes": 19720,
+      "checkpoint_v8_manifest_source_validations": 2
+    }
+  },
+  "checkpoint_decodes_in_bank": 0,
+  "checkpoint_telemetry_seconds": {
+    "begin": 0.3427942999987863,
+    "capture": 0.004001299996161833,
+    "commit": 2.5626658000110183,
+    "create": 0.3400778000068385
+  },
+  "claim": "open authored continuation; valid scalar custody is not a learning success or protected evaluation",
+  "complete_outer_measurement_pending": true,
+  "complete_resource_budget_passed": false,
+  "complete_run": false,
+  "controller_exposures": {
+    "learning_disabled": {
+      "draws": 0,
+      "ticks": {}
+    },
+    "online": {
+      "draws": 0,
+      "ticks": {}
+    }
+  },
+  "evidence": {
+    ".pytest-tmp/persistent-language-action-v8-author-check-lf/report.json": "c94c586acb8866770b509d850a3d8afcfa42a7928fab1cb1bef92e1407c4e707",
+    ".pytest-tmp/persistent-language-action-v8-author-check/report.json": "062837fff06dd6065ad2e2da16ccfff15d1bd27255c113ce3595d8c285703ae0",
+    ".pytest-tmp/persistent-language-action-v8-author-lf.launch.json": "78736cbc31d2699f5f1e54b5ab919d434e336fc87e134b1715981d7afb9dc3d1",
+    ".pytest-tmp/persistent-language-action-v8-author-lf.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".pytest-tmp/persistent-language-action-v8-author-lf.stdout": "3d65d9c0ab9fdc1ac19df39c08c5d13b44a8a6bde05affe77ccb46c631612510",
+    ".pytest-tmp/persistent-language-action-v8-author.launch.json": "5efbb6c80dbc165298b132984192cac668f5e68f43a858c52ca877b442ce97e3",
+    ".pytest-tmp/persistent-language-action-v8-author.stderr": "c20247a231f620cece7aed3a21e3705d4241070d6a4e921d521c972b92f615cd",
+    ".pytest-tmp/persistent-language-action-v8-author.stdout": "b073311085081df2791101b2cb161bcfc9f2e65da874cceb12cfb8d618b73de7",
+    ".pytest-tmp/persistent-language-action-v8-build.launch.json": "20d93cd30dfb0c8a3b2107840b340695674704a42dac562f6e1ac4162d44e1ac",
+    ".pytest-tmp/persistent-language-action-v8-build.stdout": "25200273e88c82bf608989adff945a2ef0694f9038bf178215e54788615288e2",
+    ".pytest-tmp/persistent-language-action-v8-review.json": "18fb27b6bafb9ae0480994b72da76f0dca93e55a965c4ee9019af8c0859b5116",
+    ".pytest-tmp/persistent-language-action-v8-review.launch.json": "61a3ea7dfea5e69354c6945231d9f0e3b52b7f834602e51e0916f11b8651cc22",
+    ".pytest-tmp/persistent-language-action-v8-run/attempts.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".pytest-tmp/persistent-language-action-v8-run/checkpoints.jsonl": "1bbc082d4b52605f37ac68a12ac26e7de949225e37f6fbed3a5aa1d6b0b25fc5",
+    ".pytest-tmp/persistent-language-action-v8-run/checkpoints/HEAD.json": "629ae813be93569b70e3897c1e0ee7528eccf3b900b3ffe6962b8438e2a734ed",
+    ".pytest-tmp/persistent-language-action-v8-run/checkpoints/boundary-000000000.json": "437acb05c1cee8ef93760d27ff39c489bc67005dc309ae287e521edee2d6f6e4",
+    ".pytest-tmp/persistent-language-action-v8-run/checkpoints/config.json": "1b871cd2d565e5878d783a45d68f597070f64ef1312f3a0ed4c8e3f5b6a3b3de",
+    ".pytest-tmp/persistent-language-action-v8-run/checkpoints/intent-000000000.json": "6c34ed6d033b9fb27e050b49e2d8b6cbc6775ad5ee3e0d4a3c0024c61ec7da06",
+    ".pytest-tmp/persistent-language-action-v8-run/checkpoints/intent-000000001.json": "fc202030bf5840b74ce81cd749195129edb8c6767bce4d2ef317d774f6c4e008",
+    ".pytest-tmp/persistent-language-action-v8-run/checkpoints/manifest.json": "66b0bd96be3b9e97c4eb5f9812c2b5977f294fc5900d55109445c0a303e522d0",
+    ".pytest-tmp/persistent-language-action-v8-run/checkpoints/route-learning_disabled-000000000.pt": "19bdd0267067a447625f906dc126fd7d58b1963d3850bb58f2776f1d91caa7bd",
+    ".pytest-tmp/persistent-language-action-v8-run/checkpoints/route-online-000000000.pt": "19bdd0267067a447625f906dc126fd7d58b1963d3850bb58f2776f1d91caa7bd",
+    ".pytest-tmp/persistent-language-action-v8-run/failure.json": "e5b583505d5485fdc7abe2c0bd19e2a51b464612a28380b79f21f329bbf66876",
+    ".pytest-tmp/persistent-language-action-v8-run/ingests.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".pytest-tmp/persistent-language-action-v8-run/initialization.json": "1c4cb9885c7b5e7de01dd5026dc3bf386d766b7f714c3eda7cd8cc95d00ca5b7",
+    ".pytest-tmp/persistent-language-action-v8-run/launch-record.json": "0da6c92678821666a61910660bd76166da1623098d0bca9c42ccd80737ff27ab",
+    ".pytest-tmp/persistent-language-action-v8-run/manifest.json": "66b0bd96be3b9e97c4eb5f9812c2b5977f294fc5900d55109445c0a303e522d0",
+    ".pytest-tmp/persistent-language-action-v8-run/sources.json": "45371beaad7ae83977fce5959dac7cddd745e2b143b33ee845205ab85602884a",
+    ".pytest-tmp/persistent-language-action-v8-run/teachers.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".pytest-tmp/persistent-language-action-v8.launch.json": "757fea5a26f0094a0f4bfc8fd0b10e73581c3ab6d7fe94d3c7d13176540e6045",
+    "experiments/r4_integrated/bank_persistent_language_action_v8.py": "10d587fda062049a1dd9c53d66d32f5877ccc0ec029c464c3c9f5793e6d1f3a9",
+    "experiments/r4_integrated/persistent_language_action_v8_review.py": "d565d628c1026a8bb1ac3f2f7429a929dac7217b7e8f7b23b530d5c4fa4bb75e"
+  },
+  "exposures": {
+    "learning_disabled": {
+      "action_labels": 0,
+      "attempts": 0,
+      "executions": 0,
+      "ingest_documents": 0,
+      "ingest_eos": 0,
+      "ingest_raw_bytes": 0,
+      "reader_offers": 0,
+      "teacher_occasions": 0
+    },
+    "online": {
+      "action_labels": 0,
+      "attempts": 0,
+      "executions": 0,
+      "ingest_documents": 0,
+      "ingest_eos": 0,
+      "ingest_raw_bytes": 0,
+      "reader_offers": 0,
+      "teacher_occasions": 0
+    },
+    "simple": {
+      "action_labels": 0,
+      "attempts": 0,
+      "executions": 0,
+      "ingest_documents": 0,
+      "ingest_eos": 0,
+      "ingest_raw_bytes": 0,
+      "reader_offers": 0,
+      "teacher_occasions": 0
+    }
+  },
+  "manifest_sha256": "66b0bd96be3b9e97c4eb5f9812c2b5977f294fc5900d55109445c0a303e522d0",
+  "measured_peak_mib": 684.25,
+  "measured_seconds_through_bank_preparation": 28.702261300014115,
+  "metrics": {
+    "learning_disabled": {
+      "attempts": 0,
+      "execution_outcomes": {},
+      "forgotten": 0,
+      "groups": {
+        "acquisition": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 3,
+            "observed": 0,
+            "planned": 3,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 3,
+            "observed": 0,
+            "planned": 3,
+            "supported": 0
+          }
+        },
+        "changed_form": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          }
+        },
+        "exact_delayed": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          }
+        },
+        "first": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          }
+        },
+        "instruction_construction": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 5,
+            "observed": 0,
+            "planned": 5,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 5,
+            "observed": 0,
+            "planned": 5,
+            "supported": 0
+          }
+        },
+        "recovery": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 8,
+            "observed": 0,
+            "planned": 8,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 0,
+            "observed": 0,
+            "planned": 0,
+            "supported": 0
+          }
+        },
+        "retention": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 7,
+            "observed": 0,
+            "planned": 7,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 7,
+            "observed": 0,
+            "planned": 7,
+            "supported": 0
+          }
+        },
+        "structural_combination": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 5,
+            "observed": 0,
+            "planned": 5,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 5,
+            "observed": 0,
+            "planned": 5,
+            "supported": 0
+          }
+        },
+        "transfer": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 10,
+            "observed": 0,
+            "planned": 10,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 10,
+            "observed": 0,
+            "planned": 10,
+            "supported": 0
+          }
+        }
+      },
+      "improved": 0,
+      "memory_scope": "neuronal admitted facts; simple retains every whole source",
+      "project_chains": [],
+      "public_checks_passed": 0,
+      "recovery": {
+        "completed_episodes": 0,
+        "completed_first_failures": 0,
+        "ever_recovered": 0,
+        "feedback_consuming_attempts": 0,
+        "first_correct": 0,
+        "identical_consecutive_proposals": 0,
+        "later_correct_attempts": 0,
+        "missing_episodes": 8,
+        "observed_attempts": 0,
+        "observed_episodes": 0,
+        "observed_first_failures": 0,
+        "planned_episodes": 8,
+        "terminal_correct": 0,
+        "terminal_recovered": 0
+      },
+      "retained": 0,
+      "retention": [],
+      "same_session_encounters": []
+    },
+    "online": {
+      "attempts": 0,
+      "execution_outcomes": {},
+      "forgotten": 0,
+      "groups": {
+        "acquisition": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 3,
+            "observed": 0,
+            "planned": 3,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 3,
+            "observed": 0,
+            "planned": 3,
+            "supported": 0
+          }
+        },
+        "changed_form": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          }
+        },
+        "exact_delayed": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          }
+        },
+        "first": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          }
+        },
+        "instruction_construction": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 5,
+            "observed": 0,
+            "planned": 5,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 5,
+            "observed": 0,
+            "planned": 5,
+            "supported": 0
+          }
+        },
+        "recovery": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 8,
+            "observed": 0,
+            "planned": 8,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 0,
+            "observed": 0,
+            "planned": 0,
+            "supported": 0
+          }
+        },
+        "retention": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 7,
+            "observed": 0,
+            "planned": 7,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 7,
+            "observed": 0,
+            "planned": 7,
+            "supported": 0
+          }
+        },
+        "structural_combination": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 5,
+            "observed": 0,
+            "planned": 5,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 5,
+            "observed": 0,
+            "planned": 5,
+            "supported": 0
+          }
+        },
+        "transfer": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 10,
+            "observed": 0,
+            "planned": 10,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 10,
+            "observed": 0,
+            "planned": 10,
+            "supported": 0
+          }
+        }
+      },
+      "improved": 0,
+      "memory_scope": "neuronal admitted facts; simple retains every whole source",
+      "project_chains": [],
+      "public_checks_passed": 0,
+      "recovery": {
+        "completed_episodes": 0,
+        "completed_first_failures": 0,
+        "ever_recovered": 0,
+        "feedback_consuming_attempts": 0,
+        "first_correct": 0,
+        "identical_consecutive_proposals": 0,
+        "later_correct_attempts": 0,
+        "missing_episodes": 8,
+        "observed_attempts": 0,
+        "observed_episodes": 0,
+        "observed_first_failures": 0,
+        "planned_episodes": 8,
+        "terminal_correct": 0,
+        "terminal_recovered": 0
+      },
+      "retained": 0,
+      "retention": [],
+      "same_session_encounters": []
+    },
+    "simple": {
+      "attempts": 0,
+      "execution_outcomes": {},
+      "forgotten": 0,
+      "groups": {
+        "acquisition": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 3,
+            "observed": 0,
+            "planned": 3,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 3,
+            "observed": 0,
+            "planned": 3,
+            "supported": 0
+          }
+        },
+        "changed_form": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          }
+        },
+        "exact_delayed": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          }
+        },
+        "first": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 1,
+            "observed": 0,
+            "planned": 1,
+            "supported": 0
+          }
+        },
+        "instruction_construction": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 5,
+            "observed": 0,
+            "planned": 5,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 5,
+            "observed": 0,
+            "planned": 5,
+            "supported": 0
+          }
+        },
+        "recovery": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 8,
+            "observed": 0,
+            "planned": 8,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 0,
+            "observed": 0,
+            "planned": 0,
+            "supported": 0
+          }
+        },
+        "retention": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 7,
+            "observed": 0,
+            "planned": 7,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 7,
+            "observed": 0,
+            "planned": 7,
+            "supported": 0
+          }
+        },
+        "structural_combination": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 5,
+            "observed": 0,
+            "planned": 5,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 5,
+            "observed": 0,
+            "planned": 5,
+            "supported": 0
+          }
+        },
+        "transfer": {
+          "edit": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 10,
+            "observed": 0,
+            "planned": 10,
+            "supported": 0
+          },
+          "reading": {
+            "correct": 0,
+            "dependent": 0,
+            "dependent_correct": 0,
+            "missing": 10,
+            "observed": 0,
+            "planned": 10,
+            "supported": 0
+          }
+        }
+      },
+      "improved": 0,
+      "memory_scope": "neuronal admitted facts; simple retains every whole source",
+      "project_chains": [],
+      "public_checks_passed": 0,
+      "recovery": {
+        "completed_episodes": 0,
+        "completed_first_failures": 0,
+        "ever_recovered": 0,
+        "feedback_consuming_attempts": 0,
+        "first_correct": 0,
+        "identical_consecutive_proposals": 0,
+        "later_correct_attempts": 0,
+        "missing_episodes": 8,
+        "observed_attempts": 0,
+        "observed_episodes": 0,
+        "observed_first_failures": 0,
+        "planned_episodes": 8,
+        "terminal_correct": 0,
+        "terminal_recovered": 0
+      },
+      "retained": 0,
+      "retention": [],
+      "same_session_encounters": []
+    }
+  },
+  "models_or_children_in_bank": 0,
+  "no_scientific_replays": true,
+  "observed_attempts": 0,
+  "observed_execution_children": 0,
+  "pending_transaction": {
+    "cursor": {
+      "append_done": false,
+      "attempt_index": 1,
+      "episode_index": 0,
+      "route_index": 0
+    },
+    "kind": "append"
+  },
+  "planned_attempts": 192,
+  "planned_execution_children": 132,
+  "preparation": {
+    "author_attempts": [
+      {
+        "case_seconds": 2.0411070000263862,
+        "children": 27,
+        "passed_cases": 8,
+        "peak_mib": 32.34375,
+        "scope": "author-only canonical/broken programs, zero neuronal exposure",
+        "seconds": 2.5223246,
+        "source_sha256": "77671bbab3918b6536834cd761e4c7a37efe1ef080f52f7ecdc97d0d8fb154c1",
+        "status": "failed"
+      },
+      {
+        "case_seconds": 0.9951470000087284,
+        "children": 27,
+        "passed_cases": 27,
+        "peak_mib": 79.68359375,
+        "scope": "author-only canonical/broken programs, zero neuronal exposure",
+        "seconds": 2.8452625,
+        "source_sha256": "fdc72f22df403f9514e60f94bf0765473f17851b8c680197e7fcf7581a232bcc",
+        "status": "passed"
+      }
+    ],
+    "author_children": 54,
+    "budget_scope": "completed preparation cost outside the selected 3600-second runner and 120-second saved audit",
+    "build_children": 0,
+    "build_peak_mib": 66.109375,
+    "build_seconds": 3.0362282,
+    "failure_scope": "first author harness used platform CRLF stdout; second used the qualified LF bootstrap; both launches retained",
+    "peak_mib": 79.68359375,
+    "pure_builds": 1,
+    "seconds": 8.4038153
+  },
+  "previous_failed_reviews": [],
+  "run_and_audit_seconds": 20.1082113,
+  "runner": {
+    "peak_mib": 684.25,
+    "reason": "Experiment child exited 1",
+    "seconds": 15.5702892,
+    "status": "failed"
+  },
+  "saved_cost_scope": "saved category counters; attempt timer includes its recorded begin interval and execution; no isolated scan/free latency",
+  "saved_costs": {
+    "learning_disabled": {
+      "elapsed_seconds": {
+        "attempt": 0.0,
+        "source": 0.0,
+        "teacher": 0.0
+      },
+      "included_checkpoint_begin_seconds": 0.0,
+      "work": {
+        "ack": {},
+        "free": {},
+        "source": {},
+        "teacher": {}
+      }
+    },
+    "online": {
+      "elapsed_seconds": {
+        "attempt": 0.0,
+        "source": 0.0,
+        "teacher": 0.0
+      },
+      "included_checkpoint_begin_seconds": 0.0,
+      "work": {
+        "ack": {},
+        "free": {},
+        "source": {},
+        "teacher": {}
+      }
+    },
+    "simple": {
+      "elapsed_seconds": {
+        "attempt": 0.0,
+        "source": 0.0,
+        "teacher": 0.0
+      },
+      "included_checkpoint_begin_seconds": 0.0,
+      "work": {
+        "ack": {},
+        "free": {},
+        "source": {},
+        "teacher": {}
+      }
+    }
+  },
+  "saved_prefix_review": {
+    "passed": true,
+    "scope": "durable actual prefix, local scalar receipts and custody; no reconstruction of omitted eligibility, synapses, gates or interrupted unsaved exposure"
+  },
+  "saved_review": {
+    "peak_mib": 64.9609375,
+    "seconds": 4.5379221
+  },
+  "saved_tool_sources": {
+    "experiments/r4_integrated/bank_persistent_language_action_v8.py": "10d587fda062049a1dd9c53d66d32f5877ccc0ec029c464c3c9f5793e6d1f3a9",
+    "experiments/r4_integrated/persistent_language_action_v8_review.py": "d565d628c1026a8bb1ac3f2f7429a929dac7217b7e8f7b23b530d5c4fa4bb75e"
+  },
+  "schema": "persistent-language-action-result-bank-v8",
+  "selected_budget": {
+    "initial_free_bytes": 36507222016,
+    "new_artifact_bytes": 27917287424,
+    "peak_mib": 4096,
+    "runner_seconds": 3600,
+    "saved_audit_seconds": 120
+  },
+  "source_offers": {
+    "learning_disabled": 0,
+    "online": 0,
+    "simple": 0
+  },
+  "source_revision": "0a9002d829d1edb9f000ec02585d7cde3d1db59f",
+  "status": "incomplete_resource_or_runtime_failure",
+  "timing_scope": "all build/failed+corrected author/run/failed+corrected audit outer times and this bank's byte-check preparation; banker serialization/process tail requires its outer watchdog"
+}
