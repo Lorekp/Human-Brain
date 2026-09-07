@@ -79,3 +79,23 @@ not useful transfer, retained language competence or autonomous repair.
 The numerical V7 adapter exists as source but is not exercised by these tests.
 Authenticated historical initialization, the transient-source checkpoint
 contract and a priced broader workload remain the next integration work.
+
+## Broader execution and reference integration
+
+The V8 source preparation adds a public immutable-driver proposal rule and
+separates the retrieval reference's source-history budget from neuronal factual
+tape capacity. The generic checkpoint store retains its original2048-symbol
+default through two narrow validation/restoration hooks; V8 declares its larger
+reference history explicitly. No old source guard or numerical payload check
+is relaxed. The source-reviewed V7 initializer is not run by this QA.
+
+Select `test_recurrent_public_driver_and_reference_history` and the existing
+`test_persistent_checkpoint_interrupted_frontiers` in the same test home. The
+new node has zero models or learning offers and two actual child executions:
+reject a proposed driver rewrite while actually checking the unchanged failing
+program, then apply an authored implementation edit and run the same assertions.
+It also checks two accepted and two rejected reference-history restorations or
+validations, including the unchanged old default. The old node retains its ten
+opaque interruption cases, with no neural models. This is execution/custody QA,
+not evidence of learned editing. Use a fresh120-second/2048-MiB watchdog and
+doctor receipt; preserve the first result. Execution is pending.

@@ -138,13 +138,14 @@ def _baseline_record(baseline):
     }
 
 
-def _baseline_values(record):
+def _baseline_values(record, *, document_limit=2048, symbol_limit=2048):
     _keys(record, ("documents_hex", "demonstrations", "new_teacher_offers"))
     if (not isinstance(record["documents_hex"], list)
             or not isinstance(record["demonstrations"], list)):
         raise ValueError("reference history must be chronological lists")
-    documents = [_raw(item, 2048) for item in record["documents_hex"]]
-    if sum(len(doc) + 1 for doc in documents) > 2048 or len(record["demonstrations"]) > 4096:
+    documents = [_raw(item, document_limit) for item in record["documents_hex"]]
+    if (sum(len(doc) + 1 for doc in documents) > symbol_limit
+            or len(record["demonstrations"]) > 4096):
         raise ValueError("reference history exceeds the declared session capacity")
     demos = []
     for demo in record["demonstrations"]:
@@ -162,10 +163,11 @@ def _baseline_values(record):
     return documents, demos, dict(record["new_teacher_offers"])
 
 
-def _restore_baseline(record):
+def _restore_baseline(record, *, document_limit=2048, symbol_limit=2048):
     from experiments.r4_integrated.persistent_language_action_baseline_v2 import SimpleReference
 
-    documents, demos, offers = _baseline_values(record)
+    documents, demos, offers = _baseline_values(
+        record, document_limit=document_limit, symbol_limit=symbol_limit)
     result = SimpleReference()
     result.documents, result.demonstrations = documents, demos
     result.new_teacher_offers = offers
@@ -211,6 +213,13 @@ class PersistentSessionCheckpoint:
     Host state is parent-only. No private grade, cursor or checkpoint identifier
     is passed to a learner by this module. Failed restore actors must be discarded.
     """
+
+    def _baseline_values(self, record):
+        """Default history contract; a source-bound subclass may declare its own budget."""
+        return _baseline_values(record)
+
+    def _restore_baseline(self, record):
+        return _restore_baseline(record)
 
     @classmethod
     def create(cls, directory, *, source_root, evidence_root, manifest_path,
@@ -580,7 +589,7 @@ class PersistentSessionCheckpoint:
                 or intent["previous_sha256"] != boundary["previous_sha256"]):
             raise ValueError("committed intent and boundary lineage differ")
         self._host(boundary["host"])
-        _baseline_values(boundary["baseline"])
+        self._baseline_values(boundary["baseline"])
         _keys(boundary["routes"], NEURAL_ROUTES)
         for row in boundary["routes"].values():
             _keys(row, ("payload", "sha256", "bytes", "model_sha256", "memory_sha256",
@@ -873,7 +882,7 @@ class PersistentSessionCheckpoint:
                           actor_class=f"{type(model).__module__}.{type(model).__qualname__}")
             routes[route] = record
         baseline_record = _baseline_record(baseline)
-        _baseline_values(baseline_record)
+        self._baseline_values(baseline_record)
         self._reference_progress(previous, baseline_record, events, intent)
         self._add("checkpoint_reference_records", 1)
         boundary = {"schema": "persistent-session-checkpoint-boundary-v1", "sequence": sequence,
@@ -928,7 +937,7 @@ class PersistentSessionCheckpoint:
         if any(model._experience != 0 or model.reader._active_experience != 0
                for model in models.values()):
             raise ValueError("restore requires fresh zero-experience caller actors")
-        baseline = _restore_baseline(boundary["baseline"])
+        baseline = self._restore_baseline(boundary["baseline"])
         payloads, states = {}, {}
         for route in NEURAL_ROUTES:
             model, row = models[route], boundary["routes"][route]

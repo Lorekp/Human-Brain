@@ -14341,6 +14341,70 @@ def test_recurrent_content_same_actor_online_lifecycle(tmp_path, monkeypatch):
     })
 
 
+def test_recurrent_public_driver_and_reference_history(tmp_path):
+    """Two actual checks; explicit reference storage may exceed neuronal tape size."""
+    import time
+    from pathlib import Path
+
+    from experiments.r4_integrated.persistent_language_action_execution_v2 import (
+        workspace_from_records,
+    )
+    from experiments.r4_integrated.persistent_language_action_v8_execution import (
+        POLICY_REJECTION,
+        execute_proposal,
+        qualified_launch,
+    )
+    from experiments.r4_integrated.persistent_session_checkpoint import (
+        _baseline_record,
+        _baseline_values,
+        _restore_baseline,
+    )
+    from humanbrain.sequence_assembly_observation import SpliceProposal
+
+    record = {"documents_hex": [(b"a" * 2100).hex()], "demonstrations": [],
+              "new_teacher_offers": {"reading": 0, "STOP": 0, "SPLICE": 0}}
+    with pytest.raises(ValueError):
+        _baseline_values(record)
+    reference = _restore_baseline(record, document_limit=3484, symbol_limit=12114)
+    assert _baseline_record(reference) == record
+    with pytest.raises(ValueError):
+        _baseline_values(record, document_limit=3484, symbol_limit=2100)
+    original = dict(record, documents_hex=[b"a".hex()])
+    assert _baseline_record(_restore_baseline(original)) == original
+
+    driver, implementation = b"from work import value\nassert value() == 2\n", b"def value():\n    return 1\n"
+    files = [{"path": "main.py", "content_hex": driver.hex()},
+             {"path": "work.py", "content_hex": implementation.hex()}]
+    workspace = workspace_from_records(files)
+    launch = qualified_launch(Path(__file__).resolve().parents[1])
+    bypass = SpliceProposal("SPLICE", "main.py", 0, len(driver), b"pass\n", "eos", workspace.sha256)
+    after_rejected, rejected = execute_proposal(
+        workspace, bypass, tmp_path / "rejected-driver", launch=launch,
+        deadline=time.perf_counter() + 10)
+    assert not rejected["accepted"] and rejected["rejection"] == POLICY_REJECTION
+    assert rejected["returncode"] != 0 and rejected["proposal_sha256"] == bypass.sha256
+    assert after_rejected == files
+    assert rejected["public_driver_policy"]["delegated_proposal_sha256"] is None
+    assert rejected["public_driver_policy"]["proposal_rejected"]
+    assert rejected["public_driver_policy"]["driver_integrity"]
+    offset = implementation.index(b"1")
+    proposal = SpliceProposal("SPLICE", "work.py", offset, offset + 1, b"2", "eos", workspace.sha256)
+    after_accepted, accepted = execute_proposal(
+        workspace, proposal, tmp_path / "accepted-implementation", launch=launch,
+        deadline=time.perf_counter() + 10)
+    assert accepted["accepted"] and accepted["returncode"] == 0
+    assert accepted["public_driver_policy"]["driver_integrity"]
+    assert not accepted["public_driver_policy"]["proposal_rejected"]
+    assert after_accepted == [files[0], {"path": "work.py", "content_hex":
+                                       implementation.replace(b"1", b"2").hex()}]
+    _coincidence_qa_save(tmp_path / "recurrent-public-driver-passed.json", {
+        "status": "passed", "models": 0, "source_offers": 0, "teacher_offers": 0,
+        "reference_restorations": 2, "rejected_reference_records": 2,
+        "children": 2, "rejected_execution": rejected, "accepted_execution": accepted,
+        "fixture_scope": "authored executor mechanics, not learned software repair",
+    })
+
+
 def test_dendritic_same_actor_source_and_correction(tmp_path, monkeypatch):
     """Counted source observations, actual action, local correction and atomic refusal."""
     import time
