@@ -255,19 +255,34 @@ class SequenceAssemblyCells(nn.Module):
         _add(work, "assembly_publications", 1)
         _add(work, "assembly_publication_copy_bytes", self.tensor_bytes)
 
+    def _check_evaluation_inputs(self, inputs: Tensor, fallback_currents: Tensor) -> None:
+        _tensor(inputs, (self.input_width,), torch.bool, "assembly input")
+        _tensor(fallback_currents, (OUTPUT_WIDTH,), torch.float64, "fallback currents")
+        _finite(fallback_currents, "fallback currents")
+
     @torch.no_grad()
     def evaluate(self, inputs: Tensor, fallback_currents: Tensor, *,
                  stage: AssemblyStage | None = None, work=None) -> AssemblyEvaluation:
         """One public context, bounded64-prototype gate blocks, sparse output read."""
-        _tensor(inputs, (self.input_width,), torch.bool, "assembly input")
-        _tensor(fallback_currents, (OUTPUT_WIDTH,), torch.float64, "fallback currents")
-        _finite(fallback_currents, "fallback currents")
+        self._check_evaluation_inputs(inputs, fallback_currents)
         if stage is None:
             self.check_parameters(work)
             prototypes, outgoing, count = self.prototypes, self.outgoing, int(self.used.item())
         else:
             count = self._stage_bank(stage, work)
             prototypes, outgoing = stage.prototypes, stage.outgoing
+        return self._evaluate_validated(
+            inputs, fallback_currents, prototypes, outgoing, count, work=work)
+
+    @torch.no_grad()
+    def _evaluate_validated(self, inputs: Tensor, fallback_currents: Tensor,
+                            prototypes: Tensor, outgoing: Tensor, count: int, *,
+                            work=None) -> AssemblyEvaluation:
+        """Read checked inputs/bank within one synchronous owning call only.
+
+        The caller must keep the bank unchanged and retain its public custody
+        checks. This method carries no validity state across calls.
+        """
         _add(work, "assembly_evaluations", 1)
         _add(work, "assembly_candidates", count)
         if count == 0:

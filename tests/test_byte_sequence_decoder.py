@@ -11343,9 +11343,42 @@ def test_sequence_assembly_reader_causal_prefix_and_atomicity(tmp_path):
     assert len(frame.symbols) == 3471 and len(frame.flags) == 12
     assert INPUT_WIDTH == 66093
     predictions, teacher_events = [], []
+    checked_event_work = []
+    original_kernel = reader.assemblies._evaluate_validated
+    in_reference = False
+
+    def compare_checked(inputs, fallback, prototypes, outgoing, count, *, work=None):
+        nonlocal in_reference
+        before_work = dict(work or {})
+        actual = original_kernel(inputs, fallback, prototypes, outgoing, count, work=work)
+        if not in_reference:
+            reference_work = {}
+            in_reference = True
+            try:
+                expected = reader.assemblies.evaluate(inputs, fallback, work=reference_work)
+            finally:
+                in_reference = False
+            assert actual.winner_index == expected.winner_index
+            assert actual.exact == expected.exact
+            assert torch.equal(actual.currents, expected.currents)
+            assert torch.equal(actual.agreement_counts, expected.agreement_counts)
+            assert reference_work["assembly_validation_values"] == (
+                512 * 257 + (512 - count) * (INPUT_WIDTH + 257) + 1)
+            expected_work = {key: value for key, value in reference_work.items()
+                             if key != "assembly_validation_values"}
+            # Both entry paths evaluate identical cells; only bank validation differs.
+            actual_work = {key: work.get(key, 0) - before_work.get(key, 0)
+                           for key in expected_work}
+            assert actual_work == expected_work
+            checked_event_work.append(reference_work)
+        return actual
 
     def predict():
-        prediction = reader.predict_with_receipt(observation, state, max_bytes=33)
+        with patch.object(reader.assemblies, "_evaluate_validated", compare_checked):
+            prediction = reader.predict_with_receipt(observation, state, max_bytes=33)
+        count = int(reader.assemblies.used.item())
+        assert prediction.work["assembly_validation_values"] == (
+            512 * 257 + (512 - count) * (INPUT_WIDTH + 257) + 1)
         predictions.append(prediction)
         save({"phase": "free", "attempt_id": prediction.attempt_id,
               "output_hex": prediction.generation.data.hex(),
@@ -11483,6 +11516,39 @@ def test_sequence_assembly_reader_causal_prefix_and_atomicity(tmp_path):
     assert len({prediction.attempt_id for prediction in predictions}) == 3
     state_equal(reader.state_dict(), trained)
     _assert_nested_equal(state.snapshot(), held_tape)
+    assert len(checked_event_work) == 40
+    # Mutations during an owned call must fail before a response becomes pending.
+    # Equal-valued rebinding is invisible to byte hashes and needs the identity guard.
+    failed_call_events = []
+    for mode in ("mutation", "rebinding"):
+        original_buffer = reader.assemblies.outgoing
+        original_values = original_buffer.clone()
+        experience = reader._active_experience
+        calls = 0
+
+        def corrupt_after_event(inputs, fallback, prototypes, outgoing, count, *, work=None):
+            nonlocal calls
+            result = original_kernel(inputs, fallback, prototypes, outgoing, count, work=work)
+            calls += 1
+            if calls == 1:
+                if mode == "mutation":
+                    outgoing[0, 0] += 1
+                else:
+                    reader.assemblies.outgoing = outgoing.clone()
+            return result
+
+        try:
+            with (patch.object(reader.assemblies, "_evaluate_validated", corrupt_after_event),
+                  pytest.raises(RuntimeError, match="mutated model|rebound assembly")):
+                reader.predict_with_receipt(observation, state, max_bytes=2)
+            assert reader.pending_prediction is None
+            assert reader._active_experience == experience
+            failed_call_events.append(calls)
+        finally:
+            reader.assemblies.outgoing = original_buffer
+            original_buffer.copy_(original_values)
+        state_equal(reader.state_dict(), trained)
+        _assert_nested_equal(state.snapshot(), held_tape)
     (tmp_path / "sequence-assembly-reader-passed.json").write_text(json.dumps({
         "status": "passed", "readers": 1, "assembly_banks": 1,
         "ingests": 1, "raw_ingest_bytes": 3, "ingest_eos": 1, "slots": 4,
@@ -11491,6 +11557,10 @@ def test_sequence_assembly_reader_causal_prefix_and_atomicity(tmp_path):
         "disabled_events": 2, "late_failed_events": 1, "recruited_units": 3,
         "validation_rejections": 3, "checkpoint_loads": 0, "actions": 0,
         "teacher_events": teacher_events,
+        "checked_reference_events": len(checked_event_work),
+        "removed_event_validation_values": sum(
+            item["assembly_validation_values"] for item in checked_event_work),
+        "in_call_mutation_rejections": 2, "failed_free_call_events": failed_call_events,
         "raw_sha256": hashlib.sha256(raw_path.read_bytes()).hexdigest(),
         "claim": "authored causal sequence mechanics; no broad acquisition or external prior",
     }, sort_keys=True) + "\n", encoding="utf-8")

@@ -29,7 +29,9 @@ from humanbrain.sequence_assembly_observation import (
 from humanbrain.sequence_assembly_prefix import RollingPrefixCoincidence
 
 PREFIX_SLOTS = MAX_REPLACEMENT_BYTES + 1
-INPUT_WIDTH = SENSOR_SYMBOLS * 18 + len(SENSOR_FLAG_NAMES) + PREFIX_SLOTS * 18 + 64 * 18 + PREFIX_SLOTS
+INPUT_WIDTH = (
+    SENSOR_SYMBOLS * 18 + len(SENSOR_FLAG_NAMES) + PREFIX_SLOTS * 18 + 64 * 18 + PREFIX_SLOTS
+)
 
 
 def _add(work, key, value):
@@ -108,15 +110,26 @@ class SequenceAssemblyMemoryLearner(ActivePathMemoryLearner):
             "address_credit": "none; inherited B/C frozen",
             "address_synapse_credit": "none; inherited B/C frozen",
             "free_belief": "selected memory and assembly; scores retained, no posterior recurrence",
-            "loss": "selected assembly free-current NLL before current target; no mixture or post-update probe",
-            "codec": "inherited numeric codec/U retained as fallback; new sparse assembly outgoing bank",
+            "loss": (
+                "selected assembly free-current NLL before current target; "
+                "no mixture or post-update probe"
+            ),
+            "codec": (
+                "inherited numeric codec/U retained as fallback; new sparse assembly outgoing bank"
+            ),
             "codec_credit": "inherited U and codec frozen; only assembly local outgoing errors",
-            "codec_updated_semantics": "legacy codec and U unchanged; output_updated means assembly publication",
-            "output_feature_geometry_scope": "inherited292/energy32/context256 fields describe U fallback only",
+            "codec_updated_semantics": (
+                "legacy codec and U unchanged; output_updated means assembly publication"
+            ),
+            "output_feature_geometry_scope": (
+                "inherited292/energy32/context256 fields describe U fallback only"
+            ),
             "teacher_phase": "one target-free context preparation per offered prefix then target",
             "publication": "one private assembly stage; disabled never advances",
             "fallback": "old conditional U only request<=31 and position<=16; otherwise old codec",
-            "assembly_inputs": "whole framed observation, BOS/full prefix, selected64-row context, position",
+            "assembly_inputs": (
+                "whole framed observation, BOS/full prefix, selected64-row context, position"
+            ),
             "assembly_input_width": INPUT_WIDTH,
             "teacher_capacity": "raw target<=pending max_bytes<=128 plus EOS",
             "initialization": "retain all prior numeric values; new empty assembly bank",
@@ -236,6 +249,11 @@ class SequenceAssemblyMemoryLearner(ActivePathMemoryLearner):
             raise ValueError("sequence response max_bytes must be0..128")
         work = {}
         prepared = self._prepare_observation(observation, state, work)
+        # _prepare_observation validated this live bank. The entire free loop
+        # is synchronous and read-only; these references never escape it.
+        assemblies = self.assemblies
+        prototypes, outgoing, used = assemblies.prototypes, assemblies.outgoing, assemblies.used
+        count = int(used.item())
         model_hash = _digest(self.state_dict(), work)
         memory_hash = _digest(vars(state), work)
         cache = RollingPrefixCoincidence(state.keys[:state.used], work=work)
@@ -243,7 +261,9 @@ class SequenceAssemblyMemoryLearner(ActivePathMemoryLearner):
         for position in range(max_bytes + 1):
             prefix = bytes(output)
             inputs, fallback, address, scores = self._context_forward(prepared, prefix, cache, work)
-            evaluation = self.assemblies.evaluate(inputs, fallback, work=work)
+            assemblies._check_evaluation_inputs(inputs, fallback)
+            evaluation = assemblies._evaluate_validated(
+                inputs, fallback, prototypes, outgoing, count, work=work)
             logits = evaluation.currents
             token = int(logits.argmax().item())
             nll = float(-F.log_softmax(logits, dim=0)[token].item())
@@ -255,6 +275,9 @@ class SequenceAssemblyMemoryLearner(ActivePathMemoryLearner):
                 break
             output.append(token)
             cache.advance(token)
+        if (self.assemblies is not assemblies or assemblies.prototypes is not prototypes
+                or assemblies.outgoing is not outgoing or assemblies.used is not used):
+            raise RuntimeError("free sequence response rebound assembly storage")
         if (_digest(self.state_dict(), work) != model_hash
                 or _digest(vars(state), work) != memory_hash):
             raise RuntimeError("free sequence response mutated model or memory")
@@ -274,11 +297,12 @@ class SequenceAssemblyMemoryLearner(ActivePathMemoryLearner):
             work = {}
         self._check_conditioned_parameters(work)
         self._check_state(state)
-        if not isinstance(prediction, SequenceAssemblyPrediction) or not self.is_pending(prediction):
+        if (not isinstance(prediction, SequenceAssemblyPrediction)
+                or not self.is_pending(prediction)):
             raise ValueError("response belongs to another learner or is already resolved")
         _, obs_hash, model_hash, memory_hash, trace_hash, work_hash = self._sequence_pending
         if (prediction.observation.sha256 != obs_hash
-                or observation is not None and observation.sha256 != obs_hash):
+                or (observation is not None and observation.sha256 != obs_hash)):
             raise ValueError("response observation changed")
         if (prediction.model_sha256 != model_hash or prediction.memory_sha256 != memory_hash
                 or _digest(self.state_dict(), work) != model_hash
