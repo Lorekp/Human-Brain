@@ -13887,8 +13887,19 @@ def test_persistent_checkpoint_actual_actor_continuation(tmp_path):
         _assert_nested_equal(states[route].snapshot(), restored["states"][route].snapshot())
         assert models[route]._experience == fresh[route]._experience
         assert models[route].reader._active_experience == fresh[route].reader._active_experience
-        assert models[route].reader._candidate_views is not fresh[route].reader._candidate_views
-        assert models[route].reader._self_wirings is not fresh[route].reader._self_wirings
+        # Empty tuples may be shared; independence concerns actual cached tensors.
+        for original, loaded in zip(models[route].reader._candidate_views,
+                                    fresh[route].reader._candidate_views, strict=True):
+            for name in ("indices", "values", "flags"):
+                left, right = getattr(original, name), getattr(loaded, name)
+                if left.numel():
+                    assert left.untyped_storage().data_ptr() != right.untyped_storage().data_ptr()
+        for original, loaded in zip(models[route].reader._self_wirings,
+                                    fresh[route].reader._self_wirings, strict=True):
+            for name in ("indices", "values"):
+                left, right = getattr(original, name), getattr(loaded, name)
+                if left.numel():
+                    assert left.untyped_storage().data_ptr() != right.untyped_storage().data_ptr()
         old_prediction = models[route].reader.predict_with_receipt(
             next_observation, states[route], max_bytes=1)
         new_prediction = fresh[route].reader.predict_with_receipt(
