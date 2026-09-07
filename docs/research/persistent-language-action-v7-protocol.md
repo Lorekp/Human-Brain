@@ -174,6 +174,11 @@ finish source work concurrently without reading new workload outputs or changing
 the running system. All other captured Python bytes must remain unchanged.
 The ordinary metrics/journal QA already passes on the same runner behavior;
 the release changes only its frozen manifest/guard and this external-tool scope.
+The120-second saved-review reserve is split into100 seconds for independent
+review and20 seconds for result banking, including the banker's evidence rehash.
+Report all three watchdog elapsed times and their maximum observed owned-tree
+peak. Bank preparation time is an explicitly labeled subtotal until the bank
+process finishes; it must not stand in for the final outer total.
 
 Report first acquisition, pure changed form, exact delayed acquisition, fresh
 construction/combinations, historical retention and teacher-free recovery
