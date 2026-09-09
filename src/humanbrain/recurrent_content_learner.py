@@ -122,17 +122,18 @@ class RecurrentContentMemoryLearner(DendriticSequenceMemoryLearner):
     def get_extra_state(self):
         metadata = super().get_extra_state()
         metadata.update({
-            "schema": "recurrent-content-memory-learner-v1",
+            "schema": "recurrent-content-memory-learner-v2",
             "routing": "held complete V7 prior once per actual free/teacher prefix",
             "codec_updated_semantics": "output_updated denotes new controller weight changes",
             "free_belief": "causal context/gate/mode/optional-literal stochastic populations",
             "loss": "held prior-current NLL diagnostic, not controller trajectory likelihood",
             "teacher_phase": "pre-output neural fork; fresh RNG after actual free stopping time",
-            "publication": "scan/free/teacher eligibility held; validated joint controller copies",
+            "publication": "held scan/free/teacher eligibility and causal credit; joint validated copies",
+            "local_credit": "causal-observation-credit-v1; direct literal CE; upstream own eligibility",
             "source_learning": "one causal document per transaction; old tape; no output prior",
             "source_disabled": "RNG acknowledged; weights/baselines held; tape gate separate",
             "request_binding": "prefix-visible Q during scan; complete Q only after request EOS",
-            "initialization": "all V7 numeric values held; only new controller starts afresh",
+            "initialization": "explicit retained lineage; metadata adaptation preserves numeric state",
             "trace_scope": "all actual controller draws/scans and held prior arbitration",
             "transient_source": "observe_source preserves tape object and every factual byte",
             "controller_seed": 733,
@@ -242,6 +243,7 @@ class RecurrentContentMemoryLearner(DendriticSequenceMemoryLearner):
                         stage, frame, position, h, cursors, "scan", work)
                     reward = self.controller.observe(stage, symbol, category="scan", work=work)
                     record.update({"observed_token": symbol, "reward": reward,
+                                   "credit": self.controller.observation_record(stage, work),
                                    "status_offer": item.status})
                     records.append(record)
                 position = receive(frame, position, symbol, work)
@@ -419,6 +421,7 @@ class RecurrentContentMemoryLearner(DendriticSequenceMemoryLearner):
                     prior_token=decision.winner, address=address)
                 target = teacher[index] if index < len(teacher) else BYTE_EOS
                 outcome = self.controller.observe(stage, target, category="teacher", work=work)
+                record["credit"] = self.controller.observation_record(stage, work)
                 nll = float(-F.log_softmax(prior, dim=0)[target].item())
                 loss += nll
                 records.append({"output_step": index, "prefix_hex": prefix.hex(),
@@ -537,13 +540,17 @@ class RecurrentContentMemoryLearner(DendriticSequenceMemoryLearner):
     def accounting(self):
         result = super().accounting()
         result.update({
-            "schema": "recurrent-content-accounting-v1",
+            "schema": "recurrent-content-accounting-v2",
             "controller_tensor_bytes": self.controller.tensor_bytes,
             "controller_weight_bytes": 24623616,
             "controller_eligibility_bytes": 3 * 24623616,
             "resolution_fork_eligibility_bytes": 3 * 24623616,
-            "weights_six_eligibilities_proposal_bytes": 8 * 24623616,
-            "checkpoint_scope": "idle only; no unresolved eligibility/frame/private RNG saved",
+            "controller_causal_prefix_bytes": 2 * 2802448 * 8,
+            "controller_literal_direct_bytes": 2 * 275504 * 8,
+            "controller_pending_literal_max_bytes": 16 * 257 + 16 * 1072,
+            "resolution_fork_additional_credit_bytes": 2 * 24623616,
+            "weights_root_fork_credit_proposal_bytes": 12 * 24623616,
+            "checkpoint_scope": "idle only; no unresolved eligibility/credit/frame/private RNG saved",
             "binding_stage_tensor_bytes": 0,
             "binding_correction_prior": "held complete V7 decision once per causal teacher prefix",
             "binding_source_prior": "no source or input-scan prior calls",
@@ -574,8 +581,8 @@ class RecurrentContentSpliceLearner(DendriticSequenceSpliceLearner):
     def get_extra_state(self):
         metadata = super().get_extra_state()
         metadata.update({
-            "schema": "recurrent-content-splice-learner-v1",
-            "reader": "recurrent-content-memory-learner-v1",
+            "schema": "recurrent-content-splice-learner-v2",
+            "reader": "recurrent-content-memory-learner-v2",
             "publication": "all motor proposals then controller/RNG then motor copies",
             "source": "one admitted source or explicit transient observe_source; no load replay",
             "public_reward": "validated actual execution failure=-1; otherwise0; STOP0",

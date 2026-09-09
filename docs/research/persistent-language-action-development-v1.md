@@ -1,8 +1,44 @@
 # Public persistent language/action development
 
-Status: the eighth broader session is complete and independently audited,
-2026-09-07. The prepared byte-coincidence comparison is complete. The roadmap
+Status: stable integrated comparison selected by the user, 2026-09-09.
+The eighth broader session and prepared byte-coincidence comparison are complete.
+The roadmap
 owns the next shared design; frozen streams remain exposed regression evidence.
+
+## Stable comparison requirements
+
+Pause further increases in task difficulty and further teacher reduction.
+Implement the already selected local-credit improvement and measured journal
+optimization, then compare on one stable representative language/action
+curriculum with a fixed teaching budget. Fix task/source ordering, correction
+occasions, symbol counts, action budgets and learning-checkpoint positions before
+the comparison. Count repeated observations and checkpoint probes explicitly.
+Reuse exposed development material only under this new declared comparison;
+do not alter or relabel V8's frozen result.
+
+Report acquisition on every declared taught skill, retention after intervening
+experience and changed-context transfer separately, with complete denominators
+at scheduled checkpoints. Include matched learning-disabled and transparent
+retrieval/editing references. Compare the old and improved local-credit rules
+under the same starting state and exposure contract; cross-session scores with
+different histories cannot isolate the rule change. Changed-context probes must
+distinguish changed wording, changed values/context and structural combinations,
+without silently increasing their difficulty during the comparison.
+
+Before new learning, verify numerical preservation and paired behavior across
+the migration on representative and previously working anchors. Use the same
+initial RNG state for paired stochastic outputs, and preserve actual outcomes.
+Distinguish already lost behavior from new migration losses; V8's zero successes
+cannot stand in for a positive retention demonstration. A newly initialized
+component must not silently replace working action selection. Keep teacher-free
+recovery in the integrated stream; changed proposals alone are not productive
+feedback use. Do not add another mechanism merely because ordinary QA passes.
+
+The current implementation review covers the selected causal-credit rule and
+owned journal-prefix authentication. A stable curriculum, explicit migration
+comparison and complete resource plan still precede a new measured session;
+this document does not restart a frozen run or permit missing evidence to be
+reconstructed. Retained state and source identities below remain authoritative.
 
 ## Current continuation and frozen history
 

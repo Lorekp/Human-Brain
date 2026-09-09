@@ -13758,7 +13758,130 @@ def test_persistent_checkpoint_interrupted_frontiers(tmp_path):
     })
 
 
-def test_persistent_checkpoint_actual_actor_continuation(tmp_path, monkeypatch, request):
+def test_persistent_owned_journal_refusal_and_interruption(tmp_path, monkeypatch, request):
+    """Only newly authored bytes: disk tails, writer exclusion and dirty intent."""
+    import hashlib
+    import mmap
+
+    from experiments.r4_integrated import persistent_checkpoint_journal as journal_module
+    from experiments.r4_integrated.persistent_checkpoint_journal import OwnedJournal
+    from experiments.r4_integrated.persistent_language_action_v1 import encode
+    from experiments.r4_integrated.persistent_session_checkpoint import DirtyCheckpoint
+
+    work, cases = {}, []
+    owner = OwnedJournal(tmp_path / "owned.jsonl", work)
+    request.addfinalizer(owner.close)
+    row = {"fixture": "actual disk bytes"}
+    raw = encode(row)
+    assert owner.append(row) == hashlib.sha256(raw).hexdigest()
+    assert owner.path.read_bytes() == raw
+    assert work["checkpoint_journal_tail_bytes_read"] == len(raw)
+    assert owner.rows == 1 and owner.bytes_written == len(raw)
+    with pytest.raises((OSError, ValueError)):
+        OwnedJournal(owner.path)
+    with owner.freeze():
+        with pytest.raises(ValueError, match="freeze"):
+            owner.append({"forbidden": True})
+        with pytest.raises(ValueError, match="during"):
+            owner.close()
+        if owner.cached_prefixes:
+            frontier = owner.frontier()
+            assert frontier == {"bytes": len(raw), "rows": 1,
+                                "sha256": hashlib.sha256(raw).hexdigest(), "complete": True}
+            owner.commit_validated(owner.prepare_commit(frontier))
+            with pytest.raises(ValueError, match="neither"):
+                owner.frontier(prefix=1)
+    cases.extend(("create-existing", "append-during-freeze", "close-during-freeze"))
+    if owner.cached_prefixes:
+        for mode in ("ab", "wb"):
+            with pytest.raises(OSError), owner.path.open(mode):
+                pass
+        with pytest.raises(OSError):
+            owner.path.unlink()
+        with pytest.raises(OSError):
+            owner.path.rename(tmp_path / "replacement.jsonl")
+        with owner.path.open("rb") as handle, pytest.raises(OSError):
+            mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_WRITE)
+        cases.extend(("external-append", "truncate", "delete", "replace", "writable-map"))
+        committed = owner._committed
+        next_raw = encode({"second": "tail"})
+        owner.append({"second": "tail"})
+        with owner.freeze():
+            assert owner.frontier(prefix=len(raw))["sha256"] == hashlib.sha256(raw).hexdigest()
+            assert owner.frontier()["sha256"] == hashlib.sha256(raw + next_raw).hexdigest()
+        assert owner._committed == committed
+    owner.close()
+
+    # Unsupported ownership still reads the actual tail, but never grants reuse.
+    with monkeypatch.context() as patch:
+        patch.setattr(journal_module.lease, "supported", lambda *_args: False)
+        fallback = OwnedJournal(tmp_path / "fallback.jsonl", work)
+    request.addfinalizer(fallback.close)
+    fallback.append(row)
+    with fallback.freeze(), pytest.raises(ValueError, match="full prefix"):
+        fallback.frontier()
+    assert work["checkpoint_journal_fsync_calls"] >= 1
+    fallback.close()
+    cases.append("unsupported-full-read")
+
+    damaged = OwnedJournal(tmp_path / "mismatched-tail.jsonl", work)
+    request.addfinalizer(damaged.close)
+    original_read = damaged._read_tail
+
+    def mismatched_tail(offset, intended):
+        return original_read(offset, intended.replace(b"actual", b"forged"))
+
+    with monkeypatch.context() as patch:
+        patch.setattr(damaged, "_read_tail", mismatched_tail)
+        with pytest.raises(ValueError, match="differs from intended"):
+            damaged.append(row)
+    assert damaged.path.read_bytes() == raw
+    assert damaged.rows == 0 and damaged._committed[0] == 0
+    with pytest.raises(ValueError, match="poisoned"):
+        damaged.append(row)
+    damaged.close()
+    cases.append("actual-tail-mismatch-poisons")
+
+    store, _host, evidence, journals = _persistent_checkpoint_fixture(tmp_path / "interrupted")
+    request.addfinalizer(store.close)
+    journals = {kind: [f"owned-{kind}.jsonl"] for kind in journals}
+    writers = store.create_owned_journals(journals)
+    writers[journals["attempts"][0]].append(row)
+    intent = (store.directory / "intent-000000000.json").read_bytes()
+
+    def interrupted_publication(*_args):
+        # Exercise the real commit failure wrapper with a byte-only publication
+        # fixture. No fake neuronal state is passed through actor validation.
+        raise OSError("authored HEAD publication interruption")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(store, "_commit", interrupted_publication)
+        with (
+            pytest.raises(OSError, match="HEAD publication interruption"),
+            store.checkpoint_scope(),
+        ):
+            frontiers = store.capture_frontiers(journals, execution_root="executions")
+            store.commit(None, None, None, None, frontiers)
+    assert (store.directory / "intent-000000000.json").read_bytes() == intent
+    assert not (store.directory / "HEAD.json").exists() and store._intent is not None
+    assert all(writer._committed[0] == 0 for writer in writers.values())
+    assert (evidence / journals["attempts"][0]).read_bytes() == raw
+    with pytest.raises(DirtyCheckpoint, match="interrupted"):
+        store.inspect()
+    with pytest.raises(ValueError, match="poisoned"):
+        writers[journals["attempts"][0]].append(row)
+    cases.append("publication-interruption-preserves-intent")
+    _coincidence_qa_save(tmp_path / "owned-journal-refusals-passed.json", {
+        "status": "passed", "cases": cases, "owned_backend": owner.cached_prefixes,
+        "models": 0, "children": 0, "source_offers": 0, "teacher_offers": 0,
+        "tensor_loads": 0, "successful_checkpoint_publications": 0,
+        "work": work, "store_work": store.work,
+        "scope": "authored bytes, injected publication failure; no actors or historical data",
+    })
+
+
+@pytest.mark.parametrize("use_owned", [False, True], ids=["ordinary-journals", "owned-journals"])
+def test_persistent_checkpoint_actual_actor_continuation(tmp_path, monkeypatch, request, use_owned):
     """Exact learned state, counters, actual files and independent restored actors."""
     import hashlib
     import time
@@ -13780,6 +13903,18 @@ def test_persistent_checkpoint_actual_actor_continuation(tmp_path, monkeypatch, 
 
     store, host, evidence, journals = _persistent_checkpoint_fixture(tmp_path / "actual")
     request.addfinalizer(store.close)
+    writers = {}
+    if use_owned:
+        journals = {kind: [f"owned-{kind}.jsonl"] for kind in journals}
+        writers = store.create_owned_journals(journals)
+
+    def append(kind, row):
+        name = journals[kind][0]
+        if use_owned:
+            return writers[name].append(row)
+        with (evidence / name).open("ab") as handle:
+            return handle.write(encode(row))
+
     routes = ("online", "learning_disabled")
     models = {route: TournamentRecognitionSpliceLearner(seed=733) for route in routes}
     states = {}
@@ -13801,8 +13936,9 @@ def test_persistent_checkpoint_actual_actor_continuation(tmp_path, monkeypatch, 
                                 "source_sha256": hashlib.sha256(b"print(0)\n").hexdigest(),
                                 "query_sha256": hashlib.sha256(b"prior raw request").hexdigest()}]
     baseline.new_teacher_offers = {"reading": 3, "STOP": 2, "SPLICE": 1}
-    frontiers = store.capture_frontiers(journals, execution_root="executions")
-    first = store.commit(models, states, baseline, host, frontiers)
+    with store.checkpoint_scope():
+        frontiers = store.capture_frontiers(journals, execution_root="executions")
+        first = store.commit(models, states, baseline, host, frontiers)
     assert first["sequence"] == 0 and first["work"]["checkpoint_payload_writes"] == 2
     first_boundary = store.inspect()["boundary"]
     owned_backend = leases.supported(store.directory)
@@ -13852,19 +13988,17 @@ def test_persistent_checkpoint_actual_actor_continuation(tmp_path, monkeypatch, 
                "model_after_sha256": _digest(model.state_dict()),
                "memory_after_sha256": _digest(vars(state))}
         raw_attempt = encode(row)
-        with (evidence / "attempts.jsonl").open("ab") as handle:
-            handle.write(raw_attempt)
+        append("attempts", row)
         correction = model.teach(
             prediction, observation, state, teacher, envelope, learning_enabled=route == "online")
         assert correction.reader_feedback.recognition_updated == (route == "online")
-        with (evidence / "teachers.jsonl").open("ab") as handle:
-            handle.write(encode({
+        append("teachers", {
                 "schema": "persistent-language-action-teacher-checkpoint-qa-v1", "route": route,
                 "episode_id": "fixture", "attempt_sha256": hashlib.sha256(raw_attempt).hexdigest(),
                 "teacher": store.manifest["episodes"][0]["teacher"],
                 "learning_enabled": route == "online", "reader_offers": 2, "action_labels": 3,
                 "model_after_sha256": _digest(model.state_dict()),
-                "memory_after_sha256": _digest(vars(state))}))
+                "memory_after_sha256": _digest(vars(state))})
         host["cursor"]["route_index"] = route_index + 1
         host["elapsed_seconds"] = route_index + 1
         host["counters"][route].update(attempts=1, executions=1, teacher_occasions=1,
@@ -13874,8 +14008,8 @@ def test_persistent_checkpoint_actual_actor_continuation(tmp_path, monkeypatch, 
             "episode_id": "fixture", "files": actual_files, "feedback": feedback}
         host["current"] = {"route": route, "episode_id": "fixture",
                            "files": actual_files, "feedback": feedback}
-        frontiers = store.capture_frontiers(journals, execution_root="executions")
-        if route == "online" and owned_backend:
+        if route == "online" and owned_backend and not use_owned:
+            frontiers = store.capture_frontiers(journals, execution_root="executions")
             head_before = (store.directory / "HEAD.json").read_bytes()
             publications_before = store.work["checkpoint_head_publications"]
             writes_before = store.work["checkpoint_payload_writes"]
@@ -13893,7 +14027,9 @@ def test_persistent_checkpoint_actual_actor_continuation(tmp_path, monkeypatch, 
             assert store.work["checkpoint_payload_writes"] == writes_before
             assert store._intent is not None
             assert store.inspect(require_clean=False, fresh_payloads=True)["status"] == "dirty"
-        commits.append(store.commit(models, states, baseline, host, frontiers))
+        with store.checkpoint_scope():
+            frontiers = store.capture_frontiers(journals, execution_root="executions")
+            commits.append(store.commit(models, states, baseline, host, frontiers))
         if route == "online":
             second_boundary = store.inspect()["boundary"]
             assert (second_boundary["routes"]["online"]["payload"]
@@ -13907,6 +14043,11 @@ def test_persistent_checkpoint_actual_actor_continuation(tmp_path, monkeypatch, 
     assert third["work"]["checkpoint_payload_reuses"] == 3
     assert final_boundary["routes"]["learning_disabled"]["reader_experience"] > 0
     assert final_boundary["routes"]["learning_disabled"]["experience"] == 1
+    journal_bytes = sum((evidence / names[0]).stat().st_size for names in journals.values())
+    if use_owned:
+        assert store.work["checkpoint_journal_tail_bytes_read"] == journal_bytes
+        if all(writer.cached_prefixes for writer in writers.values()):
+            assert store.work["checkpoint_journal_avoided_hash_bytes"] >= journal_bytes
     fresh = {route: TournamentRecognitionSpliceLearner(seed=733) for route in routes}
     reopened = PersistentSessionCheckpoint.open(store.directory, config_sha256=store.config_sha256)
     request.addfinalizer(reopened.close)
@@ -13914,7 +14055,7 @@ def test_persistent_checkpoint_actual_actor_continuation(tmp_path, monkeypatch, 
     independent_before = reopened.work.get("checkpoint_hash_bytes_read", 0)
     assert reopened.inspect()["boundary"] == final_boundary
     assert reopened.work["checkpoint_hash_bytes_read"] - independent_before >= sum(
-        row["bytes"] for row in final_boundary["routes"].values())
+        row["bytes"] for row in final_boundary["routes"].values()) + journal_bytes
     assert not reopened._payload_leases
     restored = reopened.restore_into(fresh)
     assert restored["work"]["checkpoint_payload_fresh_hash_checks"] == 4
@@ -13964,6 +14105,7 @@ def test_persistent_checkpoint_actual_actor_continuation(tmp_path, monkeypatch, 
         "action_labels": 6, "children": 2, "checkpoint_commits": 3,
         "checkpoint_commit_calls": 3 + failed_commits, "failed_commits": failed_commits,
         "owned_payload_backend": owned_backend, "first_reused_payload_bytes": reuse_bytes,
+        "owned_journals": use_owned, "journal_bytes": journal_bytes,
         "restore_calls": 1, "tensor_loads": restored["work"]["checkpoint_torch_load_calls"],
         "experimental_checkpoint_loads": 0, "payload_writes": 3, "payload_reuses": 3,
         "executions": executions, "comparisons": comparisons,
@@ -14034,23 +14176,30 @@ def test_recurrent_content_local_arithmetic_and_visibility(tmp_path):
             weight = getattr(controller, name + "_weight")
             weight[:, 0] = torch.arange(weight.shape[0], dtype=torch.float64) / 1000
         controller.mode_weight[3, 0] = 20
+        controller.mode_weight[0, 2] = 100
+        # A finite, subnormal target probability exercises the stable CE
+        # diagnostic on the already-counted first literal offer.
+        controller.literal_weight[97, 0] = -1200
     oracle_rng = torch.Generator(device="cpu").manual_seed(733)
-    work, draws, proposals = {}, [], []
+    work, draws, proposals, rejected_aliases = {}, [], [], []
     initial_rng = controller.rng_state.clone()
+    history = {category: [] for category in ("scan", "free", "teacher")}
 
-    def tick(stage, category, target=None, prior=None):
+    def tick(stage, category, target=None, prior=None, columns=(0, 1)):
         records = []
+        eligibility = {}
         for name in POPULATIONS:
             if name == "literal" and records[-1].index != 3:
                 break
             width = SHAPES[name][1]
-            afferent = SparseActivity(torch.tensor([0, 1]),
+            afferent = SparseActivity(torch.tensor(columns),
                                       torch.tensor([0.6, 0.8], dtype=torch.float64), width)
             weights = getattr(controller, name + "_weight")
-            currents = [float(row[0]) * 0.6 + float(row[1]) * 0.8 for row in weights]
+            currents = [float(row[columns[0]]) * 0.6 + float(row[columns[1]]) * 0.8
+                        for row in weights]
             unnormalized = [math.exp(value - max(currents)) for value in currents]
             probabilities = [value / sum(unnormalized) for value in unnormalized]
-            before = stage._eligibility[category][name][:, :2].clone()
+            before = stage._eligibility[category][name][:, :4].clone()
             draw = controller.draw(stage, name, afferent, category=category, work=work)
             uniform = float(torch.rand((), dtype=torch.float64, generator=oracle_rng))
             assert draw.uniform == uniform
@@ -14063,56 +14212,144 @@ def test_recurrent_content_local_arithmetic_and_visibility(tmp_path):
             torch.testing.assert_close(draw.logits, torch.tensor(currents, dtype=torch.float64))
             torch.testing.assert_close(draw.probabilities,
                                        torch.tensor(probabilities, dtype=torch.float64))
+            values = dict(zip(columns, (0.6, 0.8), strict=True))
             expected = torch.tensor([
-                [((index == selected) - probability) * value for value in (0.6, 0.8)]
+                [((index == selected) - probability) * values.get(column, 0.0)
+                 for column in range(4)]
                 for index, probability in enumerate(probabilities)
             ], dtype=torch.float64)
-            torch.testing.assert_close(stage._eligibility[category][name][:, :2], before + expected)
+            torch.testing.assert_close(stage._eligibility[category][name][:, :4], before + expected)
+            eligibility[name] = expected
             records.append(draw)
             draws.append(draw.record())
         token = controller.complete_tick(stage, prior_token=prior, work=work)
+        signal, direct = None, torch.zeros((257, 4), dtype=torch.float64)
         if target is not None:
+            if not rejected_aliases and records[2].index == 3:
+                # NumPy writes bypass Torch's version counter. Pre-target
+                # probabilities and afferents must still reject corrupted offers.
+                for name in ("probabilities", "log_probabilities", "indices", "values"):
+                    value = stage._literal_pending[name]
+                    version = value._version
+                    alias, original = value.numpy(), value[0].item()
+                    try:
+                        alias[0] = original + 1
+                        assert value._version == version
+                        with pytest.raises(ValueError, match=r"pre-target.*modified"):
+                            controller.observe(stage, target, category=category, work=work)
+                    finally:
+                        alias[0] = original
+                    rejected_aliases.append(name)
+            if records[2].index == 3:
+                signal = 2 * probabilities[target] - 1
+                direct = torch.tensor([
+                    [((index == target) - probability) * values.get(column, 0.0)
+                     for column in range(4)]
+                    for index, probability in enumerate(probabilities)
+                ], dtype=torch.float64)
+            else:
+                signal = 1 if token == target else -1
             reward = controller.observe(stage, target, category=category, work=work)
             assert reward == (1 if token == target else -1)
+            credit = controller.observation_record(stage, work=work)
+            assert credit["signal"] == pytest.approx(signal, abs=1e-12)
+            assert credit["literal_taught"] is (records[2].index == 3)
+            if records[2].index == 3:
+                expected_loss = max(currents) - currents[target] + math.log(sum(unnormalized))
+                assert credit["literal_loss"] == pytest.approx(expected_loss, rel=0, abs=1e-12)
+        history[category].append({"eligibility": eligibility, "signal": signal, "direct": direct})
         return token
 
+    def expected_proposal(kind, public=0):
+        """Independent forward per-symbol sums, never the implementation's A*E-P."""
+        scan, teacher = history["scan"], history["teacher"]
+        s, t = len(scan), len(teacher)
+        categories = 1 + int(t > 0) + int(kind == "edit")
+        length = s if kind == "source" else s + t + 129
+        scan_baseline = float(controller.baseline_mean[0 if kind == "source" else 1])
+        teacher_baseline = float(controller.baseline_mean[2])
+        result = {}
+        for name in POPULATIONS:
+            zero = torch.zeros((SHAPES[name][0], 4), dtype=torch.float64)
+            cumulative, causal = {}, {}
+            for category in history:
+                prefix, weighted = zero.clone(), zero.clone()
+                baseline = teacher_baseline if category == "teacher" else scan_baseline
+                for row in history[category]:
+                    prefix += row["eligibility"].get(name, zero)
+                    if row["signal"] is not None:
+                        weighted += (row["signal"] - baseline) * prefix
+                cumulative[category], causal[category] = prefix, weighted
+            public_delta = public * (cumulative["scan"] + cumulative["free"])
+            if name == "literal":
+                delta = sum((row["direct"] for row in scan), zero.clone()) / s
+                if t:
+                    delta += sum((row["direct"] for row in teacher), zero.clone()) / t
+                delta = 0.01 / categories * delta + 0.01 / (categories * length) * public_delta
+            else:
+                delta = causal["scan"] / s + public_delta
+                if t:
+                    mean_teacher = sum(row["signal"] - teacher_baseline for row in teacher) / t
+                    delta += mean_teacher * cumulative["scan"] + causal["teacher"] / t
+                delta *= 0.01 / (categories * length)
+            result[name + "_weight"] = getattr(controller, name + "_weight")[:, :4].clone() + delta
+        return result
+
     stage = controller.begin_stage(kind="source", scan_offers=2, work=work)
+    with pytest.raises(ValueError):
+        controller.observe(stage, 97, category="scan", work=work)
     tick(stage, "scan", 97)
-    tick(stage, "scan", EOS)
+    tick(stage, "scan", EOS, columns=(2, 3))
+    assert "literal" in history["scan"][0]["eligibility"]
+    assert "literal" not in history["scan"][1]["eligibility"]
     assert torch.equal(controller.rng_state, initial_rng)
     assert controller.baseline_count.tolist() == [0, 0, 0]
     controller.seal_scan(stage)
-    before = controller.context_weight[:, :2].clone()
-    expected = before + 0.01 / 2 * (stage._reward_sums["scan"] / 2) * stage._eligibility["scan"]["context"][:, :2]
+    expected = expected_proposal("source")
     proposal = controller.finish(stage, learning_enabled=True, work=work)
-    torch.testing.assert_close(proposal.state["context_weight"][:, :2], expected)
+    for name, value in expected.items():
+        torch.testing.assert_close(proposal.state[name][:, :4], value, rtol=1e-10, atol=1e-12)
     assert proposal.category_count == 1 and proposal.normalization_ticks == 2
     controller.validate_stage(proposal, work)
     controller.commit_validated(proposal, work)
     proposals.append(proposal.record())
     assert controller.baseline_count.tolist() == [1, 0, 0]
+    assert controller.baseline_mean[0] == pytest.approx(
+        sum(row["signal"] for row in history["scan"]) / 2)
     del proposal, stage
 
     # A teacher credits the common input trajectory, not the independent free branch.
+    history = {category: [] for category in history}
     stage = controller.begin_stage(kind="edit", scan_offers=1, max_bytes=0, work=work)
     tick(stage, "scan", 98)
     controller.seal_scan(stage)
     tick(stage, "free", prior=EOS)
     controller.seal_free(stage)
     fork = controller.fork_stage(stage, work)
+    for category in ("scan", "teacher"):
+        for name in POPULATIONS[:-1]:
+            left, right = stage._causal_prefix[category][name], fork._causal_prefix[category][name]
+            assert torch.equal(left, right) and left.data_ptr() != right.data_ptr()
+        left, right = stage._literal_direct[category], fork._literal_direct[category]
+        assert torch.equal(left, right) and left.data_ptr() != right.data_ptr()
     controller.declare_teacher(fork, 1)
     tick(fork, "teacher", EOS, prior=EOS)
     assert controller.baseline_count.tolist() == [1, 0, 0]
-    scan_reward, teacher_reward = fork._reward_sums["scan"], fork._reward_sums["teacher"]
-    expected = controller.context_weight[:, :2].clone()
-    expected += 0.01 / 131 / 3 * (
-        (scan_reward + teacher_reward - 1) * fork._eligibility["scan"]["context"][:, :2]
-        - fork._eligibility["free"]["context"][:, :2]
-        + teacher_reward * fork._eligibility["teacher"]["context"][:, :2])
+    expected = expected_proposal("edit", public=-1)
     proposal = controller.finish(fork, learning_enabled=True, public_reward=-1, work=work)
-    torch.testing.assert_close(proposal.state["context_weight"][:, :2], expected)
+    for name, value in expected.items():
+        torch.testing.assert_close(proposal.state[name][:, :4], value, rtol=1e-10, atol=1e-12)
     assert proposal.category_count == 3 and proposal.normalization_ticks == 131
-    assert proposal.delta_norm <= 0.02 * math.sqrt(8)
+    assert proposal.delta_norm <= math.sqrt(0.0026) + 1e-12
+    for bank in (fork._causal_prefix["scan"]["context"], fork._literal_direct["teacher"]):
+        version, original = bank._version, bank[0, 0].item()
+        try:
+            bank.numpy()[0, 0] = original + 1
+            assert bank._version == version
+            with pytest.raises(ValueError, match="proposal was modified"):
+                controller.validate_stage(proposal, work)
+        finally:
+            bank.numpy()[0, 0] = original
     controller.validate_stage(proposal, work)
     controller.commit_validated(proposal, work)
     proposals.append(proposal.record())
@@ -14120,6 +14357,7 @@ def test_recurrent_content_local_arithmetic_and_visibility(tmp_path):
     del stage, fork, proposal
 
     saved = copy.deepcopy(controller.state_dict())
+    history = {category: [] for category in history}
     stage = controller.begin_stage(kind="source", scan_offers=1, work=work)
     tick(stage, "scan", EOS)
     controller.seal_scan(stage)
@@ -14144,6 +14382,10 @@ def test_recurrent_content_local_arithmetic_and_visibility(tmp_path):
         "children": 0, "checkpoint_loads": 0, "strict_loads": 1,
         "rejected_strict_loads": 1, "frame_only_receives": 3,
         "draws": draws, "proposals": proposals, "work": work,
+        "actual_draws": len(draws), "literal_offers": 4, "nonliteral_offers": 1,
+        "rejected_premature_target": 1,
+        "rejected_pending_numpy_aliases": rejected_aliases,
+        "rejected_finished_numpy_banks": 2,
     })
 
 
@@ -14198,7 +14440,8 @@ def test_recurrent_content_same_actor_online_lifecycle(tmp_path, monkeypatch):
             actor.actions.operation_weight.zero_()
             actor.actions.operation_bias.copy_(torch.tensor([10.0, 0.0]))
         held_hashes.append(held_numeric(reader))
-        slow_before, rng_before = slow_numeric(reader.controller), reader.controller.rng_state.clone()
+        slow_before = slow_numeric(reader.controller)
+        rng_before = reader.controller.rng_state.clone()
         state, source = actor.ingest_with_receipt([b"a"], learning_enabled=enabled)
         assert state.used == 2 and source.symbol_count == 2 and source.fact_admitted
         assert source.writes_enabled and source.controller["learning_enabled"] == enabled
@@ -14236,7 +14479,8 @@ def test_recurrent_content_same_actor_online_lifecycle(tmp_path, monkeypatch):
     assert apply_gate(frame, position, registers, 5) == registers
 
     reader = disabled.reader
-    disabled_slow, disabled_rng = slow_numeric(reader.controller), reader.controller.rng_state.clone()
+    disabled_slow = slow_numeric(reader.controller)
+    disabled_rng = reader.controller.rng_state.clone()
     prediction_disabled = reader.predict_with_receipt(observation, states[1], max_bytes=1,
                                                       interaction_kind="reading")
     assert prediction_disabled.generation.data == b"" and len(prediction_disabled.steps) == 1
@@ -14248,6 +14492,16 @@ def test_recurrent_content_same_actor_online_lifecycle(tmp_path, monkeypatch):
             reader.validate_pending(prediction_disabled, states[1])
     finally:
         prediction_disabled.scan_steps[0]["observed_token"] = original_symbol
+    pending = reader.controller.pending_stage
+    for bank in (pending._causal_prefix["scan"]["context"], pending._literal_direct["scan"]):
+        original, version = bank[0, 0].item(), bank._version
+        try:
+            bank.numpy()[0, 0] = original + 1
+            assert bank._version == version
+            with pytest.raises(ValueError, match="changed"):
+                reader.validate_pending(prediction_disabled, states[1])
+        finally:
+            bank.numpy()[0, 0] = original
     feedback_disabled = reader.teach(observation, b"b", states[1], prediction=prediction_disabled,
                                      learning_enabled=False)
     assert feedback_disabled.teacher_count == 2
@@ -14284,8 +14538,14 @@ def test_recurrent_content_same_actor_online_lifecycle(tmp_path, monkeypatch):
     assert feedback.controller["rewards"]["public"] == 0
     assert set(correction.action_updates) == {"start", "end", "operation"}
     assert any(correction.action_updates.values())
-    for free, corrected in ((prediction_disabled, feedback_disabled), (prediction.payload, feedback)):
+    for free, corrected in (
+        (prediction_disabled, feedback_disabled), (prediction.payload, feedback),
+    ):
         assert len(free.scan_steps) == frame.offer_count
+        assert all(row["credit"]["observed_token"] == row["observed_token"]
+                   for row in free.scan_steps)
+        assert [row["controller"]["credit"]["observed_token"]
+                for row in corrected.teacher_steps] == [98, EOS]
         assert free.work["content_held_prior_calls"] == len(free.steps)
         assert corrected.work["content_held_prior_calls"] == 2
         assert [row["prefix_hex"] for row in corrected.teacher_steps] == ["", "62"]
@@ -14336,6 +14596,7 @@ def test_recurrent_content_same_actor_online_lifecycle(tmp_path, monkeypatch):
         "sources": sources, "free": [prediction_disabled, acknowledged, prediction.payload],
         "teacher": [feedback_disabled, feedback], "execution": execution,
         "disabled_ack_work": ack_work, "rejected_modified_trace": 1,
+        "rejected_pending_numpy_banks": 2,
         "rejected_work": rejected_work, "held_old_reader_sha256": held_hashes,
         "frame_only_receives": frame.token_count,
     })

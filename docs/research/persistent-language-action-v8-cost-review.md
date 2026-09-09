@@ -204,8 +204,12 @@ The proposed bounded contract covers only those three journals:
    truncation, writable mappings, deletion and replacement; retain path/file
    identity checks. Existing payload read leases cannot simply be placed on a
    live writer. No writable handle or mapping may predate the ownership claim.
-2. Preserve encoding and exact write counts, flush/fsync, then read and authenticate
-   the actual new tail. Advance incremental SHA256 from those verified bytes,
+2. Preserve encoding and exact write counts, then establish durability and read
+   and authenticate the actual new tail. The selected native append-only handle
+   uses NTFS write-through; `FlushFileBuffers` requires broader GENERIC_WRITE
+   access, which this ownership contract deliberately excludes. The unsupported
+   fallback keeps flush/fsync and full prefix verification. Count write-through
+   completions separately from fsync calls. Advance incremental SHA256 from verified bytes,
    checking exact EOF, row count and LF. Hashing intended bytes alone is not the
    proposed disk-authentication proof.
 3. Keep only current and last-committed frontier receipts. Same-live-store reuse

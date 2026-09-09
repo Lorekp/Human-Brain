@@ -1,7 +1,7 @@
 # Roadmap: persistent language, knowledge and action
 
-Status: living decision document. Updated 2026-09-07 after the user's direction
-to broaden the workload. This roadmap owns priorities; frozen experiments keep
+Status: living decision document. Updated 2026-09-09 after the user's direction
+to stabilize the broader workload and teaching budget. This roadmap owns priorities; frozen experiments keep
 their original evidence contracts. Read it and the active linked plan before
 choosing work and after every context compaction.
 
@@ -32,6 +32,17 @@ directions. Do not append another experiment diary to this roadmap.
 ## Active work: a broader persistent session
 
 The active plan is [persistent language-and-action development](persistent-language-action-development-v1.md).
+The current user instruction pauses further difficulty increases and teacher
+reduction. Keep a stable representative integrated curriculum and a fixed,
+declared teaching budget while implementing and comparing the selected local
+credit change. Use scheduled learning checkpoints to report complete acquisition,
+retention and changed-context transfer separately. Repeated checkpoint probes
+are exposed developmental measurements, not repeatedly fresh tests.
+Measure behavior before and after architecture migration, alongside numerical
+state preservation; retaining tensors alone does not establish retained skill.
+Keep recovery visible and require actual successful repair to claim productive
+feedback use. Passing implementation QA does not select another mechanism.
+
 Continue the learner on a workload that combines reading,
 retained knowledge, raw software actions and observation of their consequences.
 Expose it to broader problems now; perfection on the current toy cohort is not
@@ -87,7 +98,8 @@ Prioritize four pressures together:
   facts amid distractors and revisions, and report retention by age and memory
   load. Disclose truncation, eviction and any supplied retrieval position.
 - **Reduced teacher dependence:** bound when corrective labels are available,
-  then evaluate action and recovery without answer corrections. Count every
+  then evaluate action and recovery without answer corrections. Further budget
+  reduction is currently paused; hold the comparison's teaching schedule fixed. Count every
   demonstration, replay, teacher symbol and attempt.
 
 Keep existing tasks as regression coverage, with their known failures visible.

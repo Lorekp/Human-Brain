@@ -1,4 +1,4 @@
-"""Sparse stochastic cells and local trajectory credit for one acting reader.
+"""Sparse stochastic cells and causal observed-symbol credit for one acting reader.
 
 The caller owns causal input framing, h/cursor relays and actual execution.
 This module owns all random choices, their direct afferent eligibility and the
@@ -29,6 +29,8 @@ CATEGORIES = ("scan", "free", "teacher")
 WEIGHT_NAMES = tuple(name + "_weight" for name in POPULATIONS)
 TENSOR_NAMES = (*WEIGHT_NAMES, "baseline_mean", "baseline_count", "rng_state")
 WEIGHT_BYTES = 24623616
+UPDATE_NORM_BOUND = math.sqrt(0.0026)
+UPDATE_NORM_TOLERANCE = 1e-10
 WORK_KEYS = tuple(
     "controller_" + name
     for name in (
@@ -62,6 +64,28 @@ WORK_KEYS = tuple(
         "eligibility_gathers",
         "eligibility_additions",
         "eligibility_copy_values",
+        "causal_zero_values",
+        "causal_products",
+        "causal_gathers",
+        "causal_additions",
+        "causal_copy_values",
+        "credit_validation_values",
+        "literal_pending_copy_bytes",
+        "literal_teaching_offers",
+        "literal_teaching_errors",
+        "literal_teaching_products",
+        "literal_teaching_gathers",
+        "literal_teaching_additions",
+        "literal_teaching_copy_values",
+        "literal_logarithms",
+        "literal_log_probability_subtractions",
+        "literal_loss_negations",
+        "conditional_reward_products",
+        "conditional_reward_subtractions",
+        "signal_additions",
+        "baseline_subtractions",
+        "update_divisions",
+        "update_subtractions",
         "ticks",
         "offers",
         "outcome_comparisons",
@@ -209,6 +233,16 @@ class ControllerStage:
     _token: object = field(default_factory=object, repr=False)
     _generator: object = field(default=None, repr=False)
     _eligibility: dict = field(default_factory=dict, repr=False)
+    _causal_prefix: dict = field(default_factory=dict, repr=False)
+    _literal_direct: dict = field(default_factory=dict, repr=False)
+    _literal_pending: dict | None = field(default=None, repr=False)
+    _literal_sha256: str | None = None
+    _pending_mode: int | None = None
+    _baselines: tuple = ()
+    _signal_sums: dict = field(default_factory=lambda: {"scan": 0.0, "teacher": 0.0})
+    _causal_totals: dict = field(default_factory=lambda: {"scan": 0.0, "teacher": 0.0})
+    _literal_offers: dict = field(default_factory=lambda: {"scan": 0, "teacher": 0})
+    _last_observation: tuple = ()
     _phase: str = "scan"
     _teacher_offers: int | None = None
     _next: str = "context"
@@ -238,13 +272,15 @@ class ControllerProposal:
     draws: int
     ticks: Mapping
     _stage: ControllerStage = field(repr=False, compare=False)
+    _stage_sha256: str = field(repr=False, compare=False)
     _seal: str = field(repr=False, compare=False)
 
     def record(self):
         return {
-            "schema": "recurrent-content-update-v1",
+            "schema": "recurrent-content-update-v2",
             "source_sha256": self.source_sha256,
             "state_sha256": self.state_sha256,
+            "stage_sha256": self._stage_sha256,
             "learning_enabled": self.learning_enabled,
             "rewards": dict(self.rewards),
             "category_count": self.category_count,
@@ -282,14 +318,19 @@ class RecurrentContentController(nn.Module):
 
     def get_extra_state(self):
         return {
-            "schema": "recurrent-content-controller-v1",
+            "schema": "recurrent-content-controller-v2",
             "seed": self.seed,
             "shapes": dict(SHAPES),
             "rng": "torch.Generator/cpu",
             "torch_version": str(torch.__version__),
             "rng_shape": self._rng_shape,
             "sampling": "f64-softmax-ascending-cdf-final1-strict-greater",
-            "local_rule": "own-softmax-eligibility-held-trajectory-v1",
+            "local_rule": "causal-observation-credit-v1",
+            "upstream_objective": "conditional-match-causal-category-means-over-fixed-L",
+            "literal_objective": "evaluated-branch-observed-byte-category-mean-cross-entropy",
+            "public_consequence": "unchanged-actual-scan-and-free-eligibility-over-fixed-L",
+            "update_norm_bound": UPDATE_NORM_BOUND,
+            "update_norm_tolerance": UPDATE_NORM_TOLERANCE,
             "learning_rate": 0.01,
             "free_normalization_ticks": 129,
             "baseline_order": ("source", "observation", "teacher"),
@@ -375,6 +416,13 @@ class RecurrentContentController(nn.Module):
             stage._next,
             tuple(sorted(stage._choices.items())),
             stage._pending_token,
+            stage._pending_mode,
+            stage._literal_sha256,
+            stage._baselines,
+            tuple(stage._signal_sums.items()),
+            tuple(stage._causal_totals.items()),
+            tuple(stage._literal_offers.items()),
+            stage._last_observation,
             tuple(stage._counts.items()),
             tuple(stage._reward_sums.items()),
             tuple(stage._ticks.items()),
@@ -384,10 +432,23 @@ class RecurrentContentController(nn.Module):
             stage._rng_sha256,
         )
 
+    @staticmethod
+    def _private_tensors(stage):
+        values = {
+            f"eligibility/{c}/{n}": v
+            for c, bank in stage._eligibility.items() for n, v in bank.items()
+        }
+        values.update({f"causal_prefix/{c}/{n}": v
+                       for c, bank in stage._causal_prefix.items() for n, v in bank.items()})
+        values.update({f"literal_direct/{c}": v for c, v in stage._literal_direct.items()})
+        if stage._literal_pending is not None:
+            values.update({f"literal_pending/{n}": v for n, v in stage._literal_pending.items()})
+        return values
+
     def _remember(self, stage):
         stage._expected = self._status(stage)
         stage._tensor_ids = {
-            (c, n): _identity(v) for c, bank in stage._eligibility.items() for n, v in bank.items()
+            key: _identity(value) for key, value in self._private_tensors(stage).items()
         }
 
     def _guard(self, stage, work=None):
@@ -401,7 +462,7 @@ class RecurrentContentController(nn.Module):
             raise ValueError("stale, foreign or modified controller stage")
         actual = {key: _identity(getattr(self, key)) for key in TENSOR_NAMES}
         eligible = {
-            (c, n): _identity(v) for c, bank in stage._eligibility.items() for n, v in bank.items()
+            key: _identity(value) for key, value in self._private_tensors(stage).items()
         }
         if actual != self._source_ids or eligible != stage._tensor_ids:
             raise ValueError("held weights or private eligibility changed outside controller")
@@ -428,11 +489,7 @@ class RecurrentContentController(nn.Module):
         """
         self._guard(stage, work)
         rng, _ = self._rng(stage, work)
-        values = {
-            f"eligibility/{category}/{name}": value
-            for category, bank in stage._eligibility.items()
-            for name, value in bank.items()
-        }
+        values = self._private_tensors(stage)
         values.update(
             {
                 "status": self._status(stage),
@@ -484,8 +541,18 @@ class RecurrentContentController(nn.Module):
             }
             for category in CATEGORIES
         }
+        stage._causal_prefix = {
+            c: {n: torch.zeros(SHAPES[n], dtype=torch.float64) for n in POPULATIONS[:-1]}
+            for c in ("scan", "teacher")
+        }
+        stage._literal_direct = {
+            c: torch.zeros(SHAPES["literal"], dtype=torch.float64) for c in ("scan", "teacher")
+        }
+        stage._baselines = (float(self.baseline_mean[0 if kind == "source" else 1]),
+                            float(self.baseline_mean[2]))
         _add(work, "eligibility_zero_values", 3 * WEIGHT_BYTES // 8)
-        _add(work, "named_allocated_bytes", 3 * WEIGHT_BYTES)
+        _add(work, "causal_zero_values", 2 * WEIGHT_BYTES // 8)
+        _add(work, "named_allocated_bytes", 5 * WEIGHT_BYTES)
         _add(work, "rng_generators", 1)
         _add(work, "rng_state_bytes", self.rng_state.numel())
         _add(work, "stages", 1)
@@ -555,6 +622,32 @@ class RecurrentContentController(nn.Module):
         columns += update
         _finite(columns, "controller eligibility")
         eligible.index_copy_(1, activity.indices, columns)
+        if category != "free" and population != "literal":
+            prefix_bank = stage._causal_prefix[category][population]
+            prefix_columns = prefix_bank.index_select(1, activity.indices)
+            prefix_columns += update * stage._causal_totals[category]
+            _finite(prefix_columns, "causal prefix eligibility")
+            _add(work, "credit_validation_values", prefix_columns.numel())
+            prefix_bank.index_copy_(1, activity.indices, prefix_columns)
+            for key in ("causal_gathers", "causal_products", "causal_additions", "causal_copy_values"):
+                _add(work, key, rows * count)
+            _add(work, "named_allocated_bytes", 16 * rows * count)
+        if category != "free" and population == "literal":
+            # Own immutable copies outlive the returned draw and caller activity.
+            # Only this small pre-target bank is byte-checked at observe.
+            log_probabilities = shifted - math.log(float(total))
+            _finite(log_probabilities, "controller literal log probabilities")
+            stage._literal_pending = {"probabilities": probabilities.clone(),
+                                      "log_probabilities": log_probabilities,
+                                      "indices": activity.indices.clone(),
+                                      "values": activity.values.clone()}
+            stage._literal_sha256 = _digest(stage._literal_pending, work)
+            copied = 8 * rows + 16 * count
+            _add(work, "literal_pending_copy_bytes", copied)
+            _add(work, "literal_logarithms", 1)
+            _add(work, "literal_log_probability_subtractions", rows)
+            _add(work, "credit_validation_values", rows)
+            _add(work, "named_allocated_bytes", copied + 8 * rows)
         stage._choices[population] = selected
         stage._next = {"context": "gate", "gate": "mode", "literal": "complete"}.get(
             population, "literal" if selected == 3 else "complete"
@@ -627,12 +720,14 @@ class RecurrentContentController(nn.Module):
             stage._free_ended = token == 256 or stage._ticks["free"] == stage.max_bytes + 1
         else:
             stage._pending_token = token
+            stage._pending_mode = mode
         stage._choices.clear()
         stage._next = "context"
         self._remember(stage)
         _add(work, "ticks", 1)
         return token
 
+    @torch.no_grad()
     def observe(self, stage, target, *, category, work=None):
         self._guard(stage, work)
         if (
@@ -644,13 +739,72 @@ class RecurrentContentController(nn.Module):
         ):
             raise ValueError("observation needs one completed pre-arrival prediction")
         reward = 1 if stage._pending_token == target else -1
+        probability = loss = activity_sha = None
+        if (stage._pending_mode == 3) != (stage._literal_pending is not None):
+            raise ValueError("observed literal branch lost its pre-target distribution")
+        if stage._literal_pending is not None:
+            held = stage._literal_pending
+            if _digest(held, work) != stage._literal_sha256:
+                raise ValueError("pre-target literal distribution or activity was modified")
+            probability = float(held["probabilities"][target])
+            signal = 2.0 * probability - 1.0
+            loss = -float(held["log_probabilities"][target])
+            error = -held["probabilities"]
+            error[target] += 1.0
+            increment = error[:, None] * held["values"][None, :]
+            bank = stage._literal_direct[category]
+            columns = bank.index_select(1, held["indices"])
+            columns += increment
+            _finite(columns, "direct literal observed-byte accumulation")
+            _add(work, "credit_validation_values", columns.numel())
+            activity_sha = _digest({"indices": held["indices"], "values": held["values"],
+                                    "width": EMISSION_WIDTH}, work)
+            bank.index_copy_(1, held["indices"], columns)
+            stage._literal_offers[category] += 1
+            size = increment.numel()
+            for key in ("literal_teaching_products", "literal_teaching_gathers",
+                        "literal_teaching_additions", "literal_teaching_copy_values"):
+                _add(work, key, size)
+            _add(work, "literal_teaching_errors", 258)
+            _add(work, "literal_loss_negations", 1)
+            _add(work, "literal_teaching_offers", 1)
+            _add(work, "conditional_reward_products", 1)
+            _add(work, "conditional_reward_subtractions", 1)
+            _add(work, "named_allocated_bytes", 16 * size + 8 * 257)
+        else:
+            signal = float(reward)
+        baseline = stage._baselines[int(category == "teacher")]
+        before = stage._causal_totals[category]
+        after = before + (signal - baseline)
+        stage._last_observation = tuple({
+            "schema": "causal-observation-credit-offer-v1", "category": category,
+            "observed_token": target, "mode": stage._pending_mode,
+            "sampled_reward": reward, "signal": signal, "baseline_before": baseline,
+            "causal_total_before": before, "causal_total_after": after,
+            "literal_taught": probability is not None, "target_probability": probability,
+            "literal_loss": loss, "literal_activity_sha256": activity_sha,
+        }.items())
         stage._counts[category] += 1
         stage._reward_sums[category] += reward
+        stage._signal_sums[category] += signal
+        stage._causal_totals[category] = after
+        stage._literal_pending = None
+        stage._literal_sha256 = None
+        stage._pending_mode = None
         stage._pending_token = None
         self._remember(stage)
         _add(work, "offers", 1)
         _add(work, "outcome_comparisons", 1)
+        _add(work, "baseline_subtractions", 1)
+        _add(work, "signal_additions", 3)
         return reward
+
+    def observation_record(self, stage, work=None):
+        """Return scalar actual-symbol credit without exposing private tensors."""
+        self._guard(stage, work)
+        if not stage._last_observation or stage._pending_token is not None:
+            raise ValueError("credit receipt requires an already consumed observation")
+        return dict(stage._last_observation)
 
     def seal_scan(self, stage, work=None):
         self._guard(stage, work)
@@ -702,6 +856,15 @@ class RecurrentContentController(nn.Module):
         fork._eligibility = {
             c: {n: v.clone() for n, v in bank.items()} for c, bank in stage._eligibility.items()
         }
+        fork._causal_prefix = {
+            c: {n: v.clone() for n, v in bank.items()} for c, bank in stage._causal_prefix.items()
+        }
+        fork._literal_direct = {c: v.clone() for c, v in stage._literal_direct.items()}
+        fork._baselines = stage._baselines
+        fork._signal_sums = dict(stage._signal_sums)
+        fork._causal_totals = dict(stage._causal_totals)
+        fork._literal_offers = dict(stage._literal_offers)
+        fork._last_observation = stage._last_observation
         fork._phase = stage._phase
         fork._counts = dict(stage._counts)
         fork._reward_sums = dict(stage._reward_sums)
@@ -712,8 +875,8 @@ class RecurrentContentController(nn.Module):
         self._issued[fork._token] = weakref.ref(fork)
         self._remember(fork)
         _add(work, "forks", 1)
-        _add(work, "stage_copy_bytes", 3 * WEIGHT_BYTES)
-        _add(work, "named_allocated_bytes", 3 * WEIGHT_BYTES)
+        _add(work, "stage_copy_bytes", 5 * WEIGHT_BYTES)
+        _add(work, "named_allocated_bytes", 5 * WEIGHT_BYTES)
         _add(work, "rng_generators", 1)
         _add(work, "rng_state_bytes", rng.numel())
         return fork
@@ -732,6 +895,8 @@ class RecurrentContentController(nn.Module):
             stage._phase != phase
             or stage._next != "context"
             or stage._pending_token is not None
+            or stage._literal_pending is not None
+            or stage._pending_mode is not None
             or stage._counts["teacher"] != (stage._teacher_offers or 0)
         ):
             raise ValueError("finish cannot omit outstanding draws or external offers")
@@ -744,33 +909,57 @@ class RecurrentContentController(nn.Module):
         self.check_parameters(work)
         if _digest(self._state(), work) != stage.source_sha256:
             raise ValueError("controller source changed before publication")
-        for bank in stage._eligibility.values():
-            for value in bank.values():
-                _finite(value, "whole eligibility bank")
-                _add(work, "parameter_validation_values", value.numel())
+        for value in self._private_tensors(stage).values():
+            _finite(value, "whole local credit bank")
+            _add(work, "parameter_validation_values", value.numel())
         source_index = 0 if stage.kind == "source" else 1
-        scan_reward = stage._reward_sums["scan"] / stage.scan_offers
+        scan_reward = stage._signal_sums["scan"] / stage.scan_offers
         teacher_count = stage._teacher_offers or 0
-        teacher_reward = (stage._reward_sums["teacher"] / teacher_count) if teacher_count else None
-        scan_error = scan_reward - float(self.baseline_mean[source_index])
-        teacher_error = (
-            0.0 if teacher_reward is None else teacher_reward - float(self.baseline_mean[2])
-        )
+        teacher_reward = (stage._signal_sums["teacher"] / teacher_count) if teacher_count else None
         public = 0.0 if public_reward is None else float(public_reward)
         count = 1 + int(teacher_reward is not None) + int(stage.kind == "edit")
         length = stage.scan_offers + (0 if stage.kind == "source" else teacher_count + 129)
+        scale = 0.01 / (count * length)
+        teacher_error = stage._causal_totals["teacher"] / teacher_count if teacher_count else 0.0
         coefficients = {
-            "scan": (scan_error + teacher_error + public) / count,
-            "free": public / count,
-            "teacher": teacher_error / count,
+            "causal_scan": scale / stage.scan_offers,
+            "causal_teacher": scale / teacher_count if teacher_count else 0.0,
+            "common_scan_teacher": scale * teacher_error,
+            "public": scale * public,
+            "literal_scan": 0.01 / (count * stage.scan_offers),
+            "literal_teacher": 0.01 / (count * teacher_count) if teacher_count else 0.0,
         }
         state, norm_squared = {}, 0.0
         for name in POPULATIONS:
-            # Three categories remain explicit, including mathematically zero terms.
-            delta = stage._eligibility["scan"][name] * coefficients["scan"]
-            delta += stage._eligibility["free"][name] * coefficients["free"]
-            delta += stage._eligibility["teacher"][name] * coefficients["teacher"]
-            delta *= 0.01 / length
+            n = math.prod(SHAPES[name])
+            scan = stage._eligibility["scan"][name]
+            if name == "literal":
+                delta = stage._literal_direct["scan"] / stage.scan_offers
+                if teacher_count:
+                    delta += stage._literal_direct["teacher"] / teacher_count
+                delta *= 0.01 / count
+                delta += (scan + stage._eligibility["free"][name]) * (scale * public)
+                _add(work, "update_divisions", (1 + int(bool(teacher_count))) * n)
+                _add(work, "update_products", 2 * n)
+                _add(work, "update_additions", (3 + int(bool(teacher_count))) * n)
+                _add(work, "named_allocated_bytes", (40 + 8 * int(bool(teacher_count))) * n)
+            else:
+                # A_final E-P is a forward sparse accumulation, evaluated once here.
+                delta = stage._causal_totals["scan"] * scan - stage._causal_prefix["scan"][name]
+                delta /= stage.scan_offers
+                if teacher_count:
+                    teacher = (stage._causal_totals["teacher"] * stage._eligibility["teacher"][name]
+                               - stage._causal_prefix["teacher"][name])
+                    teacher /= teacher_count
+                    delta += teacher_error * scan
+                    delta += teacher
+                delta += (scan + stage._eligibility["free"][name]) * public
+                delta *= scale
+                _add(work, "update_products", (3 + 2 * int(bool(teacher_count))) * n)
+                _add(work, "update_subtractions", (1 + int(bool(teacher_count))) * n)
+                _add(work, "update_divisions", (1 + int(bool(teacher_count))) * n)
+                _add(work, "update_additions", (3 + 2 * int(bool(teacher_count))) * n)
+                _add(work, "named_allocated_bytes", (48 + 24 * int(bool(teacher_count))) * n)
             _finite(delta, "controller proposed delta")
             squared = float((delta * delta).sum().item())
             norm_squared += squared
@@ -778,15 +967,11 @@ class RecurrentContentController(nn.Module):
             candidate = weight + delta
             _finite(candidate, "controller proposed weights")
             state[name + "_weight"] = candidate if learning_enabled else weight
-            n = weight.numel()
-            _add(work, "update_products", 4 * n)
-            _add(work, "update_additions", 3 * n)
             _add(work, "update_norm_products", n)
             _add(work, "update_norm_reductions", n - 1)
             _add(work, "proposed_weight_bytes", 8 * n)
-            _add(work, "named_allocated_bytes", 40 * n)
         norm = math.sqrt(norm_squared)
-        if not math.isfinite(norm) or norm > 0.02 * math.sqrt(8) + 1e-10:
+        if not math.isfinite(norm) or norm > UPDATE_NORM_BOUND + UPDATE_NORM_TOLERANCE:
             raise ValueError("controller local update exceeds declared norm bound")
         means, counts = self.baseline_mean.clone(), self.baseline_count.clone()
         for index, value in ((source_index, scan_reward), (2, teacher_reward)):
@@ -810,15 +995,25 @@ class RecurrentContentController(nn.Module):
         rewards = {
             "scan": scan_reward,
             "teacher": teacher_reward,
+            "sampled_scan": stage._reward_sums["scan"] / stage.scan_offers,
+            "sampled_teacher": stage._reward_sums["teacher"] / teacher_count if teacher_count else None,
             "public": public_reward,
             "scan_baseline_before": float(self.baseline_mean[source_index]),
             "teacher_baseline_before": float(self.baseline_mean[2]),
             "coefficients": tuple(coefficients.items()),
+            "causal_totals": tuple(stage._causal_totals.items()),
+            "literal_offers": tuple(stage._literal_offers.items()),
+            "external_offers": (("scan", stage.scan_offers), ("teacher", teacher_count)),
+            "objectives": "conditional-match-upstream; direct-observed-literal-CE; actual-public",
         }
         state_hash = _digest(state, work)
+        stage._finished = True
+        self._remember(stage)
+        stage_hash = self.stage_digest(stage, work)
         seal = _digest(
             {
                 "state": state_hash,
+                "stage": stage_hash,
                 "source": stage.source_sha256,
                 "enabled": learning_enabled,
                 "rewards": rewards,
@@ -842,10 +1037,9 @@ class RecurrentContentController(nn.Module):
             stage._draws,
             dict(stage._ticks),
             stage,
+            stage_hash,
             seal,
         )
-        stage._finished = True
-        self._remember(stage)
         _add(work, "finish_calls", 1)
         _add(work, "category_terms", count)
         return proposal
@@ -854,11 +1048,13 @@ class RecurrentContentController(nn.Module):
         if not isinstance(proposal, ControllerProposal):
             raise ValueError("validate_stage requires a prepared controller proposal")
         self._guard(proposal._stage, work)
+        stage_hash = self.stage_digest(proposal._stage, work)
         self.validate_state(proposal.state, work=work)
         state_hash = _digest(proposal.state, work)
         seal = _digest(
             {
                 "state": state_hash,
+                "stage": stage_hash,
                 "source": proposal.source_sha256,
                 "enabled": proposal.learning_enabled,
                 "rewards": proposal.rewards,
@@ -870,7 +1066,8 @@ class RecurrentContentController(nn.Module):
             },
             work,
         )
-        if state_hash != proposal.state_sha256 or seal != proposal._seal:
+        if (state_hash != proposal.state_sha256 or stage_hash != proposal._stage_sha256
+                or seal != proposal._seal):
             raise ValueError("prepared controller proposal was modified")
         if _digest(self._state(), work) != proposal.source_sha256:
             raise ValueError("controller changed since proposal preparation")

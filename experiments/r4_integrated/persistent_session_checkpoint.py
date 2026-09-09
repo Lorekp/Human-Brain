@@ -11,11 +11,14 @@ import io
 import json
 import math
 import os
+import threading
 import time
 import uuid
+from contextlib import ExitStack, contextmanager
 from pathlib import Path, PurePosixPath
 
 from experiments.r4_integrated import persistent_checkpoint_payload_lease as payload_lease
+from experiments.r4_integrated.persistent_checkpoint_journal import OwnedJournal
 from experiments.r4_integrated.persistent_language_action_v1 import encode
 
 ROUTES = ("online", "learning_disabled", "simple")
@@ -233,6 +236,10 @@ class PersistentSessionCheckpoint:
         obj._payload_leases = {}
         obj._payload_backend = None
         obj._closed = False
+        obj._journals = {}
+        obj._journal_thread = None
+        obj._journal_poisoned = False
+        obj._journal_busy = False
         raw = obj._read(Path(manifest_path), JSON_LIMIT)
         if hashlib.sha256(raw).hexdigest() != _sha(manifest_sha256):
             raise ValueError("frozen session manifest hash mismatch")
@@ -265,6 +272,10 @@ class PersistentSessionCheckpoint:
         obj._payload_leases = {}
         obj._payload_backend = None
         obj._closed = False
+        obj._journals = {}
+        obj._journal_thread = None
+        obj._journal_poisoned = False
+        obj._journal_busy = False
         raw = obj._read(obj.directory / "config.json", JSON_LIMIT)
         if hashlib.sha256(raw).hexdigest() != _sha(config_sha256):
             raise ValueError("checkpoint configuration hash mismatch")
@@ -279,14 +290,113 @@ class PersistentSessionCheckpoint:
     def _require_open(self):
         if self._closed:
             raise ValueError("checkpoint store is closed")
+        if self._journal_poisoned:
+            raise DirtyCheckpoint("owned journal checkpoint was interrupted; reopen for full verification")
+
+    def create_owned_journals(self, journals):
+        """Opt in before the initial boundary; create every supplied segment anew.
+
+        Returns name -> writer. The store owns their lifetimes. Existing files,
+        foreign writers and ordinary xb handles cannot gain cached receipts.
+        """
+        self._require_open()
+        _keys(journals, KINDS)
+        if (self._journals or self._journal_thread is not None
+                or self._intent is None or self._intent[0]["kind"] != "initialize"
+                or (self.directory / "HEAD.json").exists()):
+            raise ValueError("owned journals require a new initializing store")
+        root = Path(self.config["evidence_root"]).resolve()
+        paths = {}
+        for kind in KINDS:
+            if not isinstance(journals[kind], list) or not journals[kind]:
+                raise ValueError("each journal requires its ordered segment paths")
+            for name in journals[kind]:
+                path = _relative(root, name)
+                if name in paths or path in paths.values():
+                    raise ValueError("duplicate owned journal segment")
+                paths[name] = path
+        try:
+            for name, path in paths.items():
+                self._journals[name] = OwnedJournal(path, self.work)
+        except BaseException:
+            self._journal_poisoned = True
+            for journal in self._journals.values():
+                journal.close()
+            raise
+        return dict(self._journals)
+
+    @contextmanager
+    def checkpoint_scope(self):
+        """Freeze all owned writers continuously from capture through publication.
+
+        Any interrupted scope poisons owned continuation and retains its intent.
+        Closing/reopening never adopts the cached prefix receipts.
+        """
+        self._require_open()
+        if self._journal_thread is not None:
+            raise ValueError("checkpoint scope is already active")
+        try:
+            with ExitStack() as stack:
+                for journal in self._journals.values():
+                    stack.enter_context(journal.freeze())
+                self._journal_thread = threading.get_ident()
+                yield self
+                self._require_journal_scope()
+        except BaseException:
+            if self._journals:
+                self._journal_poisoned = True
+                for journal in self._journals.values():
+                    journal.poison()
+            raise
+        finally:
+            self._journal_thread = None
+
+    def _require_journal_scope(self):
+        self._require_open()
+        if self._journals:
+            if self._journal_thread != threading.get_ident():
+                raise ValueError("owned journals require checkpoint_scope across capture and commit")
+            for journal in self._journals.values():
+                journal.require_frozen()
+
+    @contextmanager
+    def _journal_operation(self):
+        if self._journals and self._journal_busy:
+            raise ValueError("owned checkpoint operation is already active")
+        self._journal_busy = True
+        try:
+            yield
+        finally:
+            self._journal_busy = False
+
+    def _journal_file(self, name, *, prefix=None, fresh=False):
+        root = Path(self.config["evidence_root"]).resolve()
+        path = _relative(root, name)
+        journal = self._journals.get(name)
+        if journal is not None:
+            self._require_journal_scope()
+            if path != journal.path:
+                journal.poison()
+                raise ValueError("owned journal path was rebound")
+            if journal.cached_prefixes and not fresh:
+                item = journal.frontier(prefix=prefix)
+                self._add("checkpoint_journal_reused_checks", 1)
+                self._add("checkpoint_journal_avoided_hash_bytes", item["bytes"])
+                return item
+        self._add("checkpoint_journal_full_hash_checks", 1)
+        if fresh:
+            self._add("checkpoint_journal_fresh_hash_checks", 1)
+        return self._file(path, prefix=prefix)
 
     def close(self):
         """Release every owned file handle; never delete evidence or clear intents."""
         if self._closed:
             return
+        if self._journal_thread is not None:
+            raise ValueError("cannot close store during checkpoint scope")
         self._closed = True
         failure = None
-        for lease in self._payload_leases.values():
+        for lease in (*self._payload_leases.values(), *self._journals.values()):
             try:
                 lease.close()
             except BaseException as error:
@@ -486,7 +596,12 @@ class PersistentSessionCheckpoint:
         journals maps each kind to its chronological segment file names. This
         method neither appends/replays journals nor launches or parses programs.
         """
+        with self._journal_operation():
+            return self._capture_frontiers(journals, execution_root=execution_root)
+
+    def _capture_frontiers(self, journals, *, execution_root):
         self._require_open()
+        self._require_journal_scope()
         _keys(journals, KINDS)
         root = Path(self.config["evidence_root"]).resolve()
         records, seen = [], set()
@@ -497,7 +612,7 @@ class PersistentSessionCheckpoint:
                 if name in seen:
                     raise ValueError("duplicate journal segment")
                 seen.add(name)
-                item = self._file(_relative(root, name))
+                item = self._journal_file(name)
                 if not item.pop("complete"):
                     raise DirtyCheckpoint("journal ends inside a record")
                 records.append({"kind": kind, "path": name, **item})
@@ -516,7 +631,7 @@ class PersistentSessionCheckpoint:
         return {"journals": records, "execution_root": execution_root,
                 "execution_files": files, "execution_directories": directories}
 
-    def _frontiers(self, value, *, allow_tail=False):
+    def _frontiers(self, value, *, allow_tail=False, fresh=False):
         _keys(value, ("journals", "execution_root", "execution_files", "execution_directories"))
         root = Path(self.config["evidence_root"]).resolve()
         dirty = []
@@ -529,7 +644,7 @@ class PersistentSessionCheckpoint:
             if any(row["path"] in names for names in paths.values()):
                 raise ValueError("duplicate evidence journal path")
             paths[row["kind"]].append(row["path"])
-            item = self._file(path, prefix=_integer(row["bytes"]))
+            item = self._journal_file(row["path"], prefix=_integer(row["bytes"]), fresh=fresh)
             if (not item["complete"] or item["sha256"] != _sha(row["sha256"])
                     or item["rows"] != _integer(row["rows"])):
                 raise ValueError("committed journal prefix changed")
@@ -735,11 +850,18 @@ class PersistentSessionCheckpoint:
 
     def inspect(self, *, require_clean=True, fresh_payloads=False):
         """Authenticate the last safe prior without importing/deserializing tensors."""
+        with self._journal_operation():
+            if self._journals and self._journal_thread is None:
+                with self.checkpoint_scope():
+                    return self._inspect(require_clean=require_clean, fresh_payloads=fresh_payloads)
+            return self._inspect(require_clean=require_clean, fresh_payloads=fresh_payloads)
+
+    def _inspect(self, *, require_clean=True, fresh_payloads=False):
         self._require_open()
         if type(fresh_payloads) is not bool:
             raise ValueError("fresh payload inspection must be an explicit boolean")
         boundary, digest = self._boundary(fresh_payloads=fresh_payloads)
-        dirty = self._frontiers(boundary["frontiers"], allow_tail=True)
+        dirty = self._frontiers(boundary["frontiers"], allow_tail=True, fresh=fresh_payloads)
         for path in self.directory.glob("intent-*.json"):
             intent = json.loads(self._read(path, JSON_LIMIT))
             if _integer(intent["sequence"]) > boundary["sequence"]:
@@ -787,6 +909,18 @@ class PersistentSessionCheckpoint:
         A successful commit never clears pending state on the caller's behalf.
         """
         self._require_open()
+        self._require_journal_scope()
+        try:
+            with self._journal_operation():
+                return self._commit(models, states, baseline, host, frontiers)
+        except BaseException:
+            if self._journals:
+                self._journal_poisoned = True
+                for journal in self._journals.values():
+                    journal.poison()
+            raise
+
+    def _commit(self, models, states, baseline, host, frontiers):
         import torch
 
         from humanbrain.neuronal_splice_learner import _digest
@@ -903,6 +1037,11 @@ class PersistentSessionCheckpoint:
             if lease is not None:
                 self._leased_payload(row, lease)
                 self._add("checkpoint_payload_prepublication_checks", 1)
+        by_path = {row["path"]: row for row in frontiers["journals"]}
+        if not self._journals.keys() <= by_path.keys():
+            raise ValueError("checkpoint omitted an owned journal")
+        prepared = [(journal, journal.prepare_commit(by_path[name]))
+                    for name, journal in self._journals.items()]
         raw = encode(boundary)
         if len(raw) > JSON_LIMIT:
             raise ValueError("boundary exceeds JSON bound")
@@ -913,6 +1052,8 @@ class PersistentSessionCheckpoint:
         temporary = self.directory / f"HEAD-{uuid.uuid4().hex}.tmp"
         self._write(temporary, encode(head))
         os.replace(temporary, self.directory / "HEAD.json")
+        for journal, frontier in prepared:
+            journal.commit_validated(frontier)
         self._intent = None
         self._add("checkpoint_head_publications", 1)
         return {"boundary_sha256": head["sha256"], "sequence": sequence,
