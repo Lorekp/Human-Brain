@@ -30,10 +30,18 @@ check_scan, scan_schedule = v8.check_scan, v8.scan_schedule
 check_tick, check_prior, check_execution = v8.check_tick, v8.check_prior, v8.check_execution
 metrics = v8.metrics
 AUDIT_SECONDS = 600
+FROZEN_AUDITOR = "experiments/r4_integrated/stable_language_action_credit_review_v1.py"
+FROZEN_AUDITOR_SHA256 = "2f53d1edea559fee230205d9e107fe4df54e9366d793a9781009d2d0db864c0c"
 
 
 def _admit(deadline):
     require(time.perf_counter() < deadline, "saved audit exceeded declared 600 seconds")
+
+
+def _behavior_signature(row):
+    return digest(encoded({key: row[key] for key in (
+        "answer_hex", "proposal", "correct", "after_files", "status")}
+        | {"grade": row["grade"] if row["kind"] == "edit" else None}))
 
 
 def _paired(left, right, *, migration=False):
@@ -474,7 +482,8 @@ def check_teacher_feedback(feedback, prediction, target, used, trajectory,
     return len(steps)
 
 
-def check_checkpoints(run, sources, manifest_sha, rows_by_kind, partial, resolved):
+def check_checkpoints(run, sources, manifest_sha, rows_by_kind, partial, resolved,
+                      *, frozen_auditor_path=None):
     """Independent immutable-byte and scalar frontier audit; no tensor decoder."""
     directory = run / "checkpoints"
     if not directory.exists():
@@ -657,8 +666,16 @@ def check_checkpoints(run, sources, manifest_sha, rows_by_kind, partial, resolve
         StableLanguageActionCreditCheckpoint,
     )
 
+    class SavedAuditCheckpoint(StableLanguageActionCreditCheckpoint):
+        def _file(self, path, *, prefix=None):
+            if frozen_auditor_path is not None and path.resolve() == (ROOT / FROZEN_AUDITOR).resolve():
+                require(sources[FROZEN_AUDITOR] == FROZEN_AUDITOR_SHA256,
+                        "unknown original inspector auditor")
+                path = Path(frozen_auditor_path).resolve()
+            return super()._file(path, prefix=prefix)
+
     inspect_started = time.perf_counter()
-    with StableLanguageActionCreditCheckpoint.open(directory, config_sha256=config_sha) as store:
+    with SavedAuditCheckpoint.open(directory, config_sha256=config_sha) as store:
         checked = store.inspect(require_clean=not partial, fresh_payloads=True)
         require(
             checked["boundary_sha256"] == previous_hash and (checked["status"] == "dirty") is dirty,
@@ -689,7 +706,7 @@ def check_checkpoints(run, sources, manifest_sha, rows_by_kind, partial, resolve
 # Dispatcher and checkpoint/frontier audit follow below. No module import runs a review.
 
 
-def review_worker(run, manifest_sha, deadline):
+def review_worker(run, manifest_sha, deadline, *, frozen_auditor_path=None):
     started, partial = time.perf_counter(), False
     run = Path(run).resolve()
     require(scalar.file_sha(run / "manifest.json") == manifest_sha, "changed stable manifest")
@@ -733,8 +750,17 @@ def review_worker(run, manifest_sha, deadline):
         _admit(deadline)
         require(scalar.file_sha(safe_path(run, name)) == identity, "changed saved evidence: " + name)
     sources = read_json(run / "sources.json")
+    auditor_provenance = {"current_sha256": scalar.file_sha(ROOT / FROZEN_AUDITOR),
+                          "frozen_sha256": sources[FROZEN_AUDITOR],
+                          "frozen_source_copy": None}
     for name, identity in sources.items():
-        require(scalar.file_sha(safe_path(ROOT, name)) == identity, "changed source: " + name)
+        source_path = safe_path(ROOT, name)
+        if name == FROZEN_AUDITOR and frozen_auditor_path is not None:
+            # A post-run reader correction never changes the execution-source map.
+            require(identity == FROZEN_AUDITOR_SHA256, "unknown original auditor")
+            source_path = Path(frozen_auditor_path).resolve()
+            auditor_provenance["frozen_source_copy"] = str(source_path)
+        require(scalar.file_sha(source_path) == identity, "changed source: " + name)
     require(all(sources.get(name) == identity for name, identity in
                 report["runtime"]["source_sha256"].items()), "runtime source selection not bound")
     runtime = report["runtime"]
@@ -1063,8 +1089,7 @@ def review_worker(run, manifest_sha, deadline):
                            "rng_before_sha256": row["controller_before"]["rng_sha256"] if neural else None,
                            "diagnostics": None if row["execution"] is None else {
                                key: row["execution"][key] for key in ("stdout_hex", "stderr_hex", "capture_errors")},
-                           "behavior_sha256": digest(encoded({key: row[key] for key in (
-                               "answer_hex", "proposal", "grade", "correct", "after_files", "status")}))})
+                           "behavior_sha256": _behavior_signature(row)})
                     consumed["attempts"] += 1
                     add_cost(row, "free", "attempt")
                     if row["execution"] is not None and not row["execution"]["files_complete"]:
@@ -1148,7 +1173,8 @@ def review_worker(run, manifest_sha, deadline):
                     del row
     require(all(consumed[k] == len(indexed[k]) for k in indexed), "unplanned durable rows beyond chronological prefix")
     require(partial or pending is None, "complete run omitted scheduled outcomes")
-    checkpoint = check_checkpoints(run, sources, manifest_sha, indexed, partial, resolved)
+    checkpoint = check_checkpoints(run, sources, manifest_sha, indexed, partial, resolved,
+                                   frozen_auditor_path=frozen_auditor_path)
     if not partial:
         require(consumed == {"attempts": 192, "teachers": 6, "ingests": 72}
                 and checkpoint["boundaries"] == 265
@@ -1240,6 +1266,7 @@ def review_worker(run, manifest_sha, deadline):
             "complete_run": not partial, "run": str(run), "manifest_sha256": manifest_sha,
             "source_revision": report["runtime"]["old_source_revision"] if rule == "old" else read_json(run / "checkpoints/config.json")["source_revision"],
             "saved_tool_sources": saved_tool_sources,
+            "auditor_provenance": auditor_provenance,
             "attempt_rows": len(compact), "teacher_rows": consumed["teachers"], "ingest_rows": consumed["ingests"],
             "exposures": counts, "source_offers": source_offers, "controller_exposures": stochastic,
             "controller_exposure_scope": "checked saved ticks only; status includes its framing EOS and is disjoint from raw_content and other eos offers; free has no target or match count; aggregate matches are not a temporal improvement or task-success claim",
@@ -1255,7 +1282,7 @@ def review_worker(run, manifest_sha, deadline):
             "scope": "durable actual prefix, local scalar receipts and custody; no reconstruction of omitted eligibility, synapses, gates or interrupted unsaved exposure"}
 
 
-def review(comparison_root, manifest_sha):
+def review(comparison_root, manifest_sha, *, frozen_auditor_path=None):
     """Read existing bytes only and return an audit, including an honest failed prefix."""
     started = time.perf_counter()
     deadline = started + AUDIT_SECONDS
@@ -1272,7 +1299,8 @@ def review(comparison_root, manifest_sha):
         for rule in ("old", "causal"):
             _admit(deadline)
             run = root / rule
-            worker = review_worker(run, manifest_sha, deadline)
+            worker = review_worker(run, manifest_sha, deadline,
+                                   frozen_auditor_path=frozen_auditor_path)
             require(worker["credit_rule"] == rule, "comparison worker source assignment")
             result["workers"][rule] = worker
             result["checkpoints"][rule] = review_probes(run, worker, manifest_sha, deadline)

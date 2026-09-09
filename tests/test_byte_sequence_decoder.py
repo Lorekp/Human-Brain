@@ -15443,3 +15443,23 @@ def test_recurrent_v8_nested_receipt_serialization(tmp_path):
         "checkpoint_decodes": 0,
         "scope": "authored dataclass/mapping/bytes/tuple/tensor serialization only",
     })
+
+
+def test_stable_credit_audit_behavior_signature_reads_actual_row_contract():
+    from experiments.r4_integrated.stable_language_action_credit_review_v1 import (
+        _behavior_signature,
+    )
+
+    # The worker grades readings through accepted answers and saves no grade field.
+    reading = {"kind": "reading", "answer_hex": "61", "proposal": None,
+               "correct": True, "after_files": [], "status": "completed"}
+    reading_signature = _behavior_signature(reading)
+    assert reading_signature == _behavior_signature(dict(reading))
+    assert reading_signature != _behavior_signature(reading | {"answer_hex": "62"})
+    edit = reading | {"kind": "edit", "answer_hex": None,
+                      "proposal": {"operation": "STOP"}, "grade": {"task_success": True}}
+    assert _behavior_signature(edit) != _behavior_signature(
+        edit | {"grade": {"task_success": False}})
+    del edit["grade"]
+    with pytest.raises(KeyError, match="grade"):
+        _behavior_signature(edit)
