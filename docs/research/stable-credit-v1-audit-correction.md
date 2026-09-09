@@ -53,3 +53,32 @@ outside the original frozen launch. No corrected-audit pass is claimed here
 before that review completes. The prevention is to exercise both real reading
 and edit row contracts when checking the auditor, rather than relying on source
 review alone.
+
+The first corrected saved review passed the reading-row point but found a
+second audit assumption: it compared each phase's `work_delta` with the change
+since the previous telemetry row. Actual deltas begin at a later phase-start
+snapshot; owned-journal append and scope entry/exit work occurs between phases.
+The failed corrected review remains `review-corrected.json` (86.3544813 review
+seconds; 88.0430764 outer seconds, 101.90625 MiB). This does not alter the first
+failure or any worker outcome.
+
+An authenticated 5,573,740-byte checkpoint-journal diagnosis took 0.3661166 outer
+seconds. Its intervening counters matched the source's native writer operations.
+The next audit correction reconciles exact expected gap counters from validated
+appended-row byte lengths: ownership entry/exit, append writes, real tail reads
+and their 1-MiB buffer allocation. Unknown counters, non-journal gaps, missing
+expected work, changed counter sets and negative/oversized deltas remain errors.
+Phase-start snapshots were not saved, so inferred baselines do not independently
+establish timing; final cleanup remains a separate final-store counter scope.
+
+The phase regression failed before the fix (6.9494454 outer seconds) and both
+reader/phase regressions then passed together (5.5423658 seconds, 273.70703125 MiB).
+Doctor: `.pytest-tmp/dev/doctor-annogmcg/receipt.json`. The final source adds
+coverage of two co-published rows crossing the 1-MiB read boundary. The final
+saved-only result will use a new `review-corrected-phase.json`; earlier audit
+files remain unchanged, and all additional reporting costs are separate.
+
+Final focused QA passes both tests, including the large-row, begin-scope and
+unknown-counter cases: 6.0334261 outer seconds, 265.734375 MiB. Doctor receipt:
+`.pytest-tmp/dev/doctor-84xv1dpm/receipt.json`. Ruff passes for the corrected
+auditor and test file. This is saved-reader QA, not a learner capability result.

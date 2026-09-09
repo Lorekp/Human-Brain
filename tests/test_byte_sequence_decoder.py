@@ -15463,3 +15463,51 @@ def test_stable_credit_audit_behavior_signature_reads_actual_row_contract():
     del edit["grade"]
     with pytest.raises(KeyError, match="grade"):
         _behavior_signature(edit)
+
+
+def test_stable_credit_audit_accounts_for_journal_work_between_phases():
+    from experiments.r4_integrated.stable_language_action_credit_review_v1 import (
+        _phase_work_gap,
+    )
+
+    previous = {"checkpoint_bytes_read": 20}
+    # Entering checkpoint_scope checks three journals before the capture timer.
+    gap = {"checkpoint_journal_" + key: value for key, value in {
+        "freeze_scopes": 3, "identity_checks": 3, "identity_open_attempts": 3,
+        "identity_opens": 3, "identity_closes": 3, "metadata_queries": 24}.items()}
+    phase = {"phase": "capture", "cumulative_work": gap | {"checkpoint_bytes_read": 30},
+             "work_delta": dict.fromkeys(gap, 0) | {"checkpoint_bytes_read": 10}}
+    assert _phase_work_gap(previous, phase) == gap
+    commit = phase | {"phase": "commit", "work_delta": gap | {"checkpoint_bytes_read": 10}}
+    assert _phase_work_gap(previous, commit) == {}
+    # An attempt and its teacher append before capture; the first row spans two reads.
+    appended_gap = {"checkpoint_journal_" + key: value for key, value in {
+        "freeze_scopes": 3, "identity_checks": 7, "identity_open_attempts": 7,
+        "identity_opens": 7, "identity_closes": 7, "metadata_queries": 56,
+        "authenticated_rows": 2, "bytes_written": 1049777, "tail_bytes_read": 1049777,
+        "read_buffer_bytes": 1049776, "tail_read_calls": 3,
+        "write_buffer_bytes": 1049779, "write_calls": 2,
+        "write_through_completions": 2}.items()}
+    appended_phase = {
+        "phase": "capture", "cumulative_work": appended_gap | {"checkpoint_bytes_read": 30},
+        "work_delta": dict.fromkeys(appended_gap, 0) | {"checkpoint_bytes_read": 10}}
+    assert _phase_work_gap(previous, appended_phase, [1048577, 1200]) == appended_gap
+    # Scope validation and freeze exit each check all three writers before begin.
+    begin_gap = {"checkpoint_journal_" + key: value for key, value in {
+        "identity_checks": 6, "identity_open_attempts": 6, "identity_opens": 6,
+        "identity_closes": 6, "metadata_queries": 48}.items()}
+    begin_phase = {
+        "phase": "begin", "cumulative_work": begin_gap | {"checkpoint_bytes_read": 30},
+        "work_delta": dict.fromkeys(begin_gap, 0) | {"checkpoint_bytes_read": 10}}
+    assert _phase_work_gap(previous, begin_phase) == begin_gap
+    with pytest.raises(ValueError, match="intervening native journal work"):
+        _phase_work_gap(previous, phase | {
+            "cumulative_work": phase["cumulative_work"] | {"checkpoint_journal_unknown": 1},
+            "work_delta": phase["work_delta"] | {"checkpoint_journal_unknown": 0}})
+    for delta in (phase["work_delta"] | {"checkpoint_bytes_read": 11},
+                  phase["work_delta"] | {"checkpoint_bytes_read": 9},
+                  {"checkpoint_bytes_read": 10}):
+        with pytest.raises(ValueError):
+            _phase_work_gap(previous, phase | {"work_delta": delta})
+    with pytest.raises(ValueError):
+        _phase_work_gap(previous, phase, [1200])

@@ -44,6 +44,42 @@ def _behavior_signature(row):
         | {"grade": row["grade"] if row["kind"] == "edit" else None}))
 
 
+def _phase_work_gap(previous, item, row_bytes=()):
+    current = item["cumulative_work"]
+    delta = item["work_delta"]
+    work_valid(delta)
+    require(set(delta) == set(current), "checkpoint phase counter set")
+    gap = {k: v - previous.get(k, 0) - delta[k] for k, v in current.items()}
+    require(all(v >= 0 for v in gap.values()), "checkpoint phase exceeds total work")
+    expected = {}
+    if item["phase"] == "capture":
+        n, size = len(row_bytes), sum(row_bytes)
+        require(n <= 2 and all(type(v) is int and v > 0 for v in row_bytes),
+                "checkpoint append row sizes")
+        checks = 2 * n + 3
+        expected["freeze_scopes"] = 3
+        if n:
+            expected.update(authenticated_rows=n, bytes_written=size, tail_bytes_read=size,
+                            read_buffer_bytes=sum(min(1048576, v) for v in row_bytes),
+                            tail_read_calls=sum((v + 1048575) // 1048576 for v in row_bytes),
+                            write_buffer_bytes=size + n, write_calls=n,
+                            write_through_completions=n)
+    elif item["phase"] == "begin":
+        require(not row_bytes, "begin has no appended row")
+        checks = 6
+    else:
+        require(item["phase"] == "commit" and not row_bytes, "unexpected phase gap")
+        checks = 0
+    if checks:
+        expected.update({key: checks for key in (
+            "identity_checks", "identity_open_attempts", "identity_opens", "identity_closes")})
+        expected["metadata_queries"] = 8 * checks
+    expected = {"checkpoint_journal_" + key: value for key, value in expected.items()}
+    require({key: value for key, value in gap.items() if value} == expected,
+            "checkpoint intervening native journal work differs from actual rows")
+    return expected
+
+
 def _paired(left, right, *, migration=False):
     require(len(left) == len(right), "paired comparison missing declared outcomes")
     results = []
@@ -629,6 +665,11 @@ def check_checkpoints(run, sources, manifest_sha, rows_by_kind, partial, resolve
                 "cursor": intent["cursor"],
                 "host_cursor": boundary["host"]["cursor"],
                 "sha256": boundary_sha256,
+                "journal_appended_row_bytes": [entry["bytes"]
+                    for item in frontier["journals"]
+                    for entry in rows_by_kind[item["kind"]][
+                        0 if previous is None else next(j["rows"] for j in
+                            previous["frontiers"]["journals"] if j["kind"] == item["kind"]):item["rows"]]],
             }
         )
         previous, previous_hash, last = boundary, boundary_sha256, boundary
@@ -1192,6 +1233,7 @@ def review_worker(run, manifest_sha, deadline, *, frozen_auditor_path=None):
         require(report["budget"]["complete_seconds"] == 10800 and report["budget"]["peak_mib"] == 4096,
                 "declared complete worker budget")
     telemetry_counts, telemetry_seconds, previous_work = Counter(), Counter(), {}
+    between_phase_work = Counter()
     for entry in telemetry:
         item = read_row(entry)
         require(item["schema"] == "persistent-language-action-checkpoint-work-v8", "checkpoint telemetry schema")
@@ -1200,8 +1242,12 @@ def review_worker(run, manifest_sha, deadline, *, frozen_auditor_path=None):
         work_valid(item["cumulative_work"])
         require(all(item["cumulative_work"].get(k, 0) >= v for k, v in previous_work.items()), "checkpoint work reset")
         if "work_delta" in item:
-            require(item["work_delta"] == {k: v - previous_work.get(k, 0) for k, v in item["cumulative_work"].items()},
-                    "complete checkpoint phase accounting")
+            row_bytes = ()
+            if item["phase"] == "capture":
+                index = telemetry_counts["capture"] - 1
+                require(index < len(checkpoint["boundary_events"]), "capture lacks saved boundary")
+                row_bytes = checkpoint["boundary_events"][index]["journal_appended_row_bytes"]
+            between_phase_work.update(_phase_work_gap(previous_work, item, row_bytes))
         previous_work = item["cumulative_work"]
     if not partial:
         require(telemetry_counts == {"create": 1, "begin": 264, "capture": 265, "commit": 265}, "checkpoint complete phase counts")
@@ -1274,6 +1320,8 @@ def review_worker(run, manifest_sha, deadline, *, frozen_auditor_path=None):
             "probe_states": probe_states, "credit_rule": rule,
             "pending_transaction": pending, "checkpoint": checkpoint, "journal_frontiers": frontiers,
             "checkpoint_telemetry_counts": dict(telemetry_counts), "checkpoint_telemetry_seconds": dict(telemetry_seconds),
+            "checkpoint_between_phase_work": dict(between_phase_work),
+            "checkpoint_phase_work_scope": "phase-start snapshots were not saved; phase deltas plus source/row-derived native journal gaps reconcile cumulative counters; final cleanup remains in final store work",
             "checkpoint_telemetry_frontier": telemetry_frontier, "evidence": evidence,
             "payload_read_scope": "complete inventory (complete only), independent checkpoint authentication, fresh store inspect, and final evidence inventory are distinct real byte-read passes",
             "elapsed_seconds": time.perf_counter() - started, "model_constructions": 0, "checkpoint_decodes": 0,
