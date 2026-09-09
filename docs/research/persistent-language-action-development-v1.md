@@ -34,9 +34,11 @@ component must not silently replace working action selection. Keep teacher-free
 recovery in the integrated stream; changed proposals alone are not productive
 feedback use. Do not add another mechanism merely because ordinary QA passes.
 
-The current implementation review covers the selected causal-credit rule and
-owned journal-prefix authentication. A stable curriculum, explicit migration
-comparison and complete resource plan still precede a new measured session;
+The selected causal-credit rule and owned journal-prefix authentication pass
+[five focused implementation checks](causal-credit-owned-journal-qa-v1.md).
+The [stable comparison draft](stable-language-action-credit-comparison-v1.md)
+defines the fixed curriculum and budget; explicit migration comparison,
+probe custody and complete source/resource review still precede a measured session;
 this document does not restart a frozen run or permit missing evidence to be
 reconstructed. Retained state and source identities below remain authoritative.
 

@@ -42,6 +42,11 @@ Measure behavior before and after architecture migration, alongside numerical
 state preservation; retaining tensors alone does not establish retained skill.
 Keep recovery visible and require actual successful repair to claim productive
 feedback use. Passing implementation QA does not select another mechanism.
+The selected credit and journal changes pass
+[five focused implementation checks](causal-credit-owned-journal-qa-v1.md).
+The [stable comparison draft](stable-language-action-credit-comparison-v1.md)
+fixes the exposed workload, teaching and scheduled probes; its initializer,
+source isolation and probe custody are under implementation review.
 
 Continue the learner on a workload that combines reading,
 retained knowledge, raw software actions and observation of their consequences.
