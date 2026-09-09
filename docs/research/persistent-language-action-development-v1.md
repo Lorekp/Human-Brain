@@ -36,11 +36,11 @@ feedback use. Do not add another mechanism merely because ordinary QA passes.
 
 The selected causal-credit rule and owned journal-prefix authentication pass
 [five focused implementation checks](causal-credit-owned-journal-qa-v1.md).
-The [stable comparison draft](stable-language-action-credit-comparison-v1.md)
-defines the fixed curriculum and budget; explicit migration comparison,
-probe custody and complete source/resource review still precede a measured session;
-this document does not restart a frozen run or permit missing evidence to be
-reconstructed. Retained state and source identities below remain authoritative.
+The [reviewed stable comparison](stable-language-action-credit-comparison-v1.md)
+releases one fixed-budget monitored session, with explicit migration comparison,
+probe custody and complete source/resource bindings. It does not restart a
+frozen run or permit missing evidence to be reconstructed. Retained state and
+source identities below remain authoritative.
 
 ## Current continuation and frozen history
 
@@ -93,6 +93,10 @@ live-state hashes. Keep that path unchanged. Repeated journal prefixes explain
 84.60% of checkpoint file-hash bytes; the next persistence design is authenticated
 owned append journals, with new-tail reads and full fresh restore checks.
 These directions serve one broader persistent workload.
+The [completed matched journal measurement](owned-journal-prefix-cost-v1-result.md)
+retains exact frontier parity and full fresh verification, with24.37 versus369.06
+seconds for the selected path. The fixed-order measurement does not establish
+whole-checkpoint or learner speedup.
 
 The [outer measurement](../../benchmarks/persistent_language_action_v8.measurement.json)
 counts2362.3952900 seconds for listed preparation, corrected runner, audit and

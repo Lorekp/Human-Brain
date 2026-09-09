@@ -44,9 +44,9 @@ Keep recovery visible and require actual successful repair to claim productive
 feedback use. Passing implementation QA does not select another mechanism.
 The selected credit and journal changes pass
 [five focused implementation checks](causal-credit-owned-journal-qa-v1.md).
-The [stable comparison draft](stable-language-action-credit-comparison-v1.md)
-fixes the exposed workload, teaching and scheduled probes; its initializer,
-source isolation and probe custody are under implementation review.
+The [stable comparison protocol](stable-language-action-credit-comparison-v1.md)
+fixes the exposed workload, teaching and scheduled probes. Source and custody
+review release one monitored old/new comparison, including migration behavior.
 
 Continue the learner on a workload that combines reading,
 retained knowledge, raw software actions and observation of their consequences.
@@ -80,6 +80,10 @@ reuse authenticated prefixes only under proven exclusive writer ownership,
 with real new-tail reads and full fresh-open/restore verification retained.
 The existing owned immutable-payload path remains integral to persistence;
 different workloads prevent an attributable cross-session speedup claim.
+The [matched journal-path measurement](owned-journal-prefix-cost-v1-result.md)
+takes24.37 seconds with ownership versus369.06 seconds with ordinary repeated
+prefix checks, preserving all saved frontiers and full fresh final reads. This
+fixed-order result measures that path; whole-checkpoint cost remains separate.
 Both directions serve the next broader persistent workload, whose sources,
 learning exposure and resource limits require an explicit complete design.
 
