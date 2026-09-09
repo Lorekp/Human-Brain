@@ -1,0 +1,254 @@
+{
+  "artifacts": {
+    "stable_language_action_credit_v1.diagnostics.json": {
+      "bytes": 2780209,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\benchmarks\\stable_language_action_credit_v1.diagnostics.json",
+      "sha256": "23f574a1a30e21c6bd18ef12219b52721fcfcaa3f23226a53f5d780987cca0a2",
+      "source": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\diagnostics.json"
+    },
+    "stable_language_action_credit_v1.result.json": {
+      "bytes": 3935620,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\benchmarks\\stable_language_action_credit_v1.result.json",
+      "sha256": "1bd3073fac22fdd54cc27e16ad7c8e75d106b15e9263e44bb1161b1a85c54919",
+      "source": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\review-final.json"
+    }
+  },
+  "banking_confirmed_read_bytes_before_measurement_write": 13466263,
+  "banking_outer_included_in_listed_sum": false,
+  "banking_outer_receipt": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-banking.launch.json",
+  "banking_seconds_before_measurement_write": 0.9683435999904759,
+  "capability": "exposed development only; one late reading probe gain, no complete taught acquisition, changed-context success, software edit or recovery",
+  "execution_revision": "5622f600921e6811d66254e25c8e956a31cd19ab",
+  "listed_process_seconds_before_banking": 7504.874126700001,
+  "manifest_sha256": "7b07b6984d6511a5f854d530775a4e7d9772d45ab9ce4330c2e3f4a74259c481",
+  "maximum_observed_tree_peak_sum_mib": 1453.3203125,
+  "model_calls_in_banking": 0,
+  "monitored_steps": [
+    {
+      "bytes": 1432,
+      "elapsed_seconds": 396.7159483,
+      "memory_sample_available": true,
+      "observed_tree_peak_sum_mib": 97.71484375,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-journal-cost-v1.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "9b3318a411f7370ab334aa9173cc52048b9cd75c58aee4699559d1b441bb5128",
+      "status": "passed"
+    },
+    {
+      "bytes": 1334,
+      "elapsed_seconds": 3.1305288,
+      "memory_sample_available": true,
+      "observed_tree_peak_sum_mib": 235.921875,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-audit-call-green.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "6dd9799b0b0464e0bf379e9da0959eaef434f3c2340c991e644fbc24cd8ace2a",
+      "status": "passed"
+    },
+    {
+      "bytes": 1152,
+      "elapsed_seconds": 8.0317569,
+      "memory_sample_available": true,
+      "observed_tree_peak_sum_mib": 318.7421875,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-audit-call-red.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "e01bf4c50d10d9bc346655f1303badc9a2c46f23284cad67aedb01a60bab288b",
+      "status": "failed"
+    },
+    {
+      "bytes": 1214,
+      "elapsed_seconds": 6.0334261,
+      "memory_sample_available": true,
+      "observed_tree_peak_sum_mib": 265.734375,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-audit-final-qa.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "5a5a01b0c70e48944061cc2ed3af1a47ed675deff7e9204f10b6ea889bd91465",
+      "status": "passed"
+    },
+    {
+      "bytes": 1219,
+      "elapsed_seconds": 5.5423658,
+      "memory_sample_available": true,
+      "observed_tree_peak_sum_mib": 273.70703125,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-audit-phase-green.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "79f5bca5fcc54de58c5e326432c7bdcc707a8317bdd09eb60cd0d6fd7f088a61",
+      "status": "passed"
+    },
+    {
+      "bytes": 1143,
+      "elapsed_seconds": 6.9494454,
+      "memory_sample_available": true,
+      "observed_tree_peak_sum_mib": 319.55078125,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-audit-phase-red.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "d128dfad6b86bc394c26f401290c9dffdeaac16bf41d62d3e65dd0a2a7dc456b",
+      "status": "failed"
+    },
+    {
+      "bytes": 1106,
+      "elapsed_seconds": 2.4862426,
+      "memory_sample_available": true,
+      "observed_tree_peak_sum_mib": 231.37890625,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-audit-reader-green.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "c9fdd1db831819aba52c9a5baceae7604790285ab956617c122920aab5242fb9",
+      "status": "passed"
+    },
+    {
+      "bytes": 1140,
+      "elapsed_seconds": 7.074809,
+      "memory_sample_available": true,
+      "observed_tree_peak_sum_mib": 321.8125,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-audit-reader-red.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "65d5d6d1d3926a5df760fcfdebe13440af739f69747e3721b41f1e13af545ca7",
+      "status": "failed"
+    },
+    {
+      "bytes": 1285,
+      "elapsed_seconds": 18.6984207,
+      "memory_sample_available": true,
+      "observed_tree_peak_sum_mib": 55.921875,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-audit-repro.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "06f60d772559de746304af87a3a7fe61f5aa762e4804ffb8e1a3be0c372b2ec5",
+      "status": "failed"
+    },
+    {
+      "bytes": 1907,
+      "elapsed_seconds": 6472.8048409,
+      "memory_sample_available": true,
+      "observed_tree_peak_sum_mib": 1453.3203125,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "846f2260e5847e80e534a59b9d9c7f3e6ef9291ec758903051316c2d9a2a0168",
+      "status": "failed"
+    },
+    {
+      "bytes": 2270,
+      "elapsed_seconds": 88.0430764,
+      "memory_sample_available": true,
+      "observed_tree_peak_sum_mib": 101.90625,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-corrected-audit.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "cf80bd1263c79585ec01bd13217b0f55b73fa258fb6cf0657a8a92d37cc871c6",
+      "status": "failed"
+    },
+    {
+      "bytes": 2398,
+      "elapsed_seconds": 97.3054548,
+      "memory_sample_available": true,
+      "observed_tree_peak_sum_mib": 101.5390625,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-corrected-phase-audit.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "ac7b7260edcccabf3db9a5bca51babc2b55774098bd1de7ff2fb9a28fa12aa77",
+      "status": "failed"
+    },
+    {
+      "bytes": 1850,
+      "elapsed_seconds": 34.9028742,
+      "memory_sample_available": true,
+      "observed_tree_peak_sum_mib": 78.765625,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-diagnostics.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "01ea6b4253bc6e4091f6c215852b55863fb1e4aa636d93d14b3f084dc245898b",
+      "status": "passed"
+    },
+    {
+      "bytes": 2327,
+      "elapsed_seconds": 256.7525935,
+      "memory_sample_available": true,
+      "observed_tree_peak_sum_mib": 115.03125,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-final-audit.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "e409bad2d2d2b71e9bb30d463b1a78eadd14ff0838cdb9c745ea18d7fad4ba02",
+      "status": "passed"
+    },
+    {
+      "bytes": 1006,
+      "elapsed_seconds": 0.3334802,
+      "memory_sample_available": false,
+      "observed_tree_peak_sum_mib": 0.0,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-manifest-preparation.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "1ae6b4dcf705191e2f50ec3f8c32aab66d63c128d36eca25dedce90704196f2c",
+      "status": "passed"
+    },
+    {
+      "bytes": 1133,
+      "elapsed_seconds": 0.3871479,
+      "memory_sample_available": true,
+      "observed_tree_peak_sum_mib": 31.18359375,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-old-source-preparation.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "a1315963ef32756ada59e98d140ad1ad900ca906ac431fdb46244f26d795bb20",
+      "status": "passed"
+    },
+    {
+      "bytes": 1719,
+      "elapsed_seconds": 0.3355008,
+      "memory_sample_available": false,
+      "observed_tree_peak_sum_mib": 0.0,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-original-auditor-preparation-crlf.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "96aa1acb3d4c6adf75f9394a4c6e45a68e58ca1dad3b3ad408957395291ce993",
+      "status": "failed"
+    },
+    {
+      "bytes": 1671,
+      "elapsed_seconds": 0.3563742,
+      "memory_sample_available": false,
+      "observed_tree_peak_sum_mib": 0.0,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-original-auditor-preparation-exact.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "94e3a8b0eb17579a290a18ae946f3af64eef90e768410a882b426e3d3985a2e5",
+      "status": "passed"
+    },
+    {
+      "bytes": 1538,
+      "elapsed_seconds": 0.3437375,
+      "memory_sample_available": false,
+      "observed_tree_peak_sum_mib": 0.0,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-original-auditor-preparation.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "c07f06a2b319de623886b34537cc7a2056a13903f383c75d8a2fd5bd6468554c",
+      "status": "failed"
+    },
+    {
+      "bytes": 1756,
+      "elapsed_seconds": 0.3661166,
+      "memory_sample_available": false,
+      "observed_tree_peak_sum_mib": 0.0,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-phase-accounting-diagnosis.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "437b368cda1c70d83cfbd49df3c140de5a7d3708d4e2b3ae20e9b2c6dff568c1",
+      "status": "passed"
+    },
+    {
+      "bytes": 1736,
+      "elapsed_seconds": 32.5895968,
+      "memory_sample_available": true,
+      "observed_tree_peak_sum_mib": 80.08203125,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-probe-reader-repro.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "2045415e5b9c91494bc9f918dee3aca30802951751d88bf1e00244e284cc10ca",
+      "status": "passed"
+    },
+    {
+      "bytes": 2269,
+      "elapsed_seconds": 65.6903893,
+      "memory_sample_available": true,
+      "observed_tree_peak_sum_mib": 1281.69921875,
+      "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\causal-credit-owned-journal-qa-3254210.launch.json",
+      "scope": "recorded monitored process; zero sampled peak without samples is unavailable, not zero footprint",
+      "sha256": "445ca60c138e9160b42082f2918e2e5ee53d95fce6c1e4743399a1d43be5fa3a",
+      "status": "passed"
+    }
+  ],
+  "original_frozen_launch_status": "failed",
+  "schema": "stable-language-action-credit-measurement-v1",
+  "scope": "sum of listed monitored process durations plus separately linked banking monitor; excludes agent reasoning, source reviews, manual metadata commands, doctor/lint and documentation editing; nested worker/probe/audit phase clocks are not added again",
+  "status": "workers_complete_corrected_saved_audit_passed",
+  "task_executions_in_banking": 0,
+  "tensor_decodes_in_banking": 0
+}

@@ -1,6 +1,6 @@
 # Public persistent language/action development
 
-Status: stable integrated comparison selected by the user, 2026-09-09.
+Status: stable integrated comparison completed and saved evidence validated, 2026-09-09.
 The eighth broader session and prepared byte-coincidence comparison are complete.
 The roadmap
 owns the next shared design; frozen streams remain exposed regression evidence.
@@ -37,12 +37,41 @@ feedback use. Do not add another mechanism merely because ordinary QA passes.
 The selected causal-credit rule and owned journal-prefix authentication pass
 [five focused implementation checks](causal-credit-owned-journal-qa-v1.md).
 The [reviewed stable comparison](stable-language-action-credit-comparison-v1.md)
-releases one fixed-budget monitored session, with explicit migration comparison,
-probe custody and complete source/resource bindings. It does not restart a
-frozen run or permit missing evidence to be reconstructed. Retained state and
-source identities below remain authoritative.
+has completed that one fixed-budget session. Its
+[result](../../experiments/r4_integrated/stable_language_action_credit_v1_result.md)
+and [bank](../../benchmarks/stable_language_action_credit_v1.result.json) preserve
+all four scheduled checkpoints, explicit migration comparisons, probe custody
+and source/resource bindings. The original reporting failures and subsequent
+[saved-reader corrections](stable-credit-v1-audit-correction.md) introduced no
+learner replay or reconstructed missing experience.
 
-## Current continuation and frozen history
+## Current retained state and next decision
+
+Both main triads finish at clean HEAD264, with 530 total safe boundaries.
+The causal ONLINE payload is `route-online-000000262.pt`, 115,712,640 bytes,
+SHA256 `6e9be59b28807a0790f06b8861596d0d0db1639e84714aef84939a1c27cdc5e1`,
+under `.pytest-tmp/stable-credit-v1-comparison/causal/checkpoints`.
+Its model hash is `f4f39f528da8e0d0968ec74998d6a74cb33adecc06ec43b5cfbd0f1466a8adbc`;
+factual memory remains 1,982 slots, with 369 actor and 342 reader experiences.
+Final scheduled probes already restore exact checkpoint copies; the live learner
+and its actual main-stream RNG remain preserved separately from those probes.
+
+All four neural arms fail both taught skills throughout, including exact delayed
+main repeats. No changed-context or recovery task succeeds. Causal ONLINE gains
+one historical reading at CP48 (1/14); the other neural arms remain 0/14 and
+simple remains 9/14. There is no later retention probe for this gain, and later
+RNG states differ. This is not complete acquisition or durable advantage.
+The [prediction review](stable-credit-v1-learning-review.md) and
+[cost accounting](stable-credit-v1-cost-accounting.md)
+remain distinct from task outcomes.
+
+Keep difficulty and the teaching budget fixed. Review the saved learning evidence
+before choosing further work; no additional mechanism, corpus, teacher reduction,
+fit sweep or automatic replay is selected. Preserve the current causal state and
+both controls. The V8 details below describe the comparison's historical input,
+not a command to reset to V8 or reopen its frozen run.
+
+## Pre-comparison V8 lineage and frozen history
 
 The [eighth session](persistent-language-action-v8-protocol.md) completes all
 192 attempts and132 executions. Both neural routes score0/2 first acquisition,
@@ -68,7 +97,8 @@ Its model hash is
 376c5a6223b727020a56bf09d62b7aed5ead069431fd989de5faf7f94adce853,
 factual hash
 cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e,
-with325 actor and278 reader experiences. Its final tensor restore has not run.
+with325 actor and278 reader experiences. The stable comparison's explicit
+initializers and scheduled probes have now verified restoration of this lineage.
 
 Continue from this retained ONLINE state for the next explicitly initialized
 broader workload, preserving learned controller weights, baselines, RNG and

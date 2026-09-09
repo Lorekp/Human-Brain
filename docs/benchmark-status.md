@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-07 with the eighth persistent language/action result.
+Updated 2026-09-09 with the stable local-credit comparison.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -9,6 +9,21 @@ workload is [persistent language/action development](research/persistent-languag
 with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. No backpropagation is authorized, and
 protected evaluations retain their original access contracts.
+
+The [stable comparison](../experiments/r4_integrated/stable_language_action_credit_v1_result.md)
+completes 1,056 attempts, 672 actual executions and all four scheduled checkpoints
+with a fixed teaching budget. Its corrected saved-only audit passes; the original
+reporting failures remain preserved. Both old and causal neural arms fail the
+two taught skills, changed-context tasks and teacher-free recovery. Only causal
+ONLINE gains one historical reading at the final checkpoint (1/14 versus 0/14
+for the other neural arms and 9/14 for simple). That exposed late hit has no later
+retention measurement and does not establish a correct software edit or durable
+learning advantage. Migration preserves all required paired behavior and numerical
+state; previously absent skills are not counted as new migration losses.
+The [result bank](../benchmarks/stable_language_action_credit_v1.result.json),
+[learning review](research/stable-credit-v1-learning-review.md) and
+[cost accounting](research/stable-credit-v1-cost-accounting.md) keep task outcomes,
+prediction diagnostics, restore integrity and measured journal optimization separate.
 
 The [eighth session's banked result](../benchmarks/persistent_language_action_v8.result.json)
 completes all 192 attempts across 48 episodes per route, 132 actual program

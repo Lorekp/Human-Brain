@@ -12,19 +12,22 @@ knowledge, understands language, combines learned structure, acts in software
 workspaces and recovers from failures. Local simulated-neuron learning and useful
 real-world behavior are the central commitments.
 
-The [eighth broader session](../../experiments/r4_integrated/persistent_language_action_v8_result.md)
-completes192 attempts and132 actual executions with265 authenticated safe
-boundaries. Both neural routes score0/2 on each acquisition encounter,0/20
-fresh transfer,0/14 earlier regressions and0/8 teacher-free recovery. The simple
-reference succeeds on two acquisition follow-ups and9/14 earlier regressions,
-but also fails fresh transfer and recovery. Factual memory reaches1982 slots.
-No useful broader neuronal advantage or correct software edit is established.
+The [stable local-credit comparison](../../experiments/r4_integrated/stable_language_action_credit_v1_result.md)
+completes 1,056 attempts and 672 actual executions, with all four scheduled
+checkpoints and a passed corrected saved-only audit. Both old and causal neural
+rules fail the two taught skills, changed-context tasks and teacher-free recovery.
+The causal learner gains one historical reading at the final checkpoint (1/14);
+old and disabled controls score 0/14, and the retrieval/editing reference 9/14.
+That late hit has no subsequent retention measurement. Complete acquisition,
+durable neuronal advantage and correct software editing remain unestablished.
+The retained factual memory contains 1,982 slots; no difficulty or teaching
+budget increase is selected from this result.
 
 The prepared [byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 is also completed and independently audited. Its narrow successes remain
-regression evidence. The [current result bank](../../benchmarks/persistent_language_action_v8.result.json)
-and [learning review](persistent-language-action-v8-learning-review.md) own the
-broader measurements and failure analysis. Completion and valid custody do not
+regression evidence. The [current result bank](../../benchmarks/stable_language_action_credit_v1.result.json)
+and linked result reviews own the broader measurements and failure analysis.
+Completion and valid custody do not
 mean useful learning.
 The [experiment history](roadmap-experiment-history.md) owns chronology and retired
 directions. Do not append another experiment diary to this roadmap.
@@ -42,11 +45,14 @@ Measure behavior before and after architecture migration, alongside numerical
 state preservation; retaining tensors alone does not establish retained skill.
 Keep recovery visible and require actual successful repair to claim productive
 feedback use. Passing implementation QA does not select another mechanism.
-The selected credit and journal changes pass
-[five focused implementation checks](causal-credit-owned-journal-qa-v1.md).
-The [stable comparison protocol](stable-language-action-credit-comparison-v1.md)
-fixes the exposed workload, teaching and scheduled probes. Source and custody
-review release one monitored old/new comparison, including migration behavior.
+The selected credit and journal changes are implemented and compared under the
+[fixed protocol](stable-language-action-credit-comparison-v1.md). The completed
+run, [implementation QA](causal-credit-owned-journal-qa-v1.md) and
+[saved-audit corrections](stable-credit-v1-audit-correction.md) remain distinct
+evidence. Original audit failures are preserved; correcting readers introduced
+no learner replay. Review the separate task and
+[prediction diagnostics](stable-credit-v1-learning-review.md) before
+selecting further work. No new mechanism, fit sweep or automatic replay follows.
 
 Continue the learner on a workload that combines reading,
 retained knowledge, raw software actions and observation of their consequences.
@@ -61,15 +67,12 @@ the retrieval reference retains all source text, a disclosed memory difference.
 Preserve the actual stream as regressions without automatically replaying it.
 
 The [implemented context/content design](public-observation-sequence-context-v1.md)
-learns recurrent choices and two content cursors through own-synapse eligibility.
-The checked raw-content prediction counts show no useful advantage over disabled,
-and all neural responses stop with short, incorrect outputs. Root selects a
-bounded [local-credit refinement design](causal-observation-credit-v1.md) for
-this same acting system: direct observed-byte output teaching and causal
-per-symbol credit to earlier choices, preserving the no-backward-transport
-rule. It fixes separate local objectives and bounded normalization while
-retaining completed V8 state. No new fit,
-seed/gain sweep, replay or capability gate is released by this design selection.
+and [local-credit refinement](causal-observation-credit-v1.md) use own-synapse
+eligibility, direct observed-byte output teaching and causal per-symbol credit
+to earlier choices. They preserve the no-backward-transport rule and the same
+persistent acting system. Migration retains every numerical tensor and all
+required paired forward outcomes; equal failures do not establish retained skill.
+Later stochastic contexts are disclosed rather than reseeded for comparison.
 
 The [cost review](persistent-language-action-v8-cost-review.md) measures
 checkpoint phases at63.15% of runner time. Ownership review finds the proposed
@@ -84,8 +87,10 @@ The [matched journal-path measurement](owned-journal-prefix-cost-v1-result.md)
 takes24.37 seconds with ownership versus369.06 seconds with ordinary repeated
 prefix checks, preserving all saved frontiers and full fresh final reads. This
 fixed-order result measures that path; whole-checkpoint cost remains separate.
-Both directions serve the next broader persistent workload, whose sources,
-learning exposure and resource limits require an explicit complete design.
+The [current cost accounting](stable-credit-v1-cost-accounting.md) keeps complete
+worker costs, phase timing overlaps, fresh restore checks and supplemental
+saved-only reporting costs separate. Faster persistence is an integral code
+improvement, without implying that the selected learning change is useful.
 
 All byte/EOS columns remain eligible, and existing neuronal potentials remain
 the prior. Raw contextual contacts are a falsifiable sequence mechanism, not

@@ -3777,3 +3777,43 @@ file-hash bytes to repeated growing journal prefixes. Root redirects persistence
 design to authenticated owned append journals, retaining fresh full reads and
 live-tensor validation. These directions serve broader development without
 another toy gate or a perfection prerequisite.
+
+## Stable local-credit comparison — completed 2026-09-09
+
+The user paused difficulty increases and teacher reduction. The selected
+causal local-credit rule and owned journal-prefix optimization were integrated
+and checked in five focused implementation tests. One fixed comparison retained
+completed V8 ONLINE numerical state for four neural arms, alongside two actual
+copies of the simple reference. It reused the exposed V8 roster and two fixed
+answer corrections per arm, with complete CP0/16/32/48 probe batteries.
+
+The [result](../../experiments/r4_integrated/stable_language_action_credit_v1_result.md)
+contains 1,056 attempts, 672 real executions and 530 main safe boundaries.
+Every neural main task fails. Causal ONLINE gains one historical reading only
+at CP48 (1/14); old and disabled arms remain 0/14, simple remains 9/14.
+There is no later retention check for the gain. Both taught skills, all changed
+context groups and all recovery tasks remain unsolved by the neural arms. Required paired migration
+behavior and numerical state are preserved; the older absent reading skill is
+not counted as a new migration loss. Changed proposals do not yield repair.
+
+The [learning review](stable-credit-v1-learning-review.md) distinguishes slight
+literal-prediction improvement from the absent task-level acquisition. All
+checkpoint material is repeatedly exposed development evidence. The comparison
+does not establish fresh generalization, a correct neuronal software edit or
+an advantage over a SWE model. No subsequent mechanism is selected automatically.
+
+The original monitored launch ends failed after both workers finish because its
+saved auditor mishandles reading rows. Two subsequent saved-only checks expose
+phase-scope accounting and probe-reader argument defects. The
+[correction record](stable-credit-v1-audit-correction.md) preserves every failure,
+focused regression and exact auditor provenance. The final full audit passes;
+none of these corrections reruns a learner, task or teacher. The
+[result bank](../../benchmarks/stable_language_action_credit_v1.result.json) and
+[measurement ledger](../../benchmarks/stable_language_action_credit_v1.measurement.json)
+retain the actual evidence and measured reporting costs.
+
+The [matched journal-path result](owned-journal-prefix-cost-v1-result.md) measures
+24.37 versus 369.06 seconds with exact frontier parity and full fresh final reads.
+This fixed-order path measurement does not establish a whole-session speedup.
+[Current cost accounting](stable-credit-v1-cost-accounting.md) separates main
+phases, intervening journal work, probe restores and supplemental saved analysis.

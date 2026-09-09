@@ -46,11 +46,11 @@ copy is `.pytest-tmp/stable-credit-v1-original-auditor.py`. Doctor receipts are
 `.pytest-tmp/dev/doctor-rx82ekgt/receipt.json` and
 `.pytest-tmp/dev/doctor-slhhx78v/receipt.json`.
 
-The corrected saved-only review has a separate 600-second review ceiling under
-a 650-second / 2048-MiB outer monitor, allowing publication and shutdown. It must
-write a new result and retain the first failed audit. Its actual costs belong
-outside the original frozen launch. No corrected-audit pass is claimed here
-before that review completes. The prevention is to exercise both real reading
+The corrected saved-only review was assigned a separate 600-second review ceiling
+under a 650-second / 2048-MiB outer monitor, allowing publication and shutdown.
+Each correction had to write a new result and retain the earlier failed audits.
+Its actual costs belong outside the original frozen launch. The final passed
+review is recorded below. The prevention is to exercise both real reading
 and edit row contracts when checking the auditor, rather than relying on source
 review alone.
 
@@ -75,8 +75,9 @@ The phase regression failed before the fix (6.9494454 outer seconds) and both
 reader/phase regressions then passed together (5.5423658 seconds, 273.70703125 MiB).
 Doctor: `.pytest-tmp/dev/doctor-annogmcg/receipt.json`. The final source adds
 coverage of two co-published rows crossing the 1-MiB read boundary. The final
-saved-only result will use a new `review-corrected-phase.json`; earlier audit
-files remain unchanged, and all additional reporting costs are separate.
+saved-only review wrote a new `review-corrected-phase.json`, whose subsequent
+failure is recorded below; earlier audit files remain unchanged, and all
+additional reporting costs are separate.
 
 Final focused QA passes both tests, including the large-row, begin-scope and
 unknown-counter cases: 6.0334261 outer seconds, 265.734375 MiB. Doctor receipt:
@@ -98,3 +99,13 @@ restored to their in-process representation for this diagnostic call. The full
 final audit still revalidates every worker and does not reuse this shortcut.
 Its new output is `review-final.json`; all preceding audit attempts remain
 separate, immutable evidence of reporting-tool failures and their actual costs.
+
+The full final audit **passes** without another defect: 255.2342021 internal
+seconds, 256.7525935 outer seconds and 115.03125 MiB observed peak. It validates
+all 1,056 attempts, 672 executions, 140 teacher symbols and 12 motor labels,
+with zero model constructions, tensor decodes, predictor calls or teacher replay.
+Auditor SHA256: `116e77e187749b10812fda30bfbc6f770492e55cc4ea46861cf283a8bd650423`.
+Result SHA256: `1bd3073fac22fdd54cc27e16ad7c8e75d106b15e9263e44bb1161b1a85c54919`,
+banked unchanged as `benchmarks/stable_language_action_credit_v1.result.json`.
+The original outer launch and all three failed audit receipts keep their failed
+status. Complete costs are linked from the measurement bank and result report.
