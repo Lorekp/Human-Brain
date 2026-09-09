@@ -15465,6 +15465,21 @@ def test_stable_credit_audit_behavior_signature_reads_actual_row_contract():
         _behavior_signature(edit)
 
 
+def test_stable_credit_audit_calls_journal_with_required_completeness_policy():
+    import ast
+    import inspect
+
+    from experiments.r4_integrated import stable_language_action_credit_review_v1 as review
+
+    calls = [node for node in ast.walk(ast.parse(inspect.getsource(review)))
+             if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+             and node.func.id == "journal"]
+    assert len(calls) == 3
+    for call in calls:
+        inspect.signature(review.journal).bind(
+            *[object() for _ in call.args], **{kw.arg: object() for kw in call.keywords})
+
+
 def test_stable_credit_audit_accounts_for_journal_work_between_phases():
     from experiments.r4_integrated.stable_language_action_credit_review_v1 import (
         _phase_work_gap,

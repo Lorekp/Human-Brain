@@ -148,7 +148,7 @@ def review_probes(run, worker, manifest_sha, deadline):
                 and destruction["constructed_actors"] == 2 and destruction["all_actors_released"]
                 and destruction["reference_released"] and not destruction["published_state_to_live"]
                 and not destruction["cleanup_errors"], "disposable actor custody")
-        entries, frontier = journal(directory / "attempts.jsonl")
+        entries, frontier = journal(directory / "attempts.jsonl", partial=False)
         require(len(entries) == 84 and summary["journal"] == {
             "sha256": frontier["sha256"], "bytes": frontier["bytes"]}, "complete probe journal binding")
         launch = read_json(directory / "launch.json")

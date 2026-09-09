@@ -82,3 +82,19 @@ Final focused QA passes both tests, including the large-row, begin-scope and
 unknown-counter cases: 6.0334261 outer seconds, 265.734375 MiB. Doctor receipt:
 `.pytest-tmp/dev/doctor-84xv1dpm/receipt.json`. Ruff passes for the corrected
 auditor and test file. This is saved-reader QA, not a learner capability result.
+
+That full review validates the old main worker, then exposes a missing required
+`partial=False` argument at the probe journal reader. Its failed result remains
+`review-corrected-phase.json` (95.5507661 internal seconds; 97.3054548 outer
+seconds, 101.5390625 MiB). The corrected call explicitly rejects incomplete
+probe journals. A call-signature regression fails before correction (8.0317569
+outer seconds) and the final three audit regressions pass together (3.1305288
+seconds, 235.921875 MiB; doctor `doctor-4ibwmwzr`).
+
+A direct saved-probe check using previously validated old-worker metadata passes
+all four batteries in 32.5895968 outer seconds, 80.08203125 MiB. It constructs no
+model, decodes no tensors and executes no tasks. Only JSON integer keys are
+restored to their in-process representation for this diagnostic call. The full
+final audit still revalidates every worker and does not reuse this shortcut.
+Its new output is `review-final.json`; all preceding audit attempts remain
+separate, immutable evidence of reporting-tool failures and their actual costs.
