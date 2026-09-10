@@ -1,0 +1,31 @@
+{
+  "schema": "repeated-teaching-literal-attribution-measurement-v1",
+  "source_revision": "812e726f23ad25d2d82904868ccc2e500bc0c44f",
+  "bank_sha256": "a05ad45eeaec57fe85696be3e7866436353c91a0e05e32270910d8c9c1b3b6ba",
+  "bank_bytes": 87807,
+  "monitored_steps": [
+    {
+      "path": ".pytest-tmp/literal-attribution-v1-qa.launch.json",
+      "sha256": "b4e4ca91c78fc61263c54c248e6ea78660f46aef2cc1287229e8ac2365ce6b29",
+      "status": "passed",
+      "seconds": 5.0337697,
+      "observed_peak_mib": 273.2265625
+    },
+    {
+      "path": ".pytest-tmp/literal-attribution-v1-run.launch.json",
+      "sha256": "a2809d7742185679e9f42208382c6ce80052d7e8bb79af3fc95a2174b6e84282",
+      "status": "passed",
+      "seconds": 9.5265008,
+      "observed_peak_mib": 146.3828125
+    }
+  ],
+  "monitored_seconds": 14.5602705,
+  "banking_inner_seconds": 0.0641594,
+  "banking_scope": "PowerShell Stopwatch covers input hash, exclusive-destination check, copy and readback hash; no independent process-tree monitor",
+  "scope": "QA and saved-data analysis monitors; excludes doctor, lint, source review, schema inspection, documentation, measurement serialization and banking unless separately named",
+  "schema_inspection_teacher_journal_bytes": 1048576,
+  "analysis_journal_bytes": 510318993,
+  "analysis_model_calls": 0,
+  "analysis_teacher_calls": 0,
+  "analysis_payload_decodes": 0
+}

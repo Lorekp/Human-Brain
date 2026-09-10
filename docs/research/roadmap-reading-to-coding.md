@@ -22,6 +22,15 @@ slightly; those probabilities remain near uniform. Complete useful behavior,
 durable neuronal advantage and teacher-free repair remain unestablished.
 The retained learner keeps 1,982 factual slots and its actual continued state.
 
+The [saved update attribution](repeated-teaching-literal-attribution-v1-result.md)
+now separates weak updates from loss of selectivity. At ten fully anchored
+positions, scan learning favors the competing SPACE cell more than the target;
+it substantially opposes teacher margin gains. This is actual historical
+increment accounting, not a newly trained result or an ablation. Resolve the
+existing output-learning objective and its interaction with scan learning before
+adding a component; a teacher-coefficient increase alone is not a demonstrated
+solution.
+
 The prepared [byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 is also completed and independently audited. Its narrow successes remain
 regression evidence. The [current result bank](../../benchmarks/repeated_teaching_acquisition_v1.result.json)
@@ -39,8 +48,9 @@ has completed. Keep architecture and difficulty stable. Its
 [learning review](repeated-teaching-acquisition-v1-learning-review.md) identifies
 weak intended-byte generation under the current local update and mode mixture
 as the measured limitation; missing direct teacher contact alone is insufficient
-to explain failure. The review distinguishes measured effects from unresolved
-causal contributions. No new component, automatic budget extension or expanded
+to explain failure. The subsequent attribution identifies competing scan-driven
+currents at fixed output features. Keep absolute target-current gains distinct
+from discrimination against competing cells. No new component, automatic budget extension or expanded
 retention/changed-context evaluation follows. Preserve the learned motor behavior
 and continued state when selecting a justified learning change. The old
 two-correction budget is historical, not permanent; every new teaching schedule

@@ -28,6 +28,16 @@ separate partial learning, failed complete outcomes and passed fresh restoration
 The run takes 1,519.01 seconds at 1,529.15 MiB sampled peak. No new mechanism or
 automatic teaching extension is selected.
 
+The [saved update attribution](research/repeated-teaching-literal-attribution-v1-result.md)
+then reconstructs the actual literal increments without model calls or further
+learning. Full-current closure passes at ten fixed sites across all five
+checkpoints. Scan learning opposes teacher target-versus-SPACE margin gains by
+59.15% at two anchored reading sites and 94.81% at eight editing sites (ratios
+of mean current contributions). Five editing margins worsen even though target
+probabilities rise. This establishes competition within the shared output
+weights in addition to weak updates; it does not predict a modified learner's
+success. Analysis takes 9.5265 seconds at 146.38 MiB sampled peak.
+
 The [stable comparison](../experiments/r4_integrated/stable_language_action_credit_v1_result.md)
 completes 1,056 attempts, 672 actual executions and all four scheduled checkpoints
 with a fixed teaching budget. Its corrected saved-only audit passes; the original

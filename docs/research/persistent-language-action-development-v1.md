@@ -28,6 +28,22 @@ measured motor behavior when considering a justified local learning change.
 The previous two corrections were not a permanent budget. Teacher-free recovery
 remains unestablished and was not re-tested in this acquisition continuation.
 
+The [saved literal attribution](repeated-teaching-literal-attribution-v1-result.md)
+closes all 257 output-cell changes at ten checkpoint sites using actual recorded
+scan, teacher and public updates. Teacher terms raise intended currents, but
+scans preferentially raise their initial SPACE competitor. At the two anchored
+reading and eight anchored editing positions, opposing scan margins amount to
+59.15% and 94.81% of mean teacher margin gains, respectively. These are fixed-site
+current margins, not probability-gain percentages or a counterfactual ablation.
+Five anchored editing margins worsen despite increased target probabilities.
+The limitation therefore includes shared scan/output selectivity as well as
+weak contact scale and mode weighting. A standalone per-contact `.01` teacher
+candidate from the [source diagnosis](literal-local-update-diagnosis-v1.md) is
+not promoted: neither its source bounds nor these measurements establish complete
+acquisition. The next learning design must address these existing computations
+and preserve the learned motor span; no architecture addition or new trial is
+released by the saved analyzer's passing checks.
+
 ## Current retained continuation
 
 The completed repeated-teaching run retains final HEAD0 under

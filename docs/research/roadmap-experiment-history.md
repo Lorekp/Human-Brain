@@ -3864,3 +3864,39 @@ The [learning bank](../../benchmarks/repeated_teaching_acquisition_v1.result.jso
 [measurement ledger](../../benchmarks/repeated_teaching_acquisition_v1.measurement.json)
 preserve outcomes, provenance and scope. Independent small-report review found
 no material inconsistencies without loading models or rereading journals.
+
+### Saved literal-update attribution — completed 2026-09-10
+
+The next goal continuation selected source diagnosis and actual saved-update
+accounting while keeping architecture, learning rule and tasks unchanged. The
+[source note](literal-local-update-diagnosis-v1.md) derives the direct output
+and upstream mode coefficients, separating deliberate transaction normalization
+from locality. Its teacher-only per-contact candidate is unmeasured and is not
+promoted as an acquisition solution.
+
+The [attribution protocol](repeated-teaching-literal-attribution-v1.md) fixes one
+authenticated pass over the completed journals with no learner, teacher, prior,
+execution or payload-decode call. Source `812e726` passes two synthetic numerical
+tests and the first analysis launch. The
+[result](repeated-teaching-literal-attribution-v1-result.md) reconstructs separate
+reading-teacher, editing-teacher, scan and public contributions at 35 fixed
+activities. At ten sites with complete saved currents, all 257-cell differences
+close at every checkpoint, with maximum residual 3.47e-18. The other 25 sites
+remain projected-only rather than independently full-current-verified.
+
+Teacher target-current cancellation is modest, but scan learning preferentially
+strengthens the initial SPACE competitor at every anchored site. Opposing scan
+margin contributions offset 59.15% of mean teacher gain at two reading sites
+and 94.81% at eight editing sites; five editing margins worsen despite increased
+target probabilities. This distinguishes weak teacher scale from loss of output
+selectivity through shared scan learning. It does not establish that removing
+scans or increasing a coefficient would solve complete generation.
+
+The analysis reads 510,318,993 journal bytes once and takes 9.5265008 seconds at
+146.3828125 MiB sampled peak. QA takes 5.0337697 seconds; banking copy/hash time
+is 0.0641594 seconds separately. A schema inspection reads another 1,048,576
+teacher-journal bytes, outside the main pass. The
+[bank](../../benchmarks/repeated_teaching_literal_attribution_v1.result.json) and
+[measurement ledger](../../benchmarks/repeated_teaching_literal_attribution_v1.measurement.json)
+preserve results and scopes. No learner state, source rule, task result or prior
+frozen evidence was changed, and no new training or component was selected.
