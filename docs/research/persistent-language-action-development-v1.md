@@ -71,8 +71,8 @@ architecture; no contact minimum triggers admission or extension. The
 [decision input](integrated-local-learning-v1-acquisition-decision-input.md)
 distinguishes this finite integrated opportunity from confident isolated-literal
 learning. Compact practice receipts and fixed-activity checkpoint diagnostics
-pass source review and four authored checks. Reproducible source commitment and
-execution release remain pending; acquisition has not run. Preserve the current
+pass source review and four authored checks, committed at `4178664`. Root releases
+the fixed two-worker comparison and audits; no result is implied. Preserve the current
 parent until a completed, freshly audited successor.
 
 ## Current retained continuation

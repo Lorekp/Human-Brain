@@ -79,9 +79,11 @@ The monitor did not observe the short process between samples; its zero field is
 not evidence of zero memory. Preparation makes no model calls. Its receipts are
 in the reader QA bank.
 
-These checks do not execute the complete comparison runner. Both execution
-guards remain draft. Reproducible source commitment and explicit release are
-still pending; no new acquisition exposure or continuation checkpoint exists.
+These checks did not execute the complete comparison runner. Their draft source
+was committed at `4178664`; root then released the two execution guards for the
+declared protocol. The release changes no learning or reporting computation.
+Each launch must bind that subsequent release commit and its actual source bytes.
+QA itself creates no acquisition exposure or continuation checkpoint.
 
 Final root lint review found five long lines in the observer. Line wrapping
 alone corrects them; its before/after AST SHA256 is unchanged at

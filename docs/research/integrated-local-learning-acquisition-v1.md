@@ -3,8 +3,10 @@
 Selected 2026-09-10; implementation, source review and four authored checks pass.
 The [implementation QA](integrated-local-learning-acquisition-v1-qa.md)
 records observer, checkpoint and saved-reader checks separately from capability.
-Reproducible source commitment and execution release remain pending.
-**Execution is not yet released.** This is one bounded comparison of the current
+Implementation and evidence are committed at `4178664`. Root releases the two
+declared sequential workers and their separate audits after source review and
+the four authored checks; launch must bind the exact subsequent release commit.
+**Execution is released for this fixed schedule only.** This is one bounded comparison of the current
 local rule, not a contact-triggered repetition ladder. The
 [roadmap](roadmap-reading-to-coding.md) and
 [active plan](persistent-language-action-development-v1.md) retain authority.

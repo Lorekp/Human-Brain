@@ -41,7 +41,7 @@ timescale and measured execution cost. The selected
 [fixed acquisition comparison](integrated-local-learning-acquisition-v1.md) gives
 each existing skill 512 corrections while holding the rule and architecture fixed.
 Its compact runner, diagnostics and saved reader pass source review and authored
-QA; execution remains unreleased. No acquisition result or retention/transfer
+QA; the fixed comparison is released. No acquisition result or retention/transfer
 expansion is implied.
 
 The prepared [byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)

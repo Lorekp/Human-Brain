@@ -1,4 +1,4 @@
-"""Draft compact512-correction comparison worker; fixed existing calls and custody."""
+"""Fixed 512-correction comparison worker with compact evidence and strict custody."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from pathlib import Path
 from experiments.r4_integrated import integrated_local_learning_runtime_v1 as runtime
 
 ROOT = Path(__file__).resolve().parents[2]
-DRAFT = True
+DRAFT = False
 BANK_SHA = runtime.BANK_SHA
 BASE_SHA = "528f6599d0ff5af487a418a7a0fa06b340ba0d026328df4bab534af671bd64cf"
 ROUTES = ("online", "learning_disabled", "simple")

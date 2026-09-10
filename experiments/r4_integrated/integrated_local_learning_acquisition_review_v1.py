@@ -20,7 +20,7 @@ from pathlib import Path
 
 from experiments.r4_integrated import persistent_language_action_v8_review as saved
 
-DRAFT = True
+DRAFT = False
 ROOT = Path(__file__).resolve().parents[2]
 ROUTES = ("online", "learning_disabled", "simple")
 NEURAL = ROUTES[:2]
