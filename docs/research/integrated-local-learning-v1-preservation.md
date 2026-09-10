@@ -97,3 +97,13 @@ this is the first actual retained-parent execution under the new preservation
 protocol. Use fresh sibling `predecessor` and `current` output directories under
 `.pytest-tmp/integrated-local-learning-v1-preservation`, and place the separate
 saved comparison receipt in that parent directory.
+
+The first predecessor launch at source `12507c7` failed on an unavailable
+`psutil` import before initialization: zero actors constructed, payload decodes,
+free responses, executions or teacher symbols. Its outer receipt preserves
+2.583667 seconds and 211.0078125 MiB observed peak. The worker now reuses the
+existing `neuronal_splice_io_v1.process_memory` Windows helper, adding no package
+or relaxed resource check. Root releases the corrected first-exposure pair under
+`.pytest-tmp/integrated-local-learning-v1-preservation-corrected`; the original
+failed directory and logs remain intact. The eight-response/two-execution ceiling
+is unchanged and no experienced case is retried.

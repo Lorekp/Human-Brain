@@ -252,13 +252,13 @@ def run(args):
         _check_sources(IMPLEMENTATION_SOURCES)
         phase_start = time.perf_counter()
         selection = runtime.select(args.rule, args.predecessor_snapshot)
-        import psutil
         import torch
 
         from experiments.r4_integrated.integrated_local_learning_initialize_v1 import (
             initialize_current,
             initialize_predecessor,
         )
+        from experiments.r4_integrated.neuronal_splice_io_v1 import process_memory
         from experiments.r4_integrated.persistent_language_action_execution_v2 import (
             grade_execution,
             workspace_from_records,
@@ -276,13 +276,12 @@ def run(args):
         # Retained reference restore imports this pure module lazily. Include
         # its transitive source closure before any parent initialization work.
         importlib.import_module("experiments.r4_integrated.persistent_language_action_baseline_v2")
-        process = psutil.Process()
         phases["selection_and_import_seconds"] = time.perf_counter() - phase_start
 
         def admit(*, pending_write=True):
             tick = time.perf_counter()
             used, free = sum(_inventory(output).values()), shutil.disk_usage(output).free
-            rss = process.memory_info().rss
+            rss = int(process_memory()["working_set_mib"] * 1024**2)
             live.update(artifact_bytes=used, free_bytes=free)
             live["rss_boundary_peak_bytes"] = max(live["rss_boundary_peak_bytes"], rss)
             reserve = PENDING_BYTES if pending_write else 0
