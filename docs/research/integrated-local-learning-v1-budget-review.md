@@ -1,7 +1,10 @@
 # Integrated local learning: acquisition budget review
 
 Reviewed capacity planning, 2026-09-10; its large repetition projection is not
-selected. This source-and-receipt review authorizes
+selected. The subsequent [decision input](integrated-local-learning-v1-acquisition-decision-input.md)
+derives tighter idealized contact bounds; the separately selected
+[512-correction comparison](integrated-local-learning-acquisition-v1.md) owns the
+new finite schedule and resource budget. This source-and-receipt review authorizes
 no execution, rate change, seed search or new component. The
 [selected rule](integrated-local-learning-revision-v1.md) fixes eta at .01 and
 preserves the acting architecture. Graph discovery was unavailable (transport
@@ -161,11 +164,15 @@ of another acquisition trial or an open-ended profiling program. Free-only
 timings cannot measure changed teacher cost; keep that uncertainty explicit
 when projecting the next complete workload.
 
-The next decision must explicitly justify calibration of the current local
+The decision identified by this review must explicitly justify calibration of the current local
 update units versus one adequate finite acquisition/resource budget before committing to
 an uneconomic repetition count. The .01 contact timescale is a limitation of
 the selected update computation itself, not evidence that a new component is
 needed. Neither arbitrary rate/seed sweeps nor compact recording alone resolve
 it. There is no automatic 128- or 4,096-correction micro-gate. Until that decision,
 architecture, rate, difficulty and teaching remain unchanged; there is one
-shared acquisition queue.
+shared acquisition queue. That subsequent decision is now recorded in the linked
+512-correction protocol: hold the current rule and measure the coupled computation
+once under a fixed resource ceiling, without treating contact count as proof of
+adequate confidence or extending on failure. Its execution remains unreleased
+pending implementation and review.

@@ -3937,3 +3937,30 @@ binds exact source, inventories, outcomes and launches. The
 costs to distinguish disk savings from measured CPU time and leaves its large
 repetition projection unselected. Next justify local update units and an adequate
 finite acquisition budget; no automatic new mechanism or short teaching gate.
+
+### Fixed acquisition preparation and compact evidence — 2026-09-10
+
+The [selected acquisition protocol](integrated-local-learning-acquisition-v1.md)
+declares 512 corrections per existing skill, seven fixed panels and matched
+predecessor/current, learning-disabled and simple-reference routes. It holds
+architecture, task difficulty and the selected local rule fixed. Compact practice
+records retain actual teacher coverage and every free outcome; full panels add
+fixed-activity probability/margin and teacher/free-alignment diagnostics. The
+budget is a finite opportunity to measure the coupled rule, not a predicted
+complete-acquisition threshold or an automatically extendable schedule.
+
+Four [authored QA checks](integrated-local-learning-acquisition-v1-qa.md) pass
+across separate 17.4214144-second and 5.4671022-second monitors. The former
+constructs four fixture actors and decodes two own payloads through strict fresh
+restoration; synthetic full-block counts are validator inputs, not experiences.
+The saved-reader check and 0.3860045-second manifest preparation make no model
+calls. Limit-receipt and emitter-binding review findings are corrected before
+the reader check. No acquisition worker has run; execution guards remain draft.
+
+Bounded NTFS compression of 32 bank-listed completed historical payloads recovers
+3,506,466,816 allocated bytes in 13.8428197 seconds. Every file retains its logical
+length and full content hash; no data is deleted or numerically decoded. This is
+storage recovery, not a simulation/restore speedup. Source and evidence are ready
+for commitment, but automatic approval review rejected the local `master` commit
+twice despite the recorded project instruction to keep it up to date. The retained
+parent and protected unfinished source remain untouched.

@@ -15788,6 +15788,466 @@ def test_repeated_teaching_diagnostics_use_actual_feedback_and_conditional_mixtu
         analyze_teacher(disabled, target, literal_snapshot=snapshot, learning_enabled=False)
 
 
+def test_integrated_local_learning_observers_preserve_contacts_and_fixed_anchors(monkeypatch):
+    """Authored receipts and two weight copies; no actor, teacher, RNG or task calls."""
+    import copy
+    from types import SimpleNamespace
+
+    from experiments.r4_integrated import integrated_local_learning_diagnostics_v1 as observer
+    from experiments.r4_integrated.repeated_teaching_diagnostics_v1 import capture_literal
+    from humanbrain.recurrent_content_controller import _digest as activity_digest
+    from humanbrain.recurrent_content_learner import RecurrentContentFeedback
+
+    target = b"a"
+    live = torch.zeros((257, 1072), dtype=torch.float64)
+    # At either eight-contact activity SPACE has current log(2); others have zero.
+    live[32, 1071] = math.sqrt(8) * math.log(2)
+    fixture = SimpleNamespace(controller=SimpleNamespace(literal_weight=live))
+    initial = capture_literal(fixture)
+
+    def feedback(snapshot, h, enabled=False):
+        steps = []
+        for position, symbol in enumerate((97, 256)):
+            previous = 257 if position == 0 else 97
+            indices = torch.tensor([h, 32 + previous, 291 + 258, 550 + 98,
+                                    810, 813, 814 + 97, 1071], dtype=torch.int64)
+            values = torch.ones(8, dtype=torch.float64) / math.sqrt(8)
+            identity = activity_digest({"indices": indices, "values": values, "width": 1072})
+            mode = 3 if position == 0 else 1
+            draws = [{"rng_before_sha256": f"authored-{h}-{position}"}, {},
+                     {"index": mode, "activity_sha256": identity,
+                               "probabilities": torch.tensor([.1, .2, .3, .4],
+                                                             dtype=torch.float64)}]
+            if mode == 3:
+                logits = (snapshot["weight"].index_select(1, indices) * values).sum(1)
+                exp = (logits - logits.max()).exp()
+                draws.append({"population": "literal", "activity_sha256": identity,
+                              "logits": logits, "probabilities": exp / exp.sum()})
+            tick = {"category": "teacher", "h_before": h, "h_after": h,
+                    "cursors_before": [None, 1], "cursors_after": [None, 2],
+                    "register_tokens": [None, 98],
+                    "prior_token": 97, "emitted_token": symbol, "draws": draws,
+                    "credit": {"literal_taught": mode == 3, "observed_token": symbol,
+                               "sampled_reward": 1, "signal": .125,
+                               "signal_objective": "synthetic-brier", "baseline_before": 0.}}
+            steps.append({"output_step": position, "prefix_hex": target[:position].hex(),
+                          "observed_token": symbol, "controller": tick})
+        return RecurrentContentFeedback(
+            state=None, attempt_id="synthetic-observer", teacher_count=2,
+            total_loss=0., mean_loss=0., output_updated=enabled,
+            teacher_steps=tuple(steps), work={}, controller={"learning_enabled": enabled})
+
+    disabled_feedback = feedback(initial, 0)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("practice observer evaluated an unselected weight/activity path")
+
+    with monkeypatch.context() as guard:
+        for name in ("analyze_teacher", "score_anchors", "_activity"):
+            guard.setattr(observer, name, forbidden)
+        practice = observer.practice_teacher(disabled_feedback, target, learning_enabled=False)
+        enabled = observer.practice_teacher(feedback(initial, 0, True), target,
+                                            learning_enabled=True)
+    assert (practice["offers"], practice["raw_offers"], practice["eos_offers"]) == (2, 1, 1)
+    assert practice["literal_offers"] == enabled["literal_offers"] == 1
+    assert practice["direct_teacher_published_offers"] == 0
+    assert enabled["direct_teacher_published_offers"] == 1
+    assert practice["positions"][0]["selected_literal_target_probability"] == pytest.approx(1 / 258)
+    assert practice["positions"][0]["selected_literal_target_log_probability"] == pytest.approx(
+        -math.log(258))
+    assert practice["positions"][1]["selected_literal_target_probability"] is None
+    assert practice["positions"][1]["selected_literal_target_log_probability"] is None
+    assert practice["positions"][1]["deterministic_tokens"] == [97, 256, 98]
+    assert practice["positions"][0]["mode_probabilities"] == [.1, .2, .3, .4]
+    assert practice["positions"][0]["credit"]["signal"] == .125
+    assert all(practice[key] == 0 for key in (
+        "extra_literal_evaluations", "draws", "teacher_calls", "prior_calls", "publications"))
+    with pytest.raises(ValueError, match="gate"):
+        observer.practice_teacher(disabled_feedback, target, learning_enabled=True)
+
+    different_path = feedback(initial, 1)
+    actual_free = SimpleNamespace(steps=tuple(
+        SimpleNamespace(controller=step["controller"], observed_token=token)
+        for step, token in zip(different_path.teacher_steps, (0, 256), strict=True)))
+    alignment = observer.free_teacher_alignment(actual_free, disabled_feedback, target)
+    assert [row["intended_prefix_aligned"] for row in alignment["positions"]] == [True]
+    assert alignment["free_decisions"] == 2 and alignment["omitted_after_divergence"] == 1
+    assert alignment["positions"][0]["same_emission_activity"] is False
+    assert alignment["positions"][0]["same_incoming_rng"] is False
+    assert alignment["positions"][0]["free"]["h_after"] == 1
+    assert alignment["positions"][0]["teacher"]["h_after"] == 0
+    assert all(alignment[key] == 0 for key in ("model_calls", "draws", "publications"))
+
+    before = initial["weight"].clone()
+    panel = observer.panel_teacher(disabled_feedback, target, literal_snapshot=initial)
+    assert panel["offers"] == 2 and panel["literal_offers"] == 1
+    assert panel["direct_teacher_published_offers"] == 0
+    assert panel["work"]["extra_literal_evaluations"] == 1
+    assert panel["work"]["reused_actual_literal_distributions"] == 1
+    assert panel["positions"][0]["mode_mixture_components"] == pytest.approx(
+        [.1, 0., 0., .4 / 258])
+    assert panel["positions"][1]["mode_mixture_components"] == pytest.approx(
+        [0., .2, 0., .4 / 258])
+    assert panel["mode_mixture_path_logscore"] == pytest.approx(
+        math.log(.1 + .4 / 258) + math.log(.2 + .4 / 258))
+    anchors = panel["anchors"]
+    assert anchors[0]["indices"] == [0, 289, 549, 648, 810, 813, 911, 1071]
+    assert anchors[0]["values"] == [1 / math.sqrt(8)] * 8
+    assert all(anchor["competitor"] == 32 for anchor in anchors)
+    assert panel["current_activity_scores"]["positions"][0]["fixed_competitor_margin"] == (
+        pytest.approx(-math.log(2)))
+    anchors_before = copy.deepcopy(anchors)
+
+    # A legitimate new checkpoint changes only target A's h=0 synapse. Current
+    # teacher activity now uses h=1; fixed CP0 scores must retain h=0 explicitly.
+    live[97, 0] = math.sqrt(8) * math.log(3)
+    changed = capture_literal(fixture)
+    live[97, 0] = 99
+    assert torch.equal(initial["weight"], before)
+    assert changed["weight"][97, 0] == math.sqrt(8) * math.log(3)
+    assert initial["weight"].data_ptr() != changed["weight"].data_ptr() != live.data_ptr()
+    current = observer.panel_teacher(feedback(changed, 1), target, literal_snapshot=changed)
+    fixed = observer.score_anchors(changed, anchors)
+    first = fixed["positions"][0]
+    assert current["anchors"][0]["activity_sha256"] != anchors[0]["activity_sha256"]
+    assert current["positions"][0]["literal_target_probability"] == pytest.approx(1 / 258)
+    assert first["target_current"] == pytest.approx(math.log(3))
+    assert first["target_probability"] == pytest.approx(3 / 260)
+    assert first["target_log_probability"] == pytest.approx(math.log(3 / 260))
+    assert first["fixed_competitor"] == first["strongest_competitor"] == 32
+    assert first["fixed_competitor_current"] == pytest.approx(math.log(2))
+    assert first["fixed_competitor_margin"] == pytest.approx(math.log(3 / 2))
+    assert first["strongest_competitor_margin"] == pytest.approx(math.log(3 / 2))
+    assert fixed["positions"][1]["target_probability"] == pytest.approx(1 / 260)
+    assert fixed["work"]["fixed_activity_score_evaluations"] == 2
+    assert all(fixed[key] == 0 for key in ("model_calls", "draws", "publications"))
+    assert anchors == anchors_before and torch.equal(initial["weight"], before)
+    damaged = copy.deepcopy(anchors)
+    damaged[0]["indices"][0] = 2  # Still valid geometry, but not the authenticated site.
+    with pytest.raises(ValueError, match="identity"):
+        observer.score_anchors(changed, damaged)
+    changed["weight"].numpy()[97, 0] += 1
+    with pytest.raises(ValueError, match="snapshot changed"):
+        observer.score_anchors(changed, anchors)
+
+
+def test_integrated_local_learning_compact_teacher_refuses_lost_contacts_and_false_counts():
+    """Pure compact receipt validation, without teacher or unselected-weight calls."""
+    from experiments.r4_integrated.integrated_local_learning_checkpoint_v1 import (
+        validate_compact_teacher,
+    )
+
+    target = b"ab"
+    rows = []
+    for position, (token, mode) in enumerate(((97, 3), (98, 0), (256, 1))):
+        rows.append({
+            "position": position, "target": token, "eos": token == 256,
+            "offered": True, "selected_literal": mode == 3,
+            "direct_teacher_published": mode == 3, "selected_mode": mode,
+            "mode_probabilities": [.1, .2, .3, .4],
+            "deterministic_tokens": [97, 256, 98],
+            "selected_literal_target_probability": .2 if mode == 3 else None,
+            "selected_literal_target_log_probability": math.log(.2) if mode == 3 else None,
+            "mode_activity_sha256": "a" * 64,
+            "h_after": 0, "register_tokens": [None, 98], "prior_token": 97,
+            "credit": {"signal": .125, "baseline_before": 0., "sampled_reward": 1},
+        })
+    compact = {
+        "schema": "integrated-local-learning-practice-teacher-v1",
+        "target_hex": target.hex(), "offers": 3, "raw_offers": 2, "eos_offers": 1,
+        "literal_offers": 1, "direct_teacher_published_offers": 1, "positions": rows,
+        "extra_literal_evaluations": 0, "draws": 0, "teacher_calls": 0,
+        "prior_calls": 0, "publications": 0,
+    }
+    held = copy.deepcopy(compact)
+    assert validate_compact_teacher(compact, target, learning_enabled=True) == 1
+    assert compact == held
+    disabled = copy.deepcopy(compact)
+    disabled["positions"][0]["direct_teacher_published"] = False
+    disabled["direct_teacher_published_offers"] = 0
+    assert validate_compact_teacher(disabled, target, learning_enabled=False) == 1
+    with pytest.raises(ValueError):
+        validate_compact_teacher(disabled, target, learning_enabled=True)
+    with pytest.raises(ValueError):
+        validate_compact_teacher(compact, target, learning_enabled=False)
+    for key in ("selected_literal_target_probability", "selected_literal_target_log_probability"):
+        broken = copy.deepcopy(compact)
+        broken["positions"][0][key] = None
+        with pytest.raises(ValueError):
+            validate_compact_teacher(broken, target, learning_enabled=True)
+    for key, value in (("selected_literal_target_probability", float("nan")),
+                       ("selected_literal_target_log_probability", math.log(.3)),
+                       ("mode_probabilities", [.1, .2, .3, .5]),
+                       ("offered", False), ("target", 98)):
+        broken = copy.deepcopy(compact)
+        broken["positions"][0][key] = value
+        with pytest.raises(ValueError):
+            validate_compact_teacher(broken, target, learning_enabled=True)
+    fabricated = copy.deepcopy(compact)
+    fabricated["positions"][1]["selected_literal_target_probability"] = .2
+    fabricated["positions"][1]["selected_literal_target_log_probability"] = math.log(.2)
+    with pytest.raises(ValueError, match="unselected"):
+        validate_compact_teacher(fabricated, target, learning_enabled=True)
+    for key, value in (("offers", 2), ("raw_offers", 3), ("eos_offers", 0),
+                       ("literal_offers", 2), ("direct_teacher_published_offers", 2),
+                       ("extra_literal_evaluations", 1), ("draws", 1),
+                       ("teacher_calls", 1), ("prior_calls", 1), ("publications", 1)):
+        with pytest.raises(ValueError):
+            validate_compact_teacher(compact | {key: value}, target, learning_enabled=True)
+    with pytest.raises(ValueError):
+        validate_compact_teacher(compact, target + b"c", learning_enabled=True)
+
+
+def test_integrated_local_learning_checkpoint_authored_full_block_roundtrip(tmp_path, monkeypatch):
+    """Four CPU actors, empty tapes, authored ledger; no learning or historical loads."""
+    import hashlib
+
+    from experiments.r4_integrated import integrated_local_learning_checkpoint_v1 as checkpoint
+    from experiments.r4_integrated.persistent_language_action_baseline_v2 import SimpleReference
+    from experiments.r4_integrated.persistent_language_action_v8 import _plain
+    from experiments.r4_integrated.persistent_session_checkpoint import (
+        DirtyCheckpoint,
+        _baseline_record,
+        _tensors,
+        encode,
+    )
+    from humanbrain.neuronal_splice_learner import _digest
+    from humanbrain.recurrent_content_learner import RecurrentContentSpliceLearner
+
+    routes = checkpoint.NEURAL_ROUTES
+    models = {route: RecurrentContentSpliceLearner(seed=733) for route in routes}
+    states = {route: model.reader.memory.initial_state() for route, model in models.items()}
+    for route, model in models.items():
+        assert states[route].keys.shape[0] == 2048 and states[route].used == 0
+        assert all(t.device.type == "cpu" for t in _tensors(model.state_dict()))
+        # Declared fixture counters only: these are not claimed executed experiences.
+        model._experience, model.reader._active_experience = 913, 1430
+    memory_sha = _digest(vars(states["online"]))
+    monkeypatch.setattr(checkpoint, "PARENT_MEMORY_SHA", memory_sha)
+    monkeypatch.setattr(checkpoint.runtime, "BANK_SHA",
+                        hashlib.sha256(b"authored-bank").hexdigest())
+    monkeypatch.setattr(checkpoint.runtime, "BOUNDARY_SHA",
+                        hashlib.sha256(b"authored-boundary").hexdigest())
+    baseline = SimpleReference()
+    parent_baseline = copy.deepcopy(_baseline_record(baseline))
+
+    def reference_hashes():
+        return {"model": _digest(_plain(baseline.demonstrations)),
+                "memory": _digest(_plain(baseline.documents))}
+
+    initial = {route: {"model": _digest(model.state_dict()), "memory": memory_sha}
+               for route, model in models.items()}
+    initial["simple"] = reference_hashes()
+    initial_rng = {route: model.reader.controller.rng_state.clone()
+                   for route, model in models.items()}
+    parent = {
+        "bank_sha256": checkpoint.runtime.BANK_SHA,
+        "parent_boundary_sha256": checkpoint.runtime.BOUNDARY_SHA,
+        "initial_routes": {route: {"model_sha256": initial[route]["model"]} for route in routes},
+        "baseline_record": parent_baseline,
+        "scope": "authored empty-tape fixture, not the retained parent",
+    }
+    read_target, edit_target = b"abcdefghijk", b"ABCDEFGHIJKLMNOPQRSTUV"
+    source, query = b"x=0\n", b"authored edit"
+    files = [{"path": "app.py", "content_hex": source.hex()}]
+    tasks = {
+        "A00-R": {"kind": "reading", "request_hex": b"authored reading".hex(), "files": [],
+                  "teacher": {"target_hex": read_target.hex()}},
+        "A00-E": {"kind": "edit", "request_hex": query.hex(), "files": files,
+                  "teacher": {"path": "app.py", "start": 2, "end": 3,
+                              "replacement_hex": edit_target.hex()}},
+    }
+    manifest = {
+        "schema": "integrated-local-learning-acquisition-v1", "tasks": tasks,
+        "schedule": [{"index": i, "episode_id": name}
+                     for i, name in enumerate(checkpoint.SCHEDULE)],
+        "checkpoints": list(checkpoint.CHECKPOINTS), "routes": list(checkpoint.ROUTES),
+        "checkpoint_cases": ["A00-R", "A00-E", "R02-R", "R12-R"],
+        "scope": "synthetic ledger validation only; no cases or corrections executed",
+    }
+    evidence = tmp_path / "authored-block"
+    evidence.mkdir()
+    (evidence / "executions").mkdir()
+    manifest_raw = encode(manifest)
+    manifest_path = evidence / "manifest.json"
+    manifest_path.write_bytes(manifest_raw)
+    source_name = "experiments/r4_integrated/integrated_local_learning_checkpoint_v1.py"
+    source_sha = hashlib.sha256((checkpoint.ROOT / source_name).read_bytes()).hexdigest()
+
+    def compact(target, enabled):
+        positions = []
+        for i, token in enumerate((*target, 256)):
+            selected = i % 3 == 0
+            positions.append({
+                "position": i, "target": token, "eos": token == 256,
+                "offered": True, "selected_literal": selected,
+                "direct_teacher_published": selected and enabled,
+                "selected_mode": 3 if selected else 0,
+                "mode_probabilities": [.1, .2, .3, .4],
+                "selected_literal_target_probability": 1 / 257 if selected else None,
+                "selected_literal_target_log_probability": -math.log(257) if selected else None,
+                "deterministic_tokens": [97, 256, 98], "mode_activity_sha256": "a" * 64,
+                "h_after": 0, "register_tokens": [None, 98], "prior_token": 97, "credit": {},
+            })
+        selected_count = sum(p["selected_literal"] for p in positions)
+        return {
+            "schema": "integrated-local-learning-practice-teacher-v1",
+            "target_hex": target.hex(), "positions": positions, "offers": len(target) + 1,
+            "raw_offers": len(target), "eos_offers": 1, "literal_offers": selected_count,
+            "direct_teacher_published_offers": selected_count if enabled else 0,
+            "extra_literal_evaluations": 0, "draws": 0, "teacher_calls": 0,
+            "prior_calls": 0, "publications": 0,
+        }
+
+    diagnostics = {(route, name): compact(read_target if name == "A00-R" else edit_target,
+                                         route == "online")
+                   for route in routes for name in tasks}
+    current, results = copy.deepcopy(initial), []
+    with checkpoint.IntegratedLearningCheckpoint.create(
+        evidence / "checkpoints", evidence_root=evidence, manifest_path=manifest_path,
+        manifest_sha256=hashlib.sha256(manifest_raw).hexdigest(),
+        source_sha256={source_name: source_sha},
+        source_revision="authored-fixture", parent_receipt=parent,
+    ) as store:
+        writers = store.create_owned_journals()
+
+        def panel(index):
+            rows = []
+            for route in checkpoint.ROUTES:
+                for name in manifest["checkpoint_cases"]:
+                    rows.append({
+                        "attempt": {"route": route, "episode_id": name, "scope": "probe",
+                                    "execution": {} if name == "A00-E" else None},
+                        "teacher": {"learning_enabled": False} if name.startswith("A00") else None,
+                    })
+            writers["probes"].append({"checkpoint": index, "live_before": copy.deepcopy(current),
+                                      "live_after": copy.deepcopy(current), "rows": rows})
+
+        panel(0)
+        for index, name in enumerate(checkpoint.SCHEDULE):
+            episode, edit = tasks[name], name == "A00-E"
+            for route in checkpoint.ROUTES:
+                before = current[route]
+                if route == "simple":
+                    if edit:
+                        baseline.demonstrations.append({
+                            "query": query, "old": source[2:3], "replacement": edit_target,
+                            "source_sha256": hashlib.sha256(source).hexdigest(),
+                            "query_sha256": hashlib.sha256(query).hexdigest(),
+                        })
+                        baseline.new_teacher_offers["SPLICE"] += 1
+                    else:
+                        baseline.new_teacher_offers["reading"] += 1
+                    after = reference_hashes()
+                else:
+                    after = before
+                common = {
+                    "step_index": index, "route": route, "episode_id": name, "scope": "main",
+                    "model_before_sha256": before["model"], "model_after_sha256": after["model"],
+                    "memory_before_sha256": before["memory"],
+                    "memory_after_sha256": after["memory"],
+                }
+                attempt = common | {
+                    "kind": episode["kind"], "correct": False,
+                    "observation": {"schema": "sequence-assembly-raw-observation-v1",
+                                    "request_hex": episode["request_hex"],
+                                    "files": files if edit else None, "feedback": None},
+                    "execution": (
+                        {"files_complete": True, "capture_complete": True} if edit else None),
+                }
+                teacher = common | {
+                    "teacher": episode["teacher"], "learning_enabled": route == "online",
+                    "reader_offers": (23 if edit else 12) if route in routes else 0,
+                    "action_labels": 3 if edit and route in routes else 0,
+                }
+                if route in routes:
+                    teacher["diagnostic"] = diagnostics[route, name]
+                writers["attempts"].append(attempt)
+                writers["teachers"].append(teacher)
+                results.append({k: attempt[k]
+                                for k in ("step_index", "route", "episode_id", "correct")})
+                current[route] = after
+            if index + 1 in checkpoint.CHECKPOINTS:
+                panel(index + 1)
+        host = {"initial_hashes": initial, "schedule_completed": 1024, "results": results,
+                "counts": {"completed_attempts": 3156, "completed_teachers": 3114,
+                           "executions": 1557},
+                "scope": "fabricated denominator ledger; zero actual teacher/task executions"}
+        saved = store.commit_final(models, states, baseline, host)
+        assert saved["sequence"] == 0 and store.work["checkpoint_payload_writes"] == 2
+        assert store.work["checkpoint_head_publications"] == 1
+        with store.checkpoint_scope():
+            boundary = store.inspect()["boundary"]
+        assert [row["rows"] for row in boundary["frontiers"]["journals"]] == [3072, 3072, 7]
+        assert boundary["host"] == host
+        config_sha = store.config_sha256
+    assert sum(path.stat().st_size for path in evidence.rglob("*")
+               if path.is_file()) < 512 * 1024**2
+
+    def file_sha(path):
+        value = hashlib.sha256()
+        with path.open("rb") as handle:
+            for block in iter(lambda: handle.read(1024**2), b""):
+                value.update(block)
+        return value.hexdigest()
+
+    for row in boundary["routes"].values():
+        path = evidence / "checkpoints" / row["payload"]
+        assert path.stat().st_size == row["bytes"] and file_sha(path) == row["sha256"]
+    restored_models = {route: RecurrentContentSpliceLearner(seed=733) for route in routes}
+    with checkpoint.IntegratedLearningCheckpoint.open(
+        evidence / "checkpoints", config_sha256=config_sha,
+    ) as fresh:
+        restored = fresh.restore_into(restored_models)
+        fresh._validate_block(restored_models, restored["states"], restored["baseline"],
+                              restored["host"], restored["frontiers"])
+        assert restored["boundary_sha256"] == saved["boundary_sha256"]
+        assert restored["host"] == host
+        assert _baseline_record(restored["baseline"]) == _baseline_record(baseline)
+        assert len(restored["baseline"].demonstrations) == 512
+        assert fresh.work["checkpoint_torch_load_calls"] == 2
+        assert fresh.work["checkpoint_restore_calls"] == 1
+        assert fresh.work["checkpoint_journal_fresh_hash_checks"] >= 6
+        journal_bytes = sum(row["bytes"] for row in boundary["frontiers"]["journals"])
+        payload_bytes = sum(row["bytes"] for row in boundary["routes"].values())
+        assert fresh.work["checkpoint_hash_bytes_read"] >= 2 * (journal_bytes + payload_bytes)
+        for route, model in restored_models.items():
+            assert (model._experience, model.reader._active_experience) == (913, 1430)
+            assert torch.equal(model.reader.controller.rng_state, initial_rng[route])
+            assert _digest(model.state_dict()) == initial[route]["model"]
+            assert _digest(vars(restored["states"][route])) == memory_sha
+            incoming = models[route].state_dict()
+            for name, value in model.state_dict().items():
+                if isinstance(value, torch.Tensor):
+                    assert torch.equal(value, incoming[name])
+                    if value.numel():
+                        assert value.data_ptr() != incoming[name].data_ptr()
+                else:
+                    assert value == incoming[name]
+            for name, value in vars(restored["states"][route]).items():
+                assert torch.equal(value, getattr(states[route], name))
+                assert value.data_ptr() != getattr(states[route], name).data_ptr()
+        # A valid row appended outside the completed frontier must be refused
+        # on a fresh check before any additional restricted tensor decoding.
+        with (evidence / "attempts.jsonl").open("ab") as handle:
+            handle.write(b"{}\n")
+        with pytest.raises(DirtyCheckpoint, match="tail"):
+            fresh.inspect(fresh_payloads=True)
+        assert fresh.work["checkpoint_torch_load_calls"] == 2
+        for route, model in models.items():
+            assert _digest(model.state_dict()) == initial[route]["model"]
+            assert torch.equal(model.reader.controller.rng_state, initial_rng[route])
+        (tmp_path / "integrated-local-checkpoint-authored-qa.json").write_bytes(encode({
+            "status": "passed", "model_constructions": 4, "tensor_decodes": 2,
+            "source_offers": 0, "free_responses": 0, "teacher_calls": 0, "child_executions": 0,
+            "retained_payload_reads": 0, "payload_bytes": payload_bytes,
+            "fixture_journal_bytes": journal_bytes, "fixture_main_rows_per_journal": 3072,
+            "fixture_panels": 7, "fixture_counters": [913, 1430],
+            "boundary_sha256": saved["boundary_sha256"], "work": dict(fresh.work),
+            "scope": "authored empty 2048-slot actors; synthetic ledger is not task evidence",
+        }))
+
+
 def test_repeated_teaching_free_summary_requires_complete_eos_and_actual_step_contract():
     """Use the real immutable step data type without constructing any learner."""
     from types import SimpleNamespace
@@ -16038,3 +16498,162 @@ def test_saved_literal_attribution_checks_all_cells_and_separates_additive_curre
     sites["fixture:0"]["logits"][8][91] += .001
     with pytest.raises(ValueError, match="do not close"):
         checkpoint_report(banks, banks["teacher_A00-R"], sites, 8)
+
+
+def test_integrated_local_learning_saved_reader_stream_limits_and_interference(tmp_path):
+    """Stdlib authored evidence and one import-only subprocess; zero model calls."""
+    import hashlib
+    import subprocess
+    import time
+    from pathlib import Path
+
+    from experiments.r4_integrated import integrated_local_learning_acquisition_review_v1 as reader
+
+    project = Path(__file__).resolve().parents[1]
+    code = (
+        "import sys\n"
+        f"sys.path.insert(0, {str(project)!r})\n"
+        "import experiments.r4_integrated.integrated_local_learning_acquisition_review_v1\n"
+        "assert not any(n == 'torch' or n.startswith('torch.') "
+        "or n == 'humanbrain' or n.startswith('humanbrain.') for n in sys.modules)\n"
+        "print('pure-saved-reader-import')\n"
+    )
+    imported = subprocess.run(
+        [str(project / ".venv/Scripts/python.exe"), "-I", "-c", code],
+        capture_output=True, text=True, timeout=15, check=True,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+    assert imported.stdout.strip() == "pure-saved-reader-import"
+    rows = [{"position": 0, "offers": 1}, {"position": 1, "offers": 1}]
+    raw = b"".join(reader.encode(row) + b"\n" for row in rows)
+    path = tmp_path / "authored.jsonl"
+    path.write_bytes(raw)
+    frontier = {"bytes": len(raw), "rows": 2, "sha256": hashlib.sha256(raw).hexdigest()}
+    evidence = reader.Evidence(time.perf_counter() + 30)
+    assert list(evidence.journal(path, frontier)) == rows
+    assert (evidence.rows, evidence.passes, evidence.bytes) == (2, 1, len(raw))
+    for bad_frontier in (frontier | {"rows": 1}, frontier | {"sha256": "0" * 64}):
+        with pytest.raises(ValueError, match="frontier"):
+            list(reader.Evidence(time.perf_counter() + 30).journal(path, bad_frontier))
+    path.write_bytes(raw + b"{}\n")
+    with pytest.raises(ValueError, match="frontier"):
+        list(reader.Evidence(time.perf_counter() + 30).journal(path, frontier))
+    path.write_bytes(raw[:-1])
+    with pytest.raises(ValueError, match="incomplete"):
+        list(reader.Evidence(time.perf_counter() + 30).journal(path, frontier))
+
+    # Real actor contract: 128 returned bytes plus a 129th non-EOS sampled
+    # decision which is not appended to generation.data when the cap is reached.
+    target = b"a" * 128
+    tokens = [97] * 128 + [98]
+    positions = [{"position": i, "actual_token": token,
+                  "intended_token": 97 if i < 128 else 256,
+                  "intended_prefix_aligned": True, "matches_intended_here": i < 128}
+                 for i, token in enumerate(tokens)]
+    free = {"answer_hex": target.hex(), "stop_reason": "limit", "bytes": 128,
+            "decisions": 129, "exact_bytes": True, "complete_bytes_and_eos": False,
+            "matching_raw_prefix_bytes": 128, "positions": positions}
+    prediction = {"answer_hex": target.hex(), "stop_reason": "limit", "decisions": 129,
+                  "steps": [{"token": token} for token in tokens]}
+    checked = reader._free({"free_response": free}, prediction, target)
+    assert checked["decisions"] == 129 and checked["unreturned_limit_token"] == 98
+    assert checked["exact_bytes"] and not checked["complete_bytes_and_eos"]
+    sample_state = {"mode_activity_sha256": "a" * 64, "incoming_rng_sha256": "b" * 64}
+    alignment = {
+        "schema": "integrated-local-learning-free-teacher-alignment-v1",
+        "free_decisions": 129, "omitted_after_divergence": 0,
+        "positions": [{"position": i, "actual_token": token,
+                       "target": 97 if i < 128 else 256, "intended_prefix_aligned": True,
+                       "free": sample_state, "teacher": sample_state,
+                       "same_emission_activity": True, "same_incoming_rng": True}
+                      for i, token in enumerate(tokens)],
+    }
+    assert reader.check_alignment(alignment, checked, target) == alignment
+    for change in (free | {"decisions": 128}, free | {"positions": positions[:-1]}):
+        with pytest.raises(ValueError):
+            reader._free({"free_response": change}, prediction, target)
+    altered = copy.deepcopy(prediction)
+    altered["steps"][-1]["token"] = 99
+    with pytest.raises(ValueError, match="panel steps"):
+        reader._free({"free_response": free}, altered, target)
+
+    literal = [.8 / 256] * 257
+    literal[97] = .2
+    item = {"position": 0, "selected_mode": 3, "literal_target_probability": .2,
+            "selected_mode_target_probability": .2, "sampled_match": True,
+            "mode_mixture_components": [.1, 0., 0., .08], "activity_sha256": "a" * 64}
+    step = {"output_step": 0, "observed_token": 97, "prefix_hex": "",
+            "controller": {"category": "teacher", "prior_token": 97,
+                           "register_tokens": [None, 98], "emitted_token": 97,
+                           "draws": [{}, {}, {"index": 3, "probabilities": [.1, .2, .3, .4],
+                                              "activity_sha256": "a" * 64},
+                                     {"probabilities": literal}]}}
+    reader.check_panel_position(item, step, 97, b"")
+    # Preserve the sum while moving contribution to the wrong actual emitter.
+    with pytest.raises(ValueError, match="mixture component"):
+        reader.check_panel_position(item | {"mode_mixture_components": [0., .1, 0., .08]},
+                                    step, 97, b"")
+
+    progress = {}
+    for index, p, identity in ((0, .2, "a" * 64), (63, .3, "b" * 64)):
+        diagnostic = {"actual_teacher_controller_draws": 7, "positions": [
+            {"position": 0, "target": 97, "eos": False, "selected_literal": True,
+             "direct_teacher_published": True, "selected_literal_target_probability": p,
+             "selected_literal_target_log_probability": math.log(p),
+             "mode_activity_sha256": identity},
+            {"position": 1, "target": 256, "eos": True, "selected_literal": False,
+             "direct_teacher_published": False},
+        ]}
+        teacher = {"step_index": index, "episode_id": "A00-R", "route": "online",
+                   "reader_offers": 2, "action_labels": 0, "diagnostic": diagnostic,
+                   "free_teacher_alignment": {"omitted_after_divergence": 1, "positions": [
+                       {"same_emission_activity": True, "same_incoming_rng": False},
+                       {"same_emission_activity": False, "same_incoming_rng": False}]}}
+        reader.progress_add(progress, teacher, {"free_response": {"complete_bytes_and_eos": False}})
+    interval = progress["0:64:A00-R"]
+    reader.finish_coverage(interval["positions"])
+    first, eos = interval["positions"]["A00-R"]
+    assert (interval["teacher_occasions"], interval["reader_symbols"],
+            interval["actual_teacher_draws"]) == (2, 4, 14)
+    assert first["offers"] == first["literal_contacts"] == first["literal_publications"] == 2
+    assert first["selected_literal_probability_mean"] == pytest.approx(.25)
+    assert first["selected_literal_ce_mean"] == pytest.approx(-math.log(.2 * .3) / 2)
+    assert first["selected_activity_differs_from_first"] == 1
+    assert eos["offers"] == 2 and eos["literal_contacts"] == 0
+    assert eos["selected_literal_probability_mean"] is None
+    assert interval["alignment"]["first_same_rng"] == 0
+    assert interval["alignment"]["same_activity_aligned_rows"] == 2
+    assert interval["alignment"]["omitted_after_divergence"] == 2
+
+    checkpoints = []
+    for cp in (0, 64):
+        outcomes = []
+        for route in reader.NEURAL:
+            for name, symbol in (("A00-R", 97), ("A00-E", 98)):
+                p = .1 if cp == 0 else .2
+                margin = -.5 if cp == 0 else -.6
+                anchor = {"position": 0, "target": symbol, "competitor": 32,
+                          "activity_sha256": "a" * 64}
+                score = {"position": 0, "target": symbol, "fixed_competitor": 32,
+                         "activity_sha256": "a" * 64, "target_probability": p,
+                         "target_log_probability": math.log(p), "target_current": cp / 64,
+                         "fixed_competitor_margin": margin}
+                outcomes.append({"route": route, "episode_id": name, "correct": False,
+                                 "teacher": {"diagnostic": {"anchors": [anchor]},
+                                             "fixed_anchor_scores": {"positions": [score]}}})
+        checkpoints.append({"checkpoint": cp, "outcomes": outcomes})
+    interference, collisions = reader._panel_analysis(checkpoints)
+    assert len(interference) == len(collisions) == 4
+    assert all(row["corrections"] == {"A00-R": 64} for row in interference)
+    for row in interference:
+        assert row["positions"][0]["target_probability_delta"] == pytest.approx(.1)
+        assert row["positions"][0]["fixed_competitor_margin_delta"] == pytest.approx(-.1)
+        assert not row["correct_before"] and not row["correct_after"]
+        assert "no unique cause attribution" in row["scope"]
+    assert all({member["target"] for member in row["members"]} == {97, 98}
+               for row in collisions)
+    damaged = copy.deepcopy(checkpoints)
+    damaged[1]["outcomes"][0]["teacher"]["fixed_anchor_scores"]["positions"][0][
+        "activity_sha256"] = "c" * 64
+    with pytest.raises(ValueError, match="anchor changed"):
+        reader._panel_analysis(damaged)

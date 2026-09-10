@@ -37,7 +37,12 @@ The [actual retained preservation comparison](integrated-local-learning-v1-prese
 passes, including the learned edit span; both versions still fail all four complete
 responses. Useful acquisition under that rule is unmeasured. The
 [budget review](integrated-local-learning-v1-budget-review.md) identifies contact
-timescale and measured execution cost as inputs to the next finite teaching decision.
+timescale and measured execution cost. The selected
+[fixed acquisition comparison](integrated-local-learning-acquisition-v1.md) gives
+each existing skill 512 corrections while holding the rule and architecture fixed.
+Its compact runner, diagnostics and saved reader pass source review and authored
+QA; execution remains unreleased. No acquisition result or retention/transfer
+expansion is implied.
 
 The prepared [byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 is also completed and independently audited. Its narrow successes remain

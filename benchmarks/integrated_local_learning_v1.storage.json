@@ -1,0 +1,926 @@
+{
+  "schema": "integrated-local-learning-storage-maintenance-v1",
+  "status": "passed",
+  "scope": "Transparent NTFS compression of32 bank-authenticated completed historical payload files. No data deletion, model calls or tensor decode; scientific contents unchanged.",
+  "manifest": {
+    "scope": "NTFS transparent lossless compression; zero model calls/decodes",
+    "bank_sha256": "1bd3073fac22fdd54cc27e16ad7c8e75d106b15e9263e44bb1161b1a85c54919",
+    "files": [
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-learning_disabled-000000000.pt",
+        "sha256": "f49a6496f91bca6dc431ae221034dfda9e897d0f2476ae18d2bb4b65f8617592",
+        "bytes": 115712128
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-learning_disabled-000000003.pt",
+        "sha256": "453ee52087a2bde498c9e3734650a9efd75b4f9d6d54d0cb67e369713f578413",
+        "bytes": 115712128
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-learning_disabled-000000004.pt",
+        "sha256": "c8fe9a54678eb424d1564342fe040ce4361688309822c0cbe3edb26af720c029",
+        "bytes": 115712128
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-learning_disabled-000000009.pt",
+        "sha256": "0b6e561787f3dd096d6cd9a9bb3f9adf96e25bc121c6e48d99cd9279468be87f",
+        "bytes": 115712128
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-learning_disabled-000000010.pt",
+        "sha256": "8d77b40b08a1012f6a508bed5bc9ffefe02ec84c7b7c423202533b531bd32107",
+        "bytes": 115712128
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-learning_disabled-000000017.pt",
+        "sha256": "1e19a6727faffcdfa580a7009999e1a587cb7db9f575eaba8377fb8be5b51f26",
+        "bytes": 115712128
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-learning_disabled-000000018.pt",
+        "sha256": "66558a7b9a060bcf4c279c1a2876ee83ed6e951e8b4016491604216cf0e230a7",
+        "bytes": 115712128
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-learning_disabled-000000019.pt",
+        "sha256": "514ef64c62675fb40258d5c1d00a1bff361589cf06372e38f4dffb2318206000",
+        "bytes": 115712128
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-online-000000000.pt",
+        "sha256": "f49a6496f91bca6dc431ae221034dfda9e897d0f2476ae18d2bb4b65f8617592",
+        "bytes": 115712128
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-online-000000001.pt",
+        "sha256": "dfa922d344a662e1ac668629f8fc7034e1b198f47a4f5b766a106035546cb67a",
+        "bytes": 115712128
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-online-000000002.pt",
+        "sha256": "5821d48f62b7d65dc8829fd08226970d8540bce50eaf7d116b69478e8ff0670c",
+        "bytes": 115712128
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-online-000000007.pt",
+        "sha256": "1d3c8e9bb091e5baea4d9b77997aa213497ce77c097295962516009178af569a",
+        "bytes": 115712128
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-online-000000008.pt",
+        "sha256": "30b74a8d3463033d1e455279cbb2ffe59455acad6eccf7a34a942e0bcac2c273",
+        "bytes": 115712128
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-online-000000013.pt",
+        "sha256": "beaf9d3c5e1e787ea297e5661808819d8242bf1c46385ae0caa9f4a1ff5915c0",
+        "bytes": 115712128
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-online-000000014.pt",
+        "sha256": "f72409895f3abbc93026ac2d4ed0579ddfb8ba75d957171cad85dbe2a37ffd03",
+        "bytes": 115712128
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-online-000000015.pt",
+        "sha256": "ee138968a43dfe2be9c1efb5278b109f5096661d9ec91cce6c166026981fb368",
+        "bytes": 115712128
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-learning_disabled-000000000.pt",
+        "sha256": "347afa21e016f867d6abe838d2d63c5d1515e3fcdf9ace82d17522c947adf880",
+        "bytes": 115712640
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-learning_disabled-000000003.pt",
+        "sha256": "10308365c8fe7d51d5f17a69a5907f9633c9aaa2abf95853f866124cc702200e",
+        "bytes": 115712640
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-learning_disabled-000000004.pt",
+        "sha256": "727c95cc896f3da23af4153f1f8fb1296ef991f6ef85f046e377edc0298cebe3",
+        "bytes": 115712640
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-learning_disabled-000000009.pt",
+        "sha256": "fc3e762eff51d3de884e4f533bd0fb715dda836a77f8e1882d953910211998a2",
+        "bytes": 115712640
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-learning_disabled-000000010.pt",
+        "sha256": "e3edd5f23b12e8297327a28f527a8f94adc562757f10141807978ea45a7cf561",
+        "bytes": 115712640
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-learning_disabled-000000017.pt",
+        "sha256": "4738a81c16f8a0b31d414b5fef725fef6c00f3bbed8cdb8411e903be1d5e7ec6",
+        "bytes": 115712640
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-learning_disabled-000000018.pt",
+        "sha256": "2b2b02bdc379cb9f933b22fd8d16081bb9534fc6445f4e4ad8caafe6c178cf58",
+        "bytes": 115712640
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-learning_disabled-000000019.pt",
+        "sha256": "0f4f2f43b0b068f62a8bc08cf73a51fc95824ff74f498386758c36a69a8dc31d",
+        "bytes": 115712640
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-online-000000000.pt",
+        "sha256": "347afa21e016f867d6abe838d2d63c5d1515e3fcdf9ace82d17522c947adf880",
+        "bytes": 115712640
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-online-000000001.pt",
+        "sha256": "50cbd202c917e3ef88515df56e878e78079c20ce8f5871d40cb900b8af940927",
+        "bytes": 115712640
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-online-000000002.pt",
+        "sha256": "668f3e46fd39d8f55f98c293eba557b0baf201f9b8689f5bc414b8c6f174baab",
+        "bytes": 115712640
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-online-000000007.pt",
+        "sha256": "8a24f6a34433b083efe75f00789ff397e6de405597ae0200efcb3ed18b76b72e",
+        "bytes": 115712640
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-online-000000008.pt",
+        "sha256": "b5a4c003a631355d496e115a6aaf8e77429394c235b51c118c2399b674bb7322",
+        "bytes": 115712640
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-online-000000013.pt",
+        "sha256": "84ab66154c23b09f90c5b5b0d098fde60e29e68f824da7fe083ecc35c60d8cdb",
+        "bytes": 115712640
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-online-000000014.pt",
+        "sha256": "4895c7dc0c556298e39a1b57c8b388978f5fc63114ab7bf547ee58136006c53e",
+        "bytes": 115712640
+      },
+      {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-online-000000015.pt",
+        "sha256": "2833034a1a69d3d0d147f33f1e84fdf98cd6a5edaf0da420a10befe31d037f89",
+        "bytes": 115712640
+      }
+    ],
+    "seconds_limit": 600,
+    "logical_byte_limit": 4294967296,
+    "file_limit": 32,
+    "before_free_bytes": 5412294656
+  },
+  "report": {
+    "status": "passed",
+    "files": 32,
+    "all_content_hashes_unchanged": true,
+    "logical_bytes": 3702796288,
+    "before_allocated_bytes": 3702796288,
+    "after_allocated_bytes": 196329472,
+    "after_free_bytes": 8683339776,
+    "elapsed_seconds": 13.498593500000425,
+    "model_calls": 0,
+    "tensor_decodes": 0,
+    "deletions": 0
+  },
+  "items": [
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-00.json",
+        "bytes": 1135,
+        "sha256": "fce5753fb05c8857aa324969d6ccd9d72b63390ec176bf92d4d9f2abd45fe880"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-learning_disabled-000000000.pt",
+        "sha256": "f49a6496f91bca6dc431ae221034dfda9e897d0f2476ae18d2bb4b65f8617592",
+        "bytes": 115712128,
+        "index": 0,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c6f6c645c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e31323820746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3132372e3631362062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712128,
+        "after_allocated_bytes": 6127616,
+        "after_sha256": "f49a6496f91bca6dc431ae221034dfda9e897d0f2476ae18d2bb4b65f8617592",
+        "after_bytes": 115712128,
+        "elapsed_seconds": 0.3474522000178695
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-01.json",
+        "bytes": 1135,
+        "sha256": "7e11357b235eb6c5e9802ada02b5d415446d40d2bf68696f3bdaa220b2b2d3f9"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-learning_disabled-000000003.pt",
+        "sha256": "453ee52087a2bde498c9e3734650a9efd75b4f9d6d54d0cb67e369713f578413",
+        "bytes": 115712128,
+        "index": 1,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c6f6c645c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e31323820746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3132372e3631362062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712128,
+        "after_allocated_bytes": 6127616,
+        "after_sha256": "453ee52087a2bde498c9e3734650a9efd75b4f9d6d54d0cb67e369713f578413",
+        "after_bytes": 115712128,
+        "elapsed_seconds": 0.4551775000290945
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-02.json",
+        "bytes": 1135,
+        "sha256": "84a80fcff229ad1b02365137c9a2e7d0f6ad21871612e53f0b7a1066bd09c3ff"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-learning_disabled-000000004.pt",
+        "sha256": "c8fe9a54678eb424d1564342fe040ce4361688309822c0cbe3edb26af720c029",
+        "bytes": 115712128,
+        "index": 2,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c6f6c645c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e31323820746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3132372e3631362062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712128,
+        "after_allocated_bytes": 6127616,
+        "after_sha256": "c8fe9a54678eb424d1564342fe040ce4361688309822c0cbe3edb26af720c029",
+        "after_bytes": 115712128,
+        "elapsed_seconds": 0.3952506000059657
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-03.json",
+        "bytes": 1135,
+        "sha256": "e6f5783df196c76d2e1a2ae478c461b40734d75f2e2ae56c0e5d8963a2effca8"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-learning_disabled-000000009.pt",
+        "sha256": "0b6e561787f3dd096d6cd9a9bb3f9adf96e25bc121c6e48d99cd9279468be87f",
+        "bytes": 115712128,
+        "index": 3,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c6f6c645c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e31323820746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3132372e3631362062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712128,
+        "after_allocated_bytes": 6127616,
+        "after_sha256": "0b6e561787f3dd096d6cd9a9bb3f9adf96e25bc121c6e48d99cd9279468be87f",
+        "after_bytes": 115712128,
+        "elapsed_seconds": 0.4097292000078596
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-04.json",
+        "bytes": 1135,
+        "sha256": "377db473c8e4b979239977181a28bb4db4a8243a48f69cd16dfcb58c60340c33"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-learning_disabled-000000010.pt",
+        "sha256": "8d77b40b08a1012f6a508bed5bc9ffefe02ec84c7b7c423202533b531bd32107",
+        "bytes": 115712128,
+        "index": 4,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c6f6c645c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e31323820746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3132372e3631362062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712128,
+        "after_allocated_bytes": 6127616,
+        "after_sha256": "8d77b40b08a1012f6a508bed5bc9ffefe02ec84c7b7c423202533b531bd32107",
+        "after_bytes": 115712128,
+        "elapsed_seconds": 0.3640758999972604
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-05.json",
+        "bytes": 1135,
+        "sha256": "1720d2d27c47c539ad02507a89e14647da3d2d487b2d968f6b88d6a7e0db4746"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-learning_disabled-000000017.pt",
+        "sha256": "1e19a6727faffcdfa580a7009999e1a587cb7db9f575eaba8377fb8be5b51f26",
+        "bytes": 115712128,
+        "index": 5,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c6f6c645c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e31323820746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3132372e3631362062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712128,
+        "after_allocated_bytes": 6127616,
+        "after_sha256": "1e19a6727faffcdfa580a7009999e1a587cb7db9f575eaba8377fb8be5b51f26",
+        "after_bytes": 115712128,
+        "elapsed_seconds": 0.3827490999829024
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-06.json",
+        "bytes": 1136,
+        "sha256": "5679bd0a561dec02cd25bb5633bdbf72a5d75534be27eda4db8f20f7052292ee"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-learning_disabled-000000018.pt",
+        "sha256": "66558a7b9a060bcf4c279c1a2876ee83ed6e951e8b4016491604216cf0e230a7",
+        "bytes": 115712128,
+        "index": 6,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c6f6c645c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e31323820746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3132372e3631362062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712128,
+        "after_allocated_bytes": 6127616,
+        "after_sha256": "66558a7b9a060bcf4c279c1a2876ee83ed6e951e8b4016491604216cf0e230a7",
+        "after_bytes": 115712128,
+        "elapsed_seconds": 0.38660450000315905
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-07.json",
+        "bytes": 1135,
+        "sha256": "aa5b0df965db872aef9c38f089e8531d5a60d1896a8eabd7abb9979a4257b896"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-learning_disabled-000000019.pt",
+        "sha256": "514ef64c62675fb40258d5c1d00a1bff361589cf06372e38f4dffb2318206000",
+        "bytes": 115712128,
+        "index": 7,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c6f6c645c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e31323820746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3132372e3631362062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712128,
+        "after_allocated_bytes": 6127616,
+        "after_sha256": "514ef64c62675fb40258d5c1d00a1bff361589cf06372e38f4dffb2318206000",
+        "after_bytes": 115712128,
+        "elapsed_seconds": 0.3766115000471473
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-08.json",
+        "bytes": 1124,
+        "sha256": "57d37f67b4c0b9c6120318c612c4cf468ac13530d9dd8a7723c2d27a5173894f"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-online-000000000.pt",
+        "sha256": "f49a6496f91bca6dc431ae221034dfda9e897d0f2476ae18d2bb4b65f8617592",
+        "bytes": 115712128,
+        "index": 8,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c6f6c645c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e31323820746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3132372e3631362062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712128,
+        "after_allocated_bytes": 6127616,
+        "after_sha256": "f49a6496f91bca6dc431ae221034dfda9e897d0f2476ae18d2bb4b65f8617592",
+        "after_bytes": 115712128,
+        "elapsed_seconds": 0.3650306000490673
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-09.json",
+        "bytes": 1125,
+        "sha256": "4377841923df74b07346252d8914b3688326afe8c536b81a49692f2f9ce625f1"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-online-000000001.pt",
+        "sha256": "dfa922d344a662e1ac668629f8fc7034e1b198f47a4f5b766a106035546cb67a",
+        "bytes": 115712128,
+        "index": 9,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c6f6c645c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e31323820746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3133352e3830382062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712128,
+        "after_allocated_bytes": 6135808,
+        "after_sha256": "dfa922d344a662e1ac668629f8fc7034e1b198f47a4f5b766a106035546cb67a",
+        "after_bytes": 115712128,
+        "elapsed_seconds": 0.38984940003138036
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-10.json",
+        "bytes": 1126,
+        "sha256": "dce6d016a09693b5c425d9cbc03e6a0015ab4a0a24759a55ec72726abf5f2299"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-online-000000002.pt",
+        "sha256": "5821d48f62b7d65dc8829fd08226970d8540bce50eaf7d116b69478e8ff0670c",
+        "bytes": 115712128,
+        "index": 10,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c6f6c645c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e31323820746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3133352e3830382062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712128,
+        "after_allocated_bytes": 6135808,
+        "after_sha256": "5821d48f62b7d65dc8829fd08226970d8540bce50eaf7d116b69478e8ff0670c",
+        "after_bytes": 115712128,
+        "elapsed_seconds": 0.44711170002119616
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-11.json",
+        "bytes": 1126,
+        "sha256": "6c80b486bb3be0268235fc3576fef824099f12241bdb9b0501f10162afe4c56d"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-online-000000007.pt",
+        "sha256": "1d3c8e9bb091e5baea4d9b77997aa213497ce77c097295962516009178af569a",
+        "bytes": 115712128,
+        "index": 11,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c6f6c645c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e31323820746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3133352e3830382062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712128,
+        "after_allocated_bytes": 6135808,
+        "after_sha256": "1d3c8e9bb091e5baea4d9b77997aa213497ce77c097295962516009178af569a",
+        "after_bytes": 115712128,
+        "elapsed_seconds": 0.47071010002400726
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-12.json",
+        "bytes": 1125,
+        "sha256": "1af4ec403683768f41ab953932d44e2a6b6cfa4f1f20ba4a49a384f1b99e8ead"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-online-000000008.pt",
+        "sha256": "30b74a8d3463033d1e455279cbb2ffe59455acad6eccf7a34a942e0bcac2c273",
+        "bytes": 115712128,
+        "index": 12,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c6f6c645c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e31323820746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3133352e3830382062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712128,
+        "after_allocated_bytes": 6135808,
+        "after_sha256": "30b74a8d3463033d1e455279cbb2ffe59455acad6eccf7a34a942e0bcac2c273",
+        "after_bytes": 115712128,
+        "elapsed_seconds": 0.4651128000114113
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-13.json",
+        "bytes": 1124,
+        "sha256": "0b0392629d96866939890ab8c155c87d237a520ae9e50167db70b3a86c5f138e"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-online-000000013.pt",
+        "sha256": "beaf9d3c5e1e787ea297e5661808819d8242bf1c46385ae0caa9f4a1ff5915c0",
+        "bytes": 115712128,
+        "index": 13,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c6f6c645c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e31323820746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3133352e3830382062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712128,
+        "after_allocated_bytes": 6135808,
+        "after_sha256": "beaf9d3c5e1e787ea297e5661808819d8242bf1c46385ae0caa9f4a1ff5915c0",
+        "after_bytes": 115712128,
+        "elapsed_seconds": 0.531058499997016
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-14.json",
+        "bytes": 1125,
+        "sha256": "f7ab65b09c9694dfc7e628e8b05714538bb93c5566241ad455ac81a956a278c4"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-online-000000014.pt",
+        "sha256": "f72409895f3abbc93026ac2d4ed0579ddfb8ba75d957171cad85dbe2a37ffd03",
+        "bytes": 115712128,
+        "index": 14,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c6f6c645c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e31323820746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3133352e3830382062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712128,
+        "after_allocated_bytes": 6135808,
+        "after_sha256": "f72409895f3abbc93026ac2d4ed0579ddfb8ba75d957171cad85dbe2a37ffd03",
+        "after_bytes": 115712128,
+        "elapsed_seconds": 0.4958395999856293
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-15.json",
+        "bytes": 1126,
+        "sha256": "60e01c5b038ceb8cc0045f5b3880b3c6b1becbe749222599f83b9171863a0687"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\old\\checkpoints\\route-online-000000015.pt",
+        "sha256": "ee138968a43dfe2be9c1efb5278b109f5096661d9ec91cce6c166026981fb368",
+        "bytes": 115712128,
+        "index": 15,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c6f6c645c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e31323820746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3133392e3930342062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3820746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712128,
+        "after_allocated_bytes": 6139904,
+        "after_sha256": "ee138968a43dfe2be9c1efb5278b109f5096661d9ec91cce6c166026981fb368",
+        "after_bytes": 115712128,
+        "elapsed_seconds": 0.48902999999700114
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-16.json",
+        "bytes": 1146,
+        "sha256": "1ef26f64660a6de371c0126dd8cad2ed1440f02af0d101f2d25179f4e2c9f722"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-learning_disabled-000000000.pt",
+        "sha256": "347afa21e016f867d6abe838d2d63c5d1515e3fcdf9ace82d17522c947adf880",
+        "bytes": 115712640,
+        "index": 16,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c63617573616c5c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e36343020746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3133352e3830382062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712640,
+        "after_allocated_bytes": 6135808,
+        "after_sha256": "347afa21e016f867d6abe838d2d63c5d1515e3fcdf9ace82d17522c947adf880",
+        "after_bytes": 115712640,
+        "elapsed_seconds": 0.46804349997546524
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-17.json",
+        "bytes": 1146,
+        "sha256": "9b45fbb203bcf164ed5df00d9df13f2e5343d6509ab1a32ac8250b4f23dab953"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-learning_disabled-000000003.pt",
+        "sha256": "10308365c8fe7d51d5f17a69a5907f9633c9aaa2abf95853f866124cc702200e",
+        "bytes": 115712640,
+        "index": 17,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c63617573616c5c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e36343020746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3133352e3830382062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712640,
+        "after_allocated_bytes": 6135808,
+        "after_sha256": "10308365c8fe7d51d5f17a69a5907f9633c9aaa2abf95853f866124cc702200e",
+        "after_bytes": 115712640,
+        "elapsed_seconds": 0.41030639997916296
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-18.json",
+        "bytes": 1145,
+        "sha256": "89acece964f9b22f8855abd2d7a3cde286060075b50307246f3bc542364b1ecc"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-learning_disabled-000000004.pt",
+        "sha256": "727c95cc896f3da23af4153f1f8fb1296ef991f6ef85f046e377edc0298cebe3",
+        "bytes": 115712640,
+        "index": 18,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c63617573616c5c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e36343020746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3133352e3830382062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712640,
+        "after_allocated_bytes": 6135808,
+        "after_sha256": "727c95cc896f3da23af4153f1f8fb1296ef991f6ef85f046e377edc0298cebe3",
+        "after_bytes": 115712640,
+        "elapsed_seconds": 0.4208513000048697
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-19.json",
+        "bytes": 1145,
+        "sha256": "b516e2b53744eb79091070634381ce9646b10eed842ea1697a240c1b4987ed27"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-learning_disabled-000000009.pt",
+        "sha256": "fc3e762eff51d3de884e4f533bd0fb715dda836a77f8e1882d953910211998a2",
+        "bytes": 115712640,
+        "index": 19,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c63617573616c5c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e36343020746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3133352e3830382062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712640,
+        "after_allocated_bytes": 6135808,
+        "after_sha256": "fc3e762eff51d3de884e4f533bd0fb715dda836a77f8e1882d953910211998a2",
+        "after_bytes": 115712640,
+        "elapsed_seconds": 0.4086890000035055
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-20.json",
+        "bytes": 1145,
+        "sha256": "4f930d7f7653b8c4ad35d320678813a5b316d83874116fc24795b62cd2d4bd2d"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-learning_disabled-000000010.pt",
+        "sha256": "e3edd5f23b12e8297327a28f527a8f94adc562757f10141807978ea45a7cf561",
+        "bytes": 115712640,
+        "index": 20,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c63617573616c5c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e36343020746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3133352e3830382062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712640,
+        "after_allocated_bytes": 6135808,
+        "after_sha256": "e3edd5f23b12e8297327a28f527a8f94adc562757f10141807978ea45a7cf561",
+        "after_bytes": 115712640,
+        "elapsed_seconds": 0.4091142999823205
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-21.json",
+        "bytes": 1146,
+        "sha256": "08b07bd6aad16176d5aa5a68af1bd312245f4ad5fdbeb82e8eac9f8b9f480c8d"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-learning_disabled-000000017.pt",
+        "sha256": "4738a81c16f8a0b31d414b5fef725fef6c00f3bbed8cdb8411e903be1d5e7ec6",
+        "bytes": 115712640,
+        "index": 21,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c63617573616c5c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e36343020746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3133352e3830382062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712640,
+        "after_allocated_bytes": 6135808,
+        "after_sha256": "4738a81c16f8a0b31d414b5fef725fef6c00f3bbed8cdb8411e903be1d5e7ec6",
+        "after_bytes": 115712640,
+        "elapsed_seconds": 0.41535389999626204
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-22.json",
+        "bytes": 1145,
+        "sha256": "0cec36f03fb035df2c51cece03c2534bd55e3e78b5a30c075eb7431efc1c63cb"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-learning_disabled-000000018.pt",
+        "sha256": "2b2b02bdc379cb9f933b22fd8d16081bb9534fc6445f4e4ad8caafe6c178cf58",
+        "bytes": 115712640,
+        "index": 22,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c63617573616c5c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e36343020746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3133352e3830382062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712640,
+        "after_allocated_bytes": 6135808,
+        "after_sha256": "2b2b02bdc379cb9f933b22fd8d16081bb9534fc6445f4e4ad8caafe6c178cf58",
+        "after_bytes": 115712640,
+        "elapsed_seconds": 0.4324952000170015
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-23.json",
+        "bytes": 1146,
+        "sha256": "196b2d54d660f3a22e9db128a53be48a3bd4298aece381d27dc9f0ec4bdacd8c"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-learning_disabled-000000019.pt",
+        "sha256": "0f4f2f43b0b068f62a8bc08cf73a51fc95824ff74f498386758c36a69a8dc31d",
+        "bytes": 115712640,
+        "index": 23,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c63617573616c5c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e36343020746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3133352e3830382062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712640,
+        "after_allocated_bytes": 6135808,
+        "after_sha256": "0f4f2f43b0b068f62a8bc08cf73a51fc95824ff74f498386758c36a69a8dc31d",
+        "after_bytes": 115712640,
+        "elapsed_seconds": 0.40758489997824654
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-24.json",
+        "bytes": 1134,
+        "sha256": "13760a7c51a484d695e8c030ecd800ccd8dd2d12acef4b427d0101add9151978"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-online-000000000.pt",
+        "sha256": "347afa21e016f867d6abe838d2d63c5d1515e3fcdf9ace82d17522c947adf880",
+        "bytes": 115712640,
+        "index": 24,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c63617573616c5c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e36343020746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3133352e3830382062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3920746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712640,
+        "after_allocated_bytes": 6135808,
+        "after_sha256": "347afa21e016f867d6abe838d2d63c5d1515e3fcdf9ace82d17522c947adf880",
+        "after_bytes": 115712640,
+        "elapsed_seconds": 0.4009743999922648
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-25.json",
+        "bytes": 1134,
+        "sha256": "264b35486b5beb5a680a615f8fa65b5e06cd5805cf2d31ee468151f9582363cd"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-online-000000001.pt",
+        "sha256": "50cbd202c917e3ef88515df56e878e78079c20ce8f5871d40cb900b8af940927",
+        "bytes": 115712640,
+        "index": 25,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c63617573616c5c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e36343020746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3133392e3930342062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3820746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712640,
+        "after_allocated_bytes": 6139904,
+        "after_sha256": "50cbd202c917e3ef88515df56e878e78079c20ce8f5871d40cb900b8af940927",
+        "after_bytes": 115712640,
+        "elapsed_seconds": 0.4110921999672428
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-26.json",
+        "bytes": 1135,
+        "sha256": "81707ff9439ecb52ea729e61acc7e5e65583fdd98d1248276ee94d063546b41d"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-online-000000002.pt",
+        "sha256": "668f3e46fd39d8f55f98c293eba557b0baf201f9b8689f5bc414b8c6f174baab",
+        "bytes": 115712640,
+        "index": 26,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c63617573616c5c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e36343020746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3134342e3030302062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3820746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712640,
+        "after_allocated_bytes": 6144000,
+        "after_sha256": "668f3e46fd39d8f55f98c293eba557b0baf201f9b8689f5bc414b8c6f174baab",
+        "after_bytes": 115712640,
+        "elapsed_seconds": 0.43324790004407987
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-27.json",
+        "bytes": 1134,
+        "sha256": "bead25d9af5d3c61e224dc20628fed92d505e2ea1252d86acab42607bb35c422"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-online-000000007.pt",
+        "sha256": "8a24f6a34433b083efe75f00789ff397e6de405597ae0200efcb3ed18b76b72e",
+        "bytes": 115712640,
+        "index": 27,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c63617573616c5c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e36343020746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3134342e3030302062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3820746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712640,
+        "after_allocated_bytes": 6144000,
+        "after_sha256": "8a24f6a34433b083efe75f00789ff397e6de405597ae0200efcb3ed18b76b72e",
+        "after_bytes": 115712640,
+        "elapsed_seconds": 0.4085821000044234
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-28.json",
+        "bytes": 1133,
+        "sha256": "316bb6834b118870874aebf2cf98d1678f1f0592e05e34dd85987f2a6e7c3745"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-online-000000008.pt",
+        "sha256": "b5a4c003a631355d496e115a6aaf8e77429394c235b51c118c2399b674bb7322",
+        "bytes": 115712640,
+        "index": 28,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c63617573616c5c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e36343020746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3134342e3030302062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3820746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712640,
+        "after_allocated_bytes": 6144000,
+        "after_sha256": "b5a4c003a631355d496e115a6aaf8e77429394c235b51c118c2399b674bb7322",
+        "after_bytes": 115712640,
+        "elapsed_seconds": 0.438582899980247
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-29.json",
+        "bytes": 1134,
+        "sha256": "de930abb6e322a421a47ca93ed0c794371922d4802e571a56bb57221301f04f6"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-online-000000013.pt",
+        "sha256": "84ab66154c23b09f90c5b5b0d098fde60e29e68f824da7fe083ecc35c60d8cdb",
+        "bytes": 115712640,
+        "index": 29,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c63617573616c5c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e36343020746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3134342e3030302062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3820746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712640,
+        "after_allocated_bytes": 6144000,
+        "after_sha256": "84ab66154c23b09f90c5b5b0d098fde60e29e68f824da7fe083ecc35c60d8cdb",
+        "after_bytes": 115712640,
+        "elapsed_seconds": 0.3969593000365421
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-30.json",
+        "bytes": 1134,
+        "sha256": "0d182492aad707e49d77f388589858fc96910012a43e444f1bdf985675354683"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-online-000000014.pt",
+        "sha256": "4895c7dc0c556298e39a1b57c8b388978f5fc63114ab7bf547ee58136006c53e",
+        "bytes": 115712640,
+        "index": 30,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c63617573616c5c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e36343020746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3134342e3030302062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3820746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712640,
+        "after_allocated_bytes": 6144000,
+        "after_sha256": "4895c7dc0c556298e39a1b57c8b388978f5fc63114ab7bf547ee58136006c53e",
+        "after_bytes": 115712640,
+        "elapsed_seconds": 0.4087584000080824
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-storage-v1/item-31.json",
+        "bytes": 1135,
+        "sha256": "9d6021ea3408c88cfdde127587d145c2536f5eab791c1e626c32e999be3b0643"
+      },
+      "receipt": {
+        "path": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\stable-credit-v1-comparison\\causal\\checkpoints\\route-online-000000015.pt",
+        "sha256": "2833034a1a69d3d0d147f33f1e84fdf98cd6a5edaf0da420a10befe31d037f89",
+        "bytes": 115712640,
+        "index": 31,
+        "returncode": 0,
+        "stdout_hex": "0d0a20436f6d7072657373696e672066696c657320696e20433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c737461626c652d6372656469742d76312d636f6d70617269736f6e5c63617573616c5c636865636b706f696e74735c0d0a0d0a0d0a312066696c65732077697468696e2031206469726563746f72696573207765726520636f6d707265737365642e0d0a3131352e3731322e36343020746f74616c206279746573206f662064617461206172652073746f72656420696e20362e3134342e3030302062797465732e0d0a54686520636f6d7072657373696f6e20726174696f2069732031382c3820746f20312e0d0a",
+        "stderr_hex": "",
+        "before_allocated_bytes": 115712640,
+        "after_allocated_bytes": 6144000,
+        "after_sha256": "2833034a1a69d3d0d147f33f1e84fdf98cd6a5edaf0da420a10befe31d037f89",
+        "after_bytes": 115712640,
+        "elapsed_seconds": 0.41032299998914823
+      }
+    }
+  ],
+  "monitor": {
+    "artifact": {
+      "path": ".pytest-tmp/integrated-local-learning-storage-v1.launch.json",
+      "bytes": 1387,
+      "sha256": "bedf501d7d73a9c0076f8d23811141913eb81d2ad77780c4c26bda96a3cbe6d9"
+    },
+    "receipt": {
+      "status": "passed",
+      "started_utc": "2026-09-10T20:17:03.1345884Z",
+      "started_unix": 1789071423.132,
+      "deadline_unix": 1789072023.132,
+      "command": [
+        "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Scripts\\python.exe",
+        "-X",
+        "utf8",
+        ".pytest-tmp/integrated-local-learning-storage-v1.py"
+      ],
+      "seconds_limit": 600,
+      "tree_peak_sum_mib_limit": 1024.0,
+      "memory_method": "Maximum simultaneous sum of live owned process peak working sets, sampled every 500ms. Brief unobserved children may be missed.",
+      "launcher_sha256": "4f26b669442a596cf3023c8d066ef49ff6231732baa575b8c503ad4ae3d198dd",
+      "child_pid": 47136,
+      "exit_code": 0,
+      "elapsed_seconds": 13.8428197,
+      "finished_utc": "2026-09-10T20:17:16.9752179Z",
+      "observed_process_peaks_mib": {
+        "36440/639246682333135994": 4.54296875,
+        "29416/639246682320544665": 4.53515625,
+        "57516/639246682233485284": 32.765625,
+        "2500/639246682255361151": 4.54296875,
+        "49812/639246682263081233": 4.5390625,
+        "52912/639246682270631498": 4.53515625,
+        "44536/639246682353770002": 4.54296875,
+        "47136/639246682233220372": 5.8515625,
+        "16408/639246682366243138": 4.54296875,
+        "57364/639246682233309406": 7.46875,
+        "47224/639246682298647672": 4.55078125,
+        "32840/639246682312214841": 4.54296875
+      },
+      "observed_tree_peak_sum_mib": 50.63671875
+    }
+  },
+  "script": {
+    "artifact": {
+      "path": ".pytest-tmp/integrated-local-learning-storage-v1.py",
+      "bytes": 5084,
+      "sha256": "f63a56c258fb24fdde2935360f3be44013b7d2f7ed5decc3053d53e2d9492638"
+    },
+    "text": "\"\"\"Bounded transparent compression of authenticated completed evidence; no model imports.\"\"\"\nimport ctypes\nimport hashlib\nimport json\nimport shutil\nimport subprocess\nimport time\nfrom pathlib import Path\n\nroot = Path.cwd().resolve()\nout = root / '.pytest-tmp/integrated-local-learning-storage-v1'\nout.mkdir(exist_ok=False)\nstarted = time.perf_counter()\nbank_path = root / 'benchmarks/stable_language_action_credit_v1.result.json'\nexpected_bank = '1bd3073fac22fdd54cc27e16ad7c8e75d106b15e9263e44bb1161b1a85c54919'\nbank_raw = bank_path.read_bytes()\nassert hashlib.sha256(bank_raw).hexdigest() == expected_bank\nbank = json.loads(bank_raw)\nassert bank['passed'] and bank['status'] == 'passed'\nkernel = ctypes.WinDLL('kernel32', use_last_error=True)\nsize_function = kernel.GetCompressedFileSizeW\nsize_function.argtypes = [ctypes.c_wchar_p, ctypes.POINTER(ctypes.c_ulong)]\nsize_function.restype = ctypes.c_ulong\n\ndef allocated(path):\n    high = ctypes.c_ulong()\n    ctypes.set_last_error(0)\n    low = size_function(str(path), ctypes.byref(high))\n    if low == 0xffffffff and ctypes.get_last_error():\n        raise ctypes.WinError(ctypes.get_last_error())\n    return (high.value << 32) | low\n\ndef digest(path):\n    value = hashlib.sha256()\n    with path.open('rb') as handle:\n        for block in iter(lambda: handle.read(1024**2), b''):\n            value.update(block)\n    return value.hexdigest()\n\ndef save(name, value):\n    with (out / name).open('x', encoding='utf-8') as handle:\n        json.dump(value, handle, indent=2)\n        handle.write('\\n')\n\nselected = []\nfor role in ('old', 'causal'):\n    worker = bank['workers'][role]\n    directory = (root / '.pytest-tmp/stable-credit-v1-comparison' / role).resolve()\n    assert Path(worker['run']).resolve() == directory\n    assert worker['complete_run']\n    for route in ('learning_disabled', 'online'):\n        candidates = sorted((name, value) for name, value in worker['evidence'].items()\n                            if name.startswith('checkpoints/route-' + route + '-')\n                            and name.endswith('.pt'))[:8]\n        assert len(candidates) == 8\n        for name, value in candidates:\n            path = directory / name\n            assert not path.is_symlink() and path.resolve().is_relative_to(directory)\n            selected.append({'path': str(path), 'sha256': value, 'bytes': path.stat().st_size})\nassert len(selected) == 32 and sum(row['bytes'] for row in selected) <= 4 * 1024**3\nsave('manifest.json', {'scope': 'NTFS transparent lossless compression; zero model calls/decodes',\n                      'bank_sha256': expected_bank, 'files': selected, 'seconds_limit': 600,\n                      'logical_byte_limit': 4 * 1024**3, 'file_limit': 32,\n                      'before_free_bytes': shutil.disk_usage(root).free})\nresults = []\ntry:\n    for index, row in enumerate(selected):\n        if time.perf_counter() - started >= 540:\n            raise TimeoutError('compression final reserve reached')\n        tick = time.perf_counter()\n        path = Path(row['path'])\n        assert path.stat().st_size == row['bytes'] and digest(path) == row['sha256']\n        before = allocated(path)\n        result = subprocess.run(['compact.exe', '/C', '/Q', str(path)], shell=False,\n                                capture_output=True, timeout=60)\n        after_sha = digest(path)\n        report = {**row, 'index': index, 'returncode': result.returncode,\n                  'stdout_hex': result.stdout.hex(), 'stderr_hex': result.stderr.hex(),\n                  'before_allocated_bytes': before, 'after_allocated_bytes': allocated(path),\n                  'after_sha256': after_sha, 'after_bytes': path.stat().st_size,\n                  'elapsed_seconds': time.perf_counter() - tick}\n        save(f'item-{index:02}.json', report)\n        results.append(report)\n        assert result.returncode == 0 and after_sha == row['sha256']\n        assert report['after_bytes'] == row['bytes']\n        print(json.dumps({'completed_files': index + 1,\n                          'allocation_saved_bytes': sum(r['before_allocated_bytes'] - r['after_allocated_bytes'] for r in results),\n                          'free_bytes': shutil.disk_usage(root).free}), flush=True)\n    save('report.json', {'status': 'passed', 'files': len(results),\n                         'all_content_hashes_unchanged': True,\n                         'logical_bytes': sum(r['bytes'] for r in results),\n                         'before_allocated_bytes': sum(r['before_allocated_bytes'] for r in results),\n                         'after_allocated_bytes': sum(r['after_allocated_bytes'] for r in results),\n                         'after_free_bytes': shutil.disk_usage(root).free,\n                         'elapsed_seconds': time.perf_counter() - started,\n                         'model_calls': 0, 'tensor_decodes': 0, 'deletions': 0})\nexcept BaseException as error:\n    save('failure.json', {'type': type(error).__name__, 'error': str(error),\n                          'completed_files': len(results), 'elapsed_seconds': time.perf_counter() - started})\n    raise\n"
+  },
+  "allocated_bytes_recovered": 3506466816,
+  "limits": {
+    "seconds": 600,
+    "process_tree_mib": 1024,
+    "logical_bytes": 4294967296,
+    "files": 32
+  },
+  "claim_limits": [
+    "Allocation saving is measured separately from system free space, which can change through other activity.",
+    "No simulation/read latency speedup is established.",
+    "Future source/payload/journal restore authentication remains unchanged."
+  ],
+  "banking_preparation_seconds": 0.005673200008459389,
+  "banking_scope": "Saved receipt parse/hash only; excludes final bank write/hash, earlier file-size inspections and documentation."
+}

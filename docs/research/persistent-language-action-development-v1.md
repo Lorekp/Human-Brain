@@ -64,6 +64,17 @@ distinguishes correction counts from effective contacts and identifies the small
 contact step and expensive recorder as unresolved constraints on a useful finite
 acquisition comparison. Its large repetition projection is explicitly unselected.
 
+Root now selects the [fixed acquisition comparison](integrated-local-learning-acquisition-v1.md):
+512 corrections per skill, seven predetermined panels, and matched predecessor,
+current, disabled and simple-reference routes. Keep .01 and the same forward
+architecture; no contact minimum triggers admission or extension. The
+[decision input](integrated-local-learning-v1-acquisition-decision-input.md)
+distinguishes this finite integrated opportunity from confident isolated-literal
+learning. Compact practice receipts and fixed-activity checkpoint diagnostics
+pass source review and four authored checks. Reproducible source commitment and
+execution release remain pending; acquisition has not run. Preserve the current
+parent until a completed, freshly audited successor.
+
 ## Current retained continuation
 
 The completed repeated-teaching run retains final HEAD0 under

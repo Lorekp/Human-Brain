@@ -1,0 +1,230 @@
+{
+  "schema": "integrated-local-learning-acquisition-implementation-qa-v1",
+  "status": "passed",
+  "scope": "Three authored observer/checkpoint tests, not acquisition execution.",
+  "tested_source_sha256": {
+    "tests/test_byte_sequence_decoder.py": "e8d7f79a271cc4100bd690f0182a61101467fb4c7e68a5e7698cc13c7255d6ea",
+    "experiments/r4_integrated/integrated_local_learning_diagnostics_v1.py": "cfe6a1d1cf8ce317be22765c9f6755c8af8d1e51c5f9a46d1c07ebac3be4bc0a",
+    "experiments/r4_integrated/integrated_local_learning_checkpoint_v1.py": "fad5a1d28824bb229b1161e1a2101d9fc9af3d0d9a81e4d49fdaa65ce1796e1b",
+    "experiments/r4_integrated/integrated_local_learning_acquisition_v1.py": "d0e53ce525e601f4eb840f6eea729f53aa28314f17fbd6edcb416b3c207cb09a",
+    "experiments/r4_integrated/persistent_session_checkpoint.py": "19efd7f21d3387cdaec9d08618a8e2d1320696c1b1303a95d1ec8e2f42a7bc1c",
+    "experiments/r4_integrated/repeated_teaching_checkpoint_v1.py": "b95f0f9479f2ee752789ea918144f2bd1017a68fc664a208e2425ff8df266787",
+    "src/humanbrain/recurrent_content_controller.py": "bc53c0f5a641c1b0e0d05034db1b93cacd32250abb1b2295b36c77f7278afd2f",
+    "src/humanbrain/recurrent_content_learner.py": "c268563ca357663803d524c4db6f52ee1bfdfbb410f2497ed4bd9874a1ffac0d"
+  },
+  "sources_artifact": {
+    "path": ".pytest-tmp/integrated-local-learning-acquisition-qa-v1-sources.json",
+    "bytes": 1051,
+    "sha256": "90a370686caedf624c6842043f8fe6ce921d1d3c3f133f0ff7441fe1a4609c57"
+  },
+  "monitor": {
+    "artifact": {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-qa-v1.launch.json",
+      "bytes": 1482,
+      "sha256": "4ef432dd1f624ef99920ca273de6f01fd5ff6bc4bcc1d12459919a99692b9237"
+    },
+    "receipt": {
+      "status": "passed",
+      "started_utc": "2026-09-10T20:19:53.7513870Z",
+      "started_unix": 1789071593.749,
+      "deadline_unix": 1789071833.749,
+      "command": [
+        "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Scripts\\python.exe",
+        "-X",
+        "utf8",
+        "-m",
+        "pytest",
+        "tests/test_byte_sequence_decoder.py::test_integrated_local_learning_observers_preserve_contacts_and_fixed_anchors",
+        "tests/test_byte_sequence_decoder.py::test_integrated_local_learning_compact_teacher_refuses_lost_contacts_and_false_counts",
+        "tests/test_byte_sequence_decoder.py::test_integrated_local_learning_checkpoint_authored_full_block_roundtrip",
+        "-o",
+        "addopts=",
+        "-ra",
+        "--durations=10",
+        "--basetemp",
+        ".pytest-tmp/integrated-local-learning-acquisition-qa-v1-fixtures"
+      ],
+      "seconds_limit": 240,
+      "tree_peak_sum_mib_limit": 2048.0,
+      "memory_method": "Maximum simultaneous sum of live owned process peak working sets, sampled every 500ms. Brief unobserved children may be missed.",
+      "launcher_sha256": "4f26b669442a596cf3023c8d066ef49ff6231732baa575b8c503ad4ae3d198dd",
+      "child_pid": 41568,
+      "exit_code": 0,
+      "elapsed_seconds": 17.4214144,
+      "finished_utc": "2026-09-10T20:20:11.1707697Z",
+      "observed_process_peaks_mib": {
+        "41992/639246683939238394": 7.4765625,
+        "41860/639246683939404000": 1401.44921875,
+        "41568/639246683939152773": 5.859375
+      },
+      "observed_tree_peak_sum_mib": 1414.78515625
+    }
+  },
+  "doctor": {
+    "artifact": {
+      "path": ".pytest-tmp/dev/doctor-0yuhb3z9/receipt.json",
+      "bytes": 1664,
+      "sha256": "dbd0179baf201de38b87ae341cc9a0818ab8be1b530ca3d2573dce1e92ad881e"
+    },
+    "receipt": {
+      "command": [
+        "doctor"
+      ],
+      "started_at": "2026-09-10T20:19:03Z",
+      "environment": {
+        "checkout": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain",
+        "revision": "17a879cccd152285bd69fda3f3ad59cc11340faa",
+        "branch": "master",
+        "tracked_diff_sha256": "efd878ea4a416c521b19c86e5e45873c4a23af9da12272d6f041c517a6e9145d",
+        "status": "M docs/research/integrated-local-learning-v1-budget-review.md\n M docs/research/persistent-language-action-development-v1.md\n M docs/research/roadmap-reading-to-coding.md\n M tests/test_byte_sequence_decoder.py\n?? docs/research/integrated-local-learning-acquisition-v1.md\n?? docs/research/integrated-local-learning-v1-acquisition-decision-input.md\n?? experiments/r4_integrated/integrated_local_learning_acquisition_review_v1.py\n?? experiments/r4_integrated/integrated_local_learning_acquisition_v1.py\n?? experiments/r4_integrated/integrated_local_learning_checkpoint_v1.py\n?? experiments/r4_integrated/integrated_local_learning_diagnostics_v1.py\n?? src/humanbrain/direct_request_splice_learner.py",
+        "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]",
+        "executable": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Scripts\\python.exe",
+        "package": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\src\\humanbrain\\__init__.py",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "versions": {
+          "numpy": "2.4.6",
+          "pytest": "9.1.1",
+          "ruff": "0.16.1"
+        },
+        "device": "cpu",
+        "native_cache": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.native-cache"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 0.265
+    }
+  },
+  "logs": [
+    {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-qa-v1.stdout",
+      "bytes": 1559,
+      "sha256": "6753b338f1cbc2742a1f225583c12c485a428ff8f59ff6f914fe6074920bdaf3"
+    },
+    {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-qa-v1.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "fixture_inventory": [
+    {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-qa-v1-fixtures/test_integrated_local_learning0/authored-block/attempts.jsonl",
+      "bytes": 2029313,
+      "sha256": "5d0be051525612ee10a1d6045e297d40296af9fe7e6a449902e40337bb9fb443"
+    },
+    {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-qa-v1-fixtures/test_integrated_local_learning0/authored-block/checkpoints/boundary-000000000.json",
+      "bytes": 381370,
+      "sha256": "6c4f2cec381ef7095258fde7a4008f946dde8a8e0f9dc40955df6dc4d71faffd"
+    },
+    {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-qa-v1-fixtures/test_integrated_local_learning0/authored-block/checkpoints/config.json",
+      "bytes": 1153,
+      "sha256": "c3e364e2f2a63d38e7fc4133a8e2bf757b12a7a7dff3a913e5cca73bbbaa3e83"
+    },
+    {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-qa-v1-fixtures/test_integrated_local_learning0/authored-block/checkpoints/HEAD.json",
+      "bytes": 165,
+      "sha256": "60e2172c41a67956848ad71e7ec70354fe716091f72ccab0d11a07ccdbf3939e"
+    },
+    {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-qa-v1-fixtures/test_integrated_local_learning0/authored-block/checkpoints/intent-000000000.json",
+      "bytes": 418,
+      "sha256": "f850d03266855a7047b2b2922943e0cde0a40ea9082a546e372bd174712caffd"
+    },
+    {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-qa-v1-fixtures/test_integrated_local_learning0/authored-block/checkpoints/manifest.json",
+      "bytes": 36420,
+      "sha256": "410c3d6d650e759e50b7a7bd60d9c2dd8cbc6eba5d6f097d642f36df2abede11"
+    },
+    {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-qa-v1-fixtures/test_integrated_local_learning0/authored-block/checkpoints/route-learning_disabled-000000000.pt",
+      "bytes": 115712960,
+      "sha256": "88a868eb668bd2b529e93630949ba0bb3f3d00eba30de92bf147801febd180ec"
+    },
+    {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-qa-v1-fixtures/test_integrated_local_learning0/authored-block/checkpoints/route-online-000000000.pt",
+      "bytes": 115712960,
+      "sha256": "88a868eb668bd2b529e93630949ba0bb3f3d00eba30de92bf147801febd180ec"
+    },
+    {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-qa-v1-fixtures/test_integrated_local_learning0/authored-block/manifest.json",
+      "bytes": 36420,
+      "sha256": "410c3d6d650e759e50b7a7bd60d9c2dd8cbc6eba5d6f097d642f36df2abede11"
+    },
+    {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-qa-v1-fixtures/test_integrated_local_learning0/authored-block/probes.jsonl",
+      "bytes": 16959,
+      "sha256": "2489f3962e07723e9eaa3cc63cfa9ed0743b2f8cf240979641186788eb84b564"
+    },
+    {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-qa-v1-fixtures/test_integrated_local_learning0/authored-block/teachers.jsonl",
+      "bytes": 19034366,
+      "sha256": "e137d31949aba801c0a95143f61cba30c59bd85c5c7a835c1e953e1675cb487b"
+    },
+    {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-qa-v1-fixtures/test_integrated_local_learning0/integrated-local-checkpoint-authored-qa.json",
+      "bytes": 1357,
+      "sha256": "915a00016952ceed5bc73577feec406b60400200de2c8d7e2e87a5964ceddb16"
+    }
+  ],
+  "actual_model_scope": {
+    "constructed_authored_actors": 4,
+    "own_payload_decodes": 2,
+    "final_head_publications": 1,
+    "source_offers": 0,
+    "free_responses": 0,
+    "teacher_calls": 0,
+    "task_executions": 0,
+    "retained_parent_loads": 0
+  },
+  "fixture_note": "Empty authored2048-slot tapes and declared synthetic counters913/1430;3072attempt/teacher rows and7panels are fabricated validator fixtures, not executed experiences. Expected journal-tail corruption is retained after fresh restoration passes.",
+  "previous_observer_check": {
+    "monitor": {
+      "status": "passed",
+      "started_utc": "2026-09-10T20:04:46.7104624Z",
+      "started_unix": 1789070686.707,
+      "deadline_unix": 1789070806.707,
+      "command": [
+        "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Scripts\\python.exe",
+        "-X",
+        "utf8",
+        "-m",
+        "pytest",
+        "tests/test_byte_sequence_decoder.py::test_integrated_local_learning_observers_preserve_contacts_and_fixed_anchors",
+        "tests/test_byte_sequence_decoder.py::test_repeated_teaching_free_summary_requires_complete_eos_and_actual_step_contract",
+        "-o",
+        "addopts=",
+        "-ra",
+        "--durations=10"
+      ],
+      "seconds_limit": 120,
+      "tree_peak_sum_mib_limit": 2048.0,
+      "memory_method": "Maximum simultaneous sum of live owned process peak working sets, sampled every 500ms. Brief unobserved children may be missed.",
+      "launcher_sha256": "4f26b669442a596cf3023c8d066ef49ff6231732baa575b8c503ad4ae3d198dd",
+      "child_pid": 45916,
+      "exit_code": 0,
+      "elapsed_seconds": 5.0092996,
+      "finished_utc": "2026-09-10T20:04:51.7174693Z",
+      "observed_process_peaks_mib": {
+        "34008/639246674869228783": 7.46875,
+        "13832/639246674869425692": 267.1484375,
+        "45916/639246674869132850": 5.85546875
+      },
+      "observed_tree_peak_sum_mib": 280.47265625
+    },
+    "artifact": {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-observer-qa-v1.launch.json",
+      "bytes": 1266,
+      "sha256": "7e9b2b4a8794650bb4825b498ddd7818c6378fe6e7fecdcca014534f6ad9dadc"
+    },
+    "scope": "Two authored observer/free-summary tests passed before the later alignment storage narrowing and teacher draw counter. Current observer retested in the qualified three-node run.",
+    "source_note": "No separate pre-change source fingerprint was recorded; not current-source qualification."
+  },
+  "claim_limits": [
+    "Runner remains draft; no integrated acquisition execution.",
+    "Saved science reviewer not qualified by these tests.",
+    "Passing restore/custody checks is not behavioral learning evidence."
+  ],
+  "banking_preparation_seconds": 0.18092519999481738,
+  "banking_scope": "Saved-only fixture/receipt/source hashing; excludes final bank write/hash, documentation and independent review."
+}

@@ -1,0 +1,171 @@
+{
+  "schema": "integrated-local-learning-acquisition-reader-qa-v1",
+  "status": "passed",
+  "scope": "One authored saved-reader test and source-only manifest preparation; no acquisition execution.",
+  "tested_source_sha256": {
+    "tests/test_byte_sequence_decoder.py": "c4dbbc09b4ab25855f967d61071a3788f8d68e8b1866e0624a9a462c61dfbab6",
+    "experiments/r4_integrated/integrated_local_learning_acquisition_review_v1.py": "6433cc77b31a50f3e7fb153bb319415ede693cc70baff9d57b9d61efb79cf3f5",
+    "experiments/r4_integrated/persistent_language_action_v8_review.py": "923dbc3dbde38603c11d0e9e320f9f6765b5da2a96c62c3878c0d1379f25ea80",
+    "experiments/r4_integrated/persistent_language_action_v7_review.py": "5858c7407c3d5f4838b77e042c6af522d6e01bb2f4894e10fc3abecc314e74af"
+  },
+  "sources_artifact": {
+    "path": ".pytest-tmp/integrated-local-learning-acquisition-reviewer-qa-v1-sources.json",
+    "bytes": 544,
+    "sha256": "ba471acbc8d4dca67b58a7d0a601c458d1e58534a527e54e5350785a778ca5e6"
+  },
+  "doctor": {
+    "path": ".pytest-tmp/dev/doctor-0gg0zhg7/receipt.json",
+    "bytes": 1851,
+    "sha256": "baef739c09f492b543414a100408f5dfeeb31309175e026d7a32db560e94639e",
+    "content": {
+      "command": [
+        "doctor"
+      ],
+      "started_at": "2026-09-10T20:28:04Z",
+      "environment": {
+        "checkout": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain",
+        "revision": "17a879cccd152285bd69fda3f3ad59cc11340faa",
+        "branch": "master",
+        "tracked_diff_sha256": "5a4997821a1042f674d44b8af0c1f65a85bd25c924de20bb5f1d0ba9a2ab860b",
+        "status": "A  benchmarks/integrated_local_learning_acquisition_v1.qa.json\nA  benchmarks/integrated_local_learning_v1.storage.json\nA  docs/research/integrated-local-learning-acquisition-v1-qa.md\nA  docs/research/integrated-local-learning-acquisition-v1.md\nA  docs/research/integrated-local-learning-v1-acquisition-decision-input.md\nM  docs/research/integrated-local-learning-v1-budget-review.md\nM  docs/research/persistent-language-action-development-v1.md\nM  docs/research/roadmap-reading-to-coding.md\nA  experiments/r4_integrated/integrated_local_learning_acquisition_v1.py\nA  experiments/r4_integrated/integrated_local_learning_checkpoint_v1.py\nA  experiments/r4_integrated/integrated_local_learning_diagnostics_v1.py\nMM tests/test_byte_sequence_decoder.py\n?? experiments/r4_integrated/integrated_local_learning_acquisition_review_v1.py\n?? src/humanbrain/direct_request_splice_learner.py",
+        "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]",
+        "executable": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Scripts\\python.exe",
+        "package": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\src\\humanbrain\\__init__.py",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "versions": {
+          "numpy": "2.4.6",
+          "pytest": "9.1.1",
+          "ruff": "0.16.1"
+        },
+        "device": "cpu",
+        "native_cache": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.native-cache"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 0.297
+    }
+  },
+  "monitor": {
+    "path": ".pytest-tmp/integrated-local-learning-acquisition-reviewer-qa-v1.launch.json",
+    "bytes": 1234,
+    "sha256": "04b73006035edb52996853c6e1d10db87c2a25b4dc41fa74733d4e929a9219c7",
+    "content": {
+      "status": "passed",
+      "started_utc": "2026-09-10T20:35:22.2731850Z",
+      "started_unix": 1789072522.27,
+      "deadline_unix": 1789072642.27,
+      "command": [
+        "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Scripts\\python.exe",
+        "-X",
+        "utf8",
+        "-m",
+        "pytest",
+        "tests/test_byte_sequence_decoder.py::test_integrated_local_learning_saved_reader_stream_limits_and_interference",
+        "-o",
+        "addopts=",
+        "-ra",
+        "--durations=10",
+        "--basetemp",
+        ".pytest-tmp/integrated-local-learning-acquisition-reviewer-qa-v1-fixtures"
+      ],
+      "seconds_limit": 120,
+      "tree_peak_sum_mib_limit": 512.0,
+      "memory_method": "Maximum simultaneous sum of live owned process peak working sets, sampled every 500ms. Brief unobserved children may be missed.",
+      "launcher_sha256": "4f26b669442a596cf3023c8d066ef49ff6231732baa575b8c503ad4ae3d198dd",
+      "child_pid": 34780,
+      "exit_code": 0,
+      "elapsed_seconds": 5.4671022,
+      "finished_utc": "2026-09-10T20:35:27.7382914Z",
+      "observed_process_peaks_mib": {
+        "11424/639246693224894804": 267.57421875,
+        "35464/639246693224692336": 7.46875,
+        "34780/639246693224604217": 5.85546875
+      },
+      "observed_tree_peak_sum_mib": 280.8984375
+    }
+  },
+  "stdout": {
+    "path": ".pytest-tmp/integrated-local-learning-acquisition-reviewer-qa-v1.stdout",
+    "bytes": 1291,
+    "sha256": "43c33cb098c505466118d5709b2356c76895bcfda8381ceb9562961522452a59",
+    "content": "============================= test session starts =============================\r\nplatform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0\r\nrootdir: C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\r\nconfigfile: pyproject.toml\r\ncollected 1 item\r\n\r\ntests\\test_byte_sequence_decoder.py .                                    [100%]\r\n\r\n============================== warnings summary ===============================\r\n.venv\\Lib\\site-packages\\_pytest\\cacheprovider.py:469\r\n  C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Lib\\site-packages\\_pytest\\cacheprovider.py:469: PytestCacheWarning: could not create cache path C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest_cache\\v\\cache\\nodeids: [WinError 5] Access is denied: 'C:\\\\Users\\\\laure\\\\Desktop\\\\DeepSim\\\\Human Brain\\\\.pytest_cache\\\\v\\\\cache'\r\n    config.cache.set(\"cache/nodeids\", sorted(self.cached_nodeids))\r\n\r\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\r\n============================ slowest 10 durations =============================\r\n0.20s call     tests/test_byte_sequence_decoder.py::test_integrated_local_learning_saved_reader_stream_limits_and_interference\r\n\r\n(2 durations < 0.005s hidden.  Use -vv to show these durations.)\r\n======================== 1 passed, 1 warning in 4.49s =========================\r\n"
+  },
+  "stderr": {
+    "path": ".pytest-tmp/integrated-local-learning-acquisition-reviewer-qa-v1.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "content": ""
+  },
+  "fixtures": [
+    {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-reviewer-qa-v1-fixtures/test_integrated_local_learning0/authored.jsonl",
+      "bytes": 51,
+      "sha256": "53bdbd15c9800d67a0f2baef972271b0eb7aae15f6ced21037378fd3ac03bd49"
+    }
+  ],
+  "fixture_bytes": 51,
+  "model_calls": 0,
+  "teacher_calls": 0,
+  "task_executions": 0,
+  "tensor_decodes": 0,
+  "coverage": [
+    "journal stream authentication and count/tail/truncation refusal",
+    "129 actual decisions at 128-byte output limit",
+    "actual emitter contribution binding",
+    "selected coverage and zero-contact EOS aggregation",
+    "fixed-anchor probability gains distinct from adverse competitor margins",
+    "activity collisions and changed-anchor refusal",
+    "isolated reviewer import excludes humanbrain and torch"
+  ],
+  "preparation": {
+    "manifest": {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-v1-prepared/manifest.json",
+      "bytes": 66509,
+      "sha256": "de772f29ff34e5db1401b1a708f4e5349c4f850c0dad63d617349a87e421f293"
+    },
+    "monitor": {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-v1-prepare.launch.json",
+      "bytes": 1028,
+      "sha256": "22c8eefe78a03aa875b3cc0f360c4d4d023902f6a1724dc026757058d0355c4f",
+      "content": {
+        "status": "passed",
+        "started_utc": "2026-09-10T20:26:43.5603373Z",
+        "started_unix": 1789072003.557,
+        "deadline_unix": 1789072063.557,
+        "command": [
+          "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Scripts\\python.exe",
+          "-X",
+          "utf8",
+          "-m",
+          "experiments.r4_integrated.integrated_local_learning_acquisition_v1",
+          "prepare",
+          "--manifest",
+          "C:/Users/laure/Desktop/DeepSim/Human Brain/.pytest-tmp/integrated-local-learning-acquisition-v1-prepared/manifest.json"
+        ],
+        "seconds_limit": 60,
+        "tree_peak_sum_mib_limit": 256.0,
+        "memory_method": "Maximum simultaneous sum of live owned process peak working sets, sampled every 500ms. Brief unobserved children may be missed.",
+        "launcher_sha256": "4f26b669442a596cf3023c8d066ef49ff6231732baa575b8c503ad4ae3d198dd",
+        "child_pid": 47192,
+        "exit_code": 0,
+        "elapsed_seconds": 0.3860045,
+        "finished_utc": "2026-09-10T20:26:43.9433417Z",
+        "observed_process_peaks_mib": {},
+        "observed_tree_peak_sum_mib": 0.0
+      }
+    },
+    "stdout": {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-v1-prepare.stdout",
+      "bytes": 107,
+      "sha256": "543862fc4903a6373bceb3017c40e170c5daefe10ec9976f50f714c7873ee46e",
+      "content": "{\"manifest_sha256\": \"de772f29ff34e5db1401b1a708f4e5349c4f850c0dad63d617349a87e421f293\", \"model_calls\": 0}\r\n"
+    },
+    "stderr": {
+      "path": ".pytest-tmp/integrated-local-learning-acquisition-v1-prepare.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "content": ""
+    },
+    "scope": "No models; sampled memory absent because short process completed between samples, not zero memory."
+  },
+  "execution_release": false
+}
