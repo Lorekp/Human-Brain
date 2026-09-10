@@ -15740,3 +15740,121 @@ def test_repeated_teaching_clone_and_actual_diagnostic_lifecycle(tmp_path):
     assert actor.reader.pending_prediction is None and actor._pending is None
     assert _digest(vars(state)) == _digest(vars(other_state)) == memory_hash
     assert _digest(other.state_dict()) == held_control
+
+
+def test_saved_literal_attribution_matches_dense_local_update_and_rejects_damaged_trace():
+    import numpy as np
+
+    from experiments.r4_integrated.repeated_teaching_literal_attribution_v1 import (
+        activity,
+        resolution,
+    )
+    from humanbrain.recurrent_content_controller import _digest
+
+    # Independent dense affine/error fixture. Only receipt arithmetic runs;
+    # no learner, teacher, prior, executor, or RNG is invoked.
+    vectors = []
+
+    def tick(category, previous, target, offset):
+        indices = [7, 32 + previous, 291 + 258, 550 + 65, 810,
+                   812 if category == "scan" else 813]
+        if category != "scan":
+            indices.append(1070)  # actual EOS prior at814+256
+        indices.append(1071)
+        indices = torch.tensor(indices, dtype=torch.int64)
+        values = torch.ones(len(indices), dtype=torch.float64) / math.sqrt(len(indices))
+        sha = _digest({"indices": indices, "values": values, "width": 1072})
+        logits = torch.linspace(-0.2, 0.3, 257, dtype=torch.float64)
+        probabilities = torch.softmax(logits, dim=0)
+        vector = torch.zeros(1072, dtype=torch.float64)
+        vector[indices] = values
+        vectors.append((category, vector, target, probabilities))
+        record = {"category": category, "h_after": 7, "register_tokens": [None, 65],
+                  "prior_token": None if category == "scan" else 256,
+                  "field": 0, "offset": offset, "observed_token": target,
+                  "emitted_token": 256,
+                  "draws": [{"population": "context"}, {"population": "gate"},
+                            {"population": "mode", "index": 3, "activity_sha256": sha},
+                            {"population": "literal", "index": 256, "activity_sha256": sha,
+                             "logits": logits.tolist(), "probabilities": probabilities.tolist()}]}
+        if category != "free":
+            record["credit"] = {"observed_token": target, "literal_taught": True,
+                                "target_probability": float(probabilities[target])}
+        actual_indices, actual_values = activity(record, previous)
+        assert np.array_equal(actual_indices, indices.numpy())
+        assert np.array_equal(actual_values, values.numpy())
+        return record
+
+    prediction = {"scan_steps": [tick("scan", 257, 65, 0), tick("scan", 65, 256, 1)],
+                  "steps": [{"output_step": 0, "prefix_hex": "", "token": 256,
+                             "controller": tick("free", 257, 256, 2)}]}
+    teacher = {"episode_id": "A00-E", "learning_enabled": True,
+               "teacher": {"replacement_hex": "42"},
+               "teacher_steps": [
+                   {"output_step": 0, "prefix_hex": "", "observed_token": 66,
+                    "controller": tick("teacher", 257, 66, 2)},
+                   {"output_step": 1, "prefix_hex": "42", "observed_token": 256,
+                    "controller": tick("teacher", 66, 256, 2)}],
+               "controller": {"learning_enabled": True, "rewards": {
+                   "public": -1, "coefficients": [["literal_scan", .01 / 6],
+                       ["literal_teacher", .01 / 6], ["public", -.01 / 399]],
+                   "external_offers": [["scan", 2], ["teacher", 2]],
+                   "literal_offers": [["scan", 2], ["teacher", 2]]}}}
+    parts, positive, counts = resolution(prediction, teacher)
+    expected = {k: torch.zeros((257, 1072), dtype=torch.float64)
+                for k in ("scan", "teacher_A00-E", "public")}
+    for category, x, target, p in vectors:
+        if category != "free":
+            desired = torch.nn.functional.one_hot(torch.tensor(target), 257) - p
+            key = "scan" if category == "scan" else "teacher_A00-E"
+            expected[key] += torch.outer(desired, x) * (.01 / 6)
+        if category != "teacher":
+            selected = torch.nn.functional.one_hot(torch.tensor(256), 257) - p
+            expected["public"] += torch.outer(selected, x) * (-.01 / 399)
+    for key, matrix in expected.items():
+        np.testing.assert_allclose(parts[key], matrix.numpy(), rtol=1e-12, atol=1e-15)
+    assert counts == {"scan": 2, "free": 1, "teacher": 2}
+    assert positive[66].sum() > 0 and positive[256].sum() > 0
+    assert np.count_nonzero(positive.sum(axis=1)) == 2
+    damaged = copy.deepcopy(teacher)
+    damaged["teacher_steps"][1]["prefix_hex"] = "41"
+    with pytest.raises(ValueError, match="prefix continuity"):
+        resolution(prediction, damaged)
+    damaged = copy.deepcopy(teacher)
+    damaged["teacher"]["replacement_hex"] = "41"
+    with pytest.raises(ValueError, match="complete offered answer"):
+        resolution(prediction, damaged)
+    damaged = copy.deepcopy(prediction)
+    damaged["scan_steps"][0]["draws"][2]["activity_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="activity differs"):
+        resolution(damaged, teacher)
+
+
+def test_saved_literal_attribution_checks_all_cells_and_separates_additive_currents():
+    import numpy as np
+
+    from experiments.r4_integrated.repeated_teaching_literal_attribution_v1 import (
+        COMPONENTS,
+        checkpoint_report,
+    )
+
+    banks = {k: np.zeros((257, 1072)) for k in COMPONENTS}
+    banks["teacher_A00-R"][3, 1071] = .2
+    banks["teacher_A00-R"][4, 1071] = -.2
+    banks["scan"][3, 1071] = -.1
+    banks["scan"][4, 1071] = .1
+    initial = np.linspace(-.1, .1, 257)
+    final = initial.copy()
+    final[3] += .1
+    final[4] -= .1
+    sites = {"fixture:0": {"indices": np.array([1071]), "values": np.array([1.]),
+                          "target": 3, "logits": {0: initial, 8: final}}}
+    rows = checkpoint_report(banks, np.maximum(banks["teacher_A00-R"], 0), sites, 8)
+    assert rows[0]["target_current_by_component"]["teacher_A00-R"] == .2
+    assert rows[0]["target_current_by_component"]["scan"] == -.1
+    assert rows[0]["target_current_total"] == pytest.approx(.1)
+    assert rows[0]["max_all_cell_logit_residual"] < 1e-15
+    # A wrong non-target current must fail even if the target current is right.
+    sites["fixture:0"]["logits"][8][91] += .001
+    with pytest.raises(ValueError, match="do not close"):
+        checkpoint_report(banks, banks["teacher_A00-R"], sites, 8)
