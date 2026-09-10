@@ -15526,3 +15526,217 @@ def test_stable_credit_audit_accounts_for_journal_work_between_phases():
             _phase_work_gap(previous, phase | {"work_delta": delta})
     with pytest.raises(ValueError):
         _phase_work_gap(previous, phase, [1200])
+
+
+def test_repeated_teaching_diagnostics_use_actual_feedback_and_conditional_mixture():
+    """Synthetic receipts only: no learner, response, teacher or execution."""
+    import copy
+    import math
+    from types import SimpleNamespace
+
+    from experiments.r4_integrated.repeated_teaching_diagnostics_v1 import (
+        analyze_teacher,
+        capture_literal,
+    )
+    from humanbrain.neuronal_splice_learner import _digest
+    from humanbrain.recurrent_content_controller import _digest as controller_digest
+    from humanbrain.recurrent_content_learner import RecurrentContentFeedback
+
+    live_weight = torch.zeros((257, 1072), dtype=torch.float64)
+    fixture = SimpleNamespace(controller=SimpleNamespace(literal_weight=live_weight))
+    snapshot = capture_literal(fixture)
+    live_weight[0, 0] = 1
+    assert snapshot["weight"][0, 0] == 0  # Owned prepublication copy.
+    target, steps = b"ab", []
+    offers = ((97, 0, 97), (98, 3, 99), (256, 1, 256))
+    for position, (symbol, mode, emitted) in enumerate(offers):
+        # Independent fixed layout: h, previous, two registers, valid second,
+        # output phase, prior byte and tonic. Register one is absent -> EOS.
+        previous = 257 if position == 0 else target[position - 1]
+        indices = torch.tensor([0, 32 + previous, 291 + 258, 550 + 98, 810, 813, 814 + 97, 1071])
+        values = torch.ones(8, dtype=torch.float64) / math.sqrt(8)
+        activity = controller_digest({"indices": indices, "values": values, "width": 1072})
+        draws = [{}, {}, {"index": mode, "probabilities": [.1, .2, .3, .4],
+                             "activity_sha256": activity}]
+        if mode == 3:
+            draws.append({"population": "literal", "activity_sha256": activity,
+                          "logits": [0.] * 257, "probabilities": [1 / 257] * 257})
+        tick = {"category": "teacher", "h_after": 0, "register_tokens": [None, 98],
+                "prior_token": 97, "emitted_token": emitted, "draws": draws,
+                "credit": {"literal_taught": mode == 3, "observed_token": symbol,
+                           "sampled_reward": 1 if emitted == symbol else -1}}
+        steps.append({"output_step": position, "prefix_hex": target[:position].hex(),
+                      "observed_token": symbol, "controller": tick})
+    feedback = RecurrentContentFeedback(
+        state=None, attempt_id="synthetic", teacher_count=3, total_loss=0., mean_loss=0.,
+        output_updated=True, teacher_steps=tuple(steps), work={},
+        controller={"learning_enabled": True})
+    result = analyze_teacher(feedback, target, literal_snapshot=snapshot, learning_enabled=True)
+    assert (result["offers"], result["raw_offers"], result["eos_offers"]) == (3, 2, 1)
+    assert result["literal_offers"] == result["direct_teacher_published_offers"] == 1
+    selected = [p["selected_mode_target_probability"] for p in result["positions"]]
+    assert selected == [1., 1 / 257, 1.]
+    expected = [.1 + .4 / 257, .3 + .4 / 257, .2 + .4 / 257]
+    mixtures = [p["mode_mixture_target_probability"] for p in result["positions"]]
+    assert mixtures == pytest.approx(expected)
+    assert result["mode_mixture_path_logscore"] == pytest.approx(
+        sum(math.log(p) for p in expected))
+    assert result["mode_mixture_path_score"] == pytest.approx(math.prod(expected))
+    assert result["work"]["extra_literal_evaluations"] == 2
+    assert result["work"]["reused_actual_literal_distributions"] == 1
+    assert all(result[key] == 0 for key in (
+        "draws", "teacher_calls", "prior_calls", "publications"))
+    assert "not globally marginalized" in result["scope"]
+    disabled = {"steps": steps, "controller": {"learning_enabled": False}}
+    held = analyze_teacher(disabled, target, literal_snapshot=snapshot, learning_enabled=False)
+    assert held["literal_offers"] == 1 and held["direct_teacher_published_offers"] == 0
+    with pytest.raises(ValueError, match="gate"):
+        analyze_teacher(disabled, target, literal_snapshot=snapshot, learning_enabled=True)
+    changed = copy.deepcopy(disabled)
+    changed["steps"][1]["prefix_hex"] = "ff"
+    with pytest.raises(ValueError, match="prefix"):
+        analyze_teacher(changed, target, literal_snapshot=snapshot, learning_enabled=False)
+    changed = copy.deepcopy(disabled)
+    changed["steps"][1]["controller"]["draws"][2]["activity_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="activity"):
+        analyze_teacher(changed, target, literal_snapshot=snapshot, learning_enabled=False)
+    snapshot["weight"][98, 1071] = 1
+    with pytest.raises(ValueError, match="copy changed"):
+        analyze_teacher(disabled, target, literal_snapshot=snapshot, learning_enabled=False)
+    snapshot["sha256"] = _digest({"literal_weight": snapshot["weight"]})
+    with pytest.raises(ValueError, match="actual literal currents"):
+        analyze_teacher(disabled, target, literal_snapshot=snapshot, learning_enabled=False)
+
+
+def test_repeated_teaching_free_summary_requires_complete_eos_and_actual_step_contract():
+    """Use the real immutable step data type without constructing any learner."""
+    from types import SimpleNamespace
+
+    from experiments.r4_integrated.repeated_teaching_diagnostics_v1 import free_summary
+    from humanbrain.byte_sequence_decoder import ByteGeneration
+    from humanbrain.recurrent_content_learner import RecurrentContentStep
+
+    def step(position, token):
+        return RecurrentContentStep(
+            output_step=position, prefix=b"ab"[:position], observed_token=token,
+            selected_index=0, address_scores=torch.zeros(1), assembly_index=None,
+            assembly_scores=torch.zeros(1), exact_context=None, logits=torch.zeros(1),
+            nll=0., routing={}, binding={}, controller={})
+
+    actual = SimpleNamespace(generation=ByteGeneration(b"ab", "eos"),
+                             steps=tuple(step(i, token) for i, token in enumerate((97, 98, 256))))
+    complete = free_summary(actual, b"ab")
+    assert complete["complete_bytes_and_eos"] and complete["matching_raw_prefix_bytes"] == 2
+    assert all(p["matches_intended_here"] for p in complete["positions"])
+    bounded = {"answer_hex": "6162", "stop_reason": "limit",
+               "steps": [{"token": 97}, {"token": 98}]}
+    limited = free_summary({"payload": bounded}, b"ab")
+    assert limited["exact_bytes"] and not limited["complete_bytes_and_eos"]
+    early = free_summary({"answer_hex": "61", "stop_reason": "eos",
+                          "steps": [{"token": 97}, {"token": 256}]}, b"ab")
+    assert not early["complete_bytes_and_eos"] and early["matching_raw_prefix_bytes"] == 1
+    divergent = free_summary({"answer_hex": "7862", "stop_reason": "eos",
+                              "steps": [{"token": 120}, {"token": 98}, {"token": 256}]}, b"ab")
+    assert not divergent["complete_bytes_and_eos"]
+    assert [p["intended_prefix_aligned"] for p in divergent["positions"]] == [True, False, False]
+    assert not any(p["matches_intended_here"] for p in divergent["positions"])
+
+
+def test_repeated_teaching_clone_and_actual_diagnostic_lifecycle(tmp_path):
+    """Two tiny fixture actors, three free calls, four teacher symbols, one child."""
+    import time
+    from pathlib import Path
+
+    from experiments.r4_integrated.persistent_language_action_execution_v2 import (
+        workspace_from_records,
+    )
+    from experiments.r4_integrated.persistent_language_action_v8_execution import (
+        execute_proposal,
+        qualified_launch,
+    )
+    from experiments.r4_integrated.repeated_teaching_checkpoint_v1 import clone_for_probe
+    from experiments.r4_integrated.repeated_teaching_diagnostics_v1 import (
+        analyze_teacher,
+        capture_literal,
+        free_summary,
+    )
+    from humanbrain.neuronal_splice_learner import _digest
+    from humanbrain.recurrent_content_learner import RecurrentContentSpliceLearner
+    from humanbrain.sequence_assembly_observation import RawObservation, SpliceProposal
+
+    actor = RecurrentContentSpliceLearner(seed=733)
+    # Ordinary mechanics fixture bounds generation to the held prior's EOS.
+    with torch.no_grad():
+        reader = actor.reader
+        reader.address_weight.zero_()
+        reader.prefix_weight.zero_()
+        reader.output_weight.zero_()
+        reader.codec.weight.zero_()
+        reader.codec.bias.zero_()
+        reader.codec.bias[256] = 1
+        reader.controller.mode_weight[0, -1] = 100
+        actor.actions.operation_weight.zero_()
+        actor.actions.operation_bias.copy_(torch.tensor([10., 0.]))
+    state, source = actor.ingest_with_receipt([b"a"], learning_enabled=False)
+    assert source.symbol_count == 2
+    memory_hash, initial_hash = _digest(vars(state)), _digest(actor.state_dict())
+    initial_slow = _digest({k: v for k, v in actor.state_dict().items()
+                            if k != "reader.controller.rng_state"})
+    initial_rng = actor.reader.controller.rng_state.clone()
+    cloned = clone_for_probe(actor, state)
+    other, other_state = cloned["model"], cloned["state"]
+    assert cloned["tensor_decodes"] == 0 and cloned["work"]["model_constructions"] == 1
+    assert _digest(other.state_dict()) == initial_hash
+    assert _digest(vars(other_state)) == memory_hash
+    for name, value in actor.state_dict().items():
+        if isinstance(value, torch.Tensor) and value.numel():
+            assert value.untyped_storage().data_ptr() != (
+                other.state_dict()[name].untyped_storage().data_ptr())
+    for name, value in vars(state).items():
+        if isinstance(value, torch.Tensor) and value.numel():
+            assert value.untyped_storage().data_ptr() != (
+                getattr(other_state, name).untyped_storage().data_ptr())
+    observation = RawObservation(b"a", None)
+    prediction = actor.reader.predict_with_receipt(observation, state, 1)
+    control = other.reader.predict_with_receipt(observation, other_state, 1)
+    assert prediction.generation == control.generation
+    assert prediction.generation.data == b"" and prediction.generation.stop_reason == "eos"
+    assert prediction.controller["preoutput_h"] == control.controller["preoutput_h"]
+    assert prediction.controller["preoutput_cursors"] == control.controller["preoutput_cursors"]
+    assert [d["rng_before_sha256"] for d in prediction.steps[0].controller["draws"]] == [
+        d["rng_before_sha256"] for d in control.steps[0].controller["draws"]]
+    with pytest.raises(ValueError):
+        clone_for_probe(actor, state)
+    snapshot = capture_literal(actor.reader)
+    feedback = actor.reader.teach(observation, b"a", state, 0.01, prediction=prediction)
+    diagnostic = analyze_teacher(feedback, b"a", literal_snapshot=snapshot, learning_enabled=True)
+    assert diagnostic["offers"] == 2 and diagnostic["publications"] == 0
+    assert not free_summary(prediction, b"a")["complete_bytes_and_eos"]
+    other.reader.acknowledge(control, other_state, learning_enabled=False)
+    assert _digest({k: v for k, v in other.state_dict().items()
+                    if k != "reader.controller.rng_state"}) == initial_slow
+    assert not torch.equal(other.reader.controller.rng_state, initial_rng)
+    held_control = _digest(other.state_dict())
+    workspace = workspace_from_records([
+        {"path": "app.py", "content_hex": b"value='a'\n".hex()},
+        {"path": "main.py", "content_hex": b"import app\nprint(app.value)\n".hex()},
+    ])
+    edit_observation = RawObservation(b"b", workspace)
+    edit = actor.propose(edit_observation, state)
+    assert edit.proposal.operation == "STOP"
+    _, execution = execute_proposal(
+        workspace, edit.proposal, tmp_path / "edit", deadline=time.perf_counter() + 15,
+        launch=qualified_launch(Path(__file__).resolve().parents[1]))
+    assert execution["returncode"] == 0 and execution["stdout_hex"] == b"a\n".hex()
+    envelope = {"attempt_id": edit.attempt_id, "proposal_sha256": edit.proposal_sha256,
+                "workspace_sha256": workspace.sha256, "execution": execution}
+    snapshot = capture_literal(actor.reader)
+    teacher = SpliceProposal("SPLICE", "app.py", 7, 8, b"b", "eos", workspace.sha256)
+    correction = actor.teach(edit, edit_observation, state, teacher, envelope)
+    diagnostic = analyze_teacher(correction.reader_feedback, b"b",
+                                 literal_snapshot=snapshot, learning_enabled=True)
+    assert diagnostic["offers"] == 2 and len(correction.action_losses) == 3
+    assert not free_summary(edit, b"b")["complete_bytes_and_eos"]
+    assert actor.reader.pending_prediction is None and actor._pending is None
+    assert _digest(vars(state)) == _digest(vars(other_state)) == memory_hash
+    assert _digest(other.state_dict()) == held_control

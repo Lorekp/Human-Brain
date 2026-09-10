@@ -1,11 +1,22 @@
 # Public persistent language/action development
 
-Status: stable integrated comparison completed and saved evidence validated, 2026-09-09.
+Status: bounded repeated-teaching acquisition work selected, 2026-09-10.
 The eighth broader session and prepared byte-coincidence comparison are complete.
 The roadmap
 owns the next shared design; frozen streams remain exposed regression evidence.
 
-## Stable comparison requirements
+## Current acquisition work
+
+Keep the architecture, local update rule and task difficulty fixed while
+testing complete acquisition under a newly declared finite repeated-teaching
+budget. The [repetition protocol](repeated-teaching-acquisition-v1.md) owns its
+schedule, effective-coverage and intended-output diagnostics, free reading/edit
+outcomes, interference panel and resource limits. The previous two corrections
+are not a permanent budget. No new component, learning-rate change or broader
+retention/changed-context expansion follows automatically. Failure calls for
+an explanation of the limiting computation or update mechanism first.
+
+## Completed stable comparison requirements
 
 Pause further increases in task difficulty and further teacher reduction.
 Implement the already selected local-credit improvement and measured journal
@@ -65,9 +76,9 @@ The [prediction review](stable-credit-v1-learning-review.md) and
 [cost accounting](stable-credit-v1-cost-accounting.md)
 remain distinct from task outcomes.
 
-Keep difficulty and the teaching budget fixed. Review the saved learning evidence
-before choosing further work; no additional mechanism, corpus, teacher reduction,
-fit sweep or automatic replay is selected. Preserve the current causal state and
+Keep difficulty and architecture fixed. The user's subsequent instruction selects
+the separately bounded repetition budget above; no additional mechanism, corpus,
+teacher reduction or fit sweep is selected. Preserve the current causal state and
 both controls. The V8 details below describe the comparison's historical input,
 not a command to reset to V8 or reopen its frozen run.
 

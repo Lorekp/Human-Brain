@@ -1,7 +1,7 @@
 # Roadmap: persistent language, knowledge and action
 
-Status: living decision document. Updated 2026-09-09 after the user's direction
-to stabilize the broader workload and teaching budget. This roadmap owns priorities; frozen experiments keep
+Status: living decision document. Updated 2026-09-10 for bounded repeated teaching
+with fixed architecture and task difficulty. This roadmap owns priorities; frozen experiments keep
 their original evidence contracts. Read it and the active linked plan before
 choosing work and after every context compaction.
 
@@ -21,7 +21,8 @@ old and disabled controls score 0/14, and the retrieval/editing reference 9/14.
 That late hit has no subsequent retention measurement. Complete acquisition,
 durable neuronal advantage and correct software editing remain unestablished.
 The retained factual memory contains 1,982 slots; no difficulty or teaching
-budget increase is selected from this result.
+budget increase was selected from that result alone. The user's subsequent
+instruction explicitly authorizes a newly bounded repeated-teaching budget.
 
 The prepared [byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 is also completed and independently audited. Its narrow successes remain
@@ -35,6 +36,17 @@ directions. Do not append another experiment diary to this roadmap.
 ## Active work: a broader persistent session
 
 The active plan is [persistent language-and-action development](persistent-language-action-development-v1.md).
+The current work is [bounded repeated teaching](repeated-teaching-acquisition-v1.md)
+of the existing integrated reading and editing behaviors. Keep the architecture,
+learning rule and task difficulty unchanged. Fix the repetition budget before
+execution; the old two-correction budget is historical, not permanent. Measure
+effective teacher coverage by target position, intended-output probability with
+its actual conditioning, complete free responses and interference. Establish
+acquisition before expanding retention and changed-context evaluation. If the
+bounded run fails, identify the limiting computation or update mechanism from
+the saved evidence before selecting another component.
+
+The completed comparison below supplies the historical starting evidence.
 The current user instruction pauses further difficulty increases and teacher
 reduction. Keep a stable representative integrated curriculum and a fixed,
 declared teaching budget while implementing and comparing the selected local
@@ -52,7 +64,8 @@ run, [implementation QA](causal-credit-owned-journal-qa-v1.md) and
 evidence. Original audit failures are preserved; correcting readers introduced
 no learner replay. Review the separate task and
 [prediction diagnostics](stable-credit-v1-learning-review.md) before
-selecting further work. No new mechanism, fit sweep or automatic replay follows.
+selecting further work. No new mechanism or fit sweep follows; the separately
+bounded repetitions are selected by the latest user instruction.
 
 Continue the learner on a workload that combines reading,
 retained knowledge, raw software actions and observation of their consequences.
