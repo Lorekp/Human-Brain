@@ -62,6 +62,40 @@ cost more, while fixed setup/panels do not scale that way. Current file-system
 metadata reports 9,429,032,960 free bytes, only about .78 GiB above the 8 GiB
 reserve. The existing recorder cannot support this candidate on current disk.
 
+## Paired preservation supplies a narrower cost measurement
+
+The saved [comparison](../../.pytest-tmp/integrated-local-learning-v1-preservation-corrected/comparison.json)
+passed all four existing cases: forward behavior, complete outcomes and numerical
+RNG progression agree between predecessor and current rules. Both score 0/4;
+the previously learned 20:24 edit span is preserved, not complete editing.
+The actual retained parent is unchanged. Each disposable worker observed 718
+scan offers and 21 free ticks, made four responses and one real execution, and
+performed zero teachers or learning publications. Different raw execution stderr
+is disclosed separately, not normalized into equality.
+
+The [current worker report](../../.pytest-tmp/integrated-local-learning-v1-preservation-corrected/current/report.json)
+records these elapsed scopes:
+
+| Current worker phase | Seconds |
+| --- | ---: |
+| Initialization | 7.971011 |
+| Prediction, including internal hashes and trace construction | 9.523318 |
+| Disabled resolution, including fork/proposal/validation/RNG publication | 5.010029 |
+| Explicit worker numerical hashes, excluding nested hashes | 1.656863 |
+| Trace projection, excluding JSON | 0.134762 |
+| JSON/hash/disk-check/write/fsync publication | 0.595903 |
+| Complete worker through report's elapsed sample | 29.947378 |
+
+The [predecessor worker](../../.pytest-tmp/integrated-local-learning-v1-preservation-corrected/predecessor/report.json)
+took 31.955688 seconds. Fixed-order, one-worker-per-rule timing is not a speedup
+comparison. The component rows are within the total and have the report's stated
+scope; publication excludes final report/completion, and explicit worker hashing
+does not measure all hashing. Prediction plus disabled resolution takes 14.53
+seconds, while observed JSON publication takes .60 seconds. Compact recording
+therefore addresses disk pressure without evidence that JSON is the main CPU
+limit. These free-only measurements still do not measure teacher throughput,
+long learned responses or enabled publication cost.
+
 ## A finite comparison projection, not a selected run
 
 For capacity planning, a finite **4,096-correction-per-skill** comparison could
@@ -121,17 +155,17 @@ execution, diagnostics, seals and append calls so any remaining expensive path
 is measured. Do not remove live custody checks on a conjectured speedup. Compact
 journals address retained bytes; they do not establish a material CPU reduction.
 
-The next actual decision input is root's already bounded, unchanged-teaching-free
-paired-parent preservation check: four existing cases per worker, with phase
-cost timers. It must preserve the acquired motor behavior and paired forward
-outputs before new learning. It is not a new acquisition run or an open-ended
-profiling program. Free-only timings cannot measure changed teacher cost; keep
-that uncertainty explicit when projecting the next complete workload.
+The bounded, teaching-free paired-parent preservation check is now complete.
+Its passing behavior and phase timings are the decision input, not a release
+of another acquisition trial or an open-ended profiling program. Free-only
+timings cannot measure changed teacher cost; keep that uncertainty explicit
+when projecting the next complete workload.
 
-Use that evidence to select one adequate finite acquisition/resource budget,
-or justify calibration of the existing local update units before committing to
+The next decision must explicitly justify calibration of the current local
+update units versus one adequate finite acquisition/resource budget before committing to
 an uneconomic repetition count. The .01 contact timescale is a limitation of
 the selected update computation itself, not evidence that a new component is
 needed. Neither arbitrary rate/seed sweeps nor compact recording alone resolve
-it. Until that decision, architecture, rate, difficulty and teaching remain
-unchanged; there is one shared acquisition queue.
+it. There is no automatic 128- or 4,096-correction micro-gate. Until that decision,
+architecture, rate, difficulty and teaching remain unchanged; there is one
+shared acquisition queue.

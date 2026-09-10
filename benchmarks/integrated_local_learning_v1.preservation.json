@@ -1,0 +1,1311 @@
+{
+  "schema": "integrated-local-learning-preservation-bank-v1",
+  "status": "passed",
+  "execution_revision": "356db7d6ac49ab7a8e28081b848cf9a016a15efa",
+  "scope": "Retained forward preservation, not acquisition; saved-only banking with zero model imports/calls or tensor decodes.",
+  "comparison": {
+    "actual_controller_counts_per_worker": {
+      "controller_draws": 2396,
+      "free_ticks": 21,
+      "rng_publications": 4,
+      "scan_offers": 718
+    },
+    "cases": [
+      {
+        "complete_outcome_equal": true,
+        "correct": false,
+        "episode_id": "A00-R",
+        "forward_equal": true,
+        "numeric_rng_equal": true,
+        "raw_execution_diagnostics_equal": null
+      },
+      {
+        "complete_outcome_equal": true,
+        "correct": false,
+        "episode_id": "A00-E",
+        "forward_equal": true,
+        "numeric_rng_equal": true,
+        "raw_execution_diagnostics_equal": {
+          "stderr_hex": false,
+          "stderr_observed_bytes": false,
+          "stdout_hex": true,
+          "stdout_observed_bytes": true
+        }
+      },
+      {
+        "complete_outcome_equal": true,
+        "correct": false,
+        "episode_id": "R02-R",
+        "forward_equal": true,
+        "numeric_rng_equal": true,
+        "raw_execution_diagnostics_equal": null
+      },
+      {
+        "complete_outcome_equal": true,
+        "correct": false,
+        "episode_id": "R12-R",
+        "forward_equal": true,
+        "numeric_rng_equal": true,
+        "raw_execution_diagnostics_equal": null
+      }
+    ],
+    "completion_sha256": {
+      "current": "9a83383ad91093c30175e8e8efc8246bca3a5cf7d05d113a0863a89ee7343666",
+      "predecessor": "b2362defb71b61666cf1efd0d98c6db1020bf63ff369f47c04486309341ec3f0"
+    },
+    "elapsed_seconds": 3.504529099969659,
+    "metadata": "only exact declared v2/v3 dictionary replacements",
+    "model_calls": 0,
+    "schema": "integrated-local-learning-preservation-comparison-v1",
+    "scope": "actual retained forward/numeric preservation; no acquisition evidence",
+    "status": "passed",
+    "tensor_decodes": 0
+  },
+  "comparison_artifact": {
+    "path": ".pytest-tmp/integrated-local-learning-v1-preservation-corrected/comparison.json",
+    "bytes": 1315,
+    "sha256": "d040d52e5c470fd1aa05fec706aa6cd8cf63b64bf77c3b2ff90090b04838c210"
+  },
+  "workers": {
+    "predecessor": {
+      "completion": {
+        "elapsed_seconds": 31.992517100006808,
+        "files": {
+          "case-0.json": {
+            "bytes": 3219996,
+            "sha256": "c45b5b4dedf7baa6dd5b01a78bd7e0907e68c91e6bf589fb1cc9f751755a0629"
+          },
+          "case-1.json": {
+            "bytes": 5974893,
+            "sha256": "55032e6a07f46b3847a33cda87aa6097bcaca4b54272042ed9614bb69781bb2a"
+          },
+          "case-2.json": {
+            "bytes": 773630,
+            "sha256": "1ebcb68e50c633373ea6b7f54701c0bb3f326d7aad05e98072d7c53d9d212512"
+          },
+          "case-3.json": {
+            "bytes": 2874620,
+            "sha256": "f949956eebbd68b68584714499490eb81f5253d3a6cc52045e8a5f8678f3f175"
+          },
+          "execution/app.py": {
+            "bytes": 27,
+            "sha256": "a4ba1783036145b24dbed3da25f16ec8e8db76ef41d0acefe5bf40048f492c88"
+          },
+          "execution/main.py": {
+            "bytes": 175,
+            "sha256": "534ef821060d9487bd3823354e677a66caffd733cf6f2c5e7778a9e4e687e2d2"
+          },
+          "initialization.json": {
+            "bytes": 110052,
+            "sha256": "bc46e2ee3b1f4b0ea5454b0c93a10ceebe46d77c6ea8d280a74d442d5d8e6baf"
+          },
+          "launch.json": {
+            "bytes": 4814,
+            "sha256": "22420d72f57d1f456414f259bc749923ef1ecb2b0418159e97479db62e67ee70"
+          },
+          "manifest.json": {
+            "bytes": 32904,
+            "sha256": "528f6599d0ff5af487a418a7a0fa06b340ba0d026328df4bab534af671bd64cf"
+          },
+          "report.json": {
+            "bytes": 18724,
+            "sha256": "bc9776b12aaa4b8d89a1f24d318044bd87bebf5ee73e7a7010d42bf8114436df"
+          },
+          "sources.json": {
+            "bytes": 39225,
+            "sha256": "4c3a9c39b79e71b18269ab42b6218c4912348b2e939968d923338331db501672"
+          }
+        },
+        "rule": "predecessor",
+        "schema": "integrated-local-learning-preservation-completion-v1",
+        "status": "completed"
+      },
+      "completion_artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-v1-preservation-corrected/predecessor/completion.json",
+        "bytes": 1344,
+        "sha256": "b2362defb71b61666cf1efd0d98c6db1020bf63ff369f47c04486309341ec3f0"
+      },
+      "report": {
+        "budget": {
+          "artifact_bytes": 268435456,
+          "final_reserve_seconds": 20,
+          "free_reserve_bytes": 8589934592,
+          "pending_bytes_inside_cap": 67108864,
+          "rss_bytes": 4294967296,
+          "seconds": 180
+        },
+        "cases": [
+          "A00-R",
+          "A00-E",
+          "R02-R",
+          "R12-R"
+        ],
+        "counts": {
+          "artifact_bytes": 13030336,
+          "controller_draws": 2396,
+          "executions": 1,
+          "free_bytes": 9158094848,
+          "free_responses": 4,
+          "free_ticks": 21,
+          "ingests": 0,
+          "learning_publications": 0,
+          "rng_publications": 4,
+          "rss_boundary_peak_bytes": 740233216,
+          "scan_offers": 718,
+          "teachers": 0
+        },
+        "elapsed_seconds": 31.955687600013334,
+        "final": {
+          "experience": 402,
+          "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+          "memory_used": 1982,
+          "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+          "numeric_sha256": "25d46d31dad7c2d6551229b59f89e707efea0a7ae417ce6bbc9dd005f159c09e",
+          "reader_experience": 410,
+          "rng_sha256": "feb8fd078845e2c35a85e007365bd48cf8ccf9561fa12505cea2861f30e093ff",
+          "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+          "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+        },
+        "implementation_revision": "7e164e79d4152c7009afb2411bc2f970c62c1f3f",
+        "initial": {
+          "experience": 401,
+          "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+          "memory_used": 1982,
+          "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+          "numeric_sha256": "46fa2264d3987e9ebe8f143b3fc6fb7a9d13d2588343c60c986d86a59cce8d3d",
+          "reader_experience": 406,
+          "rng_sha256": "962b0fac1b5ef9c0bf4fe7dbede1fde431fdaf17488cf50f8eb97dbbfb2d84df",
+          "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+          "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+        },
+        "initialization_seconds": 8.642779999994673,
+        "manifest_sha256": "528f6599d0ff5af487a418a7a0fa06b340ba0d026328df4bab534af671bd64cf",
+        "parent_bank_sha256": "3783e751a40c0150da8adc091a976d91ab70c879dc1b2a5c6ffc020c27e8e262",
+        "parent_boundary_sha256": "3408eecadf057ce322f5063a879584e82ea993c433e74d1de290e5114e1ae677",
+        "phase_seconds": {
+          "actual_execution_seconds": 0.03886520001105964,
+          "admission_seconds": 0.007802799984347075,
+          "disabled_resolution_seconds": 5.111767599999439,
+          "initialization_seconds": 8.643732099968474,
+          "numerical_hash_seconds": 1.7824600999010727,
+          "prediction_seconds": 9.148574699938763,
+          "selection_and_import_seconds": 3.233736299967859,
+          "serialization_publication_seconds": 0.23697209998499602,
+          "trace_serialization_seconds": 0.11963009997271001
+        },
+        "resource_scope": "boundary RSS/admission; outer launcher enforces hard tree limits",
+        "rule": "predecessor",
+        "schema": "integrated-local-learning-preservation-worker-v1",
+        "scope": "forward preservation; zero teachers, ingests or learning publication",
+        "status": "completed",
+        "timing_scope": {
+          "actual_execution": "includes executor child and captured files/streams",
+          "admission": "boundary checks only; overlaps before-edit case elapsed",
+          "case_elapsed": "all case phases except JSON publication; overlaps listed phases",
+          "disabled_resolution": "fork, update proposal, validation, RNG publish and hashes",
+          "initialization": "parent authentication, one decode, two model copies and hashes",
+          "numerical_hash": "explicit worker hashes only; excludes nested model hashes",
+          "prediction": "includes its model hashing, forward work and trace construction",
+          "serialization_publication": "JSON, SHA, disk checks, write/fsync; excludes final report/completion",
+          "total": "all phases; nested initializer/executor timers must not be added again",
+          "trace_serialization": "reader summary/forward projection; excludes JSON encoding"
+        },
+        "unused_final": {
+          "experience": 401,
+          "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+          "memory_used": 1982,
+          "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+          "numeric_sha256": "46fa2264d3987e9ebe8f143b3fc6fb7a9d13d2588343c60c986d86a59cce8d3d",
+          "reader_experience": 406,
+          "rng_sha256": "962b0fac1b5ef9c0bf4fe7dbede1fde431fdaf17488cf50f8eb97dbbfb2d84df",
+          "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+          "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+        },
+        "unused_initial": {
+          "experience": 401,
+          "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+          "memory_used": 1982,
+          "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+          "numeric_sha256": "46fa2264d3987e9ebe8f143b3fc6fb7a9d13d2588343c60c986d86a59cce8d3d",
+          "reader_experience": 406,
+          "rng_sha256": "962b0fac1b5ef9c0bf4fe7dbede1fde431fdaf17488cf50f8eb97dbbfb2d84df",
+          "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+          "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+        },
+        "work": {
+          "custody_tensor_bytes_hashed": 2965039272
+        }
+      },
+      "sources_artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-v1-preservation-corrected/predecessor/sources.json",
+        "bytes": 39225,
+        "sha256": "4c3a9c39b79e71b18269ab42b6218c4912348b2e939968d923338331db501672"
+      },
+      "initialization_artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-v1-preservation-corrected/predecessor/initialization.json",
+        "bytes": 110052,
+        "sha256": "bc46e2ee3b1f4b0ea5454b0c93a10ceebe46d77c6ea8d280a74d442d5d8e6baf"
+      },
+      "metadata_note": "Exact dictionaries and module origins retained in authenticated full report and sources.",
+      "cases": [
+        {
+          "episode_id": "A00-R",
+          "correct": false,
+          "answer_hex": "0000ba74d42f77",
+          "reader_scalar_fields": {
+            "answer_hex": "0000ba74d42f77",
+            "attempt_id": "2254155028496:407",
+            "decisions": 8,
+            "max_bytes": 128,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "model_sha256": "612d1537b9ec76d2491257ba8cd80efe6eefb0646a31c6043b8190f886944923",
+            "observation_sha256": "3ac32aa1db461d66d206892558cb18da50e6f1aa30eb3c2a5127f6d35c67862e",
+            "schema": "recurrent-content-output-prediction-v1",
+            "stop_reason": "eos",
+            "trace_sha256": "6e4825887ca2546e3fdb8b817d21b6d598b69e02bfe961814db27beaab66fd3f"
+          },
+          "proposal": null,
+          "execution": null,
+          "grade": null,
+          "before": {
+            "experience": 401,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "memory_used": 1982,
+            "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+            "numeric_sha256": "46fa2264d3987e9ebe8f143b3fc6fb7a9d13d2588343c60c986d86a59cce8d3d",
+            "reader_experience": 406,
+            "rng_sha256": "962b0fac1b5ef9c0bf4fe7dbede1fde431fdaf17488cf50f8eb97dbbfb2d84df",
+            "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+            "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+          },
+          "after": {
+            "experience": 401,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "memory_used": 1982,
+            "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+            "numeric_sha256": "75fadc85d6cd75cc88cd87e504074deaa082c8cd333284c20bc9954fab6045c1",
+            "reader_experience": 407,
+            "rng_sha256": "3d93e747ff6f4171d0c06c1981e62648108b8546783c11df8c109202ccf5ecca",
+            "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+            "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+          },
+          "artifact": {
+            "path": ".pytest-tmp/integrated-local-learning-v1-preservation-corrected/predecessor/case-0.json",
+            "bytes": 3219996,
+            "sha256": "c45b5b4dedf7baa6dd5b01a78bd7e0907e68c91e6bf589fb1cc9f751755a0629"
+          }
+        },
+        {
+          "episode_id": "A00-E",
+          "correct": false,
+          "answer_hex": "81206920646c",
+          "reader_scalar_fields": {
+            "answer_hex": "81206920646c",
+            "attempt_id": "2254155028496:408",
+            "decisions": 7,
+            "max_bytes": 128,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "model_sha256": "cabf378fa7d9c61fc911986dcb5d8ca061c6b359044dd07b6bf98eb36a5d3e78",
+            "observation_sha256": "a5ee5f5aa0645dbb0033b4dffade00c3a180406d826fbcad44d74cc979d314f4",
+            "schema": "recurrent-content-output-prediction-v1",
+            "stop_reason": "eos",
+            "trace_sha256": "ed5874f8d27cece4eb7a362453fc1ef41f56d433251886a6b09b5cce26231a0d"
+          },
+          "proposal": {
+            "end": 24,
+            "operation": "SPLICE",
+            "path": "app.py",
+            "replacement_hex": "81206920646c",
+            "start": 20,
+            "stop_reason": "eos",
+            "workspace_sha256": "7d28f5867272a1fcd53d048f92eb7dfbe7481d9d8c629bf717dff038a366617b"
+          },
+          "execution": {
+            "accepted": true,
+            "after_files": [
+              {
+                "content_hex": "646566207469636b657473286e293a0a2020202081206920646c0a",
+                "path": "app.py"
+              },
+              {
+                "content_hex": "23205075626c696320726561642d6f6e6c79206472697665723a206d61696e2e70790a696d706f7274206170700a666f72206e2c77616e7420696e2028282d332c30292c28302c30292c28322c32292c28362c36292c2831312c3629293a0a20202020676f743d6170702e7469636b657473286e290a2020202061737365727420676f743d3d77616e742c2028277469636b657473272c6e2c676f742c77616e74290a7072696e7428276f6b27290a",
+                "path": "main.py"
+              }
+            ],
+            "before_files": [
+              {
+                "content_hex": "646566207469636b657473286e293a0a20202020706173730a",
+                "path": "app.py"
+              },
+              {
+                "content_hex": "23205075626c696320726561642d6f6e6c79206472697665723a206d61696e2e70790a696d706f7274206170700a666f72206e2c77616e7420696e2028282d332c30292c28302c30292c28322c32292c28362c36292c2831312c3629293a0a20202020676f743d6170702e7469636b657473286e290a2020202061737365727420676f743d3d77616e742c2028277469636b657473272c6e2c676f742c77616e74290a7072696e7428276f6b27290a",
+                "path": "main.py"
+              }
+            ],
+            "bootstrap_policy": "regular_source_public_temporary_module_v1",
+            "bootstrap_sha256": "7213881ba88871e024789913aa742bba520cc79520b8a7b87292c0d3b2b745b9",
+            "capture_complete": true,
+            "capture_errors": {},
+            "child_command": [
+              "C:\\Users\\laure\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\python.exe",
+              "-I",
+              "-S",
+              "-X",
+              "utf8",
+              "-B",
+              "-c",
+              "import sys; assert sys.flags.utf8_mode == 1; assert sys.stdout.encoding.lower().replace('-', '') == 'utf8'; sys.stdout.reconfigure(errors='strict', newline='\\n'); sys.stderr.reconfigure(errors='strict', newline='\\n'); sys.path.insert(0, '.'); import io, os\nwith io.open_code(os.path.abspath('main.py')) as source:\n    code = compile(source.read(), 'main.py', 'exec')\ndef _run_source(code):\n    temporary_main = type(sys)('__main__')\n    original_main = sys.modules['__main__']\n    sys.modules['__main__'] = temporary_main\n    try:\n        original_argv0 = sys.argv[0]\n        sys.argv[0] = 'main.py'\n        try:\n            namespace = temporary_main.__dict__\n            namespace.update(__name__='__main__', __file__='main.py',\n                             __cached__=None, __doc__=None, __loader__=None,\n                             __package__='', __spec__=None)\n            exec(code, namespace)\n        finally:\n            sys.argv[0] = original_argv0\n    finally:\n        sys.modules['__main__'] = original_main\n    return namespace.copy()\n_run_source(code)"
+            ],
+            "child_environment_override": {},
+            "child_environment_removed": [
+              "__PYVENV_LAUNCHER__"
+            ],
+            "child_pid": 49440,
+            "child_seconds": 0.03641940001398325,
+            "child_timeout_seconds": 3.0,
+            "delegated_execution_seconds": 0.038615699973888695,
+            "elapsed_seconds": 0.038854199985507876,
+            "files_complete": true,
+            "launch_record_sha256": "22420d72f57d1f456414f259bc749923ef1ecb2b0418159e97479db62e67ee70",
+            "output_limit_exceeded": false,
+            "output_limit_per_stream": 512,
+            "proposal_sha256": "53ae9d34b6b7b3efc54698667899282335f47da4b6831062c0e05f96d1a2dab3",
+            "proposed_files": [
+              {
+                "content_hex": "646566207469636b657473286e293a0a2020202081206920646c0a",
+                "path": "app.py"
+              },
+              {
+                "content_hex": "23205075626c696320726561642d6f6e6c79206472697665723a206d61696e2e70790a696d706f7274206170700a666f72206e2c77616e7420696e2028282d332c30292c28302c30292c28322c32292c28362c36292c2831312c3629293a0a20202020676f743d6170702e7469636b657473286e290a2020202061737365727420676f743d3d77616e742c2028277469636b657473272c6e2c676f742c77616e74290a7072696e7428276f6b27290a",
+                "path": "main.py"
+              }
+            ],
+            "public_driver_policy": {
+              "after_driver": {
+                "bytes": 175,
+                "path": "main.py",
+                "sha256": "534ef821060d9487bd3823354e677a66caffd733cf6f2c5e7778a9e4e687e2d2"
+              },
+              "before_driver": {
+                "bytes": 175,
+                "path": "main.py",
+                "sha256": "534ef821060d9487bd3823354e677a66caffd733cf6f2c5e7778a9e4e687e2d2"
+              },
+              "delegated_proposal_sha256": "53ae9d34b6b7b3efc54698667899282335f47da4b6831062c0e05f96d1a2dab3",
+              "delegated_rejection": null,
+              "driver_integrity": true,
+              "path_comparison": "casefold exact relative path",
+              "proposal_rejected": false,
+              "proposed_driver": {
+                "bytes": 175,
+                "path": "main.py",
+                "sha256": "534ef821060d9487bd3823354e677a66caffd733cf6f2c5e7778a9e4e687e2d2"
+              },
+              "protected_path": "main.py",
+              "schema": "persistent-language-action-public-driver-v1",
+              "scope": "proposal path rejection and captured public byte integrity; no OS sandbox",
+              "submitted_proposal_sha256": "53ae9d34b6b7b3efc54698667899282335f47da4b6831062c0e05f96d1a2dab3"
+            },
+            "public_driver_policy_sha256": "839256bb9178b49e3ea4cebe7b44a3da8c322a87db6ea872056de373f8ff8e39",
+            "rejection": null,
+            "returncode": 1,
+            "schema": "persistent-language-action-execution-v2",
+            "stderr_hex": "54726163656261636b20286d6f737420726563656e742063616c6c206c617374293a0a202046696c6520223c737472696e673e222c206c696e652032322c20696e203c6d6f64756c653e0a202046696c6520223c737472696e673e222c206c696e652031362c20696e205f72756e5f736f757263650a202046696c6520226d61696e2e7079222c206c696e6520322c20696e203c6d6f64756c653e0a20202020696d706f7274206170700a202046696c652022433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c696e74656772617465642d6c6f63616c2d6c6561726e696e672d76312d707265736572766174696f6e2d636f727265637465645c7072656465636573736f725c657865637574696f6e5c6170702e7079222c206c696e6520320a20202020efbfbd206920646c0a202020205e0a53796e7461784572726f723a2028756e69636f6465206572726f722920277574662d382720636f6465632063616e2774206465636f64652062797465203078383120696e20706f736974696f6e20303a20696e76616c696420737461727420627974650a",
+            "stderr_observed_bytes": 443,
+            "stderr_sha256": "0b62394225f29beef12aad313730a6f2f753131814cd1e53db6a2e9df373adb1",
+            "stdout_hex": "",
+            "stdout_observed_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "timeout": false,
+            "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\integrated-local-learning-v1-preservation-corrected\\predecessor\\execution",
+            "workspace_sha256": "7d28f5867272a1fcd53d048f92eb7dfbe7481d9d8c629bf717dff038a366617b"
+          },
+          "grade": {
+            "behavior_correct": false,
+            "complete_execution": true,
+            "protected_files_unchanged": true,
+            "task_success": false
+          },
+          "before": {
+            "experience": 401,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "memory_used": 1982,
+            "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+            "numeric_sha256": "75fadc85d6cd75cc88cd87e504074deaa082c8cd333284c20bc9954fab6045c1",
+            "reader_experience": 407,
+            "rng_sha256": "3d93e747ff6f4171d0c06c1981e62648108b8546783c11df8c109202ccf5ecca",
+            "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+            "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+          },
+          "after": {
+            "experience": 402,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "memory_used": 1982,
+            "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+            "numeric_sha256": "8ffd1ced3395b9be058f63e6e5c7a01e2def67498320ca74090f7a2faa0ef562",
+            "reader_experience": 408,
+            "rng_sha256": "893e886ff3dbcd5e8395568ed3703ce21e977a5ae6fdbea3ce6f716b3867e622",
+            "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+            "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+          },
+          "artifact": {
+            "path": ".pytest-tmp/integrated-local-learning-v1-preservation-corrected/predecessor/case-1.json",
+            "bytes": 5974893,
+            "sha256": "55032e6a07f46b3847a33cda87aa6097bcaca4b54272042ed9614bb69781bb2a"
+          }
+        },
+        {
+          "episode_id": "R02-R",
+          "correct": false,
+          "answer_hex": "8a",
+          "reader_scalar_fields": {
+            "answer_hex": "8a",
+            "attempt_id": "2254155028496:409",
+            "decisions": 2,
+            "max_bytes": 128,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "model_sha256": "db66006ff8b906aebeca4b7a314f07e22ed4ef416b5ae9511eec4506781f67e1",
+            "observation_sha256": "386c98be4758bf65561be55b132dd449a8214180821940a0994c3fd3dd2188c4",
+            "schema": "recurrent-content-output-prediction-v1",
+            "stop_reason": "eos",
+            "trace_sha256": "c5c128dcd130edcbf75c369d6293b8468ec60d41e71b0db74f6ba1cc76830541"
+          },
+          "proposal": null,
+          "execution": null,
+          "grade": null,
+          "before": {
+            "experience": 402,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "memory_used": 1982,
+            "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+            "numeric_sha256": "8ffd1ced3395b9be058f63e6e5c7a01e2def67498320ca74090f7a2faa0ef562",
+            "reader_experience": 408,
+            "rng_sha256": "893e886ff3dbcd5e8395568ed3703ce21e977a5ae6fdbea3ce6f716b3867e622",
+            "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+            "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+          },
+          "after": {
+            "experience": 402,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "memory_used": 1982,
+            "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+            "numeric_sha256": "90038d1a575765316b662caf6be61dfd045ccb700c77c05e75a6c0b2012fff4b",
+            "reader_experience": 409,
+            "rng_sha256": "bc134a50cbccef0b0c08f74781f7226c5d5d414d02dc7d44fccd4b17c0d37f99",
+            "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+            "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+          },
+          "artifact": {
+            "path": ".pytest-tmp/integrated-local-learning-v1-preservation-corrected/predecessor/case-2.json",
+            "bytes": 773630,
+            "sha256": "1ebcb68e50c633373ea6b7f54701c0bb3f326d7aad05e98072d7c53d9d212512"
+          }
+        },
+        {
+          "episode_id": "R12-R",
+          "correct": false,
+          "answer_hex": "586f00",
+          "reader_scalar_fields": {
+            "answer_hex": "586f00",
+            "attempt_id": "2254155028496:410",
+            "decisions": 4,
+            "max_bytes": 128,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "model_sha256": "94d0d57273c006cbdf8bcb61adfb02dbfad98701fa1424a1277dd77b735fffd9",
+            "observation_sha256": "988f3704a194b21b203b50131430fc2fada8463e59102d58fd109028a4b6f4be",
+            "schema": "recurrent-content-output-prediction-v1",
+            "stop_reason": "eos",
+            "trace_sha256": "cb83f740ef22329e01b105cb353ea6fbd18bb219bb6b518d8f1cd0b400ad9faf"
+          },
+          "proposal": null,
+          "execution": null,
+          "grade": null,
+          "before": {
+            "experience": 402,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "memory_used": 1982,
+            "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+            "numeric_sha256": "90038d1a575765316b662caf6be61dfd045ccb700c77c05e75a6c0b2012fff4b",
+            "reader_experience": 409,
+            "rng_sha256": "bc134a50cbccef0b0c08f74781f7226c5d5d414d02dc7d44fccd4b17c0d37f99",
+            "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+            "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+          },
+          "after": {
+            "experience": 402,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "memory_used": 1982,
+            "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+            "numeric_sha256": "25d46d31dad7c2d6551229b59f89e707efea0a7ae417ce6bbc9dd005f159c09e",
+            "reader_experience": 410,
+            "rng_sha256": "feb8fd078845e2c35a85e007365bd48cf8ccf9561fa12505cea2861f30e093ff",
+            "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+            "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+          },
+          "artifact": {
+            "path": ".pytest-tmp/integrated-local-learning-v1-preservation-corrected/predecessor/case-3.json",
+            "bytes": 2874620,
+            "sha256": "f949956eebbd68b68584714499490eb81f5253d3a6cc52045e8a5f8678f3f175"
+          }
+        }
+      ]
+    },
+    "current": {
+      "completion": {
+        "elapsed_seconds": 29.97437379998155,
+        "files": {
+          "case-0.json": {
+            "bytes": 3243559,
+            "sha256": "2c9d7fd25a5f9cb4b92e3c0c1e2084386ef22721d30fb0f9fc66b23c6c4c1173"
+          },
+          "case-1.json": {
+            "bytes": 6036863,
+            "sha256": "af03fe9efe0cad5afe800ed1e7b44f43655701ca0981d7eb1ea014182cf99c7d"
+          },
+          "case-2.json": {
+            "bytes": 781051,
+            "sha256": "8ff7b3469e0eb6c6ad0ec2cd8a21f789884046a00949557b04ede1b75714e50f"
+          },
+          "case-3.json": {
+            "bytes": 2899610,
+            "sha256": "a7b619d8c003e75b1a79745c3e7f3e770f2a6fd5405878ea3b4944e08920c1f8"
+          },
+          "execution/app.py": {
+            "bytes": 27,
+            "sha256": "a4ba1783036145b24dbed3da25f16ec8e8db76ef41d0acefe5bf40048f492c88"
+          },
+          "execution/main.py": {
+            "bytes": 175,
+            "sha256": "534ef821060d9487bd3823354e677a66caffd733cf6f2c5e7778a9e4e687e2d2"
+          },
+          "initialization.json": {
+            "bytes": 110588,
+            "sha256": "25d961c89591bb1027fd46bfbe4c37cf3dcf18cf01f3f3c02764ece81dcf2189"
+          },
+          "launch.json": {
+            "bytes": 4814,
+            "sha256": "22420d72f57d1f456414f259bc749923ef1ecb2b0418159e97479db62e67ee70"
+          },
+          "manifest.json": {
+            "bytes": 32904,
+            "sha256": "528f6599d0ff5af487a418a7a0fa06b340ba0d026328df4bab534af671bd64cf"
+          },
+          "report.json": {
+            "bytes": 18914,
+            "sha256": "45391941a1629008281ca18dd10a8ed6ed7b9429c0435e94b7a051ce49304c37"
+          },
+          "sources.json": {
+            "bytes": 38841,
+            "sha256": "8258d80f0cefbf425b16f8be9a4d45b17afd582a7cd6ae04a6c2c626c34199fa"
+          }
+        },
+        "rule": "current",
+        "schema": "integrated-local-learning-preservation-completion-v1",
+        "status": "completed"
+      },
+      "completion_artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-v1-preservation-corrected/current/completion.json",
+        "bytes": 1339,
+        "sha256": "9a83383ad91093c30175e8e8efc8246bca3a5cf7d05d113a0863a89ee7343666"
+      },
+      "report": {
+        "budget": {
+          "artifact_bytes": 268435456,
+          "final_reserve_seconds": 20,
+          "free_reserve_bytes": 8589934592,
+          "pending_bytes_inside_cap": 67108864,
+          "rss_bytes": 4294967296,
+          "seconds": 180
+        },
+        "cases": [
+          "A00-R",
+          "A00-E",
+          "R02-R",
+          "R12-R"
+        ],
+        "counts": {
+          "artifact_bytes": 13148432,
+          "controller_draws": 2396,
+          "executions": 1,
+          "free_bytes": 9142894592,
+          "free_responses": 4,
+          "free_ticks": 21,
+          "ingests": 0,
+          "learning_publications": 0,
+          "rng_publications": 4,
+          "rss_boundary_peak_bytes": 751480832,
+          "scan_offers": 718,
+          "teachers": 0
+        },
+        "elapsed_seconds": 29.947377900010906,
+        "final": {
+          "experience": 402,
+          "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+          "memory_used": 1982,
+          "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+          "numeric_sha256": "25d46d31dad7c2d6551229b59f89e707efea0a7ae417ce6bbc9dd005f159c09e",
+          "reader_experience": 410,
+          "rng_sha256": "feb8fd078845e2c35a85e007365bd48cf8ccf9561fa12505cea2861f30e093ff",
+          "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+          "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+        },
+        "implementation_revision": "7e164e79d4152c7009afb2411bc2f970c62c1f3f",
+        "initial": {
+          "experience": 401,
+          "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+          "memory_used": 1982,
+          "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+          "numeric_sha256": "46fa2264d3987e9ebe8f143b3fc6fb7a9d13d2588343c60c986d86a59cce8d3d",
+          "reader_experience": 406,
+          "rng_sha256": "962b0fac1b5ef9c0bf4fe7dbede1fde431fdaf17488cf50f8eb97dbbfb2d84df",
+          "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+          "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+        },
+        "initialization_seconds": 7.9700444000191055,
+        "manifest_sha256": "528f6599d0ff5af487a418a7a0fa06b340ba0d026328df4bab534af671bd64cf",
+        "parent_bank_sha256": "3783e751a40c0150da8adc091a976d91ab70c879dc1b2a5c6ffc020c27e8e262",
+        "parent_boundary_sha256": "3408eecadf057ce322f5063a879584e82ea993c433e74d1de290e5114e1ae677",
+        "phase_seconds": {
+          "actual_execution_seconds": 0.03724439995130524,
+          "admission_seconds": 0.007763200032059103,
+          "disabled_resolution_seconds": 5.010028799937572,
+          "initialization_seconds": 7.971010900044348,
+          "numerical_hash_seconds": 1.6568630000110716,
+          "prediction_seconds": 9.52331800002139,
+          "selection_and_import_seconds": 2.5670271000126377,
+          "serialization_publication_seconds": 0.5959027999197133,
+          "trace_serialization_seconds": 0.13476230000378564
+        },
+        "resource_scope": "boundary RSS/admission; outer launcher enforces hard tree limits",
+        "rule": "current",
+        "schema": "integrated-local-learning-preservation-worker-v1",
+        "scope": "forward preservation; zero teachers, ingests or learning publication",
+        "status": "completed",
+        "timing_scope": {
+          "actual_execution": "includes executor child and captured files/streams",
+          "admission": "boundary checks only; overlaps before-edit case elapsed",
+          "case_elapsed": "all case phases except JSON publication; overlaps listed phases",
+          "disabled_resolution": "fork, update proposal, validation, RNG publish and hashes",
+          "initialization": "parent authentication, one decode, two model copies and hashes",
+          "numerical_hash": "explicit worker hashes only; excludes nested model hashes",
+          "prediction": "includes its model hashing, forward work and trace construction",
+          "serialization_publication": "JSON, SHA, disk checks, write/fsync; excludes final report/completion",
+          "total": "all phases; nested initializer/executor timers must not be added again",
+          "trace_serialization": "reader summary/forward projection; excludes JSON encoding"
+        },
+        "unused_final": {
+          "experience": 401,
+          "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+          "memory_used": 1982,
+          "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+          "numeric_sha256": "46fa2264d3987e9ebe8f143b3fc6fb7a9d13d2588343c60c986d86a59cce8d3d",
+          "reader_experience": 406,
+          "rng_sha256": "962b0fac1b5ef9c0bf4fe7dbede1fde431fdaf17488cf50f8eb97dbbfb2d84df",
+          "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+          "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+        },
+        "unused_initial": {
+          "experience": 401,
+          "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+          "memory_used": 1982,
+          "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+          "numeric_sha256": "46fa2264d3987e9ebe8f143b3fc6fb7a9d13d2588343c60c986d86a59cce8d3d",
+          "reader_experience": 406,
+          "rng_sha256": "962b0fac1b5ef9c0bf4fe7dbede1fde431fdaf17488cf50f8eb97dbbfb2d84df",
+          "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+          "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+        },
+        "work": {
+          "custody_tensor_bytes_hashed": 2965039272
+        }
+      },
+      "sources_artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-v1-preservation-corrected/current/sources.json",
+        "bytes": 38841,
+        "sha256": "8258d80f0cefbf425b16f8be9a4d45b17afd582a7cd6ae04a6c2c626c34199fa"
+      },
+      "initialization_artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-v1-preservation-corrected/current/initialization.json",
+        "bytes": 110588,
+        "sha256": "25d961c89591bb1027fd46bfbe4c37cf3dcf18cf01f3f3c02764ece81dcf2189"
+      },
+      "metadata_note": "Exact dictionaries and module origins retained in authenticated full report and sources.",
+      "cases": [
+        {
+          "episode_id": "A00-R",
+          "correct": false,
+          "answer_hex": "0000ba74d42f77",
+          "reader_scalar_fields": {
+            "answer_hex": "0000ba74d42f77",
+            "attempt_id": "2524990248144:407",
+            "decisions": 8,
+            "max_bytes": 128,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "model_sha256": "5a2163ddb823537eb5449df7734f96f1eba5c3ef6b7328bff14f14194890f2bf",
+            "observation_sha256": "3ac32aa1db461d66d206892558cb18da50e6f1aa30eb3c2a5127f6d35c67862e",
+            "schema": "recurrent-content-output-prediction-v1",
+            "stop_reason": "eos",
+            "trace_sha256": "dcfed86fcc17de9a1bfcb462f41d87d2cc1fc7b5fc95280598c1633e7d8f4652"
+          },
+          "proposal": null,
+          "execution": null,
+          "grade": null,
+          "before": {
+            "experience": 401,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "memory_used": 1982,
+            "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+            "numeric_sha256": "46fa2264d3987e9ebe8f143b3fc6fb7a9d13d2588343c60c986d86a59cce8d3d",
+            "reader_experience": 406,
+            "rng_sha256": "962b0fac1b5ef9c0bf4fe7dbede1fde431fdaf17488cf50f8eb97dbbfb2d84df",
+            "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+            "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+          },
+          "after": {
+            "experience": 401,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "memory_used": 1982,
+            "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+            "numeric_sha256": "75fadc85d6cd75cc88cd87e504074deaa082c8cd333284c20bc9954fab6045c1",
+            "reader_experience": 407,
+            "rng_sha256": "3d93e747ff6f4171d0c06c1981e62648108b8546783c11df8c109202ccf5ecca",
+            "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+            "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+          },
+          "artifact": {
+            "path": ".pytest-tmp/integrated-local-learning-v1-preservation-corrected/current/case-0.json",
+            "bytes": 3243559,
+            "sha256": "2c9d7fd25a5f9cb4b92e3c0c1e2084386ef22721d30fb0f9fc66b23c6c4c1173"
+          }
+        },
+        {
+          "episode_id": "A00-E",
+          "correct": false,
+          "answer_hex": "81206920646c",
+          "reader_scalar_fields": {
+            "answer_hex": "81206920646c",
+            "attempt_id": "2524990248144:408",
+            "decisions": 7,
+            "max_bytes": 128,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "model_sha256": "badad586cd305e6bcf81742ab1d126483822a3558bd453154e89afef37a3dd46",
+            "observation_sha256": "a5ee5f5aa0645dbb0033b4dffade00c3a180406d826fbcad44d74cc979d314f4",
+            "schema": "recurrent-content-output-prediction-v1",
+            "stop_reason": "eos",
+            "trace_sha256": "2b5df3c05456b2243bce242289eff79a2c0f1d00afd531dc3d4ea1a00d23add4"
+          },
+          "proposal": {
+            "end": 24,
+            "operation": "SPLICE",
+            "path": "app.py",
+            "replacement_hex": "81206920646c",
+            "start": 20,
+            "stop_reason": "eos",
+            "workspace_sha256": "7d28f5867272a1fcd53d048f92eb7dfbe7481d9d8c629bf717dff038a366617b"
+          },
+          "execution": {
+            "accepted": true,
+            "after_files": [
+              {
+                "content_hex": "646566207469636b657473286e293a0a2020202081206920646c0a",
+                "path": "app.py"
+              },
+              {
+                "content_hex": "23205075626c696320726561642d6f6e6c79206472697665723a206d61696e2e70790a696d706f7274206170700a666f72206e2c77616e7420696e2028282d332c30292c28302c30292c28322c32292c28362c36292c2831312c3629293a0a20202020676f743d6170702e7469636b657473286e290a2020202061737365727420676f743d3d77616e742c2028277469636b657473272c6e2c676f742c77616e74290a7072696e7428276f6b27290a",
+                "path": "main.py"
+              }
+            ],
+            "before_files": [
+              {
+                "content_hex": "646566207469636b657473286e293a0a20202020706173730a",
+                "path": "app.py"
+              },
+              {
+                "content_hex": "23205075626c696320726561642d6f6e6c79206472697665723a206d61696e2e70790a696d706f7274206170700a666f72206e2c77616e7420696e2028282d332c30292c28302c30292c28322c32292c28362c36292c2831312c3629293a0a20202020676f743d6170702e7469636b657473286e290a2020202061737365727420676f743d3d77616e742c2028277469636b657473272c6e2c676f742c77616e74290a7072696e7428276f6b27290a",
+                "path": "main.py"
+              }
+            ],
+            "bootstrap_policy": "regular_source_public_temporary_module_v1",
+            "bootstrap_sha256": "7213881ba88871e024789913aa742bba520cc79520b8a7b87292c0d3b2b745b9",
+            "capture_complete": true,
+            "capture_errors": {},
+            "child_command": [
+              "C:\\Users\\laure\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\python.exe",
+              "-I",
+              "-S",
+              "-X",
+              "utf8",
+              "-B",
+              "-c",
+              "import sys; assert sys.flags.utf8_mode == 1; assert sys.stdout.encoding.lower().replace('-', '') == 'utf8'; sys.stdout.reconfigure(errors='strict', newline='\\n'); sys.stderr.reconfigure(errors='strict', newline='\\n'); sys.path.insert(0, '.'); import io, os\nwith io.open_code(os.path.abspath('main.py')) as source:\n    code = compile(source.read(), 'main.py', 'exec')\ndef _run_source(code):\n    temporary_main = type(sys)('__main__')\n    original_main = sys.modules['__main__']\n    sys.modules['__main__'] = temporary_main\n    try:\n        original_argv0 = sys.argv[0]\n        sys.argv[0] = 'main.py'\n        try:\n            namespace = temporary_main.__dict__\n            namespace.update(__name__='__main__', __file__='main.py',\n                             __cached__=None, __doc__=None, __loader__=None,\n                             __package__='', __spec__=None)\n            exec(code, namespace)\n        finally:\n            sys.argv[0] = original_argv0\n    finally:\n        sys.modules['__main__'] = original_main\n    return namespace.copy()\n_run_source(code)"
+            ],
+            "child_environment_override": {},
+            "child_environment_removed": [
+              "__PYVENV_LAUNCHER__"
+            ],
+            "child_pid": 39480,
+            "child_seconds": 0.03488130000187084,
+            "child_timeout_seconds": 3.0,
+            "delegated_execution_seconds": 0.03707259998191148,
+            "elapsed_seconds": 0.03723410004749894,
+            "files_complete": true,
+            "launch_record_sha256": "22420d72f57d1f456414f259bc749923ef1ecb2b0418159e97479db62e67ee70",
+            "output_limit_exceeded": false,
+            "output_limit_per_stream": 512,
+            "proposal_sha256": "53ae9d34b6b7b3efc54698667899282335f47da4b6831062c0e05f96d1a2dab3",
+            "proposed_files": [
+              {
+                "content_hex": "646566207469636b657473286e293a0a2020202081206920646c0a",
+                "path": "app.py"
+              },
+              {
+                "content_hex": "23205075626c696320726561642d6f6e6c79206472697665723a206d61696e2e70790a696d706f7274206170700a666f72206e2c77616e7420696e2028282d332c30292c28302c30292c28322c32292c28362c36292c2831312c3629293a0a20202020676f743d6170702e7469636b657473286e290a2020202061737365727420676f743d3d77616e742c2028277469636b657473272c6e2c676f742c77616e74290a7072696e7428276f6b27290a",
+                "path": "main.py"
+              }
+            ],
+            "public_driver_policy": {
+              "after_driver": {
+                "bytes": 175,
+                "path": "main.py",
+                "sha256": "534ef821060d9487bd3823354e677a66caffd733cf6f2c5e7778a9e4e687e2d2"
+              },
+              "before_driver": {
+                "bytes": 175,
+                "path": "main.py",
+                "sha256": "534ef821060d9487bd3823354e677a66caffd733cf6f2c5e7778a9e4e687e2d2"
+              },
+              "delegated_proposal_sha256": "53ae9d34b6b7b3efc54698667899282335f47da4b6831062c0e05f96d1a2dab3",
+              "delegated_rejection": null,
+              "driver_integrity": true,
+              "path_comparison": "casefold exact relative path",
+              "proposal_rejected": false,
+              "proposed_driver": {
+                "bytes": 175,
+                "path": "main.py",
+                "sha256": "534ef821060d9487bd3823354e677a66caffd733cf6f2c5e7778a9e4e687e2d2"
+              },
+              "protected_path": "main.py",
+              "schema": "persistent-language-action-public-driver-v1",
+              "scope": "proposal path rejection and captured public byte integrity; no OS sandbox",
+              "submitted_proposal_sha256": "53ae9d34b6b7b3efc54698667899282335f47da4b6831062c0e05f96d1a2dab3"
+            },
+            "public_driver_policy_sha256": "839256bb9178b49e3ea4cebe7b44a3da8c322a87db6ea872056de373f8ff8e39",
+            "rejection": null,
+            "returncode": 1,
+            "schema": "persistent-language-action-execution-v2",
+            "stderr_hex": "54726163656261636b20286d6f737420726563656e742063616c6c206c617374293a0a202046696c6520223c737472696e673e222c206c696e652032322c20696e203c6d6f64756c653e0a202046696c6520223c737472696e673e222c206c696e652031362c20696e205f72756e5f736f757263650a202046696c6520226d61696e2e7079222c206c696e6520322c20696e203c6d6f64756c653e0a20202020696d706f7274206170700a202046696c652022433a5c55736572735c6c617572655c4465736b746f705c4465657053696d5c48756d616e20427261696e5c2e7079746573742d746d705c696e74656772617465642d6c6f63616c2d6c6561726e696e672d76312d707265736572766174696f6e2d636f727265637465645c63757272656e745c657865637574696f6e5c6170702e7079222c206c696e6520320a20202020efbfbd206920646c0a202020205e0a53796e7461784572726f723a2028756e69636f6465206572726f722920277574662d382720636f6465632063616e2774206465636f64652062797465203078383120696e20706f736974696f6e20303a20696e76616c696420737461727420627974650a",
+            "stderr_observed_bytes": 439,
+            "stderr_sha256": "88582f4ef1536fe5270e285aa6093f01490c12f7e5304fabcd256686bc892161",
+            "stdout_hex": "",
+            "stdout_observed_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "timeout": false,
+            "workspace": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\integrated-local-learning-v1-preservation-corrected\\current\\execution",
+            "workspace_sha256": "7d28f5867272a1fcd53d048f92eb7dfbe7481d9d8c629bf717dff038a366617b"
+          },
+          "grade": {
+            "behavior_correct": false,
+            "complete_execution": true,
+            "protected_files_unchanged": true,
+            "task_success": false
+          },
+          "before": {
+            "experience": 401,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "memory_used": 1982,
+            "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+            "numeric_sha256": "75fadc85d6cd75cc88cd87e504074deaa082c8cd333284c20bc9954fab6045c1",
+            "reader_experience": 407,
+            "rng_sha256": "3d93e747ff6f4171d0c06c1981e62648108b8546783c11df8c109202ccf5ecca",
+            "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+            "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+          },
+          "after": {
+            "experience": 402,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "memory_used": 1982,
+            "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+            "numeric_sha256": "8ffd1ced3395b9be058f63e6e5c7a01e2def67498320ca74090f7a2faa0ef562",
+            "reader_experience": 408,
+            "rng_sha256": "893e886ff3dbcd5e8395568ed3703ce21e977a5ae6fdbea3ce6f716b3867e622",
+            "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+            "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+          },
+          "artifact": {
+            "path": ".pytest-tmp/integrated-local-learning-v1-preservation-corrected/current/case-1.json",
+            "bytes": 6036863,
+            "sha256": "af03fe9efe0cad5afe800ed1e7b44f43655701ca0981d7eb1ea014182cf99c7d"
+          }
+        },
+        {
+          "episode_id": "R02-R",
+          "correct": false,
+          "answer_hex": "8a",
+          "reader_scalar_fields": {
+            "answer_hex": "8a",
+            "attempt_id": "2524990248144:409",
+            "decisions": 2,
+            "max_bytes": 128,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "model_sha256": "5aa07b3c0b8967e83f31d172b1e76672156774349820ba05d4e15ed77e8aaf28",
+            "observation_sha256": "386c98be4758bf65561be55b132dd449a8214180821940a0994c3fd3dd2188c4",
+            "schema": "recurrent-content-output-prediction-v1",
+            "stop_reason": "eos",
+            "trace_sha256": "28054a628c5b67a9a34253ac5d45bbdca9c79a6522ea9114b1f6ff046aadbf53"
+          },
+          "proposal": null,
+          "execution": null,
+          "grade": null,
+          "before": {
+            "experience": 402,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "memory_used": 1982,
+            "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+            "numeric_sha256": "8ffd1ced3395b9be058f63e6e5c7a01e2def67498320ca74090f7a2faa0ef562",
+            "reader_experience": 408,
+            "rng_sha256": "893e886ff3dbcd5e8395568ed3703ce21e977a5ae6fdbea3ce6f716b3867e622",
+            "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+            "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+          },
+          "after": {
+            "experience": 402,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "memory_used": 1982,
+            "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+            "numeric_sha256": "90038d1a575765316b662caf6be61dfd045ccb700c77c05e75a6c0b2012fff4b",
+            "reader_experience": 409,
+            "rng_sha256": "bc134a50cbccef0b0c08f74781f7226c5d5d414d02dc7d44fccd4b17c0d37f99",
+            "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+            "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+          },
+          "artifact": {
+            "path": ".pytest-tmp/integrated-local-learning-v1-preservation-corrected/current/case-2.json",
+            "bytes": 781051,
+            "sha256": "8ff7b3469e0eb6c6ad0ec2cd8a21f789884046a00949557b04ede1b75714e50f"
+          }
+        },
+        {
+          "episode_id": "R12-R",
+          "correct": false,
+          "answer_hex": "586f00",
+          "reader_scalar_fields": {
+            "answer_hex": "586f00",
+            "attempt_id": "2524990248144:410",
+            "decisions": 4,
+            "max_bytes": 128,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "model_sha256": "39d5178ea970ffe123917cb8b27fbec03e6167fb8474dc3e07fca5a4df87ca94",
+            "observation_sha256": "988f3704a194b21b203b50131430fc2fada8463e59102d58fd109028a4b6f4be",
+            "schema": "recurrent-content-output-prediction-v1",
+            "stop_reason": "eos",
+            "trace_sha256": "10949b334130d91635a5feea5083bb8a3eb75e432532f304451f76ee50d02539"
+          },
+          "proposal": null,
+          "execution": null,
+          "grade": null,
+          "before": {
+            "experience": 402,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "memory_used": 1982,
+            "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+            "numeric_sha256": "90038d1a575765316b662caf6be61dfd045ccb700c77c05e75a6c0b2012fff4b",
+            "reader_experience": 409,
+            "rng_sha256": "bc134a50cbccef0b0c08f74781f7226c5d5d414d02dc7d44fccd4b17c0d37f99",
+            "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+            "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+          },
+          "after": {
+            "experience": 402,
+            "memory_sha256": "cdd1f887f80ec2e8ae6ee38ae8a15786d9155160cf6beb18def635a2a66da73e",
+            "memory_used": 1982,
+            "non_rng_numeric_sha256": "7fc945c935e86f950281a3cea9589245f7439eff94b3723ab06854efe749a038",
+            "numeric_sha256": "25d46d31dad7c2d6551229b59f89e707efea0a7ae417ce6bbc9dd005f159c09e",
+            "reader_experience": 410,
+            "rng_sha256": "feb8fd078845e2c35a85e007365bd48cf8ccf9561fa12505cea2861f30e093ff",
+            "self_wiring_sha256": "5ca2999fa1e458422435a2de25d64c72ffd45de3e98d4a61953a3298e7a6342b",
+            "views_sha256": "e8958cc0a92633a3f57596f4fd5c45c156d4e34fc943d8db535643eadecd8cd3"
+          },
+          "artifact": {
+            "path": ".pytest-tmp/integrated-local-learning-v1-preservation-corrected/current/case-3.json",
+            "bytes": 2899610,
+            "sha256": "a7b619d8c003e75b1a79745c3e7f3e770f2a6fd5405878ea3b4944e08920c1f8"
+          }
+        }
+      ]
+    }
+  },
+  "monitors": {
+    "failed_preflight": {
+      "receipt": {
+        "status": "failed",
+        "started_utc": "2026-09-10T19:33:05.9649838Z",
+        "started_unix": 1789068785.962,
+        "deadline_unix": 1789068965.962,
+        "command": [
+          "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Scripts\\python.exe",
+          "-X",
+          "utf8",
+          "-m",
+          "experiments.r4_integrated.integrated_local_learning_preservation_v1",
+          "worker",
+          "--rule",
+          "predecessor",
+          "--predecessor-snapshot",
+          "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\integrated-local-learning-v1-predecessor",
+          "--output",
+          "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\integrated-local-learning-v1-preservation\\predecessor"
+        ],
+        "seconds_limit": 180,
+        "tree_peak_sum_mib_limit": 4096.0,
+        "memory_method": "Maximum simultaneous sum of live owned process peak working sets, sampled every 500ms. Brief unobserved children may be missed.",
+        "launcher_sha256": "4f26b669442a596cf3023c8d066ef49ff6231732baa575b8c503ad4ae3d198dd",
+        "child_pid": 57020,
+        "exit_code": 1,
+        "error": "Experiment child exited 1",
+        "elapsed_seconds": 2.583667,
+        "finished_utc": "2026-09-10T19:33:08.5459699Z",
+        "observed_process_peaks_mib": {
+          "19876/639246655861582549": 7.4765625,
+          "57020/639246655861501252": 5.85546875,
+          "37892/639246655861751554": 197.67578125
+        },
+        "observed_tree_peak_sum_mib": 211.0078125
+      },
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-v1-preservation-predecessor.launch.json",
+        "bytes": 1390,
+        "sha256": "b3ef054c247b558c447204f75c7e3a035357d3e3449e36d8322954a67d25961b"
+      }
+    },
+    "predecessor": {
+      "receipt": {
+        "status": "passed",
+        "started_utc": "2026-09-10T19:34:55.0921274Z",
+        "started_unix": 1789068895.088,
+        "deadline_unix": 1789069075.088,
+        "command": [
+          "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Scripts\\python.exe",
+          "-X",
+          "utf8",
+          "-m",
+          "experiments.r4_integrated.integrated_local_learning_preservation_v1",
+          "worker",
+          "--rule",
+          "predecessor",
+          "--predecessor-snapshot",
+          "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\integrated-local-learning-v1-predecessor",
+          "--output",
+          "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\integrated-local-learning-v1-preservation-corrected\\predecessor"
+        ],
+        "seconds_limit": 180,
+        "tree_peak_sum_mib_limit": 4096.0,
+        "memory_method": "Maximum simultaneous sum of live owned process peak working sets, sampled every 500ms. Brief unobserved children may be missed.",
+        "launcher_sha256": "4f26b669442a596cf3023c8d066ef49ff6231732baa575b8c503ad4ae3d198dd",
+        "child_pid": 18124,
+        "exit_code": 0,
+        "elapsed_seconds": 32.729132,
+        "finished_utc": "2026-09-10T19:35:27.8181441Z",
+        "observed_process_peaks_mib": {
+          "18124/639246656952603906": 5.85546875,
+          "35056/639246656952691382": 7.46875,
+          "42704/639246656952874763": 830.80859375
+        },
+        "observed_tree_peak_sum_mib": 844.1328125
+      },
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-v1-preservation-predecessor-corrected.launch.json",
+        "bytes": 1358,
+        "sha256": "eb7fc6e12cf5acd10f648cc152c4e4da03c6758aa0f21f2a9c4437c6a1fb3313"
+      }
+    },
+    "current": {
+      "receipt": {
+        "status": "passed",
+        "started_utc": "2026-09-10T19:36:26.8806796Z",
+        "started_unix": 1789068986.879,
+        "deadline_unix": 1789069166.879,
+        "command": [
+          "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Scripts\\python.exe",
+          "-X",
+          "utf8",
+          "-m",
+          "experiments.r4_integrated.integrated_local_learning_preservation_v1",
+          "worker",
+          "--rule",
+          "current",
+          "--predecessor-snapshot",
+          "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\integrated-local-learning-v1-predecessor",
+          "--output",
+          "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\integrated-local-learning-v1-preservation-corrected\\current"
+        ],
+        "seconds_limit": 180,
+        "tree_peak_sum_mib_limit": 4096.0,
+        "memory_method": "Maximum simultaneous sum of live owned process peak working sets, sampled every 500ms. Brief unobserved children may be missed.",
+        "launcher_sha256": "4f26b669442a596cf3023c8d066ef49ff6231732baa575b8c503ad4ae3d198dd",
+        "child_pid": 24540,
+        "exit_code": 0,
+        "elapsed_seconds": 30.6353965,
+        "finished_utc": "2026-09-10T19:36:57.5154793Z",
+        "observed_process_peaks_mib": {
+          "24540/639246657870163076": 5.8515625,
+          "31732/639246657870263305": 7.46875,
+          "53968/639246657870430467": 826.58203125
+        },
+        "observed_tree_peak_sum_mib": 839.90234375
+      },
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-v1-preservation-current.launch.json",
+        "bytes": 1351,
+        "sha256": "cf7edabc9c87f9e890d872af70c4c875ed0a2eab573af2a103ce5ae22aaf4812"
+      }
+    },
+    "comparison": {
+      "receipt": {
+        "status": "passed",
+        "started_utc": "2026-09-10T19:38:23.2315201Z",
+        "started_unix": 1789069103.229,
+        "deadline_unix": 1789069163.229,
+        "command": [
+          "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Scripts\\python.exe",
+          "-X",
+          "utf8",
+          "-m",
+          "experiments.r4_integrated.integrated_local_learning_preservation_v1",
+          "compare",
+          "--predecessor",
+          "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\integrated-local-learning-v1-preservation-corrected\\predecessor",
+          "--current",
+          "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\integrated-local-learning-v1-preservation-corrected\\current",
+          "--output",
+          "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.pytest-tmp\\integrated-local-learning-v1-preservation-corrected\\comparison.json"
+        ],
+        "seconds_limit": 60,
+        "tree_peak_sum_mib_limit": 512.0,
+        "memory_method": "Maximum simultaneous sum of live owned process peak working sets, sampled every 500ms. Brief unobserved children may be missed.",
+        "launcher_sha256": "4f26b669442a596cf3023c8d066ef49ff6231732baa575b8c503ad4ae3d198dd",
+        "child_pid": 52924,
+        "exit_code": 0,
+        "elapsed_seconds": 3.8493775,
+        "finished_utc": "2026-09-10T19:38:27.0794738Z",
+        "observed_process_peaks_mib": {
+          "36652/639246659034306092": 97.46484375,
+          "34016/639246659034106129": 7.46875,
+          "52924/639246659033972825": 5.8515625
+        },
+        "observed_tree_peak_sum_mib": 110.78515625
+      },
+      "artifact": {
+        "path": ".pytest-tmp/integrated-local-learning-v1-preservation-comparison.launch.json",
+        "bytes": 1489,
+        "sha256": "5a72c1271ef6deeb52feb324419fade83e7a2d17f06e0f92f5ffe2ebd1f98477"
+      }
+    }
+  },
+  "doctor": [
+    {
+      "artifact": {
+        "path": ".pytest-tmp/dev/doctor-b3tuyew1/receipt.json",
+        "bytes": 1010,
+        "sha256": "63f593b42cbb5d8ec0af82f31ba74064c0e0e71634088bdca1686edcfb9e6269"
+      },
+      "receipt": {
+        "command": [
+          "doctor"
+        ],
+        "started_at": "2026-09-10T19:33:05Z",
+        "environment": {
+          "checkout": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain",
+          "revision": "12507c7f2cd6a75c459c58777c931876d094159f",
+          "branch": "master",
+          "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "status": "?? src/humanbrain/direct_request_splice_learner.py",
+          "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]",
+          "executable": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Scripts\\python.exe",
+          "package": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\src\\humanbrain\\__init__.py",
+          "platform": "Windows-10-10.0.26200-SP0",
+          "versions": {
+            "numpy": "2.4.6",
+            "pytest": "9.1.1",
+            "ruff": "0.16.1"
+          },
+          "device": "cpu",
+          "native_cache": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.native-cache"
+        },
+        "exit_code": 0,
+        "elapsed_seconds": 0.297
+      }
+    },
+    {
+      "artifact": {
+        "path": ".pytest-tmp/dev/doctor-x71kf5ru/receipt.json",
+        "bytes": 1010,
+        "sha256": "a5076f9a4c670584ab9a272658dd95fa14c1fbb113ff6b8fda7e33a715f62a52"
+      },
+      "receipt": {
+        "command": [
+          "doctor"
+        ],
+        "started_at": "2026-09-10T19:34:54Z",
+        "environment": {
+          "checkout": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain",
+          "revision": "356db7d6ac49ab7a8e28081b848cf9a016a15efa",
+          "branch": "master",
+          "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "status": "?? src/humanbrain/direct_request_splice_learner.py",
+          "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]",
+          "executable": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.venv\\Scripts\\python.exe",
+          "package": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\src\\humanbrain\\__init__.py",
+          "platform": "Windows-10-10.0.26200-SP0",
+          "versions": {
+            "numpy": "2.4.6",
+            "pytest": "9.1.1",
+            "ruff": "0.16.1"
+          },
+          "device": "cpu",
+          "native_cache": "C:\\Users\\laure\\Desktop\\DeepSim\\Human Brain\\.native-cache"
+        },
+        "exit_code": 0,
+        "elapsed_seconds": 0.282
+      }
+    }
+  ],
+  "failed_preflight": {
+    "artifact": {
+      "path": ".pytest-tmp/integrated-local-learning-v1-preservation/predecessor/failure.json",
+      "bytes": 360,
+      "sha256": "0656cdab0ef9007bdb6f1d65b010d5c94532b4330b06c2aea15412a1d46dc241"
+    },
+    "receipt": {
+      "completed": [],
+      "counts": {
+        "controller_draws": 0,
+        "executions": 0,
+        "free_responses": 0,
+        "free_ticks": 0,
+        "ingests": 0,
+        "learning_publications": 0,
+        "rng_publications": 0,
+        "rss_boundary_peak_bytes": 0,
+        "scan_offers": 0,
+        "teachers": 0
+      },
+      "elapsed_seconds": 1.9612268999917433,
+      "error": "ModuleNotFoundError: No module named 'psutil'",
+      "pending": null,
+      "rule": "predecessor",
+      "status": "failed"
+    }
+  },
+  "outer_elapsed_seconds_including_failed_preflight": 69.797573,
+  "retained_parent_unchanged": true,
+  "retained_parent_note": "Workers use disposable copies; continued parent remains actor401/reader406. No output state is the continuation checkpoint.",
+  "claim_limits": [
+    "Both versions0/4 complete; learned20:24 motor span preserved, wrong payload.",
+    "No new teacher coverage, acquisition probability changes, interference, retention expansion, changed-context or recovery measurement.",
+    "Actual retained RNG; historical diagnostic panels used a different reset RNG, so cross-panel output differences do not identify rule effects.",
+    "Raw execution stderr differs; exact saved diagnostics retained.",
+    "One fixed-order pair is not a speedup measurement; teacher throughput is unmeasured."
+  ],
+  "banking_preparation_seconds": 0.2702184999943711,
+  "banking_timing_scope": "This saved-only parse/hash/extraction excludes earlier interactive inspection, final bank serialization/write/hash, documentation and independent review; not a complete reporting-time measurement."
+}

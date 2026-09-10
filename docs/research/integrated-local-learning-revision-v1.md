@@ -2,7 +2,9 @@
 
 Selected for implementation, 2026-09-10, following retained bank `7271b9c`.
 Implementation and [three focused QA checks](integrated-local-learning-v1-qa.md)
-are complete; no experiment execution is released by this document. This coupled revision keeps the four existing stochastic populations,
+are complete. The separately declared [retained preservation comparison](integrated-local-learning-v1-preservation-result.md)
+also passes; acquisition remains unmeasured and no teaching run is released by
+this document. This coupled revision keeps the four existing stochastic populations,
 the same reader/action actor and its forward computation. The
 [roadmap](roadmap-reading-to-coding.md) and
 [active plan](persistent-language-action-development-v1.md) retain authority.

@@ -52,12 +52,14 @@ Implementation QA must preserve numerical state and paired forward behavior;
 it does not establish acquisition or release a training run. The next comparison
 must declare its bounded schedule and matched predecessor/disabled/reference
 controls before execution. The [implementation QA](integrated-local-learning-v1-qa.md)
-now passes; actual retained-parent forward preservation and acquisition are still
-unmeasured under the revision. Do not expand difficulty, retention or changed-context
+now passes; [actual retained-parent preservation](integrated-local-learning-v1-preservation-result.md)
+also passes, including the learned 20:24 edit span. Both versions remain 0/4 on
+complete responses, and acquisition under the revision is still unmeasured.
+Do not expand difficulty, retention or changed-context
 evaluation on the strength of implementation checks.
 
-Next verify [actual retained forward preservation](integrated-local-learning-v1-preservation.md)
-without teaching. The [budget review](integrated-local-learning-v1-budget-review.md)
+The [preservation protocol](integrated-local-learning-v1-preservation.md) completed
+without teaching or changes to the retained parent. The [budget review](integrated-local-learning-v1-budget-review.md)
 distinguishes correction counts from effective contacts and identifies the small
 contact step and expensive recorder as unresolved constraints on a useful finite
 acquisition comparison. Its large repetition projection is explicitly unselected.

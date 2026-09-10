@@ -33,8 +33,11 @@ solution. The selected [local learning revision](integrated-local-learning-revis
 keeps the forward architecture fixed and addresses observed-symbol credit,
 per-contact teaching and unconditional scan competition together. Its
 implementation passes [focused mechanics and copy checks](integrated-local-learning-v1-qa.md).
-Paired preservation of actual retained behavior and a newly declared comparison
-remain ahead; useful acquisition under that rule is unmeasured.
+The [actual retained preservation comparison](integrated-local-learning-v1-preservation-result.md)
+passes, including the learned edit span; both versions still fail all four complete
+responses. Useful acquisition under that rule is unmeasured. The
+[budget review](integrated-local-learning-v1-budget-review.md) identifies contact
+timescale and measured execution cost as inputs to the next finite teaching decision.
 
 The prepared [byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 is also completed and independently audited. Its narrow successes remain

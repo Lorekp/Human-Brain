@@ -3906,3 +3906,34 @@ teacher-journal bytes, outside the main pass. The
 [measurement ledger](../../benchmarks/repeated_teaching_literal_attribution_v1.measurement.json)
 preserve results and scopes. No learner state, source rule, task result or prior
 frozen evidence was changed, and no new training or component was selected.
+
+### Integrated local-rule implementation and preservation — 2026-09-10
+
+The [selected revision](integrated-local-learning-revision-v1.md) changes the
+observed-emitter score, local credit units and scan-only emission covariance
+within the existing forward architecture. It preserves the motor and actual
+public-consequence rules, uses the same learner/actor and performs no backward
+error transport. Source `7e164e7` records three passing focused mechanics/copy
+checks; the [QA bank](../../benchmarks/integrated_local_learning_v1.qa.json)
+keeps their 26.818253-second monitor and 1,099.45-MiB sampled peak separate from
+capability evidence. No integrated acquisition teaching was executed under it.
+
+The [actual retained preservation result](integrated-local-learning-v1-preservation-result.md)
+at `356db7d` then passes paired forward and numerical/RNG comparisons for four
+existing cases. The learned `app.py 20:24` span survives, but both versions fail
+all four complete responses. Actual retained RNG differs from old reset-panel
+RNG, so cross-panel byte differences do not identify rule effects. Eight total
+free responses and two actual executions use disposable copies with zero
+teachers, source ingests or slow publications. The parent remains at 401/406
+experiences and 1,982 factual slots.
+
+The original `psutil` import failure occurred before initialization or cases and
+remains saved. Reusing the existing Windows memory reader permits the corrected
+first-exposure pair. The failed preflight, two workers and saved-only comparator
+sum to 69.797573 seconds, excluding documentation/review and separately scoped
+banking. The [preservation bank](../../benchmarks/integrated_local_learning_v1.preservation.json)
+binds exact source, inventories, outcomes and launches. The
+[budget review](integrated-local-learning-v1-budget-review.md) uses those phase
+costs to distinguish disk savings from measured CPU time and leaves its large
+repetition projection unselected. Next justify local update units and an adequate
+finite acquisition budget; no automatic new mechanism or short teaching gate.

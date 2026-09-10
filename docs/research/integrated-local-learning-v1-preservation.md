@@ -1,5 +1,7 @@
 # Retained forward preservation for the local learning revision
 
+Completed 2026-09-10; see the [result](integrated-local-learning-v1-preservation-result.md).
+The original bounded contract follows and is not a release to replay it.
 Root-reviewed and released for one paired execution, 2026-09-10. This declares a bounded preservation
 measurement before any additional acquisition run. It follows the implemented
 [revision](integrated-local-learning-revision-v1.md) and its
