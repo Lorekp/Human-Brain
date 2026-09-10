@@ -56,6 +56,12 @@ now passes; actual retained-parent forward preservation and acquisition are stil
 unmeasured under the revision. Do not expand difficulty, retention or changed-context
 evaluation on the strength of implementation checks.
 
+Next verify [actual retained forward preservation](integrated-local-learning-v1-preservation.md)
+without teaching. The [budget review](integrated-local-learning-v1-budget-review.md)
+distinguishes correction counts from effective contacts and identifies the small
+contact step and expensive recorder as unresolved constraints on a useful finite
+acquisition comparison. Its large repetition projection is explicitly unselected.
+
 ## Current retained continuation
 
 The completed repeated-teaching run retains final HEAD0 under
