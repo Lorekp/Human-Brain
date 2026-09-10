@@ -1,0 +1,61 @@
+{
+  "banking_monitor": ".pytest-tmp/repeated-teaching-v1-banking.launch.json",
+  "banking_seconds_in_listed_total": false,
+  "banks": {
+    "repeated_teaching_acquisition_v1.result.json": {
+      "bytes": 526062,
+      "sha256": "402aae6d061464aecccbdc73d12abd0683ed0ee7d4408d650550070a69efea61"
+    },
+    "repeated_teaching_acquisition_v1.run.json": {
+      "bytes": 25034,
+      "sha256": "3783e751a40c0150da8adc091a976d91ab70c879dc1b2a5c6ffc020c27e8e262"
+    }
+  },
+  "listed_seconds": 1571.3497749,
+  "manifest_sha256": "528f6599d0ff5af487a418a7a0fa06b340ba0d026328df4bab534af671bd64cf",
+  "monitored_steps": [
+    {
+      "memory_sample_available": true,
+      "observed_peak_mib": 787.1640625,
+      "path": ".pytest-tmp/repeated-teaching-v1-qa.launch.json",
+      "seconds": 27.363366,
+      "sha256": "22e02b451619fa5b1084b0594f1287ad5c550e346f4cc4fe7331840d432f4af6",
+      "status": "failed"
+    },
+    {
+      "memory_sample_available": true,
+      "observed_peak_mib": 1006.28125,
+      "path": ".pytest-tmp/repeated-teaching-v1-qa-corrected.launch.json",
+      "seconds": 10.8562925,
+      "sha256": "441029b8563756072be151eccef2c6b62526951eec1b20aa441160c0356695f5",
+      "status": "failed"
+    },
+    {
+      "memory_sample_available": true,
+      "observed_peak_mib": 1007.23828125,
+      "path": ".pytest-tmp/repeated-teaching-v1-qa-hash-corrected.launch.json",
+      "seconds": 13.7885141,
+      "sha256": "91ad8974f33dfc09eba352041ecb07787c8b80c85cef0998a2d8072d788b71a4",
+      "status": "passed"
+    },
+    {
+      "memory_sample_available": false,
+      "observed_peak_mib": 0.0,
+      "path": ".pytest-tmp/repeated-teaching-v1-manifest-preparation.launch.json",
+      "seconds": 0.3287449,
+      "sha256": "8c03a8a595801a7957bc8194d86d14979bfc197f30bfc965f026989104ba34c8",
+      "status": "passed"
+    },
+    {
+      "memory_sample_available": true,
+      "observed_peak_mib": 1529.1484375,
+      "path": ".pytest-tmp/repeated-teaching-v1-run.launch.json",
+      "seconds": 1519.0128574,
+      "sha256": "6862658067e0d60b52702e2b682f221623462faf2423d7a017fc412ea4c28ce2",
+      "status": "passed"
+    }
+  ],
+  "schema": "repeated-teaching-measurement-v1",
+  "scope": "listed QA, pure preparation and complete experiment monitors; excludes agents, manual inspection, doctor, lint, documents and this banking monitor; nested experiment timers not added",
+  "source_revision": "f577413dd9bac32302c3c84d5e09b950f8c8473c"
+}

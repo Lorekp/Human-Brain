@@ -1,20 +1,48 @@
 # Public persistent language/action development
 
-Status: bounded repeated-teaching acquisition work selected, 2026-09-10.
+Status: bounded repeated-teaching acquisition measured, 2026-09-10.
 The eighth broader session and prepared byte-coincidence comparison are complete.
 The roadmap
 owns the next shared design; frozen streams remain exposed regression evidence.
 
-## Current acquisition work
+## Current acquisition result and decision
 
-Keep the architecture, local update rule and task difficulty fixed while
-testing complete acquisition under a newly declared finite repeated-teaching
-budget. The [repetition protocol](repeated-teaching-acquisition-v1.md) owns its
-schedule, effective-coverage and intended-output diagnostics, free reading/edit
-outcomes, interference panel and resource limits. The previous two corrections
-are not a permanent budget. No new component, learning-rate change or broader
-retention/changed-context expansion follows automatically. Failure calls for
-an explanation of the limiting computation or update mechanism first.
+The [completed repetition result](../../experiments/r4_integrated/repeated_teaching_acquisition_v1_result.md)
+kept architecture, local rule and task difficulty fixed with 32 corrections per
+skill. Both neural routes score 0/64 live complete outcomes and 0/20 checkpoint
+outcomes. The simple reference retains correct editing but fails reading.
+Online learns the correct edit span at checkpoint 16 and retains it through 64;
+the payload and reading still emit one NUL byte plus EOS. All 35 target positions
+receive 4–12 direct literal updates, totaling 273/1,120 live symbol offers.
+Their fixed-feature literal probabilities improve only slightly. The
+[learning review](repeated-teaching-acquisition-v1-learning-review.md) identifies
+intended-byte emission under the current update and mode mixture as the measured
+limitation, without isolating a single cause among scale, branch inclusion and
+shared-feature competition. Small positional interference coexists with net
+probability gains; no acquired complete neural skill was observed and then lost.
+
+The [frozen protocol](repeated-teaching-acquisition-v1.md) remains the exposure
+contract. No new component, automatic budget extension, learning-rate change
+or expanded retention/changed-context evaluation is selected. Preserve the
+measured motor behavior when considering a justified local learning change.
+The previous two corrections were not a permanent budget. Teacher-free recovery
+remains unestablished and was not re-tested in this acquisition continuation.
+
+## Current retained continuation
+
+The completed repeated-teaching run retains final HEAD0 under
+`.pytest-tmp/repeated-teaching-v1-run/checkpoints`, boundary SHA256
+`3408eecadf057ce322f5063a879584e82ea993c433e74d1de290e5114e1ae677`.
+Online payload SHA256 is
+`f77695cd9603e00e031cc867ce53573e2148eb14bb39d2e70b576b317ef66f0e`,
+model `07855c61ca02e1dea8b1e8044df2576643689b8e55a28a1d50109a3580b54d7a`.
+It retains 401 actor and 406 reader experiences and the same 1,982 factual slots.
+Fresh paired restoration passed without task or teacher replay. Continue from
+this state and the actual simple history; the stable comparison and V8 states
+below are historical ancestors, not reset instructions. See the
+[bank](../../benchmarks/repeated_teaching_acquisition_v1.result.json) and
+[cost/restore review](repeated-teaching-acquisition-v1-cost.md) for full identities
+and costs. Intermediate scalar panels are explicitly nondurable.
 
 ## Completed stable comparison requirements
 
@@ -56,7 +84,7 @@ and source/resource bindings. The original reporting failures and subsequent
 [saved-reader corrections](stable-credit-v1-audit-correction.md) introduced no
 learner replay or reconstructed missing experience.
 
-## Current retained state and next decision
+## Stable comparison parent state and historical decision
 
 Both main triads finish at clean HEAD264, with 530 total safe boundaries.
 The causal ONLINE payload is `route-online-000000262.pt`, 115,712,640 bytes,

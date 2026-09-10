@@ -1,6 +1,6 @@
 # Benchmark status
 
-Updated 2026-09-09 with the stable local-credit comparison.
+Updated 2026-09-10 with the bounded repeated-teaching acquisition result.
 
 The [roadmap](research/roadmap-reading-to-coding.md) owns current priorities and
 architecture policy. Sections below retain the history and contracts of their
@@ -9,6 +9,24 @@ workload is [persistent language/action development](research/persistent-languag
 with [public-exam comprehension](research/reading-comprehension-evaluation.md)
 as complementary evaluation pressure. No backpropagation is authorized, and
 protected evaluations retain their original access contracts.
+
+The [repeated-teaching continuation](../experiments/r4_integrated/repeated_teaching_acquisition_v1_result.md)
+completes 252 responses and 111 executions at unchanged architecture and task
+difficulty, with 32 corrections per taught skill. Both neural routes score
+0/64 live complete outcomes and 0/20 checkpoint outcomes; simple scores 32/64
+and 10/20, retaining editing success already present at checkpoint 0. Online
+acquires the correct edit span by checkpoint 16 and keeps it through 64, while
+its generated payload and reading remain NUL plus EOS. Direct literal teaching
+reaches every target position 4–12 times (273/1,120 offers), producing small
+fixed-feature probability gains without complete acquisition. Positional
+interference is visible; complete-skill forgetting is not established. Expanded
+retention, changed-context and recovery evaluation were not run. The
+[bank](../benchmarks/repeated_teaching_acquisition_v1.result.json),
+[learning review](research/repeated-teaching-acquisition-v1-learning-review.md)
+and [cost/restore review](research/repeated-teaching-acquisition-v1-cost.md)
+separate partial learning, failed complete outcomes and passed fresh restoration.
+The run takes 1,519.01 seconds at 1,529.15 MiB sampled peak. No new mechanism or
+automatic teaching extension is selected.
 
 The [stable comparison](../experiments/r4_integrated/stable_language_action_credit_v1_result.md)
 completes 1,056 attempts, 672 actual executions and all four scheduled checkpoints

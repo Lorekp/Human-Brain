@@ -1,6 +1,6 @@
 # Roadmap: persistent language, knowledge and action
 
-Status: living decision document. Updated 2026-09-10 for bounded repeated teaching
+Status: living decision document. Updated 2026-09-10 after bounded repeated teaching
 with fixed architecture and task difficulty. This roadmap owns priorities; frozen experiments keep
 their original evidence contracts. Read it and the active linked plan before
 choosing work and after every context compaction.
@@ -12,21 +12,19 @@ knowledge, understands language, combines learned structure, acts in software
 workspaces and recovers from failures. Local simulated-neuron learning and useful
 real-world behavior are the central commitments.
 
-The [stable local-credit comparison](../../experiments/r4_integrated/stable_language_action_credit_v1_result.md)
-completes 1,056 attempts and 672 actual executions, with all four scheduled
-checkpoints and a passed corrected saved-only audit. Both old and causal neural
-rules fail the two taught skills, changed-context tasks and teacher-free recovery.
-The causal learner gains one historical reading at the final checkpoint (1/14);
-old and disabled controls score 0/14, and the retrieval/editing reference 9/14.
-That late hit has no subsequent retention measurement. Complete acquisition,
-durable neuronal advantage and correct software editing remain unestablished.
-The retained factual memory contains 1,982 slots; no difficulty or teaching
-budget increase was selected from that result alone. The user's subsequent
-instruction explicitly authorizes a newly bounded repeated-teaching budget.
+The [bounded repeated-teaching result](../../experiments/r4_integrated/repeated_teaching_acquisition_v1_result.md)
+shows partial local learning without complete acquisition. After 32 corrections
+per existing skill, online and disabled learners still fail integrated reading
+and editing. Online learns the intended edit span and keeps it through later
+practice, but byte generation remains wrong. Every target position receives
+multiple direct updates and its fixed-feature literal probability improves
+slightly; those probabilities remain near uniform. Complete useful behavior,
+durable neuronal advantage and teacher-free repair remain unestablished.
+The retained learner keeps 1,982 factual slots and its actual continued state.
 
 The prepared [byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 is also completed and independently audited. Its narrow successes remain
-regression evidence. The [current result bank](../../benchmarks/stable_language_action_credit_v1.result.json)
+regression evidence. The [current result bank](../../benchmarks/repeated_teaching_acquisition_v1.result.json)
 and linked result reviews own the broader measurements and failure analysis.
 Completion and valid custody do not
 mean useful learning.
@@ -36,17 +34,19 @@ directions. Do not append another experiment diary to this roadmap.
 ## Active work: a broader persistent session
 
 The active plan is [persistent language-and-action development](persistent-language-action-development-v1.md).
-The current work is [bounded repeated teaching](repeated-teaching-acquisition-v1.md)
-of the existing integrated reading and editing behaviors. Keep the architecture,
-learning rule and task difficulty unchanged. Fix the repetition budget before
-execution; the old two-correction budget is historical, not permanent. Measure
-effective teacher coverage by target position, intended-output probability with
-its actual conditioning, complete free responses and interference. Establish
-acquisition before expanding retention and changed-context evaluation. If the
-bounded run fails, identify the limiting computation or update mechanism from
-the saved evidence before selecting another component.
+The [bounded repeated-teaching protocol](repeated-teaching-acquisition-v1.md)
+has completed. Keep architecture and difficulty stable. Its
+[learning review](repeated-teaching-acquisition-v1-learning-review.md) identifies
+weak intended-byte generation under the current local update and mode mixture
+as the measured limitation; missing direct teacher contact alone is insufficient
+to explain failure. The review distinguishes measured effects from unresolved
+causal contributions. No new component, automatic budget extension or expanded
+retention/changed-context evaluation follows. Preserve the learned motor behavior
+and continued state when selecting a justified learning change. The old
+two-correction budget is historical, not permanent; every new teaching schedule
+still needs a finite declared ceiling and complete-outcome measurements.
 
-The completed comparison below supplies the historical starting evidence.
+The completed stable comparison below supplies the historical starting evidence.
 The current user instruction pauses further difficulty increases and teacher
 reduction. Keep a stable representative integrated curriculum and a fixed,
 declared teaching budget while implementing and comparing the selected local
@@ -64,8 +64,8 @@ run, [implementation QA](causal-credit-owned-journal-qa-v1.md) and
 evidence. Original audit failures are preserved; correcting readers introduced
 no learner replay. Review the separate task and
 [prediction diagnostics](stable-credit-v1-learning-review.md) before
-selecting further work. No new mechanism or fit sweep follows; the separately
-bounded repetitions are selected by the latest user instruction.
+selecting further work. Its separately bounded successor is now measured; no
+new mechanism or fit sweep follows from passing implementation checks.
 
 Continue the learner on a workload that combines reading,
 retained knowledge, raw software actions and observation of their consequences.
@@ -100,9 +100,9 @@ The [matched journal-path measurement](owned-journal-prefix-cost-v1-result.md)
 takes24.37 seconds with ownership versus369.06 seconds with ordinary repeated
 prefix checks, preserving all saved frontiers and full fresh final reads. This
 fixed-order result measures that path; whole-checkpoint cost remains separate.
-The [current cost accounting](stable-credit-v1-cost-accounting.md) keeps complete
-worker costs, phase timing overlaps, fresh restore checks and supplemental
-saved-only reporting costs separate. Faster persistence is an integral code
+The [current cost accounting](repeated-teaching-acquisition-v1-cost.md) keeps complete
+worker costs, phase timing overlaps, fresh restore checks, explicitly nondurable
+intermediate panels and saved-only reporting costs separate. Faster persistence is an integral code
 improvement, without implying that the selected learning change is useful.
 
 All byte/EOS columns remain eligible, and existing neuronal potentials remain

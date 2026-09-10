@@ -3817,3 +3817,50 @@ The [matched journal-path result](owned-journal-prefix-cost-v1-result.md) measur
 This fixed-order path measurement does not establish a whole-session speedup.
 [Current cost accounting](stable-credit-v1-cost-accounting.md) separates main
 phases, intervening journal work, probe restores and supplemental saved analysis.
+
+## Bounded repeated-teaching acquisition — completed 2026-09-10
+
+The user selected a finite repeated-teaching comparison with architecture and
+task difficulty held stable, superseding the historical two-correction budget
+for this successor. The [protocol](repeated-teaching-acquisition-v1.md) declared
+32 corrections per existing reading/editing skill and five checkpoint panels
+before execution. Online and disabled routes continued identical copies of the
+completed causal ONLINE parent; simple continued its actual reference history.
+No neuronal source, learning rate, corpus or factual-memory capacity changed.
+
+The first experiment launch at `f577413dd9bac32302c3c84d5e09b950f8c8473c`
+completed all 252 responses and 111 actual executions, followed by passed fresh
+paired restoration and saved scalar review. The
+[result](../../experiments/r4_integrated/repeated_teaching_acquisition_v1_result.md)
+records 0/64 complete live outcomes and 0/20 checkpoint outcomes for each neural
+route. Simple retained correct editing, scoring 32/64 and 10/20. Online learned
+the intended edit span at checkpoint 16 and kept it through 64, but every
+checkpoint taught reading and payload remained one NUL byte followed by EOS.
+
+Every target position received 4–12 direct literal updates; 273 of 1,120 live
+symbol offers selected literal, with online publication and zero disabled
+publication. The [learning review](repeated-teaching-acquisition-v1-learning-review.md)
+finds small literal-probability gains at identical emission activities, near
+uniform probabilities, and weak mode-weighted intended-byte emission. Positional
+interference coexists with net gains; there was no acquired complete neural
+skill to forget. Expanded retention, changed-context and recovery work did not
+run. No new mechanism or automatic repetition extension was selected.
+
+Two implementation QA launches failed before release: an omitted explicit
+workspace fixture argument, then a mismatched observer activity-hash domain.
+Both receipts remain preserved. The corrected three tests and Ruff pass; actual
+hash equality was retained. These small fixtures did not fit the integrated
+tasks. The [cost review](repeated-teaching-acquisition-v1-cost.md) reports
+1,519.0128574 seconds and 1,529.1484375 MiB sampled peak for the complete run;
+listed QA, preparation and run monitors total 1,571.3497749 seconds, with banking
+0.4782003 seconds separately. Manual analysis and documentation remain outside
+those measured totals.
+
+One final block retains the continued ONLINE model, 401 actor and 406 reader
+experiences and 1,982 factual slots. Intermediate panels use disposable RAM
+copies and are explicitly nondurable; final full integrity/restore checks pass.
+The [learning bank](../../benchmarks/repeated_teaching_acquisition_v1.result.json),
+[run bank](../../benchmarks/repeated_teaching_acquisition_v1.run.json) and
+[measurement ledger](../../benchmarks/repeated_teaching_acquisition_v1.measurement.json)
+preserve outcomes, provenance and scope. Independent small-report review found
+no material inconsistencies without loading models or rereading journals.
