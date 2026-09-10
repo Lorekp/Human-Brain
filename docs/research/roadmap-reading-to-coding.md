@@ -29,7 +29,12 @@ it substantially opposes teacher margin gains. This is actual historical
 increment accounting, not a newly trained result or an ablation. Resolve the
 existing output-learning objective and its interaction with scan learning before
 adding a component; a teacher-coefficient increase alone is not a demonstrated
-solution.
+solution. The selected [local learning revision](integrated-local-learning-revision-v1.md)
+keeps the forward architecture fixed and addresses observed-symbol credit,
+per-contact teaching and unconditional scan competition together. Its
+implementation passes [focused mechanics and copy checks](integrated-local-learning-v1-qa.md).
+Paired preservation of actual retained behavior and a newly declared comparison
+remain ahead; useful acquisition under that rule is unmeasured.
 
 The prepared [byte-coincidence comparison](../../experiments/r4_integrated/neuronal_splice_online_v3_result.md)
 is also completed and independently audited. Its narrow successes remain

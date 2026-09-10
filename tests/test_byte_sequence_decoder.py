@@ -14120,7 +14120,7 @@ def test_persistent_checkpoint_actual_actor_continuation(tmp_path, monkeypatch, 
 
 
 def test_recurrent_content_local_arithmetic_and_visibility(tmp_path):
-    """One controller, six ticks: scalar local-credit and causal relay mechanics."""
+    """One controller, nine ticks: scalar local-credit and causal relay mechanics."""
     import math
 
     from humanbrain.recurrent_content_controller import (
@@ -14170,36 +14170,46 @@ def test_recurrent_content_local_arithmetic_and_visibility(tmp_path):
         read_registers(other, position, registers)
 
     controller = RecurrentContentController(seed=733)
-    # Authored arithmetic fixture, not a learned policy or a capability score.
+    # Every emission uses the real normalized binary phase geometry. Context
+    # afferents stay a small independent unit-energy arithmetic fixture.
+    support = [0, 1, 2, 3, 289, 388, 549, 808, 809, 811, 812, 813, 1070, 1071]
     with torch.no_grad():
         for name in POPULATIONS:
             weight = getattr(controller, name + "_weight")
             weight[:, 0] = torch.arange(weight.shape[0], dtype=torch.float64) / 1000
         controller.mode_weight[3, 0] = 20
-        controller.mode_weight[0, 2] = 100
-        # A finite, subnormal target probability exercises the stable CE
-        # diagnostic on the already-counted first literal offer.
-        controller.literal_weight[97, 0] = -1200
+        controller.mode_weight[0, 2] = 20
+        controller.literal_weight[97, 0] = -1600
+        controller.literal_weight[0, 1070] = 100
     oracle_rng = torch.Generator(device="cpu").manual_seed(733)
     work, draws, proposals, rejected_aliases = {}, [], [], []
     initial_rng = controller.rng_state.clone()
     history = {category: [] for category in ("scan", "free", "teacher")}
 
-    def tick(stage, category, target=None, prior=None, columns=(0, 1)):
-        records = []
-        eligibility = {}
+    def tick(stage, category, target=None, *, literal=True, valid=False):
+        records, eligibility, inputs, errors = [], {}, {}, {}
+        phase = (811 if stage.kind == "source" else 812) if category == "scan" else 813
+        columns = [0 if literal else 2, 289, 388 if valid else 549, 808]
+        if valid:
+            columns.append(809)
+        columns.append(phase)
+        if category != "scan":
+            columns.append(1070)
+        columns.append(1071)
         for name in POPULATIONS:
             if name == "literal" and records[-1].index != 3:
                 break
-            width = SHAPES[name][1]
-            afferent = SparseActivity(torch.tensor(columns),
-                                      torch.tensor([0.6, 0.8], dtype=torch.float64), width)
+            active = columns if name in ("mode", "literal") else [0, 1]
+            values = ([1 / math.sqrt(len(active))] * len(active)
+                      if name in ("mode", "literal") else [0.6, 0.8])
+            afferent = SparseActivity(torch.tensor(active),
+                                      torch.tensor(values, dtype=torch.float64), SHAPES[name][1])
             weights = getattr(controller, name + "_weight")
-            currents = [float(row[columns[0]]) * 0.6 + float(row[columns[1]]) * 0.8
+            currents = [sum(float(row[c]) * v for c, v in zip(active, values, strict=True))
                         for row in weights]
             unnormalized = [math.exp(value - max(currents)) for value in currents]
             probabilities = [value / sum(unnormalized) for value in unnormalized]
-            before = stage._eligibility[category][name][:, :4].clone()
+            before = stage._eligibility[category][name][:, support].clone()
             draw = controller.draw(stage, name, afferent, category=category, work=work)
             uniform = float(torch.rand((), dtype=torch.float64, generator=oracle_rng))
             assert draw.uniform == uniform
@@ -14212,41 +14222,40 @@ def test_recurrent_content_local_arithmetic_and_visibility(tmp_path):
             torch.testing.assert_close(draw.logits, torch.tensor(currents, dtype=torch.float64))
             torch.testing.assert_close(draw.probabilities,
                                        torch.tensor(probabilities, dtype=torch.float64))
-            values = dict(zip(columns, (0.6, 0.8), strict=True))
-            expected = torch.tensor([
-                [((index == selected) - probability) * values.get(column, 0.0)
-                 for column in range(4)]
-                for index, probability in enumerate(probabilities)
-            ], dtype=torch.float64)
-            torch.testing.assert_close(stage._eligibility[category][name][:, :4], before + expected)
-            eligibility[name] = expected
+            entries = dict(zip(active, values, strict=True))
+            x = torch.tensor([entries.get(c, 0.0) for c in support], dtype=torch.float64)
+            error = torch.tensor([float(i == selected) - p for i, p in enumerate(probabilities)],
+                                 dtype=torch.float64)
+            expected = error[:, None] * x[None, :]
+            torch.testing.assert_close(stage._eligibility[category][name][:, support], before + expected)
+            eligibility[name], inputs[name], errors[name] = expected, x, error
             records.append(draw)
             draws.append(draw.record())
-        token = controller.complete_tick(stage, prior_token=prior, work=work)
-        signal, direct = None, torch.zeros((257, 4), dtype=torch.float64)
+        token = controller.complete_tick(stage, prior_token=None if category == "scan" else EOS,
+                                          register_tokens=(97 if valid else None, None), work=work)
+        signal, direct_error = None, None
         if target is not None:
-            if not rejected_aliases and records[2].index == 3:
-                # NumPy writes bypass Torch's version counter. Pre-target
-                # probabilities and afferents must still reject corrupted offers.
-                for name in ("probabilities", "log_probabilities", "indices", "values"):
-                    value = stage._literal_pending[name]
-                    version = value._version
-                    alias, original = value.numpy(), value[0].item()
-                    try:
-                        alias[0] = original + 1
-                        assert value._version == version
-                        with pytest.raises(ValueError, match=r"pre-target.*modified"):
-                            controller.observe(stage, target, category=category, work=work)
-                    finally:
-                        alias[0] = original
-                    rejected_aliases.append(name)
+            if not rejected_aliases:
+                # Both held mode and literal statistics must detect NumPy writes
+                # that do not advance Torch's version counter.
+                for label, held in (("mode", stage._mode_pending),
+                                    ("literal", stage._literal_pending)):
+                    for name, value in held.items():
+                        if not isinstance(value, torch.Tensor):
+                            continue
+                        original, version = value.clone(), value._version
+                        try:
+                            value.numpy().flat[0] += 1
+                            assert value._version == version
+                            with pytest.raises(ValueError):
+                                controller.observe(stage, target, category=category, work=work)
+                        finally:
+                            value.numpy()[...] = original.numpy()
+                        rejected_aliases.append(label + "/" + name)
             if records[2].index == 3:
-                signal = 2 * probabilities[target] - 1
-                direct = torch.tensor([
-                    [((index == target) - probability) * values.get(column, 0.0)
-                     for column in range(4)]
-                    for index, probability in enumerate(probabilities)
-                ], dtype=torch.float64)
+                signal = 2 * probabilities[target] - sum(p * p for p in probabilities)
+                direct_error = torch.tensor([float(i == target) - p
+                                             for i, p in enumerate(probabilities)], dtype=torch.float64)
             else:
                 signal = 1 if token == target else -1
             reward = controller.observe(stage, target, category=category, work=work)
@@ -14254,102 +14263,144 @@ def test_recurrent_content_local_arithmetic_and_visibility(tmp_path):
             credit = controller.observation_record(stage, work=work)
             assert credit["signal"] == pytest.approx(signal, abs=1e-12)
             assert credit["literal_taught"] is (records[2].index == 3)
+            assert credit["squared_probability_norm"] == pytest.approx(
+                sum(p * p for p in probabilities) if records[2].index == 3 else 1.0)
             if records[2].index == 3:
                 expected_loss = max(currents) - currents[target] + math.log(sum(unnormalized))
                 assert credit["literal_loss"] == pytest.approx(expected_loss, rel=0, abs=1e-12)
-        history[category].append({"eligibility": eligibility, "signal": signal, "direct": direct})
+        history[category].append({"eligibility": eligibility, "signal": signal,
+                                  "direct_error": direct_error, "inputs": inputs,
+                                  "errors": errors, "phase": phase})
         return token
 
     def expected_proposal(kind, public=0):
-        """Independent forward per-symbol sums, never the implementation's A*E-P."""
+        """Per-event prefix sums and pairwise covariance; no staged A*E-P reuse."""
         scan, teacher = history["scan"], history["teacher"]
-        s, t = len(scan), len(teacher)
+        s, t, f = len(scan), len(teacher), len(history["free"])
         categories = 1 + int(t > 0) + int(kind == "edit")
         length = s if kind == "source" else s + t + 129
         scan_baseline = float(controller.baseline_mean[0 if kind == "source" else 1])
         teacher_baseline = float(controller.baseline_mean[2])
         result = {}
         for name in POPULATIONS:
-            zero = torch.zeros((SHAPES[name][0], 4), dtype=torch.float64)
+            zero = torch.zeros((SHAPES[name][0], len(support)), dtype=torch.float64)
             cumulative, causal = {}, {}
             for category in history:
                 prefix, weighted = zero.clone(), zero.clone()
                 baseline = teacher_baseline if category == "teacher" else scan_baseline
-                for row in history[category]:
+                for ordinal, row in enumerate(history[category], 1):
                     prefix += row["eligibility"].get(name, zero)
                     if row["signal"] is not None:
-                        weighted += (row["signal"] - baseline) * prefix
+                        weighted += (row["signal"] - baseline) * prefix / ordinal
                 cumulative[category], causal[category] = prefix, weighted
-            public_delta = public * (cumulative["scan"] + cumulative["free"])
-            if name == "literal":
-                delta = sum((row["direct"] for row in scan), zero.clone()) / s
-                if t:
-                    delta += sum((row["direct"] for row in teacher), zero.clone()) / t
-                delta = 0.01 / categories * delta + 0.01 / (categories * length) * public_delta
+            public_delta = .01 * public / (categories * length) * (
+                cumulative["scan"] + cumulative["free"])
+            if name in ("context", "gate"):
+                delta = causal["scan"] + causal["teacher"]
+                delta += sum(row["signal"] - teacher_baseline for row in teacher) * cumulative["scan"] / s
             else:
-                delta = causal["scan"] / s + public_delta
-                if t:
-                    mean_teacher = sum(row["signal"] - teacher_baseline for row in teacher) / t
-                    delta += mean_teacher * cumulative["scan"] + causal["teacher"] / t
-                delta *= 0.01 / (categories * length)
-            result[name + "_weight"] = getattr(controller, name + "_weight")[:, :4].clone() + delta
-        return result
+                delta = zero.clone()
+                contacts = []
+                for row in scan:
+                    if name == "literal" and row["direct_error"] is None:
+                        continue
+                    g = (row["direct_error"] if name == "literal" else
+                         (row["signal"] - scan_baseline) * row["errors"]["mode"])
+                    x = row["inputs"][name]
+                    alpha = float(x[support.index(row["phase"])])
+                    contacts.append((g, x / alpha, alpha))
+                z = sum(alpha for _, _, alpha in contacts)
+                phase = support.index(811 if kind == "source" else 812)
+                for g, v, alpha in contacts:
+                    delta[:, phase] += alpha * g
+                    for _, other_v, other_alpha in contacts:
+                        delta += (alpha * other_alpha / z) * g[:, None] * (v - other_v)[None, :]
+                if len(contacts) == 1:
+                    shared = [i for i in range(len(support)) if i != phase]
+                    assert torch.count_nonzero(delta[:, shared]) == 0
+                if not contacts:
+                    assert torch.count_nonzero(delta) == 0
+                for row in teacher:
+                    if name == "literal" and row["direct_error"] is None:
+                        continue
+                    g = (row["direct_error"] if name == "literal" else
+                         (row["signal"] - teacher_baseline) * row["errors"]["mode"])
+                    delta += g[:, None] * row["inputs"][name][None, :]
+            result[name + "_weight"] = (
+                getattr(controller, name + "_weight")[:, support].clone() + .01 * delta + public_delta)
+        bound = .01 * (math.sqrt(71) * s + math.sqrt(74) * t
+                       + abs(public) * math.sqrt(8) * (s + f) / (categories * length))
+        return result, bound
 
-    stage = controller.begin_stage(kind="source", scan_offers=2, work=work)
+    def check_proposal(proposal, expected, bound, *, enabled=True):
+        norm_squared = 0.0
+        for name, value in expected.items():
+            before = getattr(controller, name)[:, support]
+            norm_squared += float((value - before).square().sum())
+            torch.testing.assert_close(proposal.state[name][:, support], value if enabled else before,
+                                       rtol=1e-10, atol=1e-12)
+        assert proposal.delta_norm == pytest.approx(math.sqrt(norm_squared), rel=1e-10, abs=1e-12)
+        assert proposal.delta_norm <= bound + 1e-10
+        assert proposal.record()["delta_norm_bound"] == pytest.approx(bound, rel=0, abs=1e-15)
+
+    stage = controller.begin_stage(kind="source", scan_offers=3, work=work)
     with pytest.raises(ValueError):
         controller.observe(stage, 97, category="scan", work=work)
     tick(stage, "scan", 97)
-    tick(stage, "scan", EOS, columns=(2, 3))
-    assert "literal" in history["scan"][0]["eligibility"]
-    assert "literal" not in history["scan"][1]["eligibility"]
+    tick(stage, "scan", 98, valid=True)
+    tick(stage, "scan", EOS, literal=False)
+    assert [row["direct_error"] is not None for row in history["scan"]] == [True, True, False]
     assert torch.equal(controller.rng_state, initial_rng)
-    assert controller.baseline_count.tolist() == [0, 0, 0]
     controller.seal_scan(stage)
-    expected = expected_proposal("source")
+    expected, bound = expected_proposal("source")
     proposal = controller.finish(stage, learning_enabled=True, work=work)
-    for name, value in expected.items():
-        torch.testing.assert_close(proposal.state[name][:, :4], value, rtol=1e-10, atol=1e-12)
-    assert proposal.category_count == 1 and proposal.normalization_ticks == 2
+    check_proposal(proposal, expected, bound)
     controller.validate_stage(proposal, work)
     controller.commit_validated(proposal, work)
     proposals.append(proposal.record())
     assert controller.baseline_count.tolist() == [1, 0, 0]
     assert controller.baseline_mean[0] == pytest.approx(
-        sum(row["signal"] for row in history["scan"]) / 2)
+        sum(row["signal"] for row in history["scan"]) / 3)
     del proposal, stage
 
-    # A teacher credits the common input trajectory, not the independent free branch.
     history = {category: [] for category in history}
-    stage = controller.begin_stage(kind="edit", scan_offers=1, max_bytes=0, work=work)
+    stage = controller.begin_stage(kind="edit", scan_offers=1, max_bytes=1, work=work)
     tick(stage, "scan", 98)
     controller.seal_scan(stage)
-    tick(stage, "free", prior=EOS)
+    tick(stage, "free")
+    tick(stage, "free")
     controller.seal_free(stage)
     fork = controller.fork_stage(stage, work)
     for category in ("scan", "teacher"):
-        for name in POPULATIONS[:-1]:
+        for name in ("context", "gate"):
             left, right = stage._causal_prefix[category][name], fork._causal_prefix[category][name]
             assert torch.equal(left, right) and left.data_ptr() != right.data_ptr()
-        left, right = stage._literal_direct[category], fork._literal_direct[category]
-        assert torch.equal(left, right) and left.data_ptr() != right.data_ptr()
-    controller.declare_teacher(fork, 1)
-    tick(fork, "teacher", EOS, prior=EOS)
-    assert controller.baseline_count.tolist() == [1, 0, 0]
-    expected = expected_proposal("edit", public=-1)
+        for bank_name in ("_literal_direct", "_mode_direct"):
+            left, right = getattr(stage, bank_name)[category], getattr(fork, bank_name)[category]
+            assert torch.equal(left, right) and left.data_ptr() != right.data_ptr()
+    for name in ("mode", "literal"):
+        for key, left in stage._scan_moments[name].items():
+            right = fork._scan_moments[name][key]
+            assert torch.equal(left, right) and left.data_ptr() != right.data_ptr()
+    controller.declare_teacher(fork, 2)
+    tick(fork, "teacher", 97)
+    tick(fork, "teacher", EOS, valid=True)
+    expected, bound = expected_proposal("edit", public=-1)
     proposal = controller.finish(fork, learning_enabled=True, public_reward=-1, work=work)
-    for name, value in expected.items():
-        torch.testing.assert_close(proposal.state[name][:, :4], value, rtol=1e-10, atol=1e-12)
-    assert proposal.category_count == 3 and proposal.normalization_ticks == 131
-    assert proposal.delta_norm <= math.sqrt(0.0026) + 1e-12
-    for bank in (fork._causal_prefix["scan"]["context"], fork._literal_direct["teacher"]):
-        version, original = bank._version, bank[0, 0].item()
+    check_proposal(proposal, expected, bound)
+    assert proposal.category_count == 3 and proposal.normalization_ticks == 132
+    banks = (fork._causal_prefix["scan"]["context"], fork._literal_direct["teacher"],
+             fork._mode_direct["teacher"], fork._scan_moments["mode"]["pre"],
+             fork._scan_moments["literal"]["post"])
+    for bank in banks:
+        version, original = bank._version, bank.clone()
         try:
-            bank.numpy()[0, 0] = original + 1
+            bank.numpy().flat[0] += 1
             assert bank._version == version
-            with pytest.raises(ValueError, match="proposal was modified"):
+            with pytest.raises(ValueError):
                 controller.validate_stage(proposal, work)
         finally:
-            bank.numpy()[0, 0] = original
+            bank.numpy()[...] = original.numpy()
     controller.validate_stage(proposal, work)
     controller.commit_validated(proposal, work)
     proposals.append(proposal.record())
@@ -14359,9 +14410,12 @@ def test_recurrent_content_local_arithmetic_and_visibility(tmp_path):
     saved = copy.deepcopy(controller.state_dict())
     history = {category: [] for category in history}
     stage = controller.begin_stage(kind="source", scan_offers=1, work=work)
-    tick(stage, "scan", EOS)
+    tick(stage, "scan", EOS, literal=False)
     controller.seal_scan(stage)
+    expected, bound = expected_proposal("source")
     proposal = controller.finish(stage, learning_enabled=False, work=work)
+    assert stage._scan_contacts["literal"] == 0
+    check_proposal(proposal, expected, bound, enabled=False)
     controller.validate_stage(proposal, work)
     controller.commit_validated(proposal, work)
     proposals.append(proposal.record())
@@ -14377,23 +14431,27 @@ def test_recurrent_content_local_arithmetic_and_visibility(tmp_path):
     controller.load_state_dict(saved)
     _assert_nested_equal(controller.state_dict(), saved)
     _coincidence_qa_save(tmp_path / "recurrent-content-arithmetic-passed.json", {
-        "status": "passed", "controllers": 1, "actors": 0, "ticks": 6,
-        "scan_offers": 4, "teacher_offers": 1, "free_ticks": 1,
+        "status": "passed", "controllers": 1, "actors": 0, "ticks": 9,
+        "scan_offers": 5, "teacher_offers": 2, "free_ticks": 2,
         "children": 0, "checkpoint_loads": 0, "strict_loads": 1,
         "rejected_strict_loads": 1, "frame_only_receives": 3,
         "draws": draws, "proposals": proposals, "work": work,
-        "actual_draws": len(draws), "literal_offers": 4, "nonliteral_offers": 1,
+        "actual_draws": len(draws), "literal_offers": 5, "nonliteral_offers": 2,
         "rejected_premature_target": 1,
         "rejected_pending_numpy_aliases": rejected_aliases,
-        "rejected_finished_numpy_banks": 2,
+        "rejected_finished_numpy_banks": len(banks),
     })
-
 
 def test_recurrent_content_same_actor_online_lifecycle(tmp_path, monkeypatch):
     """Two actors, one actual child, and no historical checkpoint or task fitting."""
     import time
     from pathlib import Path
 
+    from experiments.r4_integrated.integrated_local_learning_initialize_v1 import (
+        METADATA_NAMES,
+        _mapping,
+        _predecessor_metadata,
+    )
     from experiments.r4_integrated.persistent_language_action_execution_v2 import (
         execute_proposal,
         qualified_launch,
@@ -14416,6 +14474,40 @@ def test_recurrent_content_same_actor_online_lifecycle(tmp_path, monkeypatch):
 
     online, disabled = (RecurrentContentSpliceLearner(seed=733) for _ in range(2))
     sources, states, held_hashes = [], [], []
+
+    # Only the explicit adapter accepts predecessor metadata. Use the two
+    # already-counted tiny actors; no historical checkpoint or decode enters QA.
+    predecessor = dict(online.state_dict())
+    old_metadata = {key: copy.deepcopy(predecessor[key]) for key in METADATA_NAMES}
+    _predecessor_metadata(old_metadata)
+    assert [old_metadata[key]["schema"] for key in METADATA_NAMES] == [
+        "recurrent-content-splice-learner-v2", "recurrent-content-memory-learner-v2",
+        "recurrent-content-controller-v2"]
+    predecessor.update(old_metadata)
+    disabled_before = _digest(disabled.state_dict())
+    with pytest.raises(ValueError):
+        disabled.load_state_dict(predecessor)
+    assert _digest(disabled.state_dict()) == disabled_before
+    invalid_metadata = dict(predecessor)
+    invalid_metadata["_extra_state"] = dict(old_metadata["_extra_state"], unexpected_rule=True)
+    with pytest.raises(ValueError, match="metadata"):
+        _mapping(invalid_metadata, disabled, adapt_v3=True)
+    migrated, migration_receipt = _mapping(predecessor, disabled, adapt_v3=True)
+    assert set(migration_receipt) == set(METADATA_NAMES)
+    assert set(migrated) == set(predecessor)
+    for key in predecessor:
+        if key not in METADATA_NAMES:
+            assert migrated[key] is predecessor[key]
+    disabled.load_state_dict(migrated, strict=True, assign=False)
+    for key, value in online.state_dict().items():
+        actual = disabled.state_dict()[key]
+        if isinstance(value, torch.Tensor):
+            assert torch.equal(value, actual)
+            if value.numel():
+                assert value.untyped_storage().data_ptr() != actual.untyped_storage().data_ptr()
+        else:
+            assert value == actual
+    del predecessor, old_metadata, invalid_metadata, migrated
 
     def held_numeric(reader):
         return _digest({name: value for name, value in reader.state_dict().items()
@@ -14493,16 +14585,18 @@ def test_recurrent_content_same_actor_online_lifecycle(tmp_path, monkeypatch):
     finally:
         prediction_disabled.scan_steps[0]["observed_token"] = original_symbol
     pending = reader.controller.pending_stage
-    for bank in (pending._causal_prefix["scan"]["context"], pending._literal_direct["scan"]):
-        original, version = bank[0, 0].item(), bank._version
+    for bank in (pending._causal_prefix["scan"]["context"], pending._literal_direct["scan"],
+                 pending._mode_direct["scan"], pending._scan_moments["mode"]["pre"],
+                 pending._scan_moments["literal"]["alpha_sum"]):
+        original, version = bank.clone(), bank._version
         try:
-            bank.numpy()[0, 0] = original + 1
+            bank.numpy().flat[0] += 1
             assert bank._version == version
             with pytest.raises(ValueError, match="changed"):
                 reader.validate_pending(prediction_disabled, states[1])
         finally:
-            bank.numpy()[0, 0] = original
-    feedback_disabled = reader.teach(observation, b"b", states[1], prediction=prediction_disabled,
+            bank.numpy()[...] = original.numpy()
+    feedback_disabled = reader.teach(observation, b"b", states[1], 0.01, prediction=prediction_disabled,
                                      learning_enabled=False)
     assert feedback_disabled.teacher_count == 2
     assert not feedback_disabled.controller["learning_enabled"]
@@ -14592,13 +14686,99 @@ def test_recurrent_content_same_actor_online_lifecycle(tmp_path, monkeypatch):
         "rejected_source_offers": 2, "free_calls": 3, "free_ticks": 3,
         "public_scan_offers": 3 * frame.offer_count, "teacher_offers": 4,
         "held_prior_calls": 7, "action_labels": 3, "children": 1,
-        "strict_loads": 1, "rejected_strict_loads": 1, "checkpoint_file_loads": 0,
+        "strict_loads": 2, "rejected_strict_loads": 2, "checkpoint_file_loads": 0,
+        "metadata_migration": migration_receipt, "rejected_unknown_metadata": 1,
         "sources": sources, "free": [prediction_disabled, acknowledged, prediction.payload],
         "teacher": [feedback_disabled, feedback], "execution": execution,
         "disabled_ack_work": ack_work, "rejected_modified_trace": 1,
-        "rejected_pending_numpy_banks": 2,
+        "rejected_pending_numpy_banks": 5,
         "rejected_work": rejected_work, "held_old_reader_sha256": held_hashes,
         "frame_only_receives": frame.token_count,
+    })
+
+
+def test_integrated_local_learning_copy_and_probe_clone(tmp_path):
+    """Three authored actors, two source symbols; no task, teacher or payload decode."""
+    from experiments.r4_integrated.integrated_local_learning_initialize_v1 import (
+        METADATA_NAMES,
+        _copy_actor,
+        _predecessor_metadata,
+        clone_for_probe,
+    )
+    from experiments.r4_integrated.persistent_session_checkpoint import _tensors
+    from humanbrain.neuronal_splice_learner import _digest
+    from humanbrain.recurrent_content_learner import RecurrentContentSpliceLearner
+
+    original = RecurrentContentSpliceLearner(seed=733)
+    tape, source = original.ingest_with_receipt([b"q"], learning_enabled=False)
+    assert tape.used == source.symbol_count == 2
+    # Nonzero counters are authored metadata, not additional simulated experience.
+    original._experience, original.reader._active_experience = 17, 23
+    before = (_digest(original.state_dict()), _digest(vars(tape)))
+    snapshot = original.snapshot(tape)
+    metadata = {key: copy.deepcopy(snapshot["model"][key]) for key in METADATA_NAMES}
+    _predecessor_metadata(metadata)
+    snapshot["model"].update(metadata)
+    payload = {"schema": "persistent-session-route-tensors-v1",
+               "model": snapshot["model"], "memory": snapshot["memory"]}
+    row = {"model_sha256": _digest(payload["model"]),
+           "memory_sha256": _digest(payload["memory"]), "mode": "learned", "seed": 733,
+           "experience": 17, "reader_experience": 23}
+    work = {}
+    copied, copied_tape, mapping, copied_storage = _copy_actor(
+        payload, row, RecurrentContentSpliceLearner, work, adapt_v3=True)
+    assert work["model_constructions"] == work["strict_model_loads"] == 1
+    assert set(mapping) == set(METADATA_NAMES)
+    assert all(mapping[key]["before"]["schema"].endswith("v2")
+               and mapping[key]["after"]["schema"].endswith("v3") for key in METADATA_NAMES)
+    assert row["model_sha256"] == _digest(payload["model"])
+    assert row["memory_sha256"] == _digest(payload["memory"])
+    cloned = clone_for_probe(copied, copied_tape)
+    clone, clone_tape = cloned["model"], cloned["state"]
+    assert cloned["tensor_decodes"] == 0
+    assert cloned["work"]["model_constructions"] == cloned["work"]["strict_model_loads"] == 1
+
+    def storage(actor, state):
+        values = list(_tensors(actor.state_dict())) + list(_tensors(vars(state)))
+        for view in actor.reader._candidate_views:
+            values.extend((view.indices, view.values, view.flags))
+        for wiring in actor.reader._self_wirings:
+            values.extend((wiring.indices, wiring.values))
+        return {value.untyped_storage().data_ptr() for value in values if value.numel()}
+
+    storage_sets = [storage(original, tape),
+                    {value.untyped_storage().data_ptr() for value in _tensors(payload) if value.numel()},
+                    storage(copied, copied_tape), storage(clone, clone_tape)]
+    assert copied_storage == storage_sets[2]
+    for index, left in enumerate(storage_sets):
+        assert left
+        for right in storage_sets[index + 1:]:
+            assert left.isdisjoint(right)
+    for actor, state in ((original, tape), (copied, copied_tape), (clone, clone_tape)):
+        assert (_digest(actor.state_dict()), _digest(vars(state))) == before
+        assert (actor._experience, actor.reader._active_experience) == (17, 23)
+        _assert_nested_equal(actor.state_dict(), original.state_dict())
+        _assert_nested_equal(state.snapshot(), tape.snapshot())
+        assert torch.equal(actor.reader.controller.rng_state, original.reader.controller.rng_state)
+
+    # A real alias write to the clone must not reach any of the other three owners.
+    weight = clone.reader.controller.literal_weight
+    saved = weight[0, 0].item()
+    try:
+        weight.numpy()[0, 0] = saved + 1
+        assert (_digest(original.state_dict()), _digest(vars(tape))) == before
+        assert (_digest(copied.state_dict()), _digest(vars(copied_tape))) == before
+        assert _digest(payload["model"]) == row["model_sha256"]
+    finally:
+        weight.numpy()[0, 0] = saved
+    assert (_digest(clone.state_dict()), _digest(vars(clone_tape))) == before
+    _coincidence_qa_save(tmp_path / "integrated-local-copy-passed.json", {
+        "status": "passed", "scope": "authored metadata fixture; not retained-parent migration evidence",
+        "actors": 3, "source_offers": 2, "teacher_offers": 0, "free_calls": 0,
+        "task_executions": 0, "children": 0, "payload_decodes": 0, "historical_loads": 0,
+        "authored_counters": [17, 23], "mapping": mapping, "copy_work": work,
+        "clone_work": cloned["work"], "source_work": source.work,
+        "pairwise_disjoint_storage_sets": 4, "model_sha256": before[0], "memory_sha256": before[1],
     })
 
 

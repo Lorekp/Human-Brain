@@ -44,6 +44,18 @@ acquisition. The next learning design must address these existing computations
 and preserve the learned motor span; no architecture addition or new trial is
 released by the saved analyzer's passing checks.
 
+Root selects the [integrated local learning revision](integrated-local-learning-revision-v1.md)
+against those measured limitations. It changes the local observed-symbol score,
+causal credit units and scan emission plasticity while retaining the same
+populations, forward computation, motor rule and public-consequence term.
+Implementation QA must preserve numerical state and paired forward behavior;
+it does not establish acquisition or release a training run. The next comparison
+must declare its bounded schedule and matched predecessor/disabled/reference
+controls before execution. The [implementation QA](integrated-local-learning-v1-qa.md)
+now passes; actual retained-parent forward preservation and acquisition are still
+unmeasured under the revision. Do not expand difficulty, retention or changed-context
+evaluation on the strength of implementation checks.
+
 ## Current retained continuation
 
 The completed repeated-teaching run retains final HEAD0 under

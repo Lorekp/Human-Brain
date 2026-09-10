@@ -10,6 +10,12 @@ For the current evidence table and exact claim boundaries, see
 [`../benchmark-status.md`](../benchmark-status.md). For the implementation-level
 program map, see [`../program-map.md`](../program-map.md).
 
+The 2026-09-10 [local learning revision and QA](integrated-local-learning-v1-qa.md)
+follow the measured repeated-teaching failure and saved scan/output attribution.
+They change local credit and plasticity within the existing forward architecture.
+Three authored mechanics/copy tests pass; no retained learner is replayed and no
+new acquisition, retention, transfer or recovery result follows from these checks.
+
 ## 1. Reservoir / readout era — closed
 
 The original reservoir-computing family was systematically tested rather than

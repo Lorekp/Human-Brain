@@ -122,18 +122,21 @@ class RecurrentContentMemoryLearner(DendriticSequenceMemoryLearner):
     def get_extra_state(self):
         metadata = super().get_extra_state()
         metadata.update({
-            "schema": "recurrent-content-memory-learner-v2",
+            "schema": "recurrent-content-memory-learner-v3",
             "routing": "held complete V7 prior once per actual free/teacher prefix",
             "codec_updated_semantics": "output_updated denotes new controller weight changes",
             "free_belief": "causal context/gate/mode/optional-literal stochastic populations",
             "loss": "held prior-current NLL diagnostic, not controller trajectory likelihood",
             "teacher_phase": "pre-output neural fork; fresh RNG after actual free stopping time",
-            "publication": "held scan/free/teacher eligibility and causal credit; joint validated copies",
-            "local_credit": "causal-observation-credit-v1; direct literal CE; upstream own eligibility",
+            "publication": ("held eligibility, prefix credit and phase moments; "
+                            "joint validated copies"),
+            "local_credit": ("integrated-local-learning-revision-v1; Brier; contact CE; "
+                             "scan covariance"),
             "source_learning": "one causal document per transaction; old tape; no output prior",
             "source_disabled": "RNG acknowledged; weights/baselines held; tape gate separate",
             "request_binding": "prefix-visible Q during scan; complete Q only after request EOS",
-            "initialization": "explicit retained lineage; metadata adaptation preserves numeric state",
+            "initialization": ("explicit retained lineage; metadata adaptation preserves "
+                               "numeric state"),
             "trace_scope": "all actual controller draws/scans and held prior arbitration",
             "transient_source": "observe_source preserves tape object and every factual byte",
             "controller_seed": 733,
@@ -540,17 +543,23 @@ class RecurrentContentMemoryLearner(DendriticSequenceMemoryLearner):
     def accounting(self):
         result = super().accounting()
         result.update({
-            "schema": "recurrent-content-accounting-v2",
+            "schema": "recurrent-content-accounting-v3",
             "controller_tensor_bytes": self.controller.tensor_bytes,
             "controller_weight_bytes": 24623616,
             "controller_eligibility_bytes": 3 * 24623616,
             "resolution_fork_eligibility_bytes": 3 * 24623616,
-            "controller_causal_prefix_bytes": 2 * 2802448 * 8,
+            "controller_causal_prefix_bytes": 2 * 2798160 * 8,
             "controller_literal_direct_bytes": 2 * 275504 * 8,
-            "controller_pending_literal_max_bytes": 16 * 257 + 16 * 1072,
-            "resolution_fork_additional_credit_bytes": 2 * 24623616,
-            "weights_root_fork_credit_proposal_bytes": 12 * 24623616,
-            "checkpoint_scope": "idle only; no unresolved eligibility/credit/frame/private RNG saved",
+            "controller_mode_direct_bytes": 2 * 4 * 1072 * 8,
+            "controller_scan_moment_bytes": (2 * 1072 + 4 + 257 + 2) * 8,
+            "controller_pending_literal_max_bytes": 16 * 257 + 16 * 9 + 8,
+            "controller_pending_mode_max_bytes": 4 * 8 + 16 * 9,
+            "resolution_fork_additional_credit_bytes": 2 * 24623616 + 19256,
+            "weights_root_fork_credit_proposal_bytes": 12 * 24623616 + 2 * 19256,
+            "credit_resident_scope": ("named banks; excludes pending draws and "
+                                      "arithmetic temporaries"),
+            "checkpoint_scope": ("idle only; no unresolved eligibility/credit/frame/"
+                                 "private RNG saved"),
             "binding_stage_tensor_bytes": 0,
             "binding_correction_prior": "held complete V7 decision once per causal teacher prefix",
             "binding_source_prior": "no source or input-scan prior calls",
@@ -581,8 +590,8 @@ class RecurrentContentSpliceLearner(DendriticSequenceSpliceLearner):
     def get_extra_state(self):
         metadata = super().get_extra_state()
         metadata.update({
-            "schema": "recurrent-content-splice-learner-v2",
-            "reader": "recurrent-content-memory-learner-v2",
+            "schema": "recurrent-content-splice-learner-v3",
+            "reader": "recurrent-content-memory-learner-v3",
             "publication": "all motor proposals then controller/RNG then motor copies",
             "source": "one admitted source or explicit transient observe_source; no load replay",
             "public_reward": "validated actual execution failure=-1; otherwise0; STOP0",
