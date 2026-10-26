@@ -1,3 +1,4 @@
+# Optional local setup. Copy to config.toml and set cwd to your checkout.
 # Project-scoped Mem0 connection for Codex. Keep the token in the Windows
 # user environment as MEM0_API_KEY; never commit it here.
 [mcp_servers.mem0]
@@ -8,8 +9,8 @@ bearer_token_env_var = "MEM0_API_KEY"
 # registration has no cwd, so it cannot reliably associate Codex sessions with
 # this repository's path-derived graph.
 [mcp_servers.codebase-memory-mcp]
-command = "C:/Users/laure/.local/bin/codebase-memory-mcp.exe"
-cwd = "C:/Users/laure/Desktop/DeepSim/Human Brain"
+command = "codebase-memory-mcp"
+cwd = "C:/path/to/Human-Brain"
 
 [mcp_servers.codebase-memory-mcp.tools.index_status]
 approval_mode = "approve"

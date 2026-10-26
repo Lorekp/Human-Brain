@@ -29,7 +29,7 @@ Original Allen endpoints:
 ## Runtime boundary
 
 The source artifacts use SI units. `humanbrain.cells` explicitly converts them
-to mV, ms, pA, pF, nS, and MΩ and ports the configured AllenSDK rules. Do not
+to mV, ms, pA, pF, nS, and MÎ© and ports the configured AllenSDK rules. Do not
 edit a downloaded configuration in place: add a new pinned artifact, record its
 provenance and digest, and update the protocol that admits it.
 
@@ -38,3 +38,19 @@ multicompartment reconstructions and do not satisfy the stricter Eyal
 human-cell oracle described in the research plan. See the repository
 [README](../../README.md) and [architecture](../../docs/architecture.md) for
 the system-level claim boundary.
+
+## Attribution and terms
+
+Allen Institute for Brain Science, **Allen Cell Types Database**, fitted neuronal
+models `503612028` and `523000114`. The exact source links and digests are above.
+These pinned files are included for noncommercial research under the
+[Allen Institute Terms of Use](https://alleninstitute.org/terms-of-use/) and
+[Citation Policy](https://alleninstitute.org/legal/citation-policy). Those terms
+permit research/noncommercial copying and redistribution subject to their
+conditions; commercial redistribution requires written permission.
+
+The configured cell-model rules originate in
+[AllenSDK](https://github.com/AllenInstitute/AllenSDK). Its
+[software license](../../licenses/AllenSDK-LICENSE.txt) is separate from the
+data terms and also restricts commercial redistribution. These notices do not
+grant a license to the project-specific code.

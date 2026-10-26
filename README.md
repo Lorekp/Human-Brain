@@ -7,7 +7,7 @@ The useful starting point is a small text learner: grow context associations fro
 ## What is implemented
 
 - A byte/phrase tokenizer and `CellLanguageModel` API for growth, incremental learning, prediction, completion, evaluation, and checkpoint persistence.
-- A dendritic context memory whose Witten–Bell-style interpolation supplies synaptic drive to fitted-cell races. This makes the statistical baseline part of the interpretation of results.
+- A dendritic context memory whose Wittenâ€“Bell-style interpolation supplies synaptic drive to fitted-cell races. This makes the statistical baseline part of the interpretation of results.
 - GLIF3 and adaptive GLIF5 cell models, sparse recurrent/readout machinery, and a Rust native kernel with optional CUDA execution paths.
 - Research harnesses for bounded scaling, typed programs, persistent memory, and actual execution of small software edits.
 - Source-bound experiment protocols, result artifacts, baseline comparisons, and public developer QA tiers.
@@ -93,4 +93,8 @@ Earlier experiments include useful small prediction and program-reuse results al
 
 The cell equations and fitted parameters build on Allen Cell Types data and AllenSDK model rules. See [pinned cell provenance](data/allen/README.md) for the exact models and checksums. The project-specific contribution is their integration into learning circuits, execution machinery, and experimental protocols; the underlying biological models and statistical techniques are prior work.
 
-Python dependencies and optional integrations are declared in `pyproject.toml`; native dependencies are declared in `src/humanbrain/_native_src/Cargo.toml`. Preserve the license notices shipped with vendored components. No repository-wide license grant is declared; obtain the owner's terms before reuse or redistribution, and check dataset and dependency terms separately.
+Python dependencies and optional integrations are declared in `pyproject.toml`; native dependencies are declared in `src/humanbrain/_native_src/Cargo.toml`. See [third-party notices](THIRD_PARTY_NOTICES.md) for Allen terms, vendored crates, and benchmark excerpts. Preserve the license notices shipped with vendored components. No repository-wide license grant is declared; obtain the owner's terms before reuse or redistribution, and check dataset and dependency terms separately.
+
+## Optional agent tooling
+
+The project does not require Codex or Mem0 to run. For contributors using those tools, copy `.codex/config.example.toml` to `.codex/config.toml`, set `cwd` to this checkout, and make `codebase-memory-mcp` available on `PATH`. Keep `MEM0_API_KEY` in your environment. The local configuration is ignored by Git.
