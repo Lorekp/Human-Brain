@@ -1,13 +1,15 @@
 # Human Brain
 
-Human Brain is a research codebase for learning and text prediction with simulated cortical cells. It combines Allen human-data-fitted GLIF cell equations, sparse dendritic associations, recurrent state, local plasticity, and experiments that connect retained knowledge to software actions.
+Human Brain is an experimental learning system built around simulated cortical cells. It explores how a system can learn from experience, retain knowledge and use what it has learned to read and act in a software workspace.
 
-The useful starting point is a small text learner: grow context associations from a corpus, select the next token through a simulated cell race, generate a continuation, and save the learned state. Larger experiments investigate persistent reading and editing. This is an experimental learning system, not a whole-brain simulation or a demonstrated general-purpose coding agent.
+The implementation combines neuron models fitted to Allen Institute human-cell data with dendritic context memory, recurrent state and local learning rules. Python provides the research interface, with a Rust native kernel and optional CUDA execution paths.
+
+A small text learner can acquire context associations, predict the next token, generate a continuation and save its learned state. Larger experiments connect persistent learning to reading and software editing. Complete integrated reading and editing remain open research problems.
 
 ## What is implemented
 
 - A byte/phrase tokenizer and `CellLanguageModel` API for growth, incremental learning, prediction, completion, evaluation, and checkpoint persistence.
-- A dendritic context memory whose Wittenâ€“Bell-style interpolation supplies synaptic drive to fitted-cell races. This makes the statistical baseline part of the interpretation of results.
+- A dendritic context memory whose Witten-Bell-style interpolation supplies synaptic drive to fitted-cell races. This makes the statistical baseline part of the interpretation of results.
 - GLIF3 and adaptive GLIF5 cell models, sparse recurrent/readout machinery, and a Rust native kernel with optional CUDA execution paths.
 - Research harnesses for bounded scaling, typed programs, persistent memory, and actual execution of small software edits.
 - Source-bound experiment protocols, result artifacts, baseline comparisons, and public developer QA tiers.
@@ -53,7 +55,7 @@ restored = CellLanguageModel.load("cell-model.npz")
 print(restored.predict_next("the membrane predicts the next ").text)
 ```
 
-This example follows the fixture in `tests/test_language.py`, which expects the next token to be `word` and checks checkpoint round-trip equality. It illustrates recall from a tiny repeated corpus, not held-out language understanding. It requires no external text dataset.
+This example follows the fixture in `tests/test_language.py`, which expects the next token to be `word` and checks checkpoint round-trip equality. It demonstrates recall from a tiny repeated corpus; held-out language understanding requires separate evaluation. It requires no external text dataset.
 
 ## Development checks
 
@@ -71,7 +73,7 @@ See [development workflow](docs/development.md) for test selection, build identi
 
 The central open problem is complete, useful learning across reading, retention, and software action. The [current roadmap](docs/research/roadmap-reading-to-coding.md) is the entry point for active work; [experiment history](docs/research/roadmap-experiment-history.md) preserves earlier directions.
 
-The [bounded repeated-teaching study](experiments/r4_integrated/repeated_teaching_acquisition_v1_result.md) reports that the online learner acquired and retained the intended edit boundaries, but both online and learning-disabled routes still failed the complete reading and editing tasks after 32 corrections per skill. Generated payloads remained wrong. This supports a narrow local-learning result, not successful integrated acquisition. A later learning-rule revision has mechanics and preservation evidence; the proposed larger acquisition comparison has no released execution result in the current roadmap.
+The [bounded repeated-teaching study](experiments/r4_integrated/repeated_teaching_acquisition_v1_result.md) reports that the online learner acquired and retained the intended edit boundaries, but both online and learning-disabled routes still failed the complete reading and editing tasks after 32 corrections per skill. Generated payloads remained wrong. A later learning-rule revision has mechanics and preservation evidence; the proposed larger acquisition comparison has no released execution result in the current roadmap.
 
 Earlier experiments include useful small prediction and program-reuse results alongside failed free-running generation and cross-structure composition. High teacher-forced accuracy, successful replay, and an instance-specific software checkpoint are different claims from generalization. Likewise, configured cell address space and measured simulation throughput do not establish useful recruitment, biological fidelity, or cognitive ability.
 
